@@ -9,18 +9,37 @@ start:
 	mov ax, 07C0h		; Set data segment to where we're loaded
 	mov ds, ax
 
+    call new_line
 
-	mov si, text_string	; Put string position into SI
-	call print_string	; Call our string-printing routine
+	mov si, header_0
+	call print_line
 
-	jmp $			; Jump here - infinite loop!
+    mov si, header_1
+	call print_line
 
+    mov si, header_2
+	call print_line
 
-	text_string db 'This is my cool new OS!', 0
+    call new_line
 
+    ;Infinite loop
+	jmp $
 
-print_string:			; Routine: output string in SI to screen
-	mov ah, 0Eh		; int 10h 'print char' function
+; Functions
+
+new_line:
+	mov ah, 0Eh
+
+    mov al, 0Ah
+    int 10h
+
+    mov al, 0Dh
+    int 10h
+
+    ret
+
+print_line:
+	mov ah, 0Eh
 
 .repeat:
 	lodsb			; Get character from string
@@ -30,8 +49,15 @@ print_string:			; Routine: output string in SI to screen
 	jmp .repeat
 
 .done:
-	ret
+    call new_line
 
+    ret
+
+; Datas
+
+	header_0 db '******************************', 0
+	header_1 db 'Welcome to Thor OS Bootloader!', 0
+	header_2 db '******************************', 0
 
 	times 510-($-$$) db 0	; Pad remainder of boot sector with 0s
 	dw 0xAA55		; The standard PC boot signature
