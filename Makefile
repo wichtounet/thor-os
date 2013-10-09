@@ -1,14 +1,14 @@
-default: thor.flp
+default: bootloader.flp
 
-thor.bin: src/thor.asm
-	nasm -f bin -o thor.bin src/thor.asm
+bootloader.bin: src/bootloader/bootloader.asm
+	nasm -f bin -o bootloader.bin src/bootloader/bootloader.asm
 
-thor.flp: thor.bin
-	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
+bootloader.flp: bootloader.bin
+	dd status=noxfer conv=notrunc if=bootloader.bin of=bootloader.flp
 
-start: thor.flp
-	qemu-kvm -fda thor.flp
+start: bootloader.flp
+	qemu-kvm -fda bootloader.flp
 
 clean:
-	rm -f thor.bin
-	rm -f thor.flp
+	rm -f bootloader.bin
+	rm -f bootloader.flp

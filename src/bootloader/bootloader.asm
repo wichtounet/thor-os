@@ -1,13 +1,18 @@
-	BITS 16
+	[BITS 16]
 
 start:
-	mov ax, 07C0h		; Set up 4K stack space after this bootloader
-	add ax, 288		; (4096 + 512) / 16 bytes per paragraph
+
+; 1. Set stable environment
+
+	mov ax, 07C0h   ; Set up 4K stack space after this bootloader
+	add ax, 288     ; (4096 + 512) / 16 bytes per paragraph
 	mov ss, ax
 	mov sp, 4096
 
-	mov ax, 07C0h		; Set data segment to where we're loaded
+	mov ax, 07C0h   ; Set data segment to where we're loaded
 	mov ds, ax
+
+; 2. Welcome the user to the bootloader
 
     call new_line
 
@@ -22,7 +27,11 @@ start:
 
     call new_line
 
-    ;Infinite loop
+; 3. Get ready for protected mode
+
+; TODO
+
+; Infinite loop to not exit directly the system
 	jmp $
 
 ; Functions
