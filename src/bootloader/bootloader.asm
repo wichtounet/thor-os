@@ -30,6 +30,23 @@ rm_start:
 
     call new_line
 
+    mov si, press_key_msg
+    call print_line
+
+    call new_line
+
+    ; Enable A20 gate
+
+    in 		al, 0x92
+    or 		al, 2
+    out		 0x92, al
+
+    ; Wait for any key
+    call key_wait
+
+    mov si, load_kernel
+	call print_line
+
 ; 3. Get ready for protected mode
 
 ; TODO
@@ -65,11 +82,30 @@ print_line:
 
     ret
 
+key_wait:
+    mov		al, 0xD2
+    out		64h, al
+
+    mov		al, 0x80
+	out		60h, al
+
+    keyup:
+		in		al, 0x60
+		and	 	al, 10000000b
+	jnz		keyup
+	Keydown:
+	in		al, 0x60
+
+    ret
+
 ; Datas
 
 	header_0 db '******************************', 0
 	header_1 db 'Welcome to Thor OS Bootloader!', 0
 	header_2 db '******************************', 0
+
+    press_key_msg db 'Press any key to load the kernel...', 0
+    load_kernel db 'Attempt to load the kernel...', 0
 
     ; Make a real bootsector
 	times 510-($-$$) db 0
