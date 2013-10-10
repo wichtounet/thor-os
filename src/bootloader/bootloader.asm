@@ -1,32 +1,35 @@
 [BITS 16]
 
+jmp rm_start
+
+%include "src/utils/intel_16.asm"
+
 ; Start in real mode
 rm_start:
 
-; 1. Set stable environment
-
     ; Set stack space (4K) and stack segment
-	mov ax, 0x7C0
-	add ax, 288
-	mov ss, ax
-	mov sp, 4096
+
+    mov ax, 0x7C0
+    add ax, 288
+    mov ss, ax
+    mov sp, 4096
 
     ; Set data segment
-	mov ax, 0x7C0
-	mov ds, ax
+    mov ax, 0x7C0
+    mov ds, ax
 
-; 2. Welcome the user to the bootloader
+    ; 2. Welcome the user to the bootloader
 
     call new_line_16
 
-	mov si, header_0
-	call print_line_16
+    mov si, header_0
+    call print_line_16
 
     mov si, header_1
-	call print_line_16
+    call print_line_16
 
     mov si, header_2
-	call print_line_16
+    call print_line_16
 
     call new_line_16
 
@@ -44,10 +47,10 @@ rm_start:
     call key_wait
 
     mov si, load_kernel
-	call print_line_16
+    call print_line_16
 
-	BASE equ 0x100       ; 0x0100:0x0 = 0x1000
-	sectors equ 0x20     ; sectors to read
+    BASE equ 0x100       ; 0x0100:0x0 = 0x1000
+    sectors equ 0x20     ; sectors to read
 
     ; Reset disk drive
     xor ax, ax
@@ -73,7 +76,7 @@ rm_start:
 
     jmp dword BASE:0x0
 
-reset_failed:
+    reset_failed:
     mov si, reset_failed_msg
     call print_line_16
 
@@ -85,59 +88,15 @@ read_failed:
 
 error_end:
     mov si, load_failed
-	call print_line_16
+    call print_line_16
 
     jmp $
 
-; Functions
-
-new_line_16:
-	mov ah, 0Eh
-
-    mov al, 0Ah
-    int 10h
-
-    mov al, 0Dh
-    int 10h
-
-    ret
-
-print_line_16:
-	mov ah, 0Eh
-
-.repeat:
-	lodsb
-	cmp al, 0
-	je .done
-	int 10h
-	jmp .repeat
-
-.done:
-    call new_line_16
-
-    ret
-
-key_wait:
-    mov		al, 0xD2
-    out		64h, al
-
-    mov		al, 0x80
-	out		60h, al
-
-    keyup:
-		in		al, 0x60
-		and	 	al, 10000000b
-	jnz		keyup
-	Keydown:
-	in		al, 0x60
-
-    ret
-
 ; Datas
 
-	header_0 db '******************************', 0
-	header_1 db 'Welcome to Thor OS Bootloader!', 0
-	header_2 db '******************************', 0
+    header_0 db '******************************', 0
+    header_1 db 'Welcome to Thor OS Bootloader!', 0
+    header_2 db '******************************', 0
 
     press_key_msg db 'Press any key to load the kernel...', 0
     load_kernel db 'Attempt to load the kernel...', 0
@@ -148,6 +107,7 @@ key_wait:
 
     bootdev db 0
 
-    ; Make a real bootsector
-	times 510-($-$$) db 0
-	dw 0xAA55
+; Make a real bootsector
+
+    times 510-($-$$) db 0
+    dw 0xAA55

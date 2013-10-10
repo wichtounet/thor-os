@@ -1,6 +1,8 @@
+[BITS 16]
+
 jmp _start
 
-[BITS 16]
+%include "src/utils/intel_16.asm"
 
 _start:
     ; Set stack space
@@ -26,35 +28,6 @@ _start:
     call new_line_16
 
     jmp $
-
-
-; Functions
-
-new_line_16:
-	mov ah, 0Eh
-
-    mov al, 0Ah
-    int 10h
-
-    mov al, 0Dh
-    int 10h
-
-    ret
-
-print_line_16:
-	mov ah, 0Eh
-
-.repeat:
-	lodsb
-	cmp al, 0
-	je .done
-	int 10h
-	jmp .repeat
-
-.done:
-    call new_line_16
-
-    ret
 
 ; Datas
 
