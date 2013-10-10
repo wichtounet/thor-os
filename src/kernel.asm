@@ -49,6 +49,8 @@ _start:
 
 pm_start:
 
+    jmp $
+
     ; Update segments
     mov ax, DATA_SELECTOR-GDT64
     mov ds, ax
@@ -106,6 +108,8 @@ lm_start:
     kernel_header_0 db '******************************', 0
     kernel_header_1 db 'Welcome to Thor OS!', 0
     kernel_header_2 db '******************************', 0
+
+; Global Descriptors Table
 
 GDT64:
     NULL_SELECTOR:
