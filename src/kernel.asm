@@ -12,25 +12,25 @@ _start:
 	mov ax, 0x100
 	mov ds, ax
 
-    call new_line
+    call new_line_16
 
 	mov si, kernel_header_0
-	call print_line
+	call print_line_16
 
     mov si, kernel_header_1
-	call print_line
+	call print_line_16
 
     mov si, kernel_header_2
-	call print_line
+	call print_line_16
 
-    call new_line
+    call new_line_16
 
     jmp $
 
 
 ; Functions
 
-new_line:
+new_line_16:
 	mov ah, 0Eh
 
     mov al, 0Ah
@@ -41,7 +41,7 @@ new_line:
 
     ret
 
-print_line:
+print_line_16:
 	mov ah, 0Eh
 
 .repeat:
@@ -52,23 +52,7 @@ print_line:
 	jmp .repeat
 
 .done:
-    call new_line
-
-    ret
-
-key_wait:
-    mov		al, 0xD2
-    out		64h, al
-
-    mov		al, 0x80
-	out		60h, al
-
-    keyup:
-		in		al, 0x60
-		and	 	al, 10000000b
-	jnz		keyup
-	Keydown:
-	in		al, 0x60
+    call new_line_16
 
     ret
 
