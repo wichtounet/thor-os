@@ -35,5 +35,5 @@ _start:
 	kernel_header_1 db 'Welcome to Thor OS!', 0
 	kernel_header_2 db '******************************', 0
 
-    ; Fill the sector
+    ; Fill the sector (not necessary, but cleaner)
 	times 512-($-$$) db 0
