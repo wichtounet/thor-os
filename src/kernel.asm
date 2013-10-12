@@ -125,10 +125,71 @@ lm_start:
     mov rdi, TRAM + 0x14 * 8
     PRINT_P command_line, BLACK_F, WHITE_B
 
-    ; Wait
-    jmp $
+    mov r8, 1
+    mov [current_line], r8
+
+    mov r8, 6
+    mov [current_column], r8
+
+    .start_waiting:
+        call key_wait
+        call key_to_ascii
+
+        mov r10, rax
+
+        ; Line offset
+        mov rax, [current_line]
+        mov rbx, 0x14 * 8
+        mul rbx
+
+        mov r11, rax
+        mov rax, r10
+
+        ; Column offset
+        mov r12, [current_column]
+        shl r12, 1
+
+        lea rdi, [r11 + r12 + TRAM]
+        stosb
+
+        ; Go to the next column
+        mov r13, [current_column]
+        inc r13
+        mov [current_column], r13
+
+        ; Wait for the next key again
+        jmp .start_waiting
 
 ; Functions
+
+; In: key in al
+; Out: ascci key in al
+key_to_ascii:
+    and eax, 0xFF
+    mov esi, azerty
+    add esi, eax
+
+    mov al, [esi]
+
+    ret
+
+; Return the keyboard input into al
+key_wait:
+    mov al, 0xD2
+    out 0x64, al
+
+    mov al, 0x80
+    out 0x60, al
+
+    .key_up:
+        in al, 0x60
+        and al, 10000000b
+    jnz .key_up
+
+    ; key_down
+        in al, 0x60
+
+    ret
 
 clear_screen:
     ; Print top bar
@@ -172,7 +233,16 @@ print_string:
 
     ret
 
-; Datas
+; Variables
+
+    current_line dq 0
+    current_column dq 0
+
+    current_input_length dq 0
+    current_input_str:
+        times 32 db 0
+
+; Strings
 
     kernel_header_0 db '******************************', 0
     kernel_header_1 db 'Welcome to Thor OS!', 0
@@ -185,6 +255,17 @@ print_string:
 
     TRAM equ 0x0B8000 ; Text RAM
     VRAM equ 0x0A0000 ; Video RAM
+
+; Qwertz table
+
+azerty:
+    db '0',0xF,'1234567890',0xF,0xF,0xF,0xF
+    db 'qwertzuiop'
+    db '^$',0xD,0x11
+    db 'asdfghjklÃ©'
+    db 'ù²','*'
+    db 'yxcvbnm,;:!'
+    db 0xF,'*',0x12,0x20,0xF,0xF
 
 ; Global Descriptors Table
 
