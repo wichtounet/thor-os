@@ -1,17 +1,12 @@
 [BITS 16]
+[ORG 0x1000]
 
 jmp _start
 
 %include "src/utils/intel_16.asm"
 
 _start:
-    ; Set stack space
-    mov ax, 0x9000
-    mov ss, ax
-    mov sp, 0xffff
-
-    ; Set data segment
-    mov ax, 0x100
+    xor ax, ax
     mov ds, ax
 
     call new_line_16
