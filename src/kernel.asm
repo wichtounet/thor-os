@@ -127,7 +127,17 @@ lm_start:
 
     .start_waiting:
         call key_wait
+
+        cmp al, 28
+        je .new_command
+
         call key_to_ascii
+
+        ; Store the entered character
+        mov r8, [current_input_length]
+        mov byte [current_input_str + r8], al
+        inc r8
+        mov [current_input_str], r8
 
         mov r10, rax
 
@@ -152,6 +162,20 @@ lm_start:
         mov [current_column], r13
 
         ; Wait for the next key again
+        jmp .start_waiting
+
+    .new_command:
+        ; Go to the next line
+        mov rax, [current_line]
+        inc rax
+        mov [current_line], rax
+
+        mov qword [current_column], 0
+
+        ; Iterate through the command table and compare each string
+
+        ; TODO Check if it is a command
+
         jmp .start_waiting
 
 ; Functions
@@ -227,6 +251,10 @@ print_string:
 
     ret
 
+sysinfo_command:
+
+    ret
+
 ; Variables
 
     current_line dq 1
@@ -236,6 +264,15 @@ print_string:
     current_input_str:
         times 32 db 0
 
+; Command table
+
+command_table:
+    dq 1 ; Number of commands
+
+    dq sysinfo_command_str
+    dq sysinfo_command
+
+
 ; Strings
 
     kernel_header_0 db '******************************', 0
@@ -244,6 +281,8 @@ print_string:
 
     header_title db "                                    THOR OS                                     ", 0
     command_line db "thor> ", 0
+
+    sysinfo_command_str db 'sysinfo', 0
 
 ; Constants
 
