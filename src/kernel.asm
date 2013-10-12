@@ -121,9 +121,13 @@ lm_start:
     ; Clean up all the screen
     call clear_screen
 
+    ; Line 0 is for header
+    mov qword [current_line], 1
+
     ;Display the command line
-    mov rdi, TRAM + 0x14 * 8
+    call set_current_position
     PRINT_P command_line, BLACK_F, WHITE_B
+    mov qword [current_column], 6
 
     .start_waiting:
         call key_wait
@@ -187,7 +191,6 @@ lm_start:
             ;Display the command line
             call set_current_position
             PRINT_P command_line, BLACK_F, WHITE_B
-
             mov qword [current_column], 6
 
         .end:
@@ -256,8 +259,8 @@ clear_screen:
     ; Print top bar
     PRINT_B header_title, WHITE_F, BLACK_B
 
+    ; Fill the entire screen with black
     mov rdi, TRAM + 0x14 * 8
-
     mov rcx, 0x14 * 24
     mov rax, 0x0720072007200720
     rep stosq
@@ -304,8 +307,8 @@ reboot_command:
 
 ; Variables
 
-    current_line dq 1
-    current_column dq 6
+    current_line dq 0
+    current_column dq 0
 
     current_input_length dq 0
     current_input_str:
