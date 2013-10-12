@@ -18,6 +18,10 @@ rm_start:
     mov ax, 0x7C0
     mov ds, ax
 
+    mov ah, 0x01
+    mov cx, 0x2607
+    int 0x10
+
     ; 2. Welcome the user to the bootloader
 
     call new_line_16
