@@ -172,7 +172,7 @@ lm_start:
             cmp r9, r8
             je .command_not_found
 
-            ; TODO Check if both strings are the same length
+            ; TODO Check if both strings are the same
 
             inc r9
             jmp .start
@@ -224,10 +224,7 @@ set_current_position:
 ; Out: ascci key in al
 key_to_ascii:
     and eax, 0xFF
-    mov esi, azerty
-    add esi, eax
-
-    mov al, [esi]
+    mov al, [eax + azerty]
 
     ret
 
