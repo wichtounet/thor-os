@@ -105,8 +105,8 @@ pm_start:
     wrmsr
 
     ; Copy PML4 address into cr3
-    mov     eax, 0x70000    ; Bass address of PML4
-    mov     cr3, eax        ; load page-map level-4 base
+    mov eax, 0x70000    ; Bass address of PML4
+    mov cr3, eax        ; load page-map level-4 base
 
     ; Switch to long mode
     mov eax, cr0
@@ -139,21 +139,8 @@ lm_start:
         inc r8
         mov [current_input_str], r8
 
-        mov r10, rax
-
-        ; Line offset
-        mov rax, [current_line]
-        mov rbx, 0x14 * 8
-        mul rbx
-
-        mov r11, rax
-        mov rax, r10
-
-        ; Column offset
-        mov r12, [current_column]
-        shl r12, 1
-
-        lea rdi, [r11 + r12 + TRAM]
+        ; Print back the entered char
+        call set_current_position
         stosb
 
         ; Go to the next column
@@ -174,11 +161,67 @@ lm_start:
 
         ; Iterate through the command table and compare each string
 
-        ; TODO Check if it is a command
+        mov r8, [command_table] ; Number of commands
+        xor r9, r9 ; iterator
+
+        .start:
+            cmp r9, r8
+            je .command_not_found
+
+            ; TODO Check if both strings are the same length
+
+            inc r9
+            jmp .start
+
+        .command_not_found:
+            call set_current_position
+            PRINT_P unknown_command_str, BLACK_F, WHITE_B
+
+            ; Go to the next line
+            mov rax, [current_line]
+            inc rax
+            mov [current_line], rax
+
+            mov qword [current_column], 0
+
+            ;Display the command line
+            call set_current_position
+            PRINT_P command_line, BLACK_F, WHITE_B
+
+            mov qword [current_column], 6
+
+        .end:
 
         jmp .start_waiting
 
 ; Functions
+
+; Set rdi to the current position based on current_line and current_column
+set_current_position:
+    push rax
+    push rbx
+    push r11
+    push r12
+
+    ; Line offset
+    mov rax, [current_line]
+    mov rbx, 0x14 * 8
+    mul rbx
+
+    mov r11, rax
+
+    ; Column offset
+    mov r12, [current_column]
+    shl r12, 1
+
+    lea rdi, [r11 + r12 + TRAM]
+
+    pop r12
+    pop r11
+    pop rbx
+    pop rax
+
+    ret
 
 ; In: key in al
 ; Out: ascci key in al
@@ -255,6 +298,10 @@ sysinfo_command:
 
     ret
 
+reboot_command:
+
+    ret
+
 ; Variables
 
     current_line dq 1
@@ -267,10 +314,13 @@ sysinfo_command:
 ; Command table
 
 command_table:
-    dq 1 ; Number of commands
+    dq 2 ; Number of commands
 
     dq sysinfo_command_str
     dq sysinfo_command
+
+    dq reboot_command_str
+    dq reboot_command
 
 
 ; Strings
@@ -283,6 +333,9 @@ command_table:
     command_line db "thor> ", 0
 
     sysinfo_command_str db 'sysinfo', 0
+    reboot_command_str db 'reboot', 0
+
+    unknown_command_str db 'This command does not exist', 0
 
 ; Constants
 
