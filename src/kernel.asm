@@ -3,8 +3,6 @@
 
 jmp _start
 
-%include "src/utils/intel_16.asm"
-
 %define BLACK_F 0x0
 %define BLUE_F 0x1
 %define GREEN_F 0x2
@@ -39,21 +37,10 @@ jmp _start
 %endmacro
 
 _start:
+    ; Reset data segments because the bootloader set it to
+    ; a value incompatible with the kernel
     xor ax, ax
     mov ds, ax
-
-    call new_line_16
-
-    mov si, kernel_header_0
-    call print_line_16
-
-    mov si, kernel_header_1
-    call print_line_16
-
-    mov si, kernel_header_2
-    call print_line_16
-
-    call new_line_16
 
     ; Disable interrupts
     cli
