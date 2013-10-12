@@ -203,24 +203,18 @@ lm_start:
 set_current_position:
     push rax
     push rbx
-    push r11
-    push r12
 
     ; Line offset
     mov rax, [current_line]
     mov rbx, 0x14 * 8
     mul rbx
 
-    mov r11, rax
-
     ; Column offset
-    mov r12, [current_column]
-    shl r12, 1
+    mov rbx, [current_column]
+    shl rbx, 1
 
-    lea rdi, [r11 + r12 + TRAM]
+    lea rdi, [rax + rbx + TRAM]
 
-    pop r12
-    pop r11
     pop rbx
     pop rax
 
