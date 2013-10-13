@@ -141,7 +141,7 @@ lm_start:
         mov r8, [current_input_length]
         mov byte [current_input_str + r8], al
         inc r8
-        mov [current_input_str], r8
+        mov [current_input_length], r8
 
         ; Print back the entered char
         call set_current_position
@@ -163,6 +163,10 @@ lm_start:
 
         mov qword [current_column], 0
 
+        ; zero terminate the input string
+        mov r8, [current_input_length]
+        mov byte [current_input_str + r8], 0
+
         ; Iterate through the command table and compare each string
 
         mov r8, [command_table] ; Number of commands
@@ -172,14 +176,55 @@ lm_start:
             cmp r9, r8
             je .command_not_found
 
-            ; TODO Check if both strings are the same
+            mov rsi, current_input_str
+            mov rdi, r9
+            shl rdi, 4
+            add rdi, 8
+            add rdi, command_table
 
+        .next_char
+            mov al, [rsi]
+            mov bl, [rdi]
+
+            cmp al, 0
+            jne .compare
+
+            cmp bl, 0
+            jne .compare
+
+            ; both == 0
+
+            mov r8, r9
+            inc r8
+            shl rdi, 4
+            add rdi, command_table
+            mov r8, [rdi]
+            jmp .exec_command
+
+            .compare:
+
+            cmp al, 0
+            je .next_command
+
+            cmp bl, 0
+            je .next_command
+
+            cmp al, bl
+            jne .next_command
+
+            inc rsi
+            inc rdi
+
+            jmp .next_char
+
+        .next_command:
             inc r9
             jmp .start
 
-        .command_not_found:
-            call set_current_position
-            PRINT_P unknown_command_str, BLACK_F, WHITE_B
+        .exec_command:
+            ; r8 = address of command to exec
+
+            call r8
 
             ; Go to the next line
             mov rax, [current_line]
@@ -193,9 +238,28 @@ lm_start:
             PRINT_P command_line, BLACK_F, WHITE_B
             mov qword [current_column], 6
 
-        .end:
+            jmp .end
 
-        jmp .start_waiting
+        .command_not_found:
+            call set_current_position
+            PRINT_P unknown_command_str, BLACK_F, WHITE_B
+
+        .end:
+            mov qword [current_input_length], 0
+
+            ; Go to the next line
+            mov rax, [current_line]
+            inc rax
+            mov [current_line], rax
+
+            mov qword [current_column], 0
+
+            ;Display the command line
+            call set_current_position
+            PRINT_P command_line, BLACK_F, WHITE_B
+            mov qword [current_column], 6
+
+            jmp .start_waiting
 
 ; Functions
 
@@ -289,10 +353,14 @@ print_string:
     ret
 
 sysinfo_command:
+    call set_current_position
+    PRINT_P sysinfo_command_str, BLACK_F, WHITE_B
 
     ret
 
 reboot_command:
+    call set_current_position
+    PRINT_P reboot_command_str, BLACK_F, WHITE_B
 
     ret
 
@@ -379,4 +447,4 @@ GDT64:
    GDT_LENGTH:
 
    ; Fill the sector (not necessary, but cleaner)
-   times 1024-($-$$) db 0
+   times 2048-($-$$) db 0
