@@ -132,6 +132,7 @@ lm_start:
     .start_waiting:
         call key_wait
 
+        ; ENTER key
         cmp al, 28
         je .new_command
 
@@ -170,19 +171,18 @@ lm_start:
         ; Iterate through the command table and compare each string
 
         mov r8, [command_table] ; Number of commands
-        xor r9, r9 ; iterator
+        xor r9, r9              ; iterator
 
         .start:
             cmp r9, r8
             je .command_not_found
 
             mov rsi, current_input_str
-            mov rdi, r9
-            shl rdi, 4
-            add rdi, 8
-            add rdi, command_table
+            mov r10, r9
+            shl r10, 4
+            mov rdi, [r10 + command_table + 8]
 
-        .next_char
+        .next_char:
             mov al, [rsi]
             mov bl, [rdi]
 
@@ -194,12 +194,13 @@ lm_start:
 
             ; both == 0
 
-            mov r8, r9
-            inc r8
-            shl rdi, 4
-            add rdi, command_table
-            mov r8, [rdi]
-            jmp .exec_command
+            mov r10, r9
+            inc r10
+            shl r10, 4
+
+            call [command_table + r10]
+
+            jmp .end
 
             .compare:
 
@@ -220,25 +221,6 @@ lm_start:
         .next_command:
             inc r9
             jmp .start
-
-        .exec_command:
-            ; r8 = address of command to exec
-
-            call r8
-
-            ; Go to the next line
-            mov rax, [current_line]
-            inc rax
-            mov [current_line], rax
-
-            mov qword [current_column], 0
-
-            ;Display the command line
-            call set_current_position
-            PRINT_P command_line, BLACK_F, WHITE_B
-            mov qword [current_column], 6
-
-            jmp .end
 
         .command_not_found:
             call set_current_position
