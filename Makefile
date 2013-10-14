@@ -12,7 +12,7 @@ thor.flp: bootloader.bin kernel.bin
 	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
 
 start: thor.flp
-	qemu-kvm -fda thor.flp
+	qemu-kvm -cpu host -fda thor.flp
 
 clean:
 	rm -f bootloader.bin
