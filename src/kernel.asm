@@ -23,13 +23,6 @@ jmp _start
 
 %define STYLE(f,b) ((f << 4) + b)
 
-%macro PRINT_B 3
-    mov rdi, TRAM
-    mov rbx, %1
-    mov dl, STYLE(%2, %3)
-    call print_string
-%endmacro
-
 %macro PRINT_P 3
     mov rbx, %1
     mov dl, STYLE(%2, %3)
@@ -320,7 +313,8 @@ key_wait:
 
 clear_screen:
     ; Print top bar
-    PRINT_B header_title, WHITE_F, BLACK_B
+    call set_current_position
+    PRINT_P header_title, WHITE_F, BLACK_B
 
     ; Fill the entire screen with black
     mov rdi, TRAM + 0x14 * 8
