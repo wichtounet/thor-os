@@ -106,7 +106,14 @@ pm_start:
 
 lm_start:
     ; Clean up all the screen
-    call clear_screen
+    call clear_command
+
+    call goto_next_line
+
+    ;Display the command line
+    mov r8, command_line
+    mov r9, command_line_length
+    call print_normal
 
     .start_waiting:
         call key_wait
@@ -291,29 +298,6 @@ key_wait:
 
     ; key_down
         in al, 0x60
-
-    ret
-
-clear_screen:
-    ; Print top bar
-    call set_current_position
-    mov rbx, header_title
-    mov dl, STYLE(WHITE_F, BLACK_B)
-    call print_string
-
-    ; Fill the entire screen with black
-    mov rdi, TRAM + 0x14 * 8
-    mov rcx, 0x14 * 24
-    mov rax, 0x0720072007200720
-    rep stosq
-
-    ; Line 0 is for header
-    mov qword [current_line], 1
-
-    ;Display the command line
-    mov r8, command_line
-    mov r9, command_line_length
-    call print_normal
 
     ret
 
@@ -648,6 +632,25 @@ reboot_command:
     ; Should never get here
     ret
 
+clear_command:
+    ; Print top bar
+    call set_current_position
+    mov rbx, header_title
+    mov dl, STYLE(WHITE_F, BLACK_B)
+    call print_string
+
+    ; Fill the entire screen with black
+    mov rdi, TRAM + 0x14 * 8
+    mov rcx, 0x14 * 24
+    mov rax, 0x0720072007200720
+    rep stosq
+
+    ; Line 0 is for header
+    mov qword [current_line], 0
+    mov qword [current_column], 0
+
+    ret
+
 ; Variables
 
     current_line dq 0
@@ -660,13 +663,16 @@ reboot_command:
 ; Command table
 
 command_table:
-    dq 2 ; Number of commands
+    dq 3 ; Number of commands
 
     dq sysinfo_command_str
     dq sysinfo_command
 
     dq reboot_command_str
     dq reboot_command
+
+    dq clear_command_str
+    dq clear_command
 
 ; Strings
 
@@ -679,6 +685,7 @@ command_table:
 
     sysinfo_command_str db 'sysinfo', 0
     reboot_command_str db 'reboot', 0
+    clear_command_str db 'clear', 0
 
     STRING command_line, "thor> "
 
