@@ -1,24 +1,5 @@
-%define BLACK_F 0x0
-%define BLUE_F 0x1
-%define GREEN_F 0x2
-%define CYAN_F 0x3
-%define RED_F 0x4
-%define PINK_F 0x5
-%define ORANGE_F 0x6
-%define WHITE_F 0x7
-
-%define BLACK_B 0x0
-%define BLUE_B 0x1
-%define GREEN_B 0x2
-%define CYAN_B 0x3
-%define RED_B 0x4
-%define PINK_B 0x5
-%define ORANGE_B 0x6
-%define WHITE_B 0x7
-
-%define STYLE(f,b) ((f << 4) + b)
-
 %include "src/utils/macros.asm"
+%include "src/utils/utils.asm"
 %include "src/utils/keyboard.asm"
 %include "src/utils/console.asm"
 
@@ -155,40 +136,6 @@ shell_start:
             call print_normal
 
             jmp .start_waiting
-
-; Functions
-
-; Compute the length of string representation of the integer
-; in r8 = integer to print
-; out rax = string length of int
-int_str_length:
-    push rbx
-    push rdx
-    push rsi
-
-    mov rax, r8
-
-    xor rsi, rsi
-
-    .loop:
-        xor rdx, rdx
-        mov rbx, 10
-        div rbx
-        add rdx, 48
-
-        inc rsi
-
-        cmp rax, 0
-        jne .loop
-
-    .exit:
-        mov rax, rsi
-
-        pop rsi
-        pop rdx
-        pop rbx
-
-        ret
 
 ; Variables
 
