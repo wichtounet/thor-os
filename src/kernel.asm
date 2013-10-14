@@ -23,12 +23,6 @@ jmp _start
 
 %define STYLE(f,b) ((f << 4) + b)
 
-%macro PRINT_P 3
-    mov rbx, %1
-    mov dl, STYLE(%2, %3)
-    call print_string
-%endmacro
-
 %macro PRINT_NORMAL 2
     call set_current_position
     mov rbx, %1
@@ -125,14 +119,6 @@ lm_start:
     ; Clean up all the screen
     call clear_screen
 
-    ; Line 0 is for header
-    mov qword [current_line], 1
-
-    ;Display the command line
-    call set_current_position
-    PRINT_P command_line, BLACK_F, WHITE_B
-    mov qword [current_column], 6
-
     .start_waiting:
         call key_wait
 
@@ -222,23 +208,20 @@ lm_start:
             jmp .start
 
         .command_not_found:
-            call set_current_position
-            PRINT_P unknown_command_str_1, BLACK_F, WHITE_B
-
-            mov rax, [current_column]
-            add rax, unknown_command_length_1
-            mov [current_column], rax
+            PRINT_NORMAL unknown_command_str_1, unknown_command_str_1_length
 
             call set_current_position
-            PRINT_P current_input_str, BLACK_F, WHITE_B
+
+            mov rbx, current_input_str
+            mov dl, STYLE(BLACK_F, WHITE_B)
+            call print_string
 
             mov rax, [current_column]
             mov rbx, [current_input_length]
             add rax, rbx
             mov [current_column], rax
 
-            call set_current_position
-            PRINT_P unknown_command_str_2, BLACK_F, WHITE_B
+            PRINT_NORMAL unknown_command_str_2, unknown_command_str_2_length
 
         .end:
             mov qword [current_input_length], 0
@@ -246,9 +229,7 @@ lm_start:
             call goto_next_line
 
             ;Display the command line
-            call set_current_position
-            PRINT_P command_line, BLACK_F, WHITE_B
-            mov qword [current_column], 6
+            PRINT_NORMAL command_line, command_line_length
 
             jmp .start_waiting
 
@@ -319,13 +300,21 @@ key_wait:
 clear_screen:
     ; Print top bar
     call set_current_position
-    PRINT_P header_title, WHITE_F, BLACK_B
+    mov rbx, header_title
+    mov dl, STYLE(WHITE_F, BLACK_B)
+    call print_string
 
     ; Fill the entire screen with black
     mov rdi, TRAM + 0x14 * 8
     mov rcx, 0x14 * 24
     mov rax, 0x0720072007200720
     rep stosq
+
+    ; Line 0 is for header
+    mov qword [current_line], 1
+
+    ;Display the command line
+    PRINT_NORMAL command_line, command_line_length
 
     ret
 
@@ -637,19 +626,15 @@ command_table:
     %1_length equ $ - %1 - 1
 %endmacro
 
-    kernel_header_0 db '******************************', 0
-    kernel_header_1 db 'Welcome to Thor OS!', 0
-    kernel_header_2 db '******************************', 0
-
     header_title db "                                    THOR OS                                     ", 0
-    command_line db "thor> ", 0
 
     sysinfo_command_str db 'sysinfo', 0
     reboot_command_str db 'reboot', 0
 
-    unknown_command_str_1 db 'The command "', 0
-    unknown_command_length_1 equ $ - unknown_command_str_1 - 1
-    unknown_command_str_2 db '" does not exist', 0
+    STRING command_line, "thor> "
+
+    STRING unknown_command_str_1, 'The command "'
+    STRING unknown_command_str_2, '" does not exist'
 
     STRING sysinfo_vendor_id, "Vendor ID: "
     STRING sysinfo_stepping, "Stepping: "
