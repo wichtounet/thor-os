@@ -1,4 +1,3 @@
-
 ; String constants
 
 sysinfo_command_str db 'sysinfo', 0
