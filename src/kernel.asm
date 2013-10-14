@@ -40,16 +40,6 @@ jmp _start
     mov [current_column], rax
 %endmacro
 
-%macro GO_TO_NEXT_LINE 0
-    ; Go to the next line
-    mov rax, [current_line]
-    inc rax
-    mov [current_line], rax
-
-    ; Start at the first column
-    mov qword [current_column], 0
-%endmacro
-
 _start:
     ; Reset data segments because the bootloader set it to
     ; a value incompatible with the kernel
@@ -171,7 +161,7 @@ lm_start:
         jmp .start_waiting
 
     .new_command:
-        GO_TO_NEXT_LINE
+        call goto_next_line
 
         ; zero terminate the input string
         mov r8, [current_input_length]
@@ -253,7 +243,7 @@ lm_start:
         .end:
             mov qword [current_input_length], 0
 
-            GO_TO_NEXT_LINE
+            call goto_next_line
 
             ;Display the command line
             call set_current_position
@@ -281,6 +271,21 @@ set_current_position:
     lea rdi, [rax + rbx + TRAM]
 
     pop rbx
+    pop rax
+
+    ret
+
+goto_next_line:
+    push rax
+
+    ; Go to the next line
+    mov rax, [current_line]
+    inc rax
+    mov [current_line], rax
+
+    ; Start at the first column
+    mov qword [current_column], 0
+
     pop rax
 
     ret
@@ -463,7 +468,7 @@ sysinfo_command:
     mov dl, STYLE(BLACK_F, WHITE_B)
     call print_string
 
-    GO_TO_NEXT_LINE
+    call goto_next_line
     PRINT_NORMAL sysinfo_stepping, sysinfo_stepping_length
 
     mov eax, 1
@@ -478,7 +483,7 @@ sysinfo_command:
     mov dl, STYLE(BLACK_F, WHITE_B)
     call print_int
 
-    GO_TO_NEXT_LINE
+    call goto_next_line
     PRINT_NORMAL sysinfo_model, sysinfo_model_length
 
     ; model id
@@ -504,7 +509,7 @@ sysinfo_command:
     mov dl, STYLE(BLACK_F, WHITE_B)
     call print_int
 
-    GO_TO_NEXT_LINE
+    call goto_next_line
     PRINT_NORMAL sysinfo_family, sysinfo_family_length
 
     mov r8, r13
@@ -513,7 +518,7 @@ sysinfo_command:
     mov dl, STYLE(BLACK_F, WHITE_B)
     call print_int
 
-    GO_TO_NEXT_LINE
+    call goto_next_line
     PRINT_NORMAL sysinfo_features, sysinfo_features_length
 
     mov eax, 1
