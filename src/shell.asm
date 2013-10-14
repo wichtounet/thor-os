@@ -19,6 +19,8 @@
 %define STYLE(f,b) ((f << 4) + b)
 
 %include "src/utils/macros.asm"
+%include "src/utils/keyboard.asm"
+
 %include "src/commands.asm"
 
 ; Entry point of the shell, this function never returns
@@ -193,32 +195,6 @@ goto_next_line:
 
     ret
 
-; In: key in al
-; Out: ascci key in al
-key_to_ascii:
-    and eax, 0xFF
-    mov al, [eax + azerty]
-
-    ret
-
-; Return the keyboard input into al
-key_wait:
-    mov al, 0xD2
-    out 0x64, al
-
-    mov al, 0x80
-    out 0x60, al
-
-    .key_up:
-        in al, 0x60
-        and al, 10000000b
-    jnz .key_up
-
-    ; key_down
-        in al, 0x60
-
-    ret
-
 ; Print the given string at the current position and update
 ; the current position for later print
 ; r8 = string to print
@@ -382,15 +358,3 @@ int_str_length:
 
     TRAM equ 0x0B8000 ; Text RAM
     VRAM equ 0x0A0000 ; Video RAM
-
-; Qwertz table
-
-azerty:
-    db '0',0xF,'1234567890',0xF,0xF,0xF,0xF
-    db 'qwertzuiop'
-    db '^$',0xD,0x11
-    db 'asdfghjklÃ©'
-    db 'ù²','*'
-    db 'yxcvbnm,;:!'
-    db 0xF,'*',0x12,0x20,0xF,0xF
-
