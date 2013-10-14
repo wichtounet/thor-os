@@ -36,6 +36,27 @@ jmp _start
     call print_string
 %endmacro
 
+%macro PRINT_NORMAL 2
+    call set_current_position
+    mov rbx, %1
+    mov dl, STYLE(BLACK_F, WHITE_B)
+    call print_string
+
+    mov rax, [current_column]
+    add rax, %2
+    mov [current_column], rax
+%endmacro
+
+%macro GO_TO_NEXT_LINE 0
+    ; Go to the next line
+    mov rax, [current_line]
+    inc rax
+    mov [current_line], rax
+
+    ; Start at the first column
+    mov qword [current_column], 0
+%endmacro
+
 _start:
     ; Reset data segments because the bootloader set it to
     ; a value incompatible with the kernel
@@ -157,12 +178,7 @@ lm_start:
         jmp .start_waiting
 
     .new_command:
-        ; Go to the next line
-        mov rax, [current_line]
-        inc rax
-        mov [current_line], rax
-
-        mov qword [current_column], 0
+        GO_TO_NEXT_LINE
 
         ; zero terminate the input string
         mov r8, [current_input_length]
@@ -244,12 +260,7 @@ lm_start:
         .end:
             mov qword [current_input_length], 0
 
-            ; Go to the next line
-            mov rax, [current_line]
-            inc rax
-            mov [current_line], rax
-
-            mov qword [current_column], 0
+            GO_TO_NEXT_LINE
 
             ;Display the command line
             call set_current_position
@@ -435,9 +446,157 @@ int_str_length:
         ret
 
 sysinfo_command:
-    call set_current_position
-    PRINT_P sysinfo_command_str, BLACK_F, WHITE_B
+    push rbp
+    mov rbp, rsp
+    sub rsp, 16
 
+    push rax
+    push rbx
+    push rcx
+    push rdx
+
+    PRINT_NORMAL sysinfo_vendor_id, sysinfo_vendor_id_length
+
+    xor eax, eax
+    cpuid
+
+    mov [rsp+0], ebx
+    mov [rsp+4], edx
+    mov [rsp+8], ecx
+
+    call set_current_position
+    mov rbx, rsp
+    mov dl, STYLE(BLACK_F, WHITE_B)
+    call print_string
+
+    GO_TO_NEXT_LINE
+    PRINT_NORMAL sysinfo_stepping, sysinfo_stepping_length
+
+    mov eax, 1
+    cpuid
+
+    mov r15, rax
+
+    mov r8, r15
+    and r8, 0xF
+
+    call set_current_position
+    mov dl, STYLE(BLACK_F, WHITE_B)
+    call print_int
+
+    GO_TO_NEXT_LINE
+    PRINT_NORMAL sysinfo_model, sysinfo_model_length
+
+    ; model id
+    mov r14, r15
+    and r14, 0xF0
+
+    ; family id
+    mov r13, r15
+    and r13, 0xF00
+
+    ; extended model id
+    mov r12, r15
+    and r12, 0xF0000
+
+    ; extended family id
+    mov r11, r15
+    and r11, 0xFF00000
+
+    shl r12, 4
+    mov r8, r14
+    add r8, r12
+    call set_current_position
+    mov dl, STYLE(BLACK_F, WHITE_B)
+    call print_int
+
+    GO_TO_NEXT_LINE
+    PRINT_NORMAL sysinfo_family, sysinfo_family_length
+
+    mov r8, r13
+    add r8, r11
+    call set_current_position
+    mov dl, STYLE(BLACK_F, WHITE_B)
+    call print_int
+
+    GO_TO_NEXT_LINE
+    PRINT_NORMAL sysinfo_features, sysinfo_features_length
+
+    mov eax, 1
+    cpuid
+
+    .mmx:
+
+    mov r15, rdx
+    and r15, 1 << 23
+    cmp r15, 0
+    je .sse
+
+    PRINT_NORMAL sysinfo_mmx, sysinfo_mmx_length
+
+    .sse:
+
+    mov r15, rdx
+    and r15, 1 << 25
+    cmp r15, 0
+    je .sse2
+
+    PRINT_NORMAL sysinfo_sse, sysinfo_sse_length
+
+    .sse2:
+
+    mov r15, rdx
+    and r15, 1 << 26
+    cmp r15, 0
+    je .ht
+
+    PRINT_NORMAL sysinfo_sse2, sysinfo_sse2_length
+
+    .ht:
+
+    mov r15, rdx
+    and r15, 1 << 28
+    cmp r15, 0
+    je .sse3
+
+    PRINT_NORMAL sysinfo_ht, sysinfo_ht_length
+
+    .sse3:
+
+    mov r15, rcx
+    and r15, 1 << 9
+    cmp r15, 0
+    je .sse4_1
+
+    PRINT_NORMAL sysinfo_sse3, sysinfo_sse3_length
+
+    .sse4_1:
+
+    mov r15, rcx
+    and r15, 1 << 19
+    cmp r15, 0
+    je .sse4_2
+
+    PRINT_NORMAL sysinfo_sse4_1, sysinfo_sse4_1_length
+
+    .sse4_2:
+
+    mov r15, rcx
+    and r15, 1 << 20
+    cmp r15, 0
+    je .last
+
+    PRINT_NORMAL sysinfo_sse4_2, sysinfo_sse4_2_length
+
+    .last:
+
+    pop rdx
+    pop rcx
+    pop rbx
+    pop rax
+
+    sub rsp, 16
+    leave
     ret
 
 reboot_command:
@@ -472,8 +631,12 @@ command_table:
     dq reboot_command_str
     dq reboot_command
 
-
 ; Strings
+
+%macro STRING 2
+    %1 db %2, 0
+    %1_length equ $ - %1 - 1
+%endmacro
 
     kernel_header_0 db '******************************', 0
     kernel_header_1 db 'Welcome to Thor OS!', 0
@@ -488,6 +651,19 @@ command_table:
     unknown_command_str_1 db 'The command "', 0
     unknown_command_length_1 equ $ - unknown_command_str_1 - 1
     unknown_command_str_2 db '" does not exist', 0
+
+    STRING sysinfo_vendor_id, "Vendor ID: "
+    STRING sysinfo_stepping, "Stepping: "
+    STRING sysinfo_model, "Model: "
+    STRING sysinfo_family, "Family: "
+    STRING sysinfo_features, "Features: "
+    STRING sysinfo_mmx, "mmx "
+    STRING sysinfo_sse, "sse "
+    STRING sysinfo_sse2, "sse2 "
+    STRING sysinfo_sse3, "sse3 "
+    STRING sysinfo_sse4_1, "sse4_1 "
+    STRING sysinfo_sse4_2, "sse4_2 "
+    STRING sysinfo_ht, "ht "
 
 ; Constants
 
@@ -537,4 +713,4 @@ GDT64:
    GDT_LENGTH:
 
    ; Fill the sector (not necessary, but cleaner)
-   times 2048-($-$$) db 0
+   times 4196-($-$$) db 0
