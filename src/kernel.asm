@@ -41,7 +41,7 @@ pm_start:
 
     ; Activate PAE
     mov eax, cr4
-    or eax, 100000b
+    or eax, 1 << 5
     mov cr4, eax
 
     ; Clean pages
