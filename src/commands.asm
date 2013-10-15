@@ -127,20 +127,23 @@ sysinfo_command:
     ; model id
     mov r14, r15
     and r14, 0xF0
+    shr r14, 4
 
     ; family id
     mov r13, r15
     and r13, 0xF00
+    shr r13, 8
 
     ; extended model id
     mov r12, r15
     and r12, 0xF0000
+    shr r12, 12
 
     ; extended family id
     mov r11, r15
     and r11, 0xFF00000
+    shr r11, 16
 
-    shl r12, 4
     mov r8, r14
     add r8, r12
     call set_current_position
