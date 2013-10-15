@@ -3,6 +3,7 @@
 sysinfo_command_str db 'sysinfo', 0
 reboot_command_str db 'reboot', 0
 clear_command_str db 'clear', 0
+help_command_str db 'help', 0
 
 STRING sysinfo_vendor_id, "Vendor ID: "
 STRING sysinfo_stepping, "Stepping: "
@@ -17,10 +18,13 @@ STRING sysinfo_sse4_1, "sse4_1 "
 STRING sysinfo_sse4_2, "sse4_2 "
 STRING sysinfo_ht, "ht "
 
+STRING available_commands, "Available commands: "
+STRING tab, "  "
+
 ; Command table
 
 command_table:
-    dq 3 ; Number of commands
+    dq 4 ; Number of commands
 
     dq sysinfo_command_str
     dq sysinfo_command
@@ -30,6 +34,9 @@ command_table:
 
     dq clear_command_str
     dq clear_command
+
+    dq help_command_str
+    dq help_command
 
 ; Command functions
 
@@ -209,6 +216,50 @@ sysinfo_command:
 
     sub rsp, 16
     leave
+    ret
+
+help_command:
+    push r8
+    push r9
+    push r10
+    push r11
+    push r12
+
+    mov r8, available_commands
+    mov r9, available_commands_length
+    call print_normal
+
+    mov r12, [command_table]   ; Number of commands
+    xor r11, r11              ; iterator
+
+    .start:
+        cmp r11, r12
+        je .end
+
+        mov r10, r11
+        shl r10, 4
+
+        call goto_next_line
+
+        mov r8, tab
+        mov r9, tab_length
+        call print_normal
+
+        mov r8, [r10 + command_table + 8]
+        mov r9, 1
+        call print_normal
+
+        inc r11
+        jmp .start
+
+    .end:
+
+    pop r12
+    pop r11
+    pop r10
+    pop r9
+    pop r8
+
     ret
 
 reboot_command:
