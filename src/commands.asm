@@ -13,6 +13,7 @@ STRING sysinfo_features, "Features: "
 STRING sysinfo_cpu_brand, "CPU Brand: "
 STRING sysinfo_max_frequency, "Max Frequency: "
 STRING sysinfo_current_frequency, "Current Frequency: "
+STRING sysinfo_l2, "L2 Cache Size: "
 STRING sysinfo_mmx, "mmx "
 STRING sysinfo_sse, "sse "
 STRING sysinfo_sse2, "sse2 "
@@ -313,6 +314,24 @@ sysinfo_command:
     rdmsr
 
     .last:
+
+    call goto_next_line
+
+    mov r8, sysinfo_l2
+    mov r9, sysinfo_l2_length
+    call print_normal
+
+    xor rcx, rcx
+    mov eax, 0x80000006
+    cpuid
+
+    and ecx, 0xFFFF0000
+    shr ecx, 16
+
+    call set_current_position
+    mov r8, rcx
+    mov dl, STYLE(BLACK_F, WHITE_B)
+    call print_int
 
     pop r10
     pop rdx
