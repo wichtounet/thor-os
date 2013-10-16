@@ -20,8 +20,10 @@ STRING sysinfo_sse2, "sse2 "
 STRING sysinfo_sse3, "sse3 "
 STRING sysinfo_sse4_1, "sse4_1 "
 STRING sysinfo_sse4_2, "sse4_2 "
-STRING sysinfo_avx, "avx"
+STRING sysinfo_avx, "avx "
 STRING sysinfo_ht, "ht "
+STRING sysinfo_fpu, "fpu "
+STRING sysinfo_aes, "aes "
 
 STRING available_commands, "Available commands: "
 STRING tab, "  "
@@ -44,6 +46,19 @@ command_table:
     dq help_command
 
 ; Command functions
+
+%macro TEST_FEATURE 3
+    mov r15, %2
+    and r15, 1 << %3
+    cmp r15, 0
+    je .%1_end
+
+    mov r8, sysinfo_%1
+    mov r9, sysinfo_%1_length
+    call print_normal
+
+    .%1_end:
+%endmacro
 
 sysinfo_command:
     push rbp
@@ -156,6 +171,8 @@ sysinfo_command:
     add r8, r11
     call print_int_normal
 
+    ; Features
+
     call goto_next_line
     mov r8, sysinfo_features
     mov r9, sysinfo_features_length
@@ -164,93 +181,16 @@ sysinfo_command:
     mov eax, 1
     cpuid
 
-    .mmx:
-
-    mov r15, rdx
-    and r15, 1 << 23
-    cmp r15, 0
-    je .sse
-
-    mov r8, sysinfo_mmx
-    mov r9, sysinfo_mmx_length
-    call print_normal
-
-    .sse:
-
-    mov r15, rdx
-    and r15, 1 << 25
-    cmp r15, 0
-    je .sse2
-
-    mov r8, sysinfo_sse
-    mov r9, sysinfo_sse_length
-    call print_normal
-
-    .sse2:
-
-    mov r15, rdx
-    and r15, 1 << 26
-    cmp r15, 0
-    je .ht
-
-    mov r8, sysinfo_sse2
-    mov r9, sysinfo_sse2_length
-    call print_normal
-
-    .ht:
-
-    mov r15, rdx
-    and r15, 1 << 28
-    cmp r15, 0
-    je .sse3
-
-    mov r8, sysinfo_ht
-    mov r9, sysinfo_ht_length
-    call print_normal
-
-    .sse3:
-
-    mov r15, rcx
-    and r15, 1 << 9
-    cmp r15, 0
-    je .sse4_1
-
-    mov r8, sysinfo_sse3
-    mov r9, sysinfo_sse3_length
-    call print_normal
-
-    .sse4_1:
-
-    mov r15, rcx
-    and r15, 1 << 19
-    cmp r15, 0
-    je .sse4_2
-
-    mov r8, sysinfo_sse4_1
-    mov r9, sysinfo_sse4_1_length
-    call print_normal
-
-    .sse4_2:
-
-    mov r15, rcx
-    and r15, 1 << 20
-    cmp r15, 0
-    je .avx
-
-    mov r8, sysinfo_sse4_2
-    mov r9, sysinfo_sse4_2_length
-    call print_normal
-
-    .avx:
-
-    mov r15, rcx
-    and r15, 1 << 28
-    cmp r15, 0
-    je .frequency
-
-    mov r8, sysinfo_avx
-    mov r9, sysinfo_avx_length
-    call print_normal
+    TEST_FEATURE ht, rdx, 28
+    TEST_FEATURE fpu, rdx, 0
+    TEST_FEATURE mmx, rdx, 23
+    TEST_FEATURE sse, rdx, 25
+    TEST_FEATURE sse2, rdx, 26
+    TEST_FEATURE sse3, rcx, 9
+    TEST_FEATURE sse4_1, rcx, 19
+    TEST_FEATURE sse4_2, rcx, 20
+    TEST_FEATURE avx, rcx, 28
+    TEST_FEATURE aes, rcx, 25
 
     .frequency:
 
