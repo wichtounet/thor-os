@@ -192,7 +192,7 @@ sysinfo_command:
     TEST_FEATURE avx, rcx, 28
     TEST_FEATURE aes, rcx, 25
 
-    .frequency:
+    ; Frequency
 
     call goto_next_line
 
@@ -260,6 +260,8 @@ sysinfo_command:
     rdmsr
 
     .last:
+
+    ; L2 Length
 
     call goto_next_line
 
