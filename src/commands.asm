@@ -20,6 +20,7 @@ STRING sysinfo_sse2, "sse2 "
 STRING sysinfo_sse3, "sse3 "
 STRING sysinfo_sse4_1, "sse4_1 "
 STRING sysinfo_sse4_2, "sse4_2 "
+STRING sysinfo_avx, "avx"
 STRING sysinfo_ht, "ht "
 
 STRING available_commands, "Available commands: "
@@ -234,10 +235,21 @@ sysinfo_command:
     mov r15, rcx
     and r15, 1 << 20
     cmp r15, 0
-    je .frequency
+    je .avx
 
     mov r8, sysinfo_sse4_2
     mov r9, sysinfo_sse4_2_length
+    call print_normal
+
+    .avx:
+
+    mov r15, rcx
+    and r15, 1 << 28
+    cmp r15, 0
+    je .frequency
+
+    mov r8, sysinfo_avx
+    mov r9, sysinfo_avx_length
     call print_normal
 
     .frequency:
