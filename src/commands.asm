@@ -115,10 +115,7 @@ sysinfo_command:
 
     mov r8, r15
     and r8, 0xF
-
-    call set_current_position
-    mov dl, STYLE(BLACK_F, WHITE_B)
-    call print_int
+    call print_int_normal
 
     call goto_next_line
     mov r8, sysinfo_model
@@ -147,9 +144,7 @@ sysinfo_command:
 
     mov r8, r14
     add r8, r12
-    call set_current_position
-    mov dl, STYLE(BLACK_F, WHITE_B)
-    call print_int
+    call print_int_normal
 
     call goto_next_line
     mov r8, sysinfo_family
@@ -158,9 +153,7 @@ sysinfo_command:
 
     mov r8, r13
     add r8, r11
-    call set_current_position
-    mov dl, STYLE(BLACK_F, WHITE_B)
-    call print_int
+    call print_int_normal
 
     call goto_next_line
     mov r8, sysinfo_features
@@ -289,10 +282,8 @@ sysinfo_command:
     imul rcx, 1000
     add rbx, rcx
 
-    call set_current_position
     mov r8, rbx
-    mov dl, STYLE(BLACK_F, WHITE_B)
-    call print_int
+    call print_int_normal
 
     ; rbx = max_frequency
 
@@ -331,10 +322,8 @@ sysinfo_command:
     and ecx, 0xFFFF0000
     shr ecx, 16
 
-    call set_current_position
     mov r8, rcx
-    mov dl, STYLE(BLACK_F, WHITE_B)
-    call print_int
+    call print_int_normal
 
     pop r10
     pop rdx
