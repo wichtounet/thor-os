@@ -1,7 +1,5 @@
-%include "src/utils/macros.asm"
 %include "src/utils/utils.asm"
 %include "src/utils/keyboard.asm"
-%include "src/utils/console.asm"
 
 %include "src/commands.asm"
 
