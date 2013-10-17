@@ -78,6 +78,9 @@ rm_start:
 
     jc read_failed
 
+    cmp al, sectors
+    jne read_failed
+
     jmp dword BASE:0x0
 
     reset_failed:
