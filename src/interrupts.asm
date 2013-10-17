@@ -139,4 +139,4 @@ IDT64:
 
 IDTR64:
     dw (256 * 16) - 1  ; Limit
-    dd IDT64           ; Base
+    dq IDT64           ; Base
