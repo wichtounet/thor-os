@@ -14,8 +14,11 @@ thor.flp: bootloader.bin kernel.bin
 	cat kernel.bin >> thor.bin
 	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
 
-start: thor.flp
+qemu: thor.flp
 	qemu-kvm -cpu host -fda thor.flp
+
+bochs: thor.flp
+	bochs -n 'boot:floppy' 'floppya: 1_44=thor.flp, status=inserted'
 
 clean:
 	rm -f *.bin
