@@ -13,7 +13,7 @@ _start:
     cli
 
     ; Load GDT
-    lgdt [GDT64]
+    lgdt [GDTR64]
 
     ; Switch to protected mode
     mov eax, cr0
@@ -108,9 +108,7 @@ lm_start:
 
 GDT64:
     NULL_SELECTOR:
-        dw GDT_LENGTH   ; limit of GDT
-        dw GDT64        ; linear address of GDT
-        dd 0x0
+        dq 0
 
     CODE_SELECTOR:          ; 32-bit code selector (ring 0)
         dw 0x0FFFF
@@ -129,11 +127,14 @@ GDT64:
     LONG_SELECTOR:  ; 64-bit code selector (ring 0)
         dw  0x0FFFF
         db  0x0, 0x0, 0x0
-        db  10011010b       ;
+        db  10011010b
         db  10101111b
         db  0x0
 
-   GDT_LENGTH:
+GDTR64:
+    dw 4 * 8 - 1 ; Length of GDT
+    dd GDT64
 
-   ; Fill the sector (not necessary, but cleaner)
+; Fill the sector (not necessary, but cleaner)
+
    times 16384-($-$$) db 0

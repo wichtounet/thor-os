@@ -58,7 +58,7 @@ _isr%1:
 %macro IDT_SET_GATE 4
 
     ; address of the entry
-    lea rdi, [idt + %1 * 128]
+    lea rdi, [IDT64 + %1 * 128]
 
     mov rax, %2
     mov word [rdi], ax ; base_lo
@@ -83,7 +83,7 @@ CREATE_ISR i
 ; Functions
 
 install_idt:
-    lidt [idtp - (0x1000)]
+    lidt [IDTR64]
 
     ret
 
@@ -134,9 +134,9 @@ install_isrs:
 ; 32 base_high
 ; 32 zero
 
-idt:
+IDT64:
     times 256 dq 0,0
 
-idtp:
+IDTR64:
     dw (256 * 16) - 1  ; Limit
-    dq idt              ; Base
+    dd IDT64           ; Base
