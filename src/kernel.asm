@@ -84,12 +84,6 @@ pm_start:
 
 [BITS 64]
 
-%include "src/utils/macros.asm"
-%include "src/utils/console.asm"
-
-%include "src/interrupts.asm"
-%include "src/shell.asm"
-
 lm_start:
     ; Install IDT
     call install_idt
@@ -103,6 +97,12 @@ lm_start:
     call shell_start
 
 ; Includes
+
+%include "src/utils/macros.asm"
+%include "src/utils/console.asm"
+
+%include "src/interrupts.asm"
+%include "src/shell.asm"
 
 ; Global Descriptors Table
 
