@@ -1,21 +1,3 @@
-; Return the keyboard input into al
-key_wait:
-    mov al, 0xD2
-    out 0x64, al
-
-    mov al, 0x80
-    out 0x60, al
-
-    .key_up:
-        in al, 0x60
-        and al, 10000000b
-    jnz .key_up
-
-    ; key_down
-        in al, 0x60
-
-    ret
-
 ; In: key in al
 ; Out: ascci key in al
 key_to_ascii:
