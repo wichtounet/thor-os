@@ -34,26 +34,7 @@ STRING isr29_msg, "29: Reserved Exception "
 STRING isr30_msg, "30: Reserved Exception "
 STRING isr31_msg, "31: Reserved Exception "
 
-; IRQs
-
-STRING isr32_msg, "32: IRQ 0 "
-STRING isr33_msg, "33: IRQ 1 "
-STRING isr34_msg, "34: IRQ 2 "
-STRING isr35_msg, "35: IRQ 3 "
-STRING isr36_msg, "36: IRQ 4 "
-STRING isr37_msg, "37: IRQ 5 "
-STRING isr38_msg, "38: IRQ 6 "
-STRING isr39_msg, "39: IRQ 7 "
-STRING isr40_msg, "40: IRQ 8 "
-STRING isr41_msg, "41: IRQ 9 "
-STRING isr42_msg, "42: IRQ 10 "
-STRING isr43_msg, "43: IRQ 11 "
-STRING isr44_msg, "44: IRQ 12 "
-STRING isr45_msg, "45: IRQ 13 "
-STRING isr46_msg, "46: IRQ 14 "
-STRING isr47_msg, "47: IRQ 15 "
-
-; Routines
+; Macros
 
 %macro CREATE_ISR 1
 _isr%1:
@@ -76,8 +57,33 @@ _isr%1:
     iretq
 %endmacro
 
-%macro IDT_SET_GATE 4
+%macro CREATE_IRQ 1
+_irq%1:
+    ; Disable interruptions to avoid being interrupted
+    cli
 
+    mov rax, %1 ; IRQ number
+    cmp rax, 8
+    jle .master
+
+    ; If IRQ 8 -> 15, send EOI to PIC2
+
+    mov al, 0x20
+    out 0xA0, al
+
+    .master:
+
+    ; Send EOI to PIC1
+    mov al, 0x20
+    out 0x20, al
+
+    pop r9
+    pop r8
+
+    iretq
+%endmacro
+
+%macro IDT_SET_GATE 4
     ; address of the entry
     lea rdi, [IDT64 + %1 * 16]
 
@@ -92,12 +98,17 @@ _isr%1:
     shr rax, 16
     mov dword [rdi+8], eax ; base_hi
     mov dword [rdi+12], 0  ; zero
-
 %endmacro
 
 %assign i 0
-%rep 48
+%rep 32
 CREATE_ISR i
+%assign i i+1
+%endrep
+
+%assign i 0
+%rep 16
+CREATE_IRQ i
 %assign i i+1
 %endrep
 
@@ -170,22 +181,22 @@ remap_irqs:
     ret
 
 install_irqs:
-    IDT_SET_GATE 32, _isr32, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 33, _isr33, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 34, _isr34, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 35, _isr35, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 36, _isr36, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 37, _isr37, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 38, _isr38, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 39, _isr39, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 40, _isr40, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 41, _isr41, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 42, _isr42, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 43, _isr43, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 44, _isr44, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 45, _isr45, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 46, _isr46, LONG_SELECTOR-GDT64, 0x8E
-    IDT_SET_GATE 47, _isr47, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 32, _irq0, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 33, _irq1, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 34, _irq2, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 35, _irq3, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 36, _irq4, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 37, _irq5, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 38, _irq6, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 39, _irq7, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 40, _irq8, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 41, _irq9, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 42, _irq10, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 43, _irq11, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 44, _irq12, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 45, _irq13, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 46, _irq14, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 47, _irq15, LONG_SELECTOR-GDT64, 0x8E
 
     ret
 
