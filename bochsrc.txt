@@ -1,0 +1,2 @@
+floppya: 1_44=thor.flp, status=inserted
+boot:floppy

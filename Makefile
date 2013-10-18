@@ -18,7 +18,7 @@ qemu: thor.flp
 	qemu-kvm -cpu host -fda thor.flp
 
 bochs: thor.flp
-	bochs -n 'boot:floppy' 'floppya: 1_44=thor.flp, status=inserted'
+	bochs -q -f bochsrc.txt
 
 clean:
 	rm -f *.bin
