@@ -205,6 +205,13 @@ install_irqs:
 
     ret
 
+; r8 = irq
+; r9 = handler address
+register_irq_handler:
+    mov [irq_handlers + r8 * 8], r9
+
+    ret
+
 ; Data structures
 
 ; each idt entry is form like that:

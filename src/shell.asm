@@ -15,32 +15,41 @@ shell_start:
     mov r9, command_line_length
     call print_normal
 
-    .start_waiting:
-        call key_wait
+    mov r8, 1
+    mov r9, key_entered
+    call register_irq_handler
 
-        ; ENTER key
-        cmp al, 28
-        je .new_command
+    ret
 
-        call key_to_ascii
+key_entered:
+    in al, 0x60
+    mov dl, al
+    and dl, 10000000b
 
-        ; Store the entered character
-        mov r8, [current_input_length]
-        mov byte [current_input_str + r8], al
-        inc r8
-        mov [current_input_length], r8
+    jnz .end_handler
 
-        ; Print back the entered char
-        call set_current_position
-        stosb
+    ; ENTER key
+    cmp al, 28
+    je .new_command
 
-        ; Go to the next column
-        mov r13, [current_column]
-        inc r13
-        mov [current_column], r13
+    call key_to_ascii
 
-        ; Wait for the next key again
-        jmp .start_waiting
+    ; Store the entered character
+    mov r8, [current_input_length]
+    mov byte [current_input_str + r8], al
+    inc r8
+    mov [current_input_length], r8
+
+    ; Print back the entered char
+    call set_current_position
+    stosb
+
+    ; Go to the next column
+    mov r13, [current_column]
+    inc r13
+    mov [current_column], r13
+
+    jmp .end_handler
 
     .new_command:
         call goto_next_line
@@ -133,7 +142,9 @@ shell_start:
             mov r9, command_line_length
             call print_normal
 
-            jmp .start_waiting
+    .end_handler:
+
+    ret
 
 ; Variables
 

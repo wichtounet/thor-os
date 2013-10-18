@@ -100,6 +100,8 @@ lm_start:
     ; Enter the shell
     call shell_start
 
+    jmp $
+
 ; Includes
 
 %include "src/utils/macros.asm"
