@@ -91,6 +91,10 @@ lm_start:
     ; Install ISRs
     call install_isrs
 
+    call remap_irqs
+
+    call install_irqs
+
     sti
 
     ; Enter the shell
