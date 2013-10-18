@@ -64,7 +64,7 @@ _irq%1:
 
     mov rax, %1 ; IRQ number
     cmp rax, 8
-    jle .master
+    jl .master
 
     ; If IRQ 8 -> 15, send EOI to PIC2
 
@@ -76,9 +76,6 @@ _irq%1:
     ; Send EOI to PIC1
     mov al, 0x20
     out 0x20, al
-
-    pop r9
-    pop r8
 
     iretq
 %endmacro
