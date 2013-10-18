@@ -62,6 +62,14 @@ _irq%1:
     ; Disable interruptions to avoid being interrupted
     cli
 
+    mov rax, [irq_handlers + 8 *%1]
+    cmp rax, 0
+
+    je .eoi
+    call rax
+
+    .eoi:
+
     mov rax, %1 ; IRQ number
     cmp rax, 8
     jl .master
@@ -214,3 +222,7 @@ IDT64:
 IDTR64:
     dw (256 * 16) - 1  ; Limit
     dq IDT64           ; Base
+
+; Handlers for each IRQ, 0 indicate no handler
+irq_handlers:
+    times 16 dq 0
