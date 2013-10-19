@@ -70,7 +70,7 @@ goto_next_line:
     mov rsi, TRAM + 2 * 0x14 * 8
     mov rdi, TRAM + 1 * 0x14 * 8
 
-    .scroll_up
+    .scroll_up:
 
     mov al, byte [rsi]
     mov byte [rdi], al

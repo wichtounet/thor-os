@@ -55,10 +55,15 @@ key_entered:
     jmp .end_handler
 
     .enter:
+        mov r8, [current_input_length]
+
+        ; If the user didn't enter anything, just go to the next line
+        test r8, r8
+        je .end
+
         call goto_next_line
 
         ; zero terminate the input string
-        mov r8, [current_input_length]
         mov byte [current_input_str + r8], 0
 
         ; Iterate through the command table and compare each string

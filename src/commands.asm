@@ -531,7 +531,7 @@ date_command:
     mov r9, colon_length
     call print_normal
 
-    .display
+    .display:
 
     ; print everything
 
