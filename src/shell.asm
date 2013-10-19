@@ -29,8 +29,11 @@ key_entered:
     jnz .end_handler
 
     ; ENTER key
-    cmp al, 28
-    je .new_command
+    cmp al, 0x1C
+    je .enter
+
+    cmp al, 0x0E
+    je .backspace
 
     call key_to_ascii
 
@@ -51,7 +54,7 @@ key_entered:
 
     jmp .end_handler
 
-    .new_command:
+    .enter:
         call goto_next_line
 
         ; zero terminate the input string
@@ -141,6 +144,29 @@ key_entered:
             mov r8, command_line
             mov r9, command_line_length
             call print_normal
+
+            jmp .end_handler
+
+    .backspace:
+
+    ; If there are no characters, there is nothing to do
+    mov r8, [current_input_length]
+    test r8, r8
+    je .end_handler
+
+    ; There is one less character on the input
+    dec r8
+    mov [current_input_length], r8
+
+    ; Go to the previous column
+    mov r13, [current_column]
+    dec r13
+    mov [current_column], r13
+
+    ; Print back the entered char
+    call set_current_position
+    mov al, ' '
+    stosb
 
     .end_handler:
 
