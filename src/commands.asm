@@ -33,7 +33,7 @@ STRING tab, "  "
 ; Command table
 
 command_table:
-    dq 4 ; Number of commands
+    dq 5 ; Number of commands
 
     dq sysinfo_command_str
     dq sysinfo_command
