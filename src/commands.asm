@@ -5,6 +5,7 @@ reboot_command_str db 'reboot', 0
 clear_command_str db 'clear', 0
 help_command_str db 'help', 0
 uptime_command_str db 'uptime', 0
+date_command_str db 'date', 0
 
 STRING sysinfo_vendor_id, "Vendor ID: "
 STRING sysinfo_stepping, "Stepping: "
@@ -31,11 +32,12 @@ STRING sysinfo_aes, "aes "
 STRING uptime_message, "Uptime (s): "
 STRING available_commands, "Available commands: "
 STRING tab, "  "
+STRING colon, ":"
 
 ; Command table
 
 command_table:
-    dq 5 ; Number of commands
+    dq 6 ; Number of commands
 
     dq sysinfo_command_str
     dq sysinfo_command
@@ -51,6 +53,9 @@ command_table:
 
     dq help_command_str
     dq help_command
+
+    dq date_command_str
+    dq date_command
 
 ; Command functions
 
@@ -375,13 +380,180 @@ uptime_command:
 reboot_command:
     ; Reboot using the 8042 keyboard controller
     ; by pulsing the CPU's reset pin
-    in al, 0x64
+    mov al, 0x64
     or al, 0xFE
     out 0x64, al
     mov al, 0xFE
     out 0x64, al
 
     ; Should never get here
+    ret
+
+; in al = register to get
+get_rtc_register:
+    out 0x70, al
+
+    in al, 0x71
+
+    ret
+
+; in al = BCD coded
+; out al = binary
+bcd_to_binary:
+    push rbx
+    push rcx
+    push rdx
+
+    mov dl, al
+    and dl, 0xF0
+    shr dl, 1
+
+    mov bl, al
+    and bl, 0xF0
+    shr bl, 3
+
+    mov cl, al
+    and cl, 0xF
+
+    add dl, bl
+    add dl, cl
+
+    mov al, dl
+
+    pop rdx
+    pop rcx
+    pop rbx
+
+    ret
+
+date_command:
+    push rbp
+    mov rbp, rsp
+    sub rsp, 48
+
+    .restart:
+
+    ; Update last values
+
+    mov al, [rsp+0]
+    mov [rsp+3], al ; last seconds
+
+    mov al, [rsp+1]
+    mov [rsp+4], al ; last minutes
+
+    mov al, [rsp+2]
+    mov [rsp+5], al ; last hours
+
+    ; Make sure an update isn't in progress
+
+    .wait_no_update:
+    mov al, 0x0A
+    out 0x70, al
+
+    in al, 0x71
+    and al, 0x80
+
+    test al, al
+    jnz .wait_no_update
+
+    ; Get the values of the registers
+
+    mov al, 0x00
+    call get_rtc_register
+    mov [rsp+0], al ; seconds
+
+    mov al, 0x02
+    call get_rtc_register
+    mov [rsp+1], al ; minutes
+
+    mov al, 0x04
+    call get_rtc_register
+    mov [rsp+2], al ; hours
+
+    mov al, [rsp+0]
+    mov bl, [rsp+3]
+    cmp al, bl
+    jne .restart
+
+    mov al, [rsp+1]
+    mov bl, [rsp+4]
+    cmp al, bl
+    jne .restart
+
+    mov al, [rsp+2]
+    mov bl, [rsp+5]
+    cmp al, bl
+    jne .restart
+
+    ; Test if necessary to convert from BCD to binary
+
+    mov al, 0x0B
+    call get_rtc_register
+    and al, 0x04
+    test al, al
+    jnz .normal
+
+    ; Convert BCD to binary
+
+    ; Seconds
+    mov al, [rsp+0]
+    call bcd_to_binary
+    mov [rsp+0], al
+
+    ; minute
+    mov al, [rsp+1]
+    call bcd_to_binary
+    mov [rsp+1], al
+
+    ; hours
+    mov al, [rsp+2]
+    call bcd_to_binary
+    mov [rsp+2], al
+
+    .normal:
+
+    ; Test if necessary to convert hours
+
+    mov al, 0x0B
+    call get_rtc_register
+    and al, 0x02
+    test al, al
+    jz .display
+
+    mov al, [rsp+2]
+    and al, 0x80
+    test al, al
+    jz .display
+
+    ; TODO Convert to 24 hours
+
+    mov r8, colon
+    mov r9, colon_length
+    call print_normal
+
+    .display
+
+    ; print everything
+
+    movzx r8, byte [rsp+2]
+    call print_int_normal
+
+    mov r8, colon
+    mov r9, colon_length
+    call print_normal
+
+    movzx r8, byte [rsp+1]
+    call print_int_normal
+
+    mov r8, colon
+    mov r9, colon_length
+    call print_normal
+
+    movzx r8, byte [rsp+0]
+    call print_int_normal
+
+    sub rsp, 48
+    leave
     ret
 
 clear_command:
