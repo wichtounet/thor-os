@@ -18,7 +18,7 @@ print_line_16:
 
 .repeat:
 	lodsb
-	cmp al, 0
+    test al, al
 	je .done
 	int 10h
 	jmp .repeat

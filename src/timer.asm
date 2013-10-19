@@ -28,7 +28,7 @@ irq_timer_handler:
     xor rdx, rdx
     mov rcx, 1000
     div rcx
-    cmp rdx, 0
+    test rdx, rdx
     jnz .end
 
     mov rax, [timer_seconds]

@@ -63,9 +63,12 @@ _irq%1:
     cli
 
     mov rax, [irq_handlers + 8 *%1]
-    cmp rax, 0
 
+    ; If there are no handler, just send EOI
+    test rax, rax
     je .eoi
+
+    ; Call the handler
     call rax
 
     .eoi:

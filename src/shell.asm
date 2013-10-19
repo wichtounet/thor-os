@@ -79,10 +79,10 @@ key_entered:
             mov al, [rsi]
             mov bl, [rdi]
 
-            cmp al, 0
+            test al, al
             jne .compare
 
-            cmp bl, 0
+            test bl, bl
             jne .compare
 
             ; both == 0
@@ -97,10 +97,10 @@ key_entered:
 
             .compare:
 
-            cmp al, 0
+            test al, al
             je .next_command
 
-            cmp bl, 0
+            test bl, bl
             je .next_command
 
             cmp al, bl

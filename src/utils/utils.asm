@@ -18,7 +18,7 @@ int_str_length:
 
         inc rsi
 
-        cmp rax, 0
+        test rax, rax
         jne .loop
 
     .exit:
