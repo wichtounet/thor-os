@@ -53,6 +53,8 @@ set_current_position:
 
 goto_next_line:
     push rax
+    push rsi
+    push rdi
 
     ; Go to the next line
     mov rax, [current_line]
@@ -62,6 +64,30 @@ goto_next_line:
     ; Start at the first column
     mov qword [current_column], 0
 
+    cmp rax, 25
+    jne .end
+
+    mov rsi, TRAM + 2 * 0x14 * 8
+    mov rdi, TRAM + 1 * 0x14 * 8
+
+    .scroll_up
+
+    mov al, byte [rsi]
+    mov byte [rdi], al
+
+    inc rsi
+    inc rdi
+
+    cmp rdi, TRAM + 25 * 0x14 * 8
+    jne .scroll_up
+
+    mov rax, 24
+    mov [current_line], rax
+
+    .end:
+
+    pop rdi
+    pop rsi
     pop rax
 
     ret
