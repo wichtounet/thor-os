@@ -121,8 +121,7 @@ print_string:
     ret
 
 ; Print the given integer at the current position
-; WARNING: Does not update current position afterwards
-; r8 = integer t0 print
+; r8 = integer to print
 print_int_normal:
     push rdi
     push rdx
@@ -130,6 +129,12 @@ print_int_normal:
     call set_current_position
     mov dl, STYLE(BLACK_F, WHITE_B)
     call print_int
+
+    call int_str_length
+
+    mov rbx, [current_column]
+    add rbx, rax
+    mov [current_column], rbx
 
     pop rdi
     pop rdx

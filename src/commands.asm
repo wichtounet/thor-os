@@ -13,8 +13,10 @@ STRING sysinfo_family, "Family: "
 STRING sysinfo_features, "Features: "
 STRING sysinfo_cpu_brand, "CPU Brand: "
 STRING sysinfo_max_frequency, "Max Frequency: "
+STRING sysinfo_frequency_unit, "Mhz"
 STRING sysinfo_current_frequency, "Current Frequency: "
 STRING sysinfo_l2, "L2 Cache Size: "
+STRING sysinfo_l2_unit, "KB"
 STRING sysinfo_mmx, "mmx "
 STRING sysinfo_sse, "sse "
 STRING sysinfo_sse2, "sse2 "
@@ -242,6 +244,10 @@ sysinfo_command:
     mov r8, rbx
     call print_int_normal
 
+    mov r8, sysinfo_frequency_unit
+    mov r9, sysinfo_frequency_unit
+    call print_normal
+
     ; rbx = max_frequency
 
     mov eax, 0x06
@@ -283,6 +289,10 @@ sysinfo_command:
 
     mov r8, rcx
     call print_int_normal
+
+    mov r8, sysinfo_l2_unit
+    mov r9, sysinfo_l2_unit_length
+    call print_normal
 
     pop r10
     pop rdx
