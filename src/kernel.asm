@@ -97,6 +97,8 @@ lm_start:
 
     sti
 
+    call install_timer
+
     ; Enter the shell
     call shell_start
 
@@ -107,6 +109,7 @@ lm_start:
 %include "src/utils/macros.asm"
 %include "src/utils/console.asm"
 
+%include "src/timer.asm"
 %include "src/interrupts.asm"
 %include "src/shell.asm"
 

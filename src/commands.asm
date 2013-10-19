@@ -4,6 +4,7 @@ sysinfo_command_str db 'sysinfo', 0
 reboot_command_str db 'reboot', 0
 clear_command_str db 'clear', 0
 help_command_str db 'help', 0
+uptime_command_str db 'uptime', 0
 
 STRING sysinfo_vendor_id, "Vendor ID: "
 STRING sysinfo_stepping, "Stepping: "
@@ -25,6 +26,7 @@ STRING sysinfo_ht, "ht "
 STRING sysinfo_fpu, "fpu "
 STRING sysinfo_aes, "aes "
 
+STRING uptime_message, "Uptime (s): "
 STRING available_commands, "Available commands: "
 STRING tab, "  "
 
@@ -41,6 +43,9 @@ command_table:
 
     dq clear_command_str
     dq clear_command
+
+    dq uptime_command_str
+    dq uptime_command
 
     dq help_command_str
     dq help_command
@@ -328,6 +333,22 @@ help_command:
     pop r12
     pop r11
     pop r10
+    pop r9
+    pop r8
+
+    ret
+
+uptime_command:
+    push r8
+    push r9
+
+    mov r8, uptime_message
+    mov r9, uptime_message_length
+    call print_normal
+
+    mov r8, [timer_seconds]
+    call print_int_normal
+
     pop r9
     pop r8
 
