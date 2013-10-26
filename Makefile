@@ -6,12 +6,12 @@ KERNEL_UTILS_SRC=$(wildcard src/utils/*.asm)
 bootloader.bin: src/bootloader/bootloader.asm
 	nasm -w+all -f bin -o bootloader.bin src/bootloader/bootloader.asm
 
-kernel.bin: $(KERNEL_SRC) $(KERNEL_UTILS_SRC)
-	nasm -w+all -f bin -o kernel.bin src/kernel.asm
+micro_kernel.bin: $(KERNEL_SRC) $(KERNEL_UTILS_SRC)
+	nasm -w+all -f bin -o micro_kernel.bin src/micro_kernel.asm
 
-thor.flp: bootloader.bin kernel.bin
+thor.flp: bootloader.bin micro_kernel.bin
 	cat bootloader.bin > thor.bin
-	cat kernel.bin >> thor.bin
+	cat micro_kernel.bin >> thor.bin
 	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
 
 qemu: thor.flp
