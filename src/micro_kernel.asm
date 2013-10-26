@@ -30,7 +30,6 @@ _start:
 [BITS 32]
 
 pm_start:
-
     ; Update segments
     mov ax, DATA_SELECTOR-GDT64
     mov ds, ax
