@@ -565,6 +565,12 @@ date_command:
     ret
 
 load_command:
+    ; Fill the entire screen with black
+    mov rdi, TRAM
+    mov rcx, 0x14 * 25
+    mov rax, 0x0720072007200720
+    rep stosq
+
     call 0x5000
 
     call clear_command
