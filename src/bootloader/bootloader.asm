@@ -53,8 +53,10 @@ rm_start:
     mov si, load_kernel
     call print_line_16
 
-    BASE equ 0x100       ; 0x0100:0x0 = 0x1000
-    sectors equ 0x20     ; sectors to read
+    ; Loading the assembly kernel from floppy
+
+    ASM_KERNEL_BASE equ 0x100       ; 0x0100:0x0 = 0x1000
+    sectors equ 0x20                ; sectors to read
 
     ; Reset disk drive
     xor ax, ax
@@ -64,7 +66,7 @@ rm_start:
 
     jc reset_failed
 
-    mov ax, BASE
+    mov ax, ASM_KERNEL_BASE
     mov es, ax
     xor bx, bx
 
@@ -81,7 +83,9 @@ rm_start:
     cmp al, sectors
     jne read_failed
 
-    jmp dword BASE:0x0
+    ; Run the assembly kernel
+
+    jmp dword ASM_KERNEL_BASE:0x0
 
     reset_failed:
     mov si, reset_failed_msg
