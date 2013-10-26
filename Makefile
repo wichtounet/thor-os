@@ -10,14 +10,16 @@ micro_kernel.bin: $(KERNEL_SRC) $(KERNEL_UTILS_SRC)
 	nasm -w+all -f bin -o micro_kernel.bin src/micro_kernel.asm
 
 kernel.o: src/kernel.cpp
-	g++ -Wall -Wextra -O2 -fno-exceptions -fno-rtti -ffreestanding -c src/kernel.cpp -o kernel.o
+	g++ -O2 -std=c++11 -Wall -Wextra -fno-exceptions -fno-rtti -ffreestanding -c src/kernel.cpp -o kernel.o
 
-kernel.bin:  kernel.o
-	g++ -T linker.ld -o kernel.bin.o -ffreestanding -O2 -nostdlib kernel.o
+kernel.bin: kernel.o
+	g++ -std=c++11 -T linker.ld -o kernel.bin.o -ffreestanding -O2 -nostdlib kernel.o
 	objcopy -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
+
+filler.bin: kernel.bin
 	bash fill.bash
 
-thor.flp: bootloader.bin micro_kernel.bin kernel.bin
+thor.flp: bootloader.bin micro_kernel.bin kernel.bin filler.bin
 	cat bootloader.bin > thor.bin
 	cat micro_kernel.bin >> thor.bin
 	cat kernel.bin >> thor.bin
