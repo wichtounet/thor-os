@@ -53,12 +53,6 @@ rm_start:
     mov si, load_kernel
     call print_line_16
 
-    ; Loading the assembly kernel from floppy
-
-    ASM_KERNEL_BASE equ 0x100       ; 0x0100:0x0 = 0x1000
-    sectors equ 0x20                ; sectors to read
-    bootdev equ 0x0
-
     ; Reset disk drive
     xor ax, ax
     xor ah, ah
@@ -67,12 +61,18 @@ rm_start:
 
     jc reset_failed
 
+    ; Loading the assembly kernel from floppy
+
+    ASM_KERNEL_BASE equ 0x100       ; 0x0100:0x0 = 0x1000
+    asm_sectors equ 0x20                ; sectors to read
+    bootdev equ 0x0
+
     mov ax, ASM_KERNEL_BASE
     mov es, ax
     xor bx, bx
 
     mov ah, 0x2         ; Read sectors from memory
-    mov al, sectors     ; Number of sectors to read
+    mov al, asm_sectors ; Number of sectors to read
     xor ch, ch          ; Cylinder 0
     mov cl, 2           ; Sector 2
     xor dh, dh          ; Head 0
@@ -81,7 +81,29 @@ rm_start:
 
     jc read_failed
 
-    cmp al, sectors
+    cmp al, asm_sectors
+    jne read_failed
+
+    ; Loading the C++ kernel from floppy
+
+    CPP_KERNEL_BASE equ 0x1000
+    cpp_sectors equ 0x02
+
+    mov ax, CPP_KERNEL_BASE
+    mov es, ax
+    xor bx, bx
+
+    mov ah, 0x2         ; Read sectors from memory
+    mov al, cpp_sectors ; Number of sectors to read
+    xor ch, ch          ; Cylinder 0
+    mov cl, 16          ; Sector 16
+    mov dh, 1           ; Head 1
+    mov dl, bootdev     ; Drive
+    int 0x13
+
+    jc read_failed
+
+    cmp al, cpp_sectors
     jne read_failed
 
     ; Run the assembly kernel
