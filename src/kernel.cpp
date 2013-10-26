@@ -2,7 +2,7 @@ void k_print_line(const char* string);
 void k_print(const char* string);
 
 extern "C"
-void kernel_main(){
+void  __attribute__ ((section ("main_section"))) kernel_main(){
     k_print_line("hello, world!");
 
     return;
@@ -30,6 +30,9 @@ enum vga_color {
     WHITE = 15,
 };
 
+long current_line = 0;
+long current_column = 0;
+
 uint8_t make_color(vga_color fg, vga_color bg){
     return fg | bg << 4;
 }
@@ -41,9 +44,6 @@ uint16_t make_vga_entry(char c, uint8_t color){
 }
 
 void k_print_line(const char* string){
-    long current_line = 0;
-    long current_column = 0;
-
     k_print(string);
 
     current_column = 0;
@@ -51,9 +51,6 @@ void k_print_line(const char* string){
 }
 
 void k_print(const char* string){
-    long current_line = 0;
-    long current_column = 0;
-
     uint16_t* vga_buffer = (uint16_t*) 0x0B8000;
 
     for(int i = 0; string[i] != 0; ++i){
