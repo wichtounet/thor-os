@@ -57,6 +57,7 @@ rm_start:
 
     ASM_KERNEL_BASE equ 0x100       ; 0x0100:0x0 = 0x1000
     sectors equ 0x20                ; sectors to read
+    bootdev equ 0x0
 
     ; Reset disk drive
     xor ax, ax
@@ -75,7 +76,7 @@ rm_start:
     xor ch, ch          ; Cylinder 0
     mov cl, 2           ; Sector 2
     xor dh, dh          ; Head 0
-    mov dl, [bootdev]   ; Drive
+    mov dl, bootdev     ; Drive
     int 0x13
 
     jc read_failed
@@ -115,8 +116,6 @@ error_end:
     reset_failed_msg db 'Reset disk failed', 0
     read_failed_msg db 'Read disk failed', 0
     load_failed db 'Kernel loading failed', 0
-
-    bootdev db 0
 
 ; Make a real bootsector
 
