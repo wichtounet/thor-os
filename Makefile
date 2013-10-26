@@ -12,11 +12,6 @@ micro_kernel.bin: $(KERNEL_SRC) $(KERNEL_UTILS_SRC)
 kernel.o: src/kernel.cpp
 	g++ -Wall -Wextra -O2 -fno-exceptions -fno-rtti -ffreestanding -c src/kernel.cpp -o kernel.o
 
-kernel2.bin:  kernel.o
-	ld -e kernel_main -Ttext 0x10000 -o kernel.bin.o kernel.o
-	ld -e kernel_main -i -Ttext 0x10000 -o kernel.bin.o kernel.o
-	objcopy -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
-
 kernel.bin:  kernel.o
 	g++ -T linker.ld -o kernel.bin.o -ffreestanding -O2 -nostdlib kernel.o
 	objcopy -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
