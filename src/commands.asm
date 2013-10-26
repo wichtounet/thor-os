@@ -567,6 +567,8 @@ date_command:
 load_command:
     call 0x5000
 
+    call clear_command
+
     ret
 
 read_command:
@@ -601,7 +603,7 @@ read_command:
 
 clear_command:
     ; Print top bar
-    call set_current_position
+    mov rdi, TRAM
     mov rbx, header_title
     mov dl, STYLE(WHITE_F, BLACK_B)
     call print_string
