@@ -9,6 +9,8 @@ void keyboard_handler();
 
 extern "C" {
 void  __attribute__ ((section ("main_section"))) kernel_main(){
+    wipeout();
+
     k_print("thor> ");
 
     register_irq_handler<1>(keyboard_handler);
@@ -20,6 +22,8 @@ void  __attribute__ ((section ("main_section"))) kernel_main(){
 std::size_t current_input_length = 0;
 char current_input[50];
 
+void exec_command();
+
 void keyboard_handler(){
     uint8_t key = in_byte(0x60);
 
@@ -27,7 +31,15 @@ void keyboard_handler(){
         //TODO Handle shift
     } else {
         if(key == 0x1C){
-            //TODO Enter
+            current_input[current_input_length] = '\0';
+
+            k_print_line();
+
+            exec_command();
+
+            current_input_length = 0;
+
+            k_print("thor> ");
         } else if(key == 0x0E){
             //TODO Backspace
         } else {
@@ -39,4 +51,10 @@ void keyboard_handler(){
            }
         }
     }
+}
+
+void exec_command(){
+    k_print("The command \"");
+    k_print(current_input);
+    k_print_line("\" does not exist");
 }
