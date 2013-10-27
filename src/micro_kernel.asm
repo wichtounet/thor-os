@@ -93,8 +93,10 @@ lm_start:
     ; Install ISRs
     call install_isrs
 
+    ; Remap IRQs with wrong numbers
     call remap_irqs
 
+    ; Install all IRQs
     call install_irqs
 
     sti

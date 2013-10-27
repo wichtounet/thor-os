@@ -16,14 +16,11 @@ void out_byte (uint16_t _port, uint8_t _data){
     __asm__ __volatile__ ("out %0, %1" : : "dN" (_port), "a" (_data));
 }
 
-void __attribute__((naked)) keyboard_handler(){
+void keyboard_handler(){
     in_byte(0x60);
 
     k_print("key");
 }
-
-long current_line = 0;
-long current_column = 0;
 
 extern "C"
 void  __attribute__ ((section ("main_section"))) kernel_main(){
@@ -39,6 +36,9 @@ void  __attribute__ ((section ("main_section"))) kernel_main(){
 
     return;
 }
+
+long current_line = 0;
+long current_column = 0;
 
 enum vga_color {
     BLACK = 0,
