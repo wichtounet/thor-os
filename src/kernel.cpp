@@ -3,8 +3,7 @@ void k_print(const char* string);
 
 extern "C"
 void  __attribute__ ((section ("main_section"))) kernel_main(){
-    k_print_line("hello, ");
-    k_print_line(" world!");
+    k_print("thor> ");
 
     return;
 }
