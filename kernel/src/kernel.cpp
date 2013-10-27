@@ -57,8 +57,21 @@ void keyboard_handler(){
     }
 }
 
+bool str_equals(const char* a, const char* b){
+    while(*a && *a == *b){
+        ++a;
+        ++b;
+    }
+
+    return *a == *b;
+}
+
 void exec_command(){
-    k_print("The command \"");
-    k_print(current_input);
-    k_print_line("\" does not exist");
+    if(str_equals("reboot", current_input)){
+        interrupt<60>();
+    } else {
+        k_print("The command \"");
+        k_print(current_input);
+        k_print_line("\" does not exist");
+    }
 }

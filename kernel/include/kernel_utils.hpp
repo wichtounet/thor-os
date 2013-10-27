@@ -13,6 +13,14 @@ void register_irq_handler(void (*handler)()){
         );
 }
 
+template<uint8_t INT>
+void interrupt(){
+    asm ("int %0"
+        :
+        : "i" (INT)
+        );
+}
+
 uint8_t in_byte(uint16_t _port);
 void out_byte (uint16_t _port, uint8_t _data);
 

@@ -208,12 +208,36 @@ install_irqs:
 
     ret
 
+install_syscalls:
+    IDT_SET_GATE 60, syscall_reboot, LONG_SELECTOR-GDT64, 0x8E
+
+    ret
+
 ; r8 = irq
 ; r9 = handler address
 register_irq_handler:
     mov [irq_handlers + r8 * 8], r9
 
     ret
+
+; Syscalls
+
+; Reboot the computer
+; No parameters
+syscall_reboot:
+    cli
+
+    push rax
+
+    mov al, 0x64
+    or al, 0xFE
+    out 0x64, al
+    mov al, 0xFE
+    out 0x64, al
+
+    pop rax
+
+    iretq
 
 ; Data structures
 

@@ -99,6 +99,9 @@ lm_start:
     ; Install all IRQs
     call install_irqs
 
+    ; Install custom syscalls
+    call install_syscalls
+
     sti
 
     call install_timer
