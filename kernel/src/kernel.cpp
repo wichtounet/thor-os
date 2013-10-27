@@ -76,10 +76,12 @@ struct command_definition {
 
 void reboot_command();
 void help_command();
+void uptime_command();
 
-std::array<command_definition, 2> commands = {{
+std::array<command_definition, 3> commands = {{
     {"reboot", reboot_command},
-    {"help", help_command}
+    {"help", help_command},
+    {"uptime", uptime_command}
 }};
 
 void reboot_command(){
@@ -93,6 +95,12 @@ void help_command(){
         k_print("   ");
         k_print_line(command.name);
     }
+}
+
+void uptime_command(){
+    k_print("Uptime: ");
+    k_print(timer_seconds());
+    k_print_line("s");
 }
 
 void exec_command(){

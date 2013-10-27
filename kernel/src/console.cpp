@@ -59,6 +59,22 @@ void k_print_line(const char* string){
     ++current_line;
 }
 
+void k_print(std::size_t number){
+    char buffer[20];
+    int i = 0;
+
+    while(number != 0){
+        buffer[i++] = '0' + number % 10;
+        number /= 10;
+    }
+
+    --i;
+
+    for(; i > 0; --i){
+        k_print(buffer[i]);
+    }
+}
+
 void k_print(char key){
     uint16_t* vga_buffer = (uint16_t*) 0x0B8000;
 
