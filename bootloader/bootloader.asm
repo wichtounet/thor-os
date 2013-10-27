@@ -63,8 +63,8 @@ rm_start:
 
     ; Loading the assembly kernel from floppy
 
-    ASM_KERNEL_BASE equ 0x100       ; 0x0100:0x0 = 0x1000
-    asm_sectors equ 0x22            ; sectors to read
+    ASM_KERNEL_BASE equ 0x100   ; 0x0100:0x0 = 0x1000
+    sectors equ 0x28            ; sectors to read
     bootdev equ 0x0
 
     mov ax, ASM_KERNEL_BASE
@@ -72,7 +72,7 @@ rm_start:
     xor bx, bx
 
     mov ah, 0x2         ; Read sectors from memory
-    mov al, asm_sectors ; Number of sectors to read
+    mov al, sectors ; Number of sectors to read
     xor ch, ch          ; Cylinder 0
     mov cl, 2           ; Sector 2
     xor dh, dh          ; Head 0
@@ -81,7 +81,7 @@ rm_start:
 
     jc read_failed
 
-    cmp al, asm_sectors
+    cmp al, sectors
     jne read_failed
 
     ; Run the assembly kernel
