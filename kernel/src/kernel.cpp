@@ -5,6 +5,7 @@
 #include "keyboard.hpp"
 #include "kernel_utils.hpp"
 #include "console.hpp"
+#include "timer.hpp"
 
 void keyboard_handler();
 
@@ -15,6 +16,7 @@ void  __attribute__ ((section ("main_section"))) kernel_main(){
     k_print("thor> ");
 
     register_irq_handler<1>(keyboard_handler);
+    install_timer();
 
     return;
 }

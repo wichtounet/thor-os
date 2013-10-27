@@ -12,7 +12,7 @@ micro_kernel.bin: $(MICRO_KERNEL_SRC) $(MICRO_KERNEL_UTILS_SRC)
 KERNEL_FLAGS=-masm=intel -Ikernel/include/ -O1 -std=c++11 -Wall -Wextra -fno-exceptions -fno-rtti -ffreestanding
 KERNEL_LINK_FLAGS=-std=c++11 -T linker.ld -ffreestanding -O1 -nostdlib
 
-KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o
+KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o
 
 kernel.o: kernel/src/kernel.cpp
 	g++ $(KERNEL_FLAGS) -c kernel/src/kernel.cpp -o kernel.o
@@ -25,6 +25,9 @@ console.o: kernel/src/console.cpp
 
 kernel_utils.o: kernel/src/kernel_utils.cpp
 	g++ $(KERNEL_FLAGS) -c kernel/src/kernel_utils.cpp -o kernel_utils.o
+
+timer.o: kernel/src/timer.cpp
+	g++ $(KERNEL_FLAGS) -c kernel/src/timer.cpp -o timer.o
 
 kernel.bin: $(KERNEL_O_FILES)
 	g++ $(KERNEL_LINK_FLAGS) -o kernel.bin.o $(KERNEL_O_FILES)
