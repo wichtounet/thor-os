@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <array>
 
 #include "types.hpp"
 #include "keyboard.hpp"
@@ -66,8 +67,6 @@ bool str_equals(const char* a, const char* b){
     return *a == *b;
 }
 
-#define COMMANDS 2
-
 struct command_definition {
     const char* name;
     void (*function)();
@@ -76,10 +75,10 @@ struct command_definition {
 void reboot_command();
 void help_command();
 
-command_definition commands[COMMANDS] = {
+std::array<command_definition, 2> commands = {{
     {"reboot", reboot_command},
     {"help", help_command}
-};
+}};
 
 void reboot_command(){
     interrupt<60>();
@@ -88,16 +87,16 @@ void reboot_command(){
 void help_command(){
     k_print_line("Available commands:");
 
-    for(int i = 0; i < COMMANDS; ++i){
+    for(auto& command : commands){
         k_print("   ");
-        k_print_line(commands[i].name);
+        k_print_line(command.name);
     }
 }
 
 void exec_command(){
-    for(int i = 0; i < COMMANDS; ++i){
-        if(str_equals(current_input, commands[i].name)){
-            commands[i].function();
+    for(auto& command : commands){
+        if(str_equals(current_input, command.name)){
+            command.function();
 
             return;
         }
