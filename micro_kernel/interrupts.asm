@@ -210,6 +210,7 @@ install_irqs:
 
 install_syscalls:
     IDT_SET_GATE 60, syscall_reboot, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 61, syscall_irq, LONG_SELECTOR-GDT64, 0x8E
 
     ret
 
@@ -221,6 +222,15 @@ register_irq_handler:
     ret
 
 ; Syscalls
+
+; r8 = irq
+; r9 = handler address
+syscall_irq:
+    cli
+
+    call register_irq_handler
+
+    iretq
 
 ; Reboot the computer
 ; No parameters
