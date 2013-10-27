@@ -39,6 +39,14 @@ uint16_t make_vga_entry(char c, uint8_t color){
 
 }
 
+void set_column(long column){
+    current_column = column;
+}
+
+long get_column(){
+    return current_column;
+}
+
 void k_print_line(){
     current_column = 0;
     ++current_line;

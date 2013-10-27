@@ -41,7 +41,11 @@ void keyboard_handler(){
 
             k_print("thor> ");
         } else if(key == 0x0E){
-            //TODO Backspace
+            set_column(get_column() - 1);
+            k_print(' ');
+            set_column(get_column() - 1);
+
+            --current_input_length;
         } else {
            auto qwertz_key = key_to_ascii(key);
 
