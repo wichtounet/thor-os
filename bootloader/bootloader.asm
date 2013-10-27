@@ -2,7 +2,7 @@
 
 jmp rm_start
 
-%include "src/bootloader/intel_16.asm"
+%include "bootloader/intel_16.asm"
 
 ; Start in real mode
 rm_start:

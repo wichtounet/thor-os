@@ -3,8 +3,8 @@ default: thor.flp
 KERNEL_SRC=$(wildcard src/*.asm)
 KERNEL_UTILS_SRC=$(wildcard src/utils/*.asm)
 
-bootloader.bin: src/bootloader/bootloader.asm
-	nasm -w+all -f bin -o bootloader.bin src/bootloader/bootloader.asm
+bootloader.bin: bootloader/bootloader.asm
+	nasm -w+all -f bin -o bootloader.bin bootloader/bootloader.asm
 
 micro_kernel.bin: $(KERNEL_SRC) $(KERNEL_UTILS_SRC)
 	nasm -w+all -f bin -o micro_kernel.bin src/micro_kernel.asm
@@ -37,3 +37,4 @@ clean:
 	rm -f *.bin
 	rm -f *.flp
 	rm -f *.o
+	rm -f *.g
