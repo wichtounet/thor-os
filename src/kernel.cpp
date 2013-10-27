@@ -1,17 +1,44 @@
 void k_print_line(const char* string);
 void k_print(const char* string);
 
+#include "addresses.hpp"
+
+typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
+typedef unsigned int uint16_t __attribute__ ((__mode__ (__HI__)));
+
+uint8_t in_byte(uint16_t _port){
+    uint8_t rv;
+    __asm__ __volatile__ ("in %0, %1" : "=a" (rv) : "dN" (_port));
+    return rv;
+}
+
+void out_byte (uint16_t _port, uint8_t _data){
+    __asm__ __volatile__ ("out %0, %1" : : "dN" (_port), "a" (_data));
+}
+
+void __attribute__((naked)) keyboard_handler(){
+    in_byte(0x60);
+
+    k_print("key");
+}
+
+long current_line = 0;
+long current_column = 0;
+
 extern "C"
 void  __attribute__ ((section ("main_section"))) kernel_main(){
     k_print("thor> ");
 
-    //TODO Register keyword handler
+    asm ("mov r8, 1; mov r9, %0; call %1"
+        :
+        : "i" (&keyboard_handler), "i" (asm_register_irq_handler)
+        : "r8", "r9"
+        );
+
+    //while(true);
 
     return;
 }
-
-typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
-typedef unsigned int uint16_t __attribute__ ((__mode__ (__HI__)));
 
 enum vga_color {
     BLACK = 0,
@@ -31,9 +58,6 @@ enum vga_color {
     LIGHT_BROWN = 14,
     WHITE = 15,
 };
-
-long current_line = 0;
-long current_column = 0;
 
 uint8_t make_color(vga_color fg, vga_color bg){
     return fg | bg << 4;

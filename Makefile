@@ -8,9 +8,10 @@ bootloader.bin: src/bootloader/bootloader.asm
 
 micro_kernel.bin: $(KERNEL_SRC) $(KERNEL_UTILS_SRC)
 	nasm -w+all -f bin -o micro_kernel.bin src/micro_kernel.asm
+	nasm -D DEBUG -g -w+all -f elf64 -o micro_kernel.g src/micro_kernel.asm
 
 kernel.o: src/kernel.cpp
-	g++ -O2 -std=c++11 -Wall -Wextra -fno-exceptions -fno-rtti -ffreestanding -c src/kernel.cpp -o kernel.o
+	g++ -masm=intel -O2 -std=c++11 -Wall -Wextra -fno-exceptions -fno-rtti -ffreestanding -c src/kernel.cpp -o kernel.o
 
 kernel.bin: kernel.o
 	g++ -std=c++11 -T linker.ld -o kernel.bin.o -ffreestanding -O2 -nostdlib kernel.o

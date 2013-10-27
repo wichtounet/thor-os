@@ -573,9 +573,7 @@ load_command:
 
     call 0x5000
 
-    jmp $
-
-    call clear_command
+    ;jmp $
 
     ret
 
