@@ -16,8 +16,17 @@ void out_byte (uint16_t _port, uint8_t _data){
     __asm__ __volatile__ ("out %0, %1" : : "dN" (_port), "a" (_data));
 }
 
+template<uint8_t IRQ>
+void register_irq_handler(void (*handler)()){
+    asm ("mov r8, %0; mov r9, %1; call %2"
+        :
+        : "I" (IRQ), "r" (handler), "i" (asm_register_irq_handler)
+        : "r8", "r9"
+        );
+}
+
 void keyboard_handler(){
-    in_byte(0x60);
+    uint8_t key = in_byte(0x60);
 
     k_print("key");
 }
@@ -26,13 +35,7 @@ extern "C"
 void  __attribute__ ((section ("main_section"))) kernel_main(){
     k_print("thor> ");
 
-    asm ("mov r8, 1; mov r9, %0; call %1"
-        :
-        : "i" (&keyboard_handler), "i" (asm_register_irq_handler)
-        : "r8", "r9"
-        );
-
-    //while(true);
+    register_irq_handler<1>(keyboard_handler);
 
     return;
 }
