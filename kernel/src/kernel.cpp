@@ -66,12 +66,44 @@ bool str_equals(const char* a, const char* b){
     return *a == *b;
 }
 
-void exec_command(){
-    if(str_equals("reboot", current_input)){
-        interrupt<60>();
-    } else {
-        k_print("The command \"");
-        k_print(current_input);
-        k_print_line("\" does not exist");
+#define COMMANDS 2
+
+struct command_definition {
+    const char* name;
+    void (*function)();
+};
+
+void reboot_command();
+void help_command();
+
+command_definition commands[COMMANDS] = {
+    {"reboot", reboot_command},
+    {"help", help_command}
+};
+
+void reboot_command(){
+    interrupt<60>();
+}
+
+void help_command(){
+    k_print_line("Available commands:");
+
+    for(int i = 0; i < COMMANDS; ++i){
+        k_print("   ");
+        k_print_line(commands[i].name);
     }
+}
+
+void exec_command(){
+    for(int i = 0; i < COMMANDS; ++i){
+        if(str_equals(current_input, commands[i].name)){
+            commands[i].function();
+
+            return;
+        }
+    }
+
+    k_print("The command \"");
+    k_print(current_input);
+    k_print_line("\" does not exist");
 }
