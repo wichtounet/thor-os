@@ -5,6 +5,8 @@ extern "C"
 void  __attribute__ ((section ("main_section"))) kernel_main(){
     k_print("thor> ");
 
+    //TODO Register keyword handler
+
     return;
 }
 
