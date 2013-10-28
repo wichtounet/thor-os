@@ -1,7 +1,10 @@
 default: thor.flp
 
-bootloader.bin: bootloader/bootloader.asm
-	nasm -w+all -f bin -o bootloader.bin bootloader/bootloader.asm
+bootloader.bin: force_look
+	cd bootloader; $(MAKE)
+
+force_look:
+	true
 
 MICRO_KERNEL_SRC=$(wildcard micro_kernel/*.asm)
 MICRO_KERNEL_UTILS_SRC=$(wildcard micro_kernel/utils/*.asm)
@@ -40,7 +43,7 @@ filler.bin: kernel.bin
 	bash fill.bash
 
 thor.flp: bootloader.bin micro_kernel.bin kernel.bin filler.bin
-	cat bootloader.bin > thor.bin
+	cat bootloader/bootloader.bin > thor.bin
 	cat micro_kernel.bin >> thor.bin
 	cat kernel.bin >> thor.bin
 	cat filler.bin >> thor.bin
