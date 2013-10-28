@@ -1,6 +1,8 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
+#include <cstddef>
+
 void set_column(long column);
 long get_column();
 

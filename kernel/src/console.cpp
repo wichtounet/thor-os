@@ -94,6 +94,9 @@ void k_print(const char* string){
 }
 
 void wipeout(){
+    current_line = 0;
+    current_column = 0;
+
     for(int line = 0; line < 25; ++line){
         for(std::size_t column = 0; column < 80; ++column){
             k_print(' ');
