@@ -64,7 +64,7 @@ rm_start:
     ; Loading the assembly kernel from floppy
 
     ASM_KERNEL_BASE equ 0x100   ; 0x0100:0x0 = 0x1000
-    sectors equ 0x28            ; sectors to read
+    sectors equ 0x30            ; sectors to read
     bootdev equ 0x0
 
     mov ax, ASM_KERNEL_BASE

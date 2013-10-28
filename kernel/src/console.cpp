@@ -70,7 +70,7 @@ void k_print(std::size_t number){
 
     --i;
 
-    for(; i > 0; --i){
+    for(; i >= 0; --i){
         k_print(buffer[i]);
     }
 }

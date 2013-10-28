@@ -4,8 +4,8 @@
 
 namespace {
 
-std::size_t _timer_ticks;
-std::size_t _timer_seconds;
+std::size_t _timer_ticks = 0;
+std::size_t _timer_seconds = 0;
 
 void timer_handler(){
     ++_timer_ticks;
