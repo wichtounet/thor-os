@@ -1,7 +1,7 @@
-%include "micro_kernel/utils/utils.asm"
-%include "micro_kernel/utils/keyboard.asm"
+%include "utils/utils.asm"
+%include "utils/keyboard.asm"
 
-%include "micro_kernel/commands.asm"
+%include "commands.asm"
 
 ; Entry point of the shell, this function never returns
 shell_start:

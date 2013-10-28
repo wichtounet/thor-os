@@ -113,11 +113,11 @@ lm_start:
 
 ; Includes
 
-%include "micro_kernel/utils/macros.asm"
-%include "micro_kernel/utils/console.asm"
+%include "utils/macros.asm"
+%include "utils/console.asm"
 
-%include "micro_kernel/interrupts.asm"
-%include "micro_kernel/shell.asm"
+%include "interrupts.asm"
+%include "shell.asm"
 
 ; Global Descriptors Table
 

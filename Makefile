@@ -3,14 +3,11 @@ default: thor.flp
 bootloader.bin: force_look
 	cd bootloader; $(MAKE)
 
+micro_kernel.bin: force_look
+	cd micro_kernel; $(MAKE)
+
 force_look:
 	true
-
-MICRO_KERNEL_SRC=$(wildcard micro_kernel/*.asm)
-MICRO_KERNEL_UTILS_SRC=$(wildcard micro_kernel/utils/*.asm)
-
-micro_kernel.bin: $(MICRO_KERNEL_SRC) $(MICRO_KERNEL_UTILS_SRC)
-	nasm -w+all -f bin -o micro_kernel.bin micro_kernel/micro_kernel.asm
 
 KERNEL_FLAGS=-masm=intel -Ikernel/include/ -O1 -std=c++11 -Wall -Wextra -fno-exceptions -fno-rtti -ffreestanding
 KERNEL_LINK_FLAGS=-std=c++11 -T linker.ld -ffreestanding -O1 -nostdlib
@@ -44,7 +41,7 @@ filler.bin: kernel.bin
 
 thor.flp: bootloader.bin micro_kernel.bin kernel.bin filler.bin
 	cat bootloader/bootloader.bin > thor.bin
-	cat micro_kernel.bin >> thor.bin
+	cat micro_kernel/micro_kernel.bin >> thor.bin
 	cat kernel.bin >> thor.bin
 	cat filler.bin >> thor.bin
 	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
