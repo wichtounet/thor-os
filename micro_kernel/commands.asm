@@ -4,7 +4,6 @@ sysinfo_command_str db 'sysinfo', 0
 reboot_command_str db 'reboot', 0
 clear_command_str db 'clear', 0
 help_command_str db 'help', 0
-uptime_command_str db 'uptime', 0
 date_command_str db 'date', 0
 read_command_str db 'read', 0
 load_command_str db 'load', 0
@@ -31,7 +30,6 @@ STRING sysinfo_ht, "ht "
 STRING sysinfo_fpu, "fpu "
 STRING sysinfo_aes, "aes "
 
-STRING uptime_message, "Uptime (s): "
 STRING available_commands, "Available commands: "
 STRING tab, "  "
 STRING colon, ":"
@@ -39,7 +37,7 @@ STRING colon, ":"
 ; Command table
 
 command_table:
-    dq 8 ; Number of commands
+    dq 7 ; Number of commands
 
     dq sysinfo_command_str
     dq sysinfo_command
@@ -55,9 +53,6 @@ command_table:
 
     dq load_command_str
     dq load_command
-
-    dq uptime_command_str
-    dq uptime_command
 
     dq date_command_str
     dq date_command
@@ -261,36 +256,6 @@ sysinfo_command:
     mov r9, sysinfo_frequency_unit
     call print_normal
 
-    ; rbx = max_frequency
-
-    call goto_next_line
-
-    mov r8, sysinfo_current_frequency
-    mov r9, sysinfo_current_frequency_length
-    call print_normal
-
-    rdtscp
-    shl rdx, 32
-    or rax, rdx
-    mov rcx, rax ; cycles start
-
-    mov r8, 100
-    call wait_ms ; wait 100ms
-
-    rdtscp
-    shl rdx, 32
-    or rax, rdx ; cycles end
-
-    sub rax, rcx ; cycles
-    imul rax, 10
-
-    xor rdx, rdx
-    mov rcx, 1000000
-    div rcx
-
-    mov r8, rax
-    call print_int_normal
-
     .last:
 
     ; L2 Length
@@ -364,22 +329,6 @@ help_command:
     pop r12
     pop r11
     pop r10
-    pop r9
-    pop r8
-
-    ret
-
-uptime_command:
-    push r8
-    push r9
-
-    mov r8, uptime_message
-    mov r9, uptime_message_length
-    call print_normal
-
-    mov r8, [timer_seconds]
-    call print_int_normal
-
     pop r9
     pop r8
 
