@@ -121,9 +121,7 @@ void help_command(const char*){
 }
 
 void uptime_command(const char*){
-    k_print("Uptime: ");
-    k_print(timer_seconds());
-    k_print_line("s");
+    k_printf("Uptime: %ds\n", timer_seconds());
 }
 
 #define CURRENT_YEAR        2013
@@ -215,21 +213,9 @@ void date_command(const char*){
         year += 100;
     }
 
-    k_print((std::size_t) day);
-    k_print('.');
-    k_print((std::size_t) month);
-    k_print('.');
-    k_print((std::size_t) year);
-
-    k_print(' ');
-
-    k_print((std::size_t) hour);
-    k_print(':');
-    k_print((std::size_t) minute);
-    k_print(':');
-    k_print((std::size_t) second);
-
-    k_print_line();
+    k_printf("%d.%d.%d %d:%d:%d\n",
+        (std::size_t) day, (std::size_t) month, (std::size_t) year,
+        (std::size_t) hour, (std::size_t) minute, (std::size_t) second);
 }
 
 void sleep_command(const char* params){
