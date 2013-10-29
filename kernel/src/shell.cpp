@@ -148,15 +148,15 @@ void exec_command(){
     k_print("\" does not exist \n");
 }
 
-void clear_command(const char* params){
+void clear_command(const char*){
     wipeout();
 }
 
-void reboot_command(const char* params){
+void reboot_command(const char*){
     interrupt<60>();
 }
 
-void help_command(const char* params){
+void help_command(const char*){
     k_print("Available commands:\n");
 
     for(auto& command : commands){
@@ -165,7 +165,7 @@ void help_command(const char* params){
     }
 }
 
-void uptime_command(const char* params){
+void uptime_command(const char*){
     k_print("Uptime: ");
     k_print(timer_seconds());
     k_print_line("s");
@@ -186,7 +186,7 @@ uint8_t get_RTC_register(int reg) {
       return in_byte(cmos_data);
 }
 
-void date_command(const char* params){
+void date_command(const char*){
     uint8_t second;
     uint8_t minute;
     uint8_t hour;
@@ -291,7 +291,7 @@ void date_command(const char* params){
     k_print_line();
 }
 
-void sleep_command(const char* params){
+void sleep_command(const char*){
     sleep_ms(5000);
 }
 
