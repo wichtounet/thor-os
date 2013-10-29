@@ -5,9 +5,6 @@
 
 ; Entry point of the shell, this function never returns
 shell_start:
-    ; Clean up all the screen
-    call clear_command
-
     call goto_next_line
 
     ;Display the command line

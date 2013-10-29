@@ -1,9 +1,6 @@
 ; String constants
 
 sysinfo_command_str db 'sysinfo', 0
-reboot_command_str db 'reboot', 0
-clear_command_str db 'clear', 0
-help_command_str db 'help', 0
 
 STRING sysinfo_vendor_id, "Vendor ID: "
 STRING sysinfo_stepping, "Stepping: "
@@ -27,26 +24,13 @@ STRING sysinfo_ht, "ht "
 STRING sysinfo_fpu, "fpu "
 STRING sysinfo_aes, "aes "
 
-STRING available_commands, "Available commands: "
-STRING tab, "  "
-STRING colon, ":"
-
 ; Command table
 
 command_table:
-    dq 6 ; Number of commands
+    dq 1 ; Number of commands
 
     dq sysinfo_command_str
     dq sysinfo_command
-
-    dq reboot_command_str
-    dq reboot_command
-
-    dq clear_command_str
-    dq clear_command
-
-    dq help_command_str
-    dq help_command
 
 ; Command functions
 
@@ -277,115 +261,5 @@ sysinfo_command:
     sub rsp, 20
     leave
     ret
-
-help_command:
-    push r8
-    push r9
-    push r10
-    push r11
-    push r12
-
-    mov r8, available_commands
-    mov r9, available_commands_length
-    call print_normal
-
-    mov r12, [command_table]   ; Number of commands
-    xor r11, r11              ; iterator
-
-    .start:
-        cmp r11, r12
-        je .end
-
-        mov r10, r11
-        shl r10, 4
-
-        call goto_next_line
-
-        mov r8, tab
-        mov r9, tab_length
-        call print_normal
-
-        mov r8, [r10 + command_table + 8]
-        mov r9, 1
-        call print_normal
-
-        inc r11
-        jmp .start
-
-    .end:
-
-    pop r12
-    pop r11
-    pop r10
-    pop r9
-    pop r8
-
-    ret
-
-reboot_command:
-    ; Reboot using the 8042 keyboard controller
-    ; by pulsing the CPU's reset pin
-    mov al, 0x64
-    or al, 0xFE
-    out 0x64, al
-    mov al, 0xFE
-    out 0x64, al
-
-    ; Should never get here
-    ret
-
-; in al = register to get
-get_rtc_register:
-    out 0x70, al
-
-    in al, 0x71
-
-    ret
-
-; in al = BCD coded
-; out al = binary
-bcd_to_binary:
-    push rbx
-    push rcx
-    push rdx
-
-    mov dl, al
-    and dl, 0xF0
-    shr dl, 1
-
-    mov bl, al
-    and bl, 0xF0
-    shr bl, 3
-
-    mov cl, al
-    and cl, 0xF
-
-    add dl, bl
-    add dl, cl
-
-    mov al, dl
-
-    pop rdx
-    pop rcx
-    pop rbx
-
-    ret
-
-clear_command:
-    ; Print top bar
-    mov rdi, TRAM
-    mov rbx, header_title
-    mov dl, STYLE(WHITE_F, BLACK_B)
-    call print_string
-
-    ; Fill the entire screen with black
-    mov rdi, TRAM + 0x14 * 8
-    mov rcx, 0x14 * 24
-    mov rax, 0x0720072007200720
-    rep stosq
-
-    ; Line 0 is for header
-    mov qword [current_line], 0
-    mov qword [current_column], 0
 
     ret
