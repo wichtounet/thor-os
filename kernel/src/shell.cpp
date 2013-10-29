@@ -129,7 +129,6 @@ void uptime_command(const char*){
 }
 
 #define CURRENT_YEAR        2013
-#define century_register    0x00
 #define cmos_address        0x70
 #define cmos_data           0x71
 
@@ -151,15 +150,17 @@ void date_command(const char*){
     uint8_t month;
     unsigned int year;
 
-    uint8_t century;
     uint8_t last_second;
     uint8_t last_minute;
     uint8_t last_hour;
     uint8_t last_day;
     uint8_t last_month;
     uint8_t last_year;
-    uint8_t last_century;
     uint8_t registerB;
+
+    //TODO When ACPI gets supported, get the address
+    //of the century register and use it to make
+    //better year calculation
 
     while (get_update_in_progress_flag()){};                // Make sure an update isn't in progress
 
@@ -170,10 +171,6 @@ void date_command(const char*){
     month = get_RTC_register(0x08);
     year = get_RTC_register(0x09);
 
-    if(century_register != 0) {
-        century = get_RTC_register(century_register);
-    }
-
     do {
         last_second = second;
         last_minute = minute;
@@ -181,7 +178,6 @@ void date_command(const char*){
         last_day = day;
         last_month = month;
         last_year = year;
-        last_century = century;
 
         while (get_update_in_progress_flag()){};           // Make sure an update isn't in progress
 
@@ -191,13 +187,8 @@ void date_command(const char*){
         day = get_RTC_register(0x07);
         month = get_RTC_register(0x08);
         year = get_RTC_register(0x09);
-
-        if(century_register != 0) {
-            century = get_RTC_register(century_register);
-        }
     } while( (last_second != second) || (last_minute != minute) || (last_hour != hour) ||
-        (last_day != day) || (last_month != month) || (last_year != year) ||
-        (last_century != century) );
+        (last_day != day) || (last_month != month) || (last_year != year) );
 
     registerB = get_RTC_register(0x0B);
 
@@ -211,9 +202,6 @@ void date_command(const char*){
         month = (month & 0x0F) + ((month / 16) * 10);
         year = (year & 0x0F) + ((year / 16) * 10);
 
-        if(century_register != 0) {
-            century = (century & 0x0F) + ((century / 16) * 10);
-        }
     }
 
     // Convert 12 hour clock to 24 hour clock if necessary
@@ -224,11 +212,9 @@ void date_command(const char*){
 
     // Calculate the full (4-digit) year
 
-    if(century_register != 0) {
-        year += century * 100;
-    } else {
-        year += (CURRENT_YEAR / 100) * 100;
-        if(year < CURRENT_YEAR) year += 100;
+    year += (CURRENT_YEAR / 100) * 100;
+    if(year < CURRENT_YEAR){
+        year += 100;
     }
 
     k_print((std::size_t) day);
