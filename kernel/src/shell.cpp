@@ -83,7 +83,7 @@ void reboot_command(){
 }
 
 void help_command(){
-    k_print_line("Available commands:");
+    k_print("Available commands:\n");
 
     for(auto& command : commands){
         k_print("   ");
@@ -108,7 +108,7 @@ void exec_command(){
 
     k_print("The command \"");
     k_print(current_input);
-    k_print_line("\" does not exist");
+    k_print("\" does not exist \n");
 }
 
 void clear_command(){

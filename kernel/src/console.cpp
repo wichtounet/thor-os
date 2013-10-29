@@ -76,21 +76,24 @@ void k_print(std::size_t number){
 }
 
 void k_print(char key){
+    if(key == '\n'){
+        ++current_line;
+        current_column = 0;
+
+        return;
+    }
+
     uint16_t* vga_buffer = (uint16_t*) 0x0B8000;
 
     vga_buffer[current_line * 80 + current_column] = make_vga_entry(key, make_color(WHITE, BLACK));
 
     ++current_column;
-
-    return;
 }
 
 void k_print(const char* string){
     for(int i = 0; string[i] != 0; ++i){
         k_print(string[i]);
     }
-
-    return;
 }
 
 void wipeout(){
