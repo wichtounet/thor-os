@@ -79,15 +79,15 @@ void k_print(char key){
     if(key == '\n'){
         ++current_line;
         current_column = 0;
+    } else if(key == '\t'){
+        k_print("  ");
+    } else {
+        uint16_t* vga_buffer = (uint16_t*) 0x0B8000;
 
-        return;
+        vga_buffer[current_line * 80 + current_column] = make_vga_entry(key, make_color(WHITE, BLACK));
+
+        ++current_column;
     }
-
-    uint16_t* vga_buffer = (uint16_t*) 0x0B8000;
-
-    vga_buffer[current_line * 80 + current_column] = make_vga_entry(key, make_color(WHITE, BLACK));
-
-    ++current_column;
 }
 
 void k_print(const char* string){

@@ -86,7 +86,7 @@ void help_command(){
     k_print("Available commands:\n");
 
     for(auto& command : commands){
-        k_print("   ");
+        k_print('\t');
         k_print_line(command.name);
     }
 }
