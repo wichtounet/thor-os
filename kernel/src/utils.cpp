@@ -1,5 +1,13 @@
-
 #include "utils.hpp"
+
+bool str_equals(const char* a, const char* b){
+    while(*a && *a == *b){
+        ++a;
+        ++b;
+    }
+
+    return *a == *b;
+}
 
 std::size_t parse(const char* str){
     int i = 0;

@@ -74,15 +74,6 @@ void keyboard_handler(){
     }
 }
 
-bool str_equals(const char* a, const char* b){
-    while(*a && *a == *b){
-        ++a;
-        ++b;
-    }
-
-    return *a == *b;
-}
-
 void exec_command(){
     char buffer[50];
 
