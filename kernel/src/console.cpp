@@ -38,7 +38,7 @@ uint16_t make_vga_entry(char c, uint8_t color){
     return c16 | color16 << 8;
 }
 
-}
+} //end of anonymous namespace
 
 void set_column(long column){
     current_column = column;
