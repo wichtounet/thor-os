@@ -1,4 +1,5 @@
 #include <cstddef>
+#include <cstdarg>
 
 #include "console.hpp"
 #include "types.hpp"
@@ -108,4 +109,29 @@ void wipeout(){
 
     current_line = 0;
     current_column = 0;
+}
+
+void k_printf(const char* fmt, ...){
+    va_list va;
+    va_start(va, fmt);
+
+    char ch;
+
+    while ((ch=*(fmt++))) {
+        if(ch != '%'){
+            k_print(ch);
+        } else {
+            ch = *(fmt++);
+
+            if(ch == 'd'){
+                auto arg = va_arg(va, std::size_t);
+                k_print(arg);
+            } else if(ch == 's'){
+                auto arg = va_arg(va, const char*);
+                k_print(arg);
+            }
+        }
+    }
+
+    va_end(va);
 }
