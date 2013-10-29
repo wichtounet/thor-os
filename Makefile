@@ -29,6 +29,8 @@ force_look:
 	true
 
 clean:
+	cd bootloader; $(MAKE) clean
+	cd kernel; $(MAKE) clean
+	cd micro_kernel; $(MAKE) clean
 	rm -f *.bin
 	rm -f *.flp
-	rm -f *.o

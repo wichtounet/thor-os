@@ -24,3 +24,7 @@ timer.o: src/timer.cpp
 
 shell.o: src/shell.cpp
 	g++ $(KERNEL_FLAGS) -c src/shell.cpp -o shell.o
+
+clean:
+	rm -f *.o
+	rm -f *.bin
