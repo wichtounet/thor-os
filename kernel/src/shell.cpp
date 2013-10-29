@@ -83,50 +83,6 @@ bool str_equals(const char* a, const char* b){
     return *a == *b;
 }
 
-bool str_contains(const char* a, char c){
-    while(*a){
-        if(*a == c){
-            return true;
-        }
-        ++a;
-    }
-
-    return false;
-}
-
-void str_copy(const char* a, char* b){
-    while(*a){
-        *b++ = *a++;
-    }
-
-    *b = '\0';
-}
-
-const char* str_until(char* a, char c){
-    char* it = a;
-    while(*it){
-        if(*it == c){
-            *it = '\0';
-            return a;
-        }
-        ++it;
-    }
-
-    return a;
-}
-
-const char* str_from(char* a, char c){
-    char* it = a;
-    while(*it){
-        if(*it == c){
-            return ++it;
-        }
-        ++it;
-    }
-
-    return a;
-}
-
 void exec_command(){
     char buffer[50];
 
