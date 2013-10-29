@@ -12,25 +12,27 @@ namespace {
 
 //Declarations of the different functions
 
-void reboot_command();
-void help_command();
-void uptime_command();
-void clear_command();
-void date_command();
-void sleep_command();
+void reboot_command(const char* params);
+void help_command(const char* params);
+void uptime_command(const char* params);
+void clear_command(const char* params);
+void date_command(const char* params);
+void sleep_command(const char* params);
+void echo_command(const char* params);
 
 struct command_definition {
     const char* name;
-    void (*function)();
+    void (*function)(const char*);
 };
 
-std::array<command_definition, 6> commands = {{
+std::array<command_definition, 7> commands = {{
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
     {"date", date_command},
-    {"sleep", sleep_command}
+    {"sleep", sleep_command},
+    {"echo", echo_command}
 }};
 
 std::size_t current_input_length = 0;
@@ -80,29 +82,62 @@ bool str_equals(const char* a, const char* b){
     return *a == *b;
 }
 
-void reboot_command(){
-    interrupt<60>();
-}
-
-void help_command(){
-    k_print("Available commands:\n");
-
-    for(auto& command : commands){
-        k_print('\t');
-        k_print_line(command.name);
+bool str_contains(const char* a, char c){
+    while(*a){
+        if(*a == c){
+            return true;
+        }
+        ++a;
     }
+
+    return false;
 }
 
-void uptime_command(){
-    k_print("Uptime: ");
-    k_print(timer_seconds());
-    k_print_line("s");
+void str_copy(const char* a, char* b){
+    while(*a){
+        *b++ = *a++;
+    }
+
+    *b = '\0';
+}
+
+const char* str_until(char* a, char c){
+    char* it = a;
+    while(*it){
+        if(*it == c){
+            *it = '\0';
+            return a;
+        }
+        ++it;
+    }
+
+    return a;
+}
+
+const char* str_from(char* a, char c){
+    char* it = a;
+    while(*it){
+        if(*it == c){
+            return ++it;
+        }
+        ++it;
+    }
+
+    return a;
 }
 
 void exec_command(){
+    char buffer[50];
+
     for(auto& command : commands){
-        if(str_equals(current_input, command.name)){
-            command.function();
+        const char* input_command = current_input;
+        if(str_contains(current_input, ' ')){
+            str_copy(current_input, buffer);
+            input_command = str_until(buffer, ' ');
+        }
+
+        if(str_equals(input_command, command.name)){
+            command.function(current_input);
 
             return;
         }
@@ -113,8 +148,27 @@ void exec_command(){
     k_print("\" does not exist \n");
 }
 
-void clear_command(){
+void clear_command(const char* params){
     wipeout();
+}
+
+void reboot_command(const char* params){
+    interrupt<60>();
+}
+
+void help_command(const char* params){
+    k_print("Available commands:\n");
+
+    for(auto& command : commands){
+        k_print('\t');
+        k_print_line(command.name);
+    }
+}
+
+void uptime_command(const char* params){
+    k_print("Uptime: ");
+    k_print(timer_seconds());
+    k_print_line("s");
 }
 
 #define CURRENT_YEAR        2013
@@ -132,7 +186,7 @@ uint8_t get_RTC_register(int reg) {
       return in_byte(cmos_data);
 }
 
-void date_command(){
+void date_command(const char* params){
     uint8_t second;
     uint8_t minute;
     uint8_t hour;
@@ -237,8 +291,12 @@ void date_command(){
     k_print_line();
 }
 
-void sleep_command(){
+void sleep_command(const char* params){
     sleep_ms(5000);
+}
+
+void echo_command(const char* params){
+    k_print_line(params + 5);
 }
 
 } //end of anonymous namespace
@@ -246,7 +304,7 @@ void sleep_command(){
 void init_shell(){
     current_input_length = 0;
 
-    clear_command();
+    clear_command(0);
 
     k_print("thor> ");
 
