@@ -17,18 +17,20 @@ void help_command();
 void uptime_command();
 void clear_command();
 void date_command();
+void sleep_command();
 
 struct command_definition {
     const char* name;
     void (*function)();
 };
 
-std::array<command_definition, 5> commands = {{
+std::array<command_definition, 6> commands = {{
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
-    {"date", date_command}
+    {"date", date_command},
+    {"sleep", sleep_command}
 }};
 
 std::size_t current_input_length = 0;
@@ -233,6 +235,10 @@ void date_command(){
     k_print((std::size_t) second);
 
     k_print_line();
+}
+
+void sleep_command(){
+    sleep_ms(5000);
 }
 
 } //end of anonymous namespace
