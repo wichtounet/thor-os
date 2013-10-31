@@ -246,14 +246,30 @@ void memory_command(const char*){
     } else {
         k_printf("There are %d mmap entry\n", mmap_entry_count());
 
+        std::size_t available_memory = 0;
+
         for(std::size_t i = 0; i < mmap_entry_count(); ++i){
             auto& entry = mmap_entry(i);
 
             std::size_t base = entry.base_low + (entry.base_high << 32);
             std::size_t length = entry.length_low + (entry.length_high << 32);
 
-            k_printf("%d\t%d\t%s\t%d\n",
-                base, length, str_e820_type(entry.type), entry.acpi);
+            if(entry.type == 1){
+                available_memory += length;
+            }
+
+            k_printf("%h\t%h\t%d\t%s\t%d\n",
+                base, base + length, length, str_e820_type(entry.type), entry.acpi);
+        }
+
+        if(available_memory > 1024 * 1024 * 1024){
+            k_printf("Total available memory: %dGiB\n", available_memory / (1024 * 1024 * 1024));
+        } else if(available_memory > 1024 * 1024){
+            k_printf("Total available memory: %dMiB\n", available_memory / (1024 * 1024));
+        } else if(available_memory > 1024){
+            k_printf("Total available memory: %dKiB\n", available_memory / 1024);
+        } else {
+            k_printf("Total available memory: %dB\n", available_memory);
         }
     }
 }

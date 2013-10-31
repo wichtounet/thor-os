@@ -131,6 +131,51 @@ void k_printf(const char* fmt, ...){
             if(ch == 'd'){
                 auto arg = va_arg(va, std::size_t);
                 k_print(arg);
+            } else if(ch == 'h'){
+                k_print("0x");
+
+                uint8_t buffer[20];
+
+                auto arg = va_arg(va, std::size_t);
+                int i = 0;
+
+                while(arg / 16 != 0){
+                    buffer[i++] = arg % 16;
+                    arg /= 16;
+                }
+
+                buffer[i] = arg;
+
+                while(i >= 0){
+                    uint8_t digit = buffer[i];
+
+                    if(digit < 10){
+                        k_print((char) ('0' + digit));
+                    } else {
+                        switch(digit){
+                            case 10:
+                                k_print('A');
+                                break;
+                            case 11:
+                                k_print('B');
+                                break;
+                            case 12:
+                                k_print('C');
+                                break;
+                            case 13:
+                                k_print('D');
+                                break;
+                            case 14:
+                                k_print('E');
+                                break;
+                            case 15:
+                                k_print('F');
+                                break;
+                        }
+                    }
+
+                    --i;
+                }
             } else if(ch == 's'){
                 auto arg = va_arg(va, const char*);
                 k_print(arg);
