@@ -148,12 +148,6 @@ pm_start:
 [BITS 64]
 
 lm_start:
-    movzx r8, byte [e820_failed]
-    call set_current_position
-    call print_int_normal
-
-    jmp $
-
     ; Install IDT
     call install_idt
 

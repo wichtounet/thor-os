@@ -211,6 +211,7 @@ install_irqs:
 install_syscalls:
     IDT_SET_GATE 60, syscall_reboot, LONG_SELECTOR-GDT64, 0x8E
     IDT_SET_GATE 61, syscall_irq, LONG_SELECTOR-GDT64, 0x8E
+    IDT_SET_GATE 62, syscall_mmap, LONG_SELECTOR-GDT64, 0x8E
 
     ret
 
@@ -247,6 +248,30 @@ syscall_reboot:
 
     pop rax
 
+    iretq
+
+syscall_mmap:
+    cli
+
+    .e820_failed
+
+    cmp r8, 0
+    jne .entry_count
+
+    movzx rax, byte [e820_failed]
+    iretq
+
+    .entry_count
+
+    cmp r8, 1
+    jne .e820_mmap
+
+    movzx rax, word [e820_entry_count]
+    iretq
+
+    .e820_mmap
+
+    mov rax, e820_memory_map
     iretq
 
 ; Data structures
