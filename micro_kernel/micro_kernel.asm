@@ -84,7 +84,7 @@ _start:
     or al, 1b
     mov cr0, eax
 
-    ; Desactivate pagination
+    ; Disable paging
     mov eax, cr0
     and eax, 01111111111111111111111111111111b
     mov cr0, eax
@@ -107,38 +107,40 @@ pm_start:
     or eax, 1 << 5
     mov cr4, eax
 
-    ; Clean pages
+    ; Configure the Page-Map Level 4 Table (PML4T)
+
+    ; Clear the tables
     mov edi, 0x70000
-    mov ecx, 0x10000
+    mov ecx, 4096
     xor eax, eax
     rep stosd
 
-    ; Update pages
-    mov dword [0x70000], 0x71000 + 7    ; first PDP table
-    mov dword [0x71000], 0x72000 + 7    ; first page directory
-    mov dword [0x72000], 0x73000 + 7    ; first page table
+    ; Update tables (3 means Present, Writable and Supervisor only)
+    mov dword [0x70000], 0x71000 + 3   ; PML4T[0] -> PDPT
+    mov dword [0x71000], 0x72000 + 3   ; PDPT[0] -> PDT
+    mov dword [0x72000], 0x73000 + 3   ; PDT[0] -> PT
 
-    mov edi, 0x73000                    ; address of first page table
-    mov eax, 7
-    mov ecx, 256                        ; number of pages to map (1 MB)
+    mov edi, 0x73000 ; First PT
+    mov ebx, 0x3     ; Present, Writeable and Supervisor only
+    mov ecx, 512     ; Map first two MiB
 
-    make_page_entries:
-        stosd
-        add     edi, 4
-        add     eax, 0x1000
-        loop    make_page_entries
+    .write_entry:
+    mov dword [edi], ebx
+    add ebx, 0x1000  ; Map the next block of 4KiB
+    add edi, 8       ; A page entry in PT is 64 bit in size
+    loop .write_entry
 
-    ; Update MSR (Model Specific Registers)
+    ; Enable long mode by seting the EFER.LME flag
     mov ecx, 0xC0000080
     rdmsr
     or eax, 100000000b
     wrmsr
 
-    ; Copy PML4 address into cr3
+    ; Se the address of the page directory
     mov eax, 0x70000    ; Bass address of PML4
     mov cr3, eax        ; load page-map level-4 base
 
-    ; Switch to long mode
+    ; Enable paging
     mov eax, cr0
     or eax, 10000000000000000000000000000000b
     mov cr0, eax
