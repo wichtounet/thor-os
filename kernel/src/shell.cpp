@@ -222,7 +222,7 @@ void echo_command(const char* params){
     k_print_line(params + 5);
 }
 
-const char* str_e820_type(uint16_t type){
+const char* str_e820_type(std::size_t type){
     switch(type){
         case 1:
             return "Free";
@@ -251,15 +251,12 @@ void memory_command(const char*){
         for(std::size_t i = 0; i < mmap_entry_count(); ++i){
             auto& entry = mmap_entry(i);
 
-            std::size_t base = entry.base_low + (entry.base_high << 32);
-            std::size_t length = entry.length_low + (entry.length_high << 32);
-
             if(entry.type == 1){
-                available_memory += length;
+                available_memory += entry.size;
             }
 
-            k_printf("%h\t%h\t%d\t%s\t%d\n",
-                base, base + length, length, str_e820_type(entry.type), entry.acpi);
+            k_printf("%h\t%h\t%d\t%s\n",
+                entry.base, entry.base + entry.size, entry.size, str_e820_type(entry.type));
         }
 
         if(available_memory > 1024 * 1024 * 1024){

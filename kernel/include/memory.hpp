@@ -4,14 +4,10 @@
 #include "types.hpp"
 
 struct mmapentry {
-    uint32_t base_low;
-    uint32_t base_high;
-    uint32_t length_low;
-    uint32_t length_high;
-    uint16_t type;
-    uint16_t acpi;
-    uint32_t damn_padding;
-} __attribute__((packed));
+    std::size_t base;
+    std::size_t size;
+    std::size_t type;
+};
 
 void load_memory_map();
 bool mmap_failed();
