@@ -169,16 +169,12 @@ lm_start:
 
     jmp $
 
-    ; Enter the shell
-    ;call shell_start
-
 ; Includes
 
 %include "utils/macros.asm"
 %include "utils/console.asm"
 
 %include "interrupts.asm"
-%include "shell.asm"
 
 ; Global Descriptors Table
 

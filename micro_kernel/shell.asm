@@ -1,4 +1,3 @@
-%include "utils/utils.asm"
 %include "utils/keyboard.asm"
 
 %include "commands.asm"
