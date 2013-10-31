@@ -8,6 +8,7 @@
 #include "shell.hpp"
 #include "timer.hpp"
 #include "utils.hpp"
+#include "memory.hpp"
 
 namespace {
 
@@ -20,20 +21,22 @@ void clear_command(const char* params);
 void date_command(const char* params);
 void sleep_command(const char* params);
 void echo_command(const char* params);
+void memory_command(const char* params);
 
 struct command_definition {
     const char* name;
     void (*function)(const char*);
 };
 
-std::array<command_definition, 7> commands = {{
+std::array<command_definition, 8> commands = {{
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
     {"date", date_command},
     {"sleep", sleep_command},
-    {"echo", echo_command}
+    {"echo", echo_command},
+    {"memory", memory_command}
 }};
 
 std::size_t current_input_length = 0;
@@ -217,6 +220,42 @@ void sleep_command(const char* params){
 
 void echo_command(const char* params){
     k_print_line(params + 5);
+}
+
+const char* str_e820_type(uint16_t type){
+    switch(type){
+        case 1:
+            return "Free";
+        case 2:
+            return "Reserved";
+        case 3:
+        case 4:
+            return "ACPI";
+        case 5:
+            return "Unusable";
+        case 6:
+            return "Disabled";
+        default:
+            return "Unknown";
+    }
+}
+
+void memory_command(const char*){
+    if(mmap_failed()){
+        k_print_line("The mmap was not correctly loaded from e820");
+    } else {
+        k_printf("There are %d mmap entry\n", mmap_entry_count());
+
+        for(std::size_t i = 0; i < mmap_entry_count(); ++i){
+            auto& entry = mmap_entry(i);
+
+            std::size_t base = entry.base_low + (entry.base_high << 32);
+            std::size_t length = entry.length_low + (entry.length_high << 32);
+
+            k_printf("%d\t%d\t%s\t%d\n",
+                base, length, str_e820_type(entry.type), entry.acpi);
+        }
+    }
 }
 
 } //end of anonymous namespace
