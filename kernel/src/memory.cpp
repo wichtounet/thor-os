@@ -42,6 +42,10 @@ void load_memory_map(){
             os_entry.base = base;
             os_entry.size = length;
             os_entry.type = bios_entry.type;
+
+            if(os_entry.base == 0 && os_entry.type == 1){
+                os_entry.type = 7;
+            }
         }
     }
 }
@@ -71,6 +75,8 @@ const char* str_e820_type(std::size_t type){
             return "Unusable";
         case 6:
             return "Disabled";
+        case 7:
+            return "Kernel";
         default:
             return "Unknown";
     }
