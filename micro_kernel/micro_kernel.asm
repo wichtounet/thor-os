@@ -1,10 +1,66 @@
 [BITS 16]
 
-%ifndef DEBUG
 [ORG 0x1000]
-%endif
 
 jmp _start
+
+e820_mmap:
+    pusha
+
+    xor ax, ax
+    mov es, ax
+    mov di, e820_memory_map
+
+    xor ebx, ebx
+    xor bp, bp
+    mov edx, 0x0534D4150
+    mov eax, 0xe820
+    mov [es:di + 20], dword 1
+    mov ecx, 24
+    int 0x15
+    jc .failed
+
+    mov edx, 0x0534D4150
+    cmp eax, edx
+    jne .failed
+    jmp .jmpin
+
+    .e820lp:
+    mov eax, 0xE820
+    mov [es:di + 20], dword 1
+    mov ecx, 24
+    int 0x15
+    jc .e820f
+    mov edx, 0x0534D4150
+
+    .jmpin:
+    jcxz .skipent
+    cmp cl, 20
+    jbe .notext
+    test byte [es:di + 20], 1
+    je .skipent
+
+    .notext:
+    mov ecx, [es:di + 8]
+    or ecx, [es:di + 12]
+    jz .skipent
+    inc bp
+    add di, 24
+
+    .skipent:
+    test ebx, ebx
+    jne .e820lp
+
+    .e820f:
+    mov  [e820_entry_count], bp
+    clc
+
+    .failed:
+    stc
+
+    popa
+
+    ret
 
 _start:
     ; Reset data segments because the bootloader set it to
@@ -14,6 +70,8 @@ _start:
 
     ; Disable interrupts
     cli
+
+    call e820_mmap
 
     ; Load GDT
     lgdt [GDTR64]
@@ -87,6 +145,10 @@ pm_start:
 [BITS 64]
 
 lm_start:
+    movzx r8, word [e820_entry_count]
+    call set_current_position
+    call print_int_normal
+
     ; Install IDT
     call install_idt
 
@@ -149,6 +211,12 @@ GDT64:
 GDTR64:
     dw 4 * 8 - 1 ; Length of GDT
     dd GDT64
+
+e820_memory_map:
+    times 32 dq 0, 0, 0
+
+e820_entry_count:
+    dw 0
 
 ; Fill the sector (not necessary, but cleaner)
 
