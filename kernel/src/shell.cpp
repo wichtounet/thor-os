@@ -222,24 +222,6 @@ void echo_command(const char* params){
     k_print_line(params + 5);
 }
 
-const char* str_e820_type(std::size_t type){
-    switch(type){
-        case 1:
-            return "Free";
-        case 2:
-            return "Reserved";
-        case 3:
-        case 4:
-            return "ACPI";
-        case 5:
-            return "Unusable";
-        case 6:
-            return "Disabled";
-        default:
-            return "Unknown";
-    }
-}
-
 void memory_command(const char*){
     if(mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");

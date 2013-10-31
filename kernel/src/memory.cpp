@@ -24,7 +24,7 @@ void mmap_query(std::size_t cmd, std::size_t* result){
     *result = tmp;
 }
 
-}
+} //end of anonymous namespace //end of anonymous namespace
 
 void load_memory_map(){
     mmap_query(0, &e820_failed);
@@ -57,3 +57,22 @@ bool mmap_failed(){
 const mmapentry& mmap_entry(std::size_t i){
     return e820_mmap[i];
 }
+
+const char* str_e820_type(std::size_t type){
+    switch(type){
+        case 1:
+            return "Free";
+        case 2:
+            return "Reserved";
+        case 3:
+        case 4:
+            return "ACPI";
+        case 5:
+            return "Unusable";
+        case 6:
+            return "Disabled";
+        default:
+            return "Unknown";
+    }
+}
+
