@@ -44,9 +44,12 @@ _isr%1:
     push r8
     push r9
 
-    mov r8, isr%1_msg
+    lea rdi, [12 * 8 * 0x14 + 30 * 2 + TRAM]
+
+    mov rbx, isr%1_msg
     mov r9, isr%1_msg_length
-    call print_normal
+    mov dl, STYLE(RED_F, WHITE_B)
+    call print_string
 
     ; Simply halt the CPU because we don't know how to solve the problem
     hlt
