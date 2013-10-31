@@ -61,6 +61,11 @@ void k_print_line(const char* string){
 }
 
 void k_print(std::size_t number){
+    if(number == 0){
+        k_print('0');
+        return;
+    }
+
     char buffer[20];
     int i = 0;
 
