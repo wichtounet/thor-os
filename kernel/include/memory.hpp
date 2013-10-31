@@ -15,4 +15,7 @@ std::size_t mmap_entry_count();
 const mmapentry& mmap_entry(std::size_t i);
 const char* str_e820_type(std::size_t type);
 
+void init_memory_manager();
+std::size_t* k_malloc(std::size_t bytes);
+
 #endif

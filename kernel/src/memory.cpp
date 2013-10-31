@@ -24,7 +24,108 @@ void mmap_query(std::size_t cmd, std::size_t* result){
     *result = tmp;
 }
 
+struct malloc_header_chunk {
+    std::size_t size;
+    malloc_header_chunk* next;
+    malloc_header_chunk* prev;
+};
+
+struct malloc_footer_chunk {
+    std::size_t size;
+};
+
+struct fake_head {
+    std::size_t size;
+    malloc_header_chunk* next;
+    malloc_header_chunk* prev;
+    std::size_t size_2;
+};
+
+fake_head head;
+malloc_header_chunk* malloc_head = 0;
+
+std::size_t* allocate_block(std::size_t bytes){
+    //TODO
+}
+
+const std::size_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
+const std::size_t MIN_SPLIT = 32;
+
 } //end of anonymous namespace //end of anonymous namespace
+
+void init_memory_manager(){
+    //Init the fake head
+    head.size = 0;
+    head.next = nullptr;
+    head.prev = nullptr;
+    head.size_2 = 0;
+
+    malloc_head = (malloc_header_chunk*) &head;
+
+    std::size_t* block = allocate_block(16384);
+    malloc_header_chunk* header = (malloc_header_chunk*) block;
+    header->size = 16384 - META_SIZE;
+    header->next  = malloc_head;
+    header->prev = malloc_head;
+
+    auto footer = (malloc_footer_chunk*) (block +  header->size);
+    footer->size = header->size;
+
+    malloc_head->next = header;
+    malloc_head->prev = header;
+}
+
+std::size_t* k_malloc(std::size_t bytes){
+    std::size_t required_bytes = bytes + META_SIZE;
+
+    malloc_header_chunk* current = malloc_head->next;
+
+    while(true){
+        if(current == malloc_head){
+            //There are no blocks big enough to hold this request
+            //TODO Allocate new blocks
+        } else if(current->size >= bytes){
+            //This block is big enough
+
+            //Is it worth splitting the block ?
+            if(current->size - bytes - META_SIZE > MIN_SPLIT){
+                auto old_size = current->size;
+                auto new_block_size = current->size - bytes - META_SIZE;
+
+                //Set the new size;
+                current->size = bytes;
+                ((malloc_footer_chunk*) current + bytes)->size = bytes;
+
+                auto new_block = (malloc_header_chunk*) current + bytes + sizeof(malloc_footer_chunk);
+
+                new_block->size = new_block_size;
+                new_block->next = current->next;
+                new_block->prev = current->prev;
+                current->prev->next = new_block;
+                current->next->prev = new_block;
+
+                ((malloc_footer_chunk*) new_block + new_block_size)->size = new_block_size;
+
+                //Make sure the node is clean
+                current->prev = nullptr;
+                current->next = nullptr;
+
+                return (std::size_t*) current + sizeof(malloc_header_chunk);
+            } else {
+                //Remove this node from the free list
+                current->prev->next = current->next;
+                current->next->prev = current->prev;
+
+                //Make sure the node is clean
+                current->prev = nullptr;
+                current->next = nullptr;
+
+                //The found block can be returned as is
+                return (std::size_t*) current + sizeof(malloc_header_chunk);
+            }
+        }
+    }
+}
 
 void load_memory_map(){
     mmap_query(0, &e820_failed);
@@ -81,4 +182,3 @@ const char* str_e820_type(std::size_t type){
             return "Unknown";
     }
 }
-
