@@ -55,8 +55,8 @@ typedef page_table* page_directory_table;
 typedef page_directory_table* page_directory_pointer_table;
 typedef page_directory_pointer_table* pml4t_t;
 
-mmapentry* current_mmap_entry;
-std::size_t current_mmap_entry_position;
+mmapentry* current_mmap_entry = nullptr;
+uint8_t* current_mmap_entry_position;
 
 std::size_t pml4t_index = 0;
 std::size_t pdpt_index = 0;
@@ -70,7 +70,7 @@ std::size_t* allocate_block(std::size_t blocks){
 
             if(entry.type == 1 && entry.base >= 0x100000 && entry.size >= 16384){
                 current_mmap_entry = &entry;
-                current_mmap_entry_position = entry.base;
+                current_mmap_entry_position = (uint8_t*) entry.base;
                 break;
             }
         }
@@ -81,27 +81,30 @@ std::size_t* allocate_block(std::size_t blocks){
     }
 
     pml4t_t pml4t = (pml4t_t) 0x70000;
-    auto pdpt = pml4t[pml4t_index];
-    auto pdt = pdpt[pdpt_index];
-    auto pt = pdt[pdt_index];
+    auto pdpt = (page_directory_pointer_table)(pml4t[pml4t_index] - 0x3);
+    auto pdt = (page_directory_table)(pdpt[pdpt_index] - 0x3);
+    auto pt = (page_table)(pdt[pdt_index] - 0x3);
+
+    pt = (page_table) 0x73000;
 
     if(pt_index + blocks >= 512){
         //TODO Go to a new page table
     }
 
     for(std::size_t i = 0; i < blocks; ++i){
-        pt[pt_index + i] = (std::size_t*) current_mmap_entry_position + (i * 4096);
+        std::size_t page_address = ((std::size_t) current_mmap_entry_position) + i * BLOCK_SIZE + 0x3;
+        pt[pt_index + i] = (page_entry) (page_address);
     }
 
     auto block = (std::size_t*) current_mmap_entry_position;
 
     pt_index += blocks;
-    current_mmap_entry_position += (blocks * 4096);
+    current_mmap_entry_position += blocks * BLOCK_SIZE;
 
     return block;
 }
 
-} //end of anonymous namespace //end of anonymous namespace
+} //end of anonymous namespace
 
 void init_memory_manager(){
     //Init the fake head
@@ -114,11 +117,12 @@ void init_memory_manager(){
 
     std::size_t* block = allocate_block(MIN_BLOCKS);
     malloc_header_chunk* header = (malloc_header_chunk*) block;
+
     header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
-    header->next  = malloc_head;
+    header->next = malloc_head;
     header->prev = malloc_head;
 
-    auto footer = (malloc_footer_chunk*) (block +  header->size);
+    auto footer = (malloc_footer_chunk*) (((uint8_t*) block) + header->size + sizeof(malloc_header_chunk));
     footer->size = header->size;
 
     malloc_head->next = header;
