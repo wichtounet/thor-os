@@ -128,7 +128,7 @@ void init_memory_manager(){
 }
 
 std::size_t* k_malloc(std::size_t bytes){
-    malloc_header_chunk* current = malloc_head->next;
+    auto current = malloc_head->next;
 
     while(true){
         if(current == malloc_head){
@@ -197,6 +197,18 @@ std::size_t* k_malloc(std::size_t bytes){
 
         current = current->next;
     }
+}
+
+void k_free(std::size_t* block){
+    auto free_header = reinterpret_cast<malloc_header_chunk*>(block);
+
+    auto header = malloc_head;
+
+    free_header->prev = header;
+    free_header->next = header->next;
+
+    header->next->prev = free_header;
+    header->next = free_header;
 }
 
 void load_memory_map(){
