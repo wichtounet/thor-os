@@ -2,6 +2,11 @@
 
 namespace {
 
+const std::size_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
+const std::size_t MIN_SPLIT = 32;
+const std::size_t BLOCK_SIZE = 4096;
+const std::size_t MIN_BLOCKS = 4;
+
 struct bios_mmap_entry {
     uint32_t base_low;
     uint32_t base_high;
@@ -48,9 +53,6 @@ std::size_t* allocate_block(std::size_t bytes){
     //TODO
 }
 
-const std::size_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
-const std::size_t MIN_SPLIT = 32;
-
 } //end of anonymous namespace //end of anonymous namespace
 
 void init_memory_manager(){
@@ -62,9 +64,9 @@ void init_memory_manager(){
 
     malloc_head = (malloc_header_chunk*) &head;
 
-    std::size_t* block = allocate_block(16384);
+    std::size_t* block = allocate_block(MIN_BLOCKS * BLOCK_SIZE);
     malloc_header_chunk* header = (malloc_header_chunk*) block;
-    header->size = 16384 - META_SIZE;
+    header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
     header->next  = malloc_head;
     header->prev = malloc_head;
 
@@ -83,7 +85,19 @@ std::size_t* k_malloc(std::size_t bytes){
     while(true){
         if(current == malloc_head){
             //There are no blocks big enough to hold this request
-            //TODO Allocate new blocks
+
+            std::size_t* block = allocate_block(MIN_BLOCKS * BLOCK_SIZE);
+            malloc_header_chunk* header = (malloc_header_chunk*) block;
+            header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
+
+            current->next->prev = header;
+            current->next = header;
+
+            header->next  = current->next;
+            header->prev = current;
+
+            auto footer = (malloc_footer_chunk*) (block +  header->size);
+            footer->size = header->size;
         } else if(current->size >= bytes){
             //This block is big enough
 
@@ -124,6 +138,8 @@ std::size_t* k_malloc(std::size_t bytes){
                 return (std::size_t*) current + sizeof(malloc_header_chunk);
             }
         }
+
+        current = current->next;
     }
 }
 
