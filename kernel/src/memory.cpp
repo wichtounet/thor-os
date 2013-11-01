@@ -81,11 +81,9 @@ std::size_t* allocate_block(std::size_t blocks){
     }
 
     pml4t_t pml4t = (pml4t_t) 0x70000;
-    auto pdpt = (page_directory_pointer_table)(pml4t[pml4t_index] - 0x3);
-    auto pdt = (page_directory_table)(pdpt[pdpt_index] - 0x3);
-    auto pt = (page_table)(pdt[pdt_index] - 0x3);
-
-    pt = (page_table) 0x73000;
+    auto pdpt = (page_directory_pointer_table)(reinterpret_cast<uintptr_t>(pml4t[pml4t_index]) & ~0xFFF);
+    auto pdt = (page_directory_table)(reinterpret_cast<uintptr_t>(pdpt[pdpt_index]) & ~0xFFF);
+    auto pt = (page_table)(reinterpret_cast<uintptr_t>(pdt[pdt_index]) & ~0xFFF);
 
     if(pt_index + blocks >= 512){
         //TODO Go to a new page table
