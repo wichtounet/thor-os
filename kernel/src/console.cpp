@@ -88,7 +88,7 @@ void k_print(char key){
     } else if(key == '\t'){
         k_print("  ");
     } else {
-        uint16_t* vga_buffer = (uint16_t*) 0x0B8000;
+        uint16_t* vga_buffer = reinterpret_cast<uint16_t*>(0x0B8000);
 
         vga_buffer[current_line * 80 + current_column] = make_vga_entry(key, make_color(WHITE, BLACK));
 
@@ -150,7 +150,7 @@ void k_printf(const char* fmt, ...){
                     uint8_t digit = buffer[i];
 
                     if(digit < 10){
-                        k_print((char) ('0' + digit));
+                        k_print(static_cast<char>('0' + digit));
                     } else {
                         switch(digit){
                             case 10:

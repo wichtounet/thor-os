@@ -138,20 +138,20 @@ uint8_t get_RTC_register(int reg) {
 }
 
 void date_command(const char*){
-    uint8_t second;
-    uint8_t minute;
-    uint8_t hour;
-    uint8_t day;
-    uint8_t month;
-    unsigned int year;
+    std::size_t second;
+    std::size_t minute;
+    std::size_t hour;
+    std::size_t day;
+    std::size_t month;
+    std::size_t year;
 
-    uint8_t last_second;
-    uint8_t last_minute;
-    uint8_t last_hour;
-    uint8_t last_day;
-    uint8_t last_month;
-    uint8_t last_year;
-    uint8_t registerB;
+    std::size_t last_second;
+    std::size_t last_minute;
+    std::size_t last_hour;
+    std::size_t last_day;
+    std::size_t last_month;
+    std::size_t last_year;
+    std::size_t registerB;
 
     //TODO When ACPI gets supported, get the address
     //of the century register and use it to make
@@ -212,9 +212,7 @@ void date_command(const char*){
         year += 100;
     }
 
-    k_printf("%d.%d.%d %d:%d:%d\n",
-        (std::size_t) day, (std::size_t) month, (std::size_t) year,
-        (std::size_t) hour, (std::size_t) minute, (std::size_t) second);
+    k_printf("%d.%d.%d %d:%d:%d\n", day, month, year, hour, minute, second);
 }
 
 void sleep_command(const char* params){

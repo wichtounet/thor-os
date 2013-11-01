@@ -50,13 +50,13 @@ fake_head head;
 malloc_header_chunk* malloc_head = 0;
 
 typedef std::size_t* page_entry;
-typedef page_entry* page_table;
-typedef page_table* page_directory_table;
-typedef page_directory_table* page_directory_pointer_table;
-typedef page_directory_pointer_table* pml4t_t;
+typedef page_entry* pt_t;
+typedef pt_t* pdt_t;
+typedef pdt_t* pdpt_t;
+typedef pdpt_t* pml4t_t;
 
 mmapentry* current_mmap_entry = nullptr;
-uint8_t* current_mmap_entry_position;
+std::size_t current_mmap_entry_position;
 
 std::size_t pml4t_index = 0;
 std::size_t pdpt_index = 0;
@@ -70,7 +70,7 @@ std::size_t* allocate_block(std::size_t blocks){
 
             if(entry.type == 1 && entry.base >= 0x100000 && entry.size >= 16384){
                 current_mmap_entry = &entry;
-                current_mmap_entry_position = (uint8_t*) entry.base;
+                current_mmap_entry_position = entry.base;
                 break;
             }
         }
@@ -80,21 +80,20 @@ std::size_t* allocate_block(std::size_t blocks){
         return nullptr;
     }
 
-    pml4t_t pml4t = (pml4t_t) 0x70000;
-    auto pdpt = (page_directory_pointer_table)(reinterpret_cast<uintptr_t>(pml4t[pml4t_index]) & ~0xFFF);
-    auto pdt = (page_directory_table)(reinterpret_cast<uintptr_t>(pdpt[pdpt_index]) & ~0xFFF);
-    auto pt = (page_table)(reinterpret_cast<uintptr_t>(pdt[pdt_index]) & ~0xFFF);
+    pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
+    auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4t_index]) & ~0xFFF);
+    auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[pdpt_index]) & ~0xFFF);
+    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[pdt_index]) & ~0xFFF);
 
     if(pt_index + blocks >= 512){
         //TODO Go to a new page table
     }
 
     for(std::size_t i = 0; i < blocks; ++i){
-        std::size_t page_address = ((std::size_t) current_mmap_entry_position) + i * BLOCK_SIZE + 0x3;
-        pt[pt_index + i] = (page_entry) (page_address);
+        pt[pt_index + i] = reinterpret_cast<page_entry>((current_mmap_entry_position + i * BLOCK_SIZE) | 0x3);
     }
 
-    auto block = (std::size_t*) current_mmap_entry_position;
+    auto block = reinterpret_cast<std::size_t*>(current_mmap_entry_position);
 
     pt_index += blocks;
     current_mmap_entry_position += blocks * BLOCK_SIZE;
@@ -111,16 +110,17 @@ void init_memory_manager(){
     head.prev = nullptr;
     head.size_2 = 0;
 
-    malloc_head = (malloc_header_chunk*) &head;
+    malloc_head = reinterpret_cast<malloc_header_chunk*>(&head);
 
-    std::size_t* block = allocate_block(MIN_BLOCKS);
-    malloc_header_chunk* header = (malloc_header_chunk*) block;
+    auto block = allocate_block(MIN_BLOCKS);
+    auto header = reinterpret_cast<malloc_header_chunk*>(block);
 
     header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
     header->next = malloc_head;
     header->prev = malloc_head;
 
-    auto footer = (malloc_footer_chunk*) (((uint8_t*) block) + header->size + sizeof(malloc_header_chunk));
+    auto footer = reinterpret_cast<malloc_footer_chunk*>(
+        reinterpret_cast<uintptr_t>(block) + header->size + sizeof(malloc_header_chunk));
     footer->size = header->size;
 
     malloc_head->next = header;
@@ -135,7 +135,7 @@ std::size_t* k_malloc(std::size_t bytes){
             //There are no blocks big enough to hold this request
 
             std::size_t* block = allocate_block(MIN_BLOCKS);
-            malloc_header_chunk* header = (malloc_header_chunk*) block;
+            auto header = reinterpret_cast<malloc_header_chunk*>(block);
             header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
 
             current->next->prev = header;
@@ -144,7 +144,8 @@ std::size_t* k_malloc(std::size_t bytes){
             header->next  = current->next;
             header->prev = current;
 
-            auto footer = (malloc_footer_chunk*) (block +  header->size);
+            auto footer = reinterpret_cast<malloc_footer_chunk*>(
+                reinterpret_cast<uintptr_t>(block) + header->size + sizeof(malloc_header_chunk));
             footer->size = header->size;
         } else if(current->size >= bytes){
             //This block is big enough
@@ -155,9 +156,13 @@ std::size_t* k_malloc(std::size_t bytes){
 
                 //Set the new size;
                 current->size = bytes;
-                ((malloc_footer_chunk*) current + bytes)->size = bytes;
 
-                auto new_block = (malloc_header_chunk*) current + bytes + sizeof(malloc_footer_chunk);
+                auto footer = reinterpret_cast<malloc_footer_chunk*>(
+                    reinterpret_cast<uintptr_t>(current) + bytes + sizeof(malloc_header_chunk));
+                footer->size = bytes;
+
+                auto new_block = reinterpret_cast<malloc_header_chunk*>(
+                    reinterpret_cast<uintptr_t>(current) + bytes + META_SIZE);
 
                 new_block->size = new_block_size;
                 new_block->next = current->next;
@@ -165,13 +170,16 @@ std::size_t* k_malloc(std::size_t bytes){
                 current->prev->next = new_block;
                 current->next->prev = new_block;
 
-                ((malloc_footer_chunk*) new_block + new_block_size)->size = new_block_size;
+                auto new_footer = reinterpret_cast<malloc_footer_chunk*>(
+                    reinterpret_cast<uintptr_t>(new_block) + new_block_size + sizeof(malloc_header_chunk));
+                new_footer->size = new_block_size;
 
                 //Make sure the node is clean
                 current->prev = nullptr;
                 current->next = nullptr;
 
-                return (std::size_t*) current + sizeof(malloc_header_chunk);
+                return reinterpret_cast<std::size_t*>(
+                    reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
             } else {
                 //Remove this node from the free list
                 current->prev->next = current->next;
@@ -182,7 +190,8 @@ std::size_t* k_malloc(std::size_t bytes){
                 current->next = nullptr;
 
                 //The found block can be returned as is
-                return (std::size_t*) current + sizeof(malloc_header_chunk);
+                return reinterpret_cast<std::size_t*>(
+                    reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
             }
         }
 
@@ -193,15 +202,15 @@ std::size_t* k_malloc(std::size_t bytes){
 void load_memory_map(){
     mmap_query(0, &e820_failed);
     mmap_query(1, &entry_count);
-    mmap_query(2, (std::size_t*) &e820_address);
+    mmap_query(2, reinterpret_cast<std::size_t*>(&e820_address));
 
     if(!e820_failed && e820_address){
         for(std::size_t i = 0; i < entry_count; ++i){
             auto& bios_entry = e820_address[i];
             auto& os_entry = e820_mmap[i];
 
-            std::size_t base = bios_entry.base_low + ((std::size_t) bios_entry.base_high << 32);
-            std::size_t length = bios_entry.length_low + ((std::size_t) bios_entry.length_high << 32);
+            std::size_t base = bios_entry.base_low + (static_cast<std::size_t>(bios_entry.base_high) << 32);
+            std::size_t length = bios_entry.length_low + (static_cast<std::size_t>(bios_entry.length_high) << 32);
 
             os_entry.base = base;
             os_entry.size = length;

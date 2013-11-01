@@ -27,8 +27,8 @@ void install_timer(){
     std::size_t divisor = 1193180 / 1000;
 
     out_byte(0x43, 0x36);
-    out_byte(0x40, (uint8_t) divisor);
-    out_byte(0x40, (uint8_t) (divisor >> 8));
+    out_byte(0x40, static_cast<uint8_t>(divisor));
+    out_byte(0x40, static_cast<uint8_t>(divisor >> 8));
 
     register_irq_handler<0>(timer_handler);
 }
