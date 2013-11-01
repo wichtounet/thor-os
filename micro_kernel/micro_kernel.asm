@@ -122,7 +122,7 @@ pm_start:
 
     mov edi, 0x73000 ; First PT
     mov ebx, 0x3     ; Present, Writeable and Supervisor only
-    mov ecx, 512     ; Map first two MiB
+    mov ecx, 256; Map first MiB
 
     .write_entry:
     mov dword [edi], ebx
