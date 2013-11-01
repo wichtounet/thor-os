@@ -1,7 +1,7 @@
 KERNEL_FLAGS=-masm=intel -Iinclude/ -O1 -std=c++11 -Wall -Wextra -pedantic -Wold-style-cast -Wshadow -fno-exceptions -fno-rtti -ffreestanding
 KERNEL_LINK_FLAGS=-std=c++11 -T linker.ld -ffreestanding -O1 -nostdlib
 
-KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o shell.o utils.o memory.o
+KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o shell.o utils.o memory.o thor.o
 
 kernel.bin: $(KERNEL_O_FILES)
 	g++ $(KERNEL_LINK_FLAGS) -o kernel.bin.o $(KERNEL_O_FILES)
@@ -30,6 +30,9 @@ utils.o: src/utils.cpp
 
 memory.o: src/memory.cpp
 	g++ $(KERNEL_FLAGS) -c src/memory.cpp -o memory.o
+
+thor.o: src/thor.cpp
+	g++ $(KERNEL_FLAGS) -c src/thor.cpp -o thor.o
 
 clean:
 	rm -f *.o
