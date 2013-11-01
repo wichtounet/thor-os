@@ -2,11 +2,6 @@
 
 namespace {
 
-const std::size_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
-const std::size_t MIN_SPLIT = 32;
-const std::size_t BLOCK_SIZE = 4096;
-const std::size_t MIN_BLOCKS = 4;
-
 struct bios_mmap_entry {
     uint32_t base_low;
     uint32_t base_high;
@@ -46,6 +41,11 @@ struct fake_head {
     std::size_t size_2;
 };
 
+const std::size_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
+const std::size_t MIN_SPLIT = 32;
+const std::size_t BLOCK_SIZE = 4096;
+const std::size_t MIN_BLOCKS = 4;
+
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
 
@@ -78,8 +78,6 @@ void init_memory_manager(){
 }
 
 std::size_t* k_malloc(std::size_t bytes){
-    std::size_t required_bytes = bytes + META_SIZE;
-
     malloc_header_chunk* current = malloc_head->next;
 
     while(true){
