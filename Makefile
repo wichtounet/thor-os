@@ -20,7 +20,7 @@ thor.flp: bootloader.bin micro_kernel.bin kernel.bin filler.bin
 	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
 
 qemu: thor.flp
-	qemu-kvm -cpu host -fda thor.flp
+	qemu-kvm -cpu host -fda thor.flp -hda hdd.img
 
 bochs: thor.flp
 	echo "c" > commands
@@ -34,6 +34,9 @@ debug: thor.flp
 
 force_look:
 	true
+
+create_hdd:
+	dd if=/dev/zero of=hdd.img bs=512 count=20160
 
 clean:
 	cd bootloader; $(MAKE) clean
