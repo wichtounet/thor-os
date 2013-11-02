@@ -35,9 +35,6 @@ debug: thor.flp
 force_look:
 	true
 
-create_hdd:
-	dd if=/dev/zero of=hdd.img bs=512 count=20160
-
 clean:
 	cd bootloader; $(MAKE) clean
 	cd kernel; $(MAKE) clean
