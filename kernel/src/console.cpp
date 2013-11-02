@@ -136,6 +136,14 @@ void k_printf(const char* fmt, ...){
         } else {
             ch = *(fmt++);
 
+            std::size_t min_width = 0;
+            while(ch >= '0' && ch <= '9'){
+                min_width = 10 * min_width + (ch - '0');
+                ch = *(fmt++);
+            }
+
+            auto prev  = current_column;
+
             if(ch == 'd'){
                 auto arg = va_arg(va, std::size_t);
                 k_print(arg);
@@ -187,6 +195,19 @@ void k_printf(const char* fmt, ...){
             } else if(ch == 's'){
                 auto arg = va_arg(va, const char*);
                 k_print(arg);
+            }
+
+            if(min_width > 0){
+                auto width = current_column - prev;
+
+                if(min_width > width){
+                    min_width -= width;
+
+                    while(min_width > 0){
+                        k_print(' ');
+                        --min_width;
+                    }
+                }
             }
         }
     }
