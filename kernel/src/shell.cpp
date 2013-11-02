@@ -21,6 +21,7 @@ void clear_command(const char* params);
 void date_command(const char* params);
 void sleep_command(const char* params);
 void echo_command(const char* params);
+void mmap_command(const char* params);
 void memory_command(const char* params);
 
 struct command_definition {
@@ -28,7 +29,7 @@ struct command_definition {
     void (*function)(const char*);
 };
 
-std::array<command_definition, 8> commands = {{
+std::array<command_definition, 9> commands = {{
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -36,7 +37,8 @@ std::array<command_definition, 8> commands = {{
     {"date", date_command},
     {"sleep", sleep_command},
     {"echo", echo_command},
-    {"memory", memory_command}
+    {"mmap", mmap_command},
+    {"memory", memory_command},
 }};
 
 std::size_t current_input_length = 0;
@@ -230,40 +232,43 @@ void echo_command(const char* params){
     k_print_line(params + 5);
 }
 
+void mmap_command(const char*){
+    if(mmap_failed()){
+        k_print_line("The mmap was not correctly loaded from e820");
+    } else {
+        k_printf("There are %d mmap entry\n", mmap_entry_count());
+
+        for(std::size_t i = 0; i < mmap_entry_count(); ++i){
+            auto& entry = mmap_entry(i);
+
+            k_printf("%h\t%h\t%d\t%s\n",
+                entry.base, entry.base + entry.size, entry.size, str_e820_type(entry.type));
+        }
+    }
+}
+
+void print_memory(const char* format, std::size_t memory){
+    if(memory > 1024 * 1024 * 1024){
+        k_printf(format, memory / (1024 * 1024 * 1024), "GiB");
+    } else if(memory > 1024 * 1024){
+        k_printf(format, memory / (1024 * 1024), "MiB");
+    } else if(memory > 1024){
+        k_printf(format, memory / 1024, "KiB");
+    } else {
+        k_printf(format, memory, "B");
+    }
+}
+
 void memory_command(const char*){
     if(mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");
     } else {
         k_printf("There are %d mmap entry\n", mmap_entry_count());
 
-        std::size_t available_memory = 0;
-
-        for(std::size_t i = 0; i < mmap_entry_count(); ++i){
-            auto& entry = mmap_entry(i);
-
-            if(entry.type == 1){
-                available_memory += entry.size;
-            }
-
-            k_printf("%h\t%h\t%d\t%s\n",
-                entry.base, entry.base + entry.size, entry.size, str_e820_type(entry.type));
-        }
-
-        if(available_memory > 1024 * 1024 * 1024){
-            k_printf("Total available memory: %dGiB\n", available_memory / (1024 * 1024 * 1024));
-        } else if(available_memory > 1024 * 1024){
-            k_printf("Total available memory: %dMiB\n", available_memory / (1024 * 1024));
-        } else if(available_memory > 1024){
-            k_printf("Total available memory: %dKiB\n", available_memory / 1024);
-        } else {
-            k_printf("Total available memory: %dB\n", available_memory);
-        }
+        print_memory("Total available memory: %d%s\n", available_memory());
+        print_memory("Total used memory: %d%s\n", used_memory());
+        print_memory("Total free memory: %d%s\n", free_memory());
     }
-
-    std::size_t* test = (std::size_t*) k_malloc(sizeof(std::size_t));
-    k_print(*test);
-    *test = 99;
-    k_print(*test);
 }
 
 } //end of anonymous namespace

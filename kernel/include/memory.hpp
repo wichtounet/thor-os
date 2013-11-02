@@ -19,4 +19,8 @@ void init_memory_manager();
 std::size_t* k_malloc(std::size_t bytes);
 void k_free(std::size_t* block);
 
+std::size_t available_memory();
+std::size_t free_memory();
+std::size_t used_memory();
+
 #endif
