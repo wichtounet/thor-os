@@ -48,6 +48,14 @@ long get_column(){
     return current_column;
 }
 
+void set_line(long line){
+    current_line= line;
+}
+
+long get_line(){
+    return current_line;
+}
+
 void k_print_line(){
     current_column = 0;
     ++current_line;

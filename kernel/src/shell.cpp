@@ -60,6 +60,11 @@ void keyboard_handler(){
 
             exec_command();
 
+            if(get_column() != 0){
+                set_column(0);
+                set_line(get_line() + 1);
+            }
+
             current_input_length = 0;
 
             k_print("thor> ");
@@ -254,6 +259,11 @@ void memory_command(const char*){
             k_printf("Total available memory: %dB\n", available_memory);
         }
     }
+
+    std::size_t* test = (std::size_t*) k_malloc(sizeof(std::size_t));
+    k_print(*test);
+    *test = 99;
+    k_print(*test);
 }
 
 } //end of anonymous namespace

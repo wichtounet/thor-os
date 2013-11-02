@@ -6,7 +6,7 @@ KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o shell.o util
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
 
-LINK_O_FILES=$(CRTBEGIN_OBJ) $(KERNEL_O_FILES) $(CRTEND_OBJ)
+LINK_O_FILES=$(KERNEL_O_FILES)
 
 kernel.bin: $(LINK_O_FILES)
 	g++ $(KERNEL_LINK_FLAGS) -o kernel.bin.o $(LINK_O_FILES)
