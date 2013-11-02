@@ -169,7 +169,7 @@ install_isrs:
 remap_irqs:
     mov al, 0x11
     out 0x20, al ; Restart PIC1
-    out 0xA1, al ; Restart PIC2
+    out 0xA0, al ; Restart PIC2
 
     mov al, 0x20
     out 0x21, al ; Make PIC1 starts at 32
@@ -185,7 +185,7 @@ remap_irqs:
     out 0x21, al ; 8086 mode for PIC1
     out 0xA1, al ; 8086 mode for PIC2
 
-    mov al, 0x00
+    mov al, 0x0
     out 0x21, al ; Enable all IRQs on PIC1
     out 0xA1, al ; Enable all IRQs on PIC2
 
