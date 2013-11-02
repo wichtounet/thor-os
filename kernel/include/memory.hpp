@@ -16,8 +16,14 @@ const mmapentry& mmap_entry(std::size_t i);
 const char* str_e820_type(std::size_t type);
 
 void init_memory_manager();
+
 std::size_t* k_malloc(std::size_t bytes);
 void k_free(std::size_t* block);
+
+template<typename T>
+T* k_malloc(){
+    return reinterpret_cast<T*>(k_malloc(sizeof(T)));
+}
 
 std::size_t available_memory();
 std::size_t free_memory();

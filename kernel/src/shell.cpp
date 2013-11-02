@@ -263,8 +263,6 @@ void memory_command(const char*){
     if(mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");
     } else {
-        k_printf("There are %d mmap entry\n", mmap_entry_count());
-
         print_memory("Total available memory: %d%s\n", available_memory());
         print_memory("Total used memory: %d%s\n", used_memory());
         print_memory("Total free memory: %d%s\n", free_memory());
