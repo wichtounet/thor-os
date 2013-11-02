@@ -241,11 +241,12 @@ void mmap_command(const char*){
     } else {
         k_printf("There are %d mmap entry\n", mmap_entry_count());
 
+        k_print_line("Base         End          Size         Type");
         for(std::size_t i = 0; i < mmap_entry_count(); ++i){
             auto& entry = mmap_entry(i);
 
-            k_printf("%h\t%h\t%d\t%s\n",
-                entry.base, entry.base + entry.size, entry.size, str_e820_type(entry.type));
+            k_printf("%.10h %.10h %.10h %.10d %s\n",
+                entry.base, entry.base + entry.size, entry.size, entry.size, str_e820_type(entry.type));
         }
     }
 }

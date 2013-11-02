@@ -68,6 +68,21 @@ void k_print_line(const char* string){
     ++current_line;
 }
 
+std::size_t digits(std::size_t number){
+    if(number < 10){
+        return 1;
+    }
+
+    int i = 0;
+
+    while(number != 0){
+        number /= 10;
+        ++i;
+    }
+
+    return i;
+}
+
 void k_print(std::size_t number){
     if(number == 0){
         k_print('0');
@@ -142,10 +157,34 @@ void k_printf(const char* fmt, ...){
                 ch = *(fmt++);
             }
 
+            std::size_t min_digits = 0;
+            if(ch == '.'){
+                ch = *(fmt++);
+
+                while(ch >= '0' && ch <= '9'){
+                    min_digits = 10 * min_digits + (ch - '0');
+                    ch = *(fmt++);
+                }
+            }
+
             auto prev  = current_column;
 
             if(ch == 'd'){
                 auto arg = va_arg(va, std::size_t);
+
+                if(min_digits > 0){
+                    auto d = digits(arg);
+                    if(min_digits > d){
+                        min_digits -= d;
+                        while(min_digits > 0){
+                            while(min_digits > 0){
+                                k_print('0');
+                                --min_digits;
+                            }
+                        }
+                    }
+                }
+
                 k_print(arg);
             } else if(ch == 'h'){
                 k_print("0x");
@@ -161,6 +200,14 @@ void k_printf(const char* fmt, ...){
                 }
 
                 buffer[i] = arg;
+
+                if(min_digits > 0 && min_digits > i){
+                    min_digits -= i + 1;
+                    while(min_digits > 0){
+                        k_print('0');
+                        --min_digits;
+                    }
+                }
 
                 while(i >= 0){
                     uint8_t digit = buffer[i];
