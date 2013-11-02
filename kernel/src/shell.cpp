@@ -10,8 +10,6 @@
 #include "utils.hpp"
 #include "memory.hpp"
 
-#include <vector>
-
 namespace {
 
 //Declarations of the different functions
@@ -226,8 +224,6 @@ void sleep_command(const char* params){
 void echo_command(const char* params){
     k_print_line(params + 5);
 }
-
-std::vector<std::size_t> test;
 
 void memory_command(const char*){
     if(mmap_failed()){
