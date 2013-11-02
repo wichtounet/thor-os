@@ -9,6 +9,7 @@
 #include "timer.hpp"
 #include "utils.hpp"
 #include "memory.hpp"
+#include "ata.hpp"
 
 namespace {
 
@@ -272,58 +273,12 @@ void memory_command(const char*){
 }
 
 void disks_command(const char*){
-    k_print_line("Controllers");
+    k_print_line("Controller   Drive    Present");
 
-    out_byte(0x1F3, 0x88);
-    bool primary = in_byte(0x1F3) == 0x88;
+    for(std::size_t i = 0; i < number_of_disks(); ++i){
+        auto& descriptor = drive(i);
 
-    out_byte(0x173, 0x88);
-    bool secondary = in_byte(0x173) == 0x88;
-
-    if(primary){
-        k_print_line("\t\tPrimary: Present");
-    } else {
-        k_print_line("\t\tPrimary: Not present");
-    }
-
-    if(secondary){
-        k_print_line("\t\tSecondary: Present");
-    } else {
-        k_print_line("\t\tSecondary: Not present");
-    }
-
-    k_print_line("Disks");
-
-    out_byte(0x1F6, 0xA0);
-    sleep_ms(5);
-    if(in_byte(0x1F7) & 0x40){
-        k_print_line("\t\tPrimary Master: Present");
-    } else {
-        k_print_line("\t\tPrimary Master: Not Present");
-    }
-
-    out_byte(0x1F6, 0xB0);
-    sleep_ms(5);
-    if(in_byte(0x1F7) & 0x40){
-        k_print_line("\t\tPrimary Slave: Present");
-    } else {
-        k_print_line("\t\tPrimary Slave: Not Present");
-    }
-
-    out_byte(0x176, 0xA0);
-    sleep_ms(5);
-    if(in_byte(0x177) & 0x40){
-        k_print_line("\t\tSecondary Master: Present");
-    } else {
-        k_print_line("\t\tSecondary Master: Not Present");
-    }
-
-    out_byte(0x176, 0xB0);
-    sleep_ms(5);
-    if(in_byte(0x177) & 0x40){
-        k_print_line("\t\tSecondary Slave: Present");
-    } else {
-        k_print_line("\t\tSecondary Slave: Not Present");
+        k_printf("%h  %h   %s\n", descriptor.controller, descriptor.drive, descriptor.present ? "Yes" : "No");
     }
 }
 
