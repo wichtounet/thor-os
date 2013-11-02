@@ -23,13 +23,14 @@ void sleep_command(const char* params);
 void echo_command(const char* params);
 void mmap_command(const char* params);
 void memory_command(const char* params);
+void disks_command(const char* params);
 
 struct command_definition {
     const char* name;
     void (*function)(const char*);
 };
 
-std::array<command_definition, 9> commands = {{
+std::array<command_definition, 10> commands = {{
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -39,6 +40,7 @@ std::array<command_definition, 9> commands = {{
     {"echo", echo_command},
     {"mmap", mmap_command},
     {"memory", memory_command},
+    {"disks", disks_command},
 }};
 
 std::size_t current_input_length = 0;
@@ -266,6 +268,62 @@ void memory_command(const char*){
         print_memory("Total available memory: %d%s\n", available_memory());
         print_memory("Total used memory: %d%s\n", used_memory());
         print_memory("Total free memory: %d%s\n", free_memory());
+    }
+}
+
+void disks_command(const char*){
+    k_print_line("Controllers");
+
+    out_byte(0x1F3, 0x88);
+    bool primary = in_byte(0x1F3) == 0x88;
+
+    out_byte(0x173, 0x88);
+    bool secondary = in_byte(0x173) == 0x88;
+
+    if(primary){
+        k_print_line("\t\tPrimary: Present");
+    } else {
+        k_print_line("\t\tPrimary: Not present");
+    }
+
+    if(secondary){
+        k_print_line("\t\tSecondary: Present");
+    } else {
+        k_print_line("\t\tSecondary: Not present");
+    }
+
+    k_print_line("Disks");
+
+    out_byte(0x1F6, 0xA0);
+    sleep_ms(5);
+    if(in_byte(0x1F7) & 0x40){
+        k_print_line("\t\tPrimary Master: Present");
+    } else {
+        k_print_line("\t\tPrimary Master: Not Present");
+    }
+
+    out_byte(0x1F6, 0xB0);
+    sleep_ms(5);
+    if(in_byte(0x1F7) & 0x40){
+        k_print_line("\t\tPrimary Slave: Present");
+    } else {
+        k_print_line("\t\tPrimary Slave: Not Present");
+    }
+
+    out_byte(0x176, 0xA0);
+    sleep_ms(5);
+    if(in_byte(0x177) & 0x40){
+        k_print_line("\t\tSecondary Master: Present");
+    } else {
+        k_print_line("\t\tSecondary Master: Not Present");
+    }
+
+    out_byte(0x176, 0xB0);
+    sleep_ms(5);
+    if(in_byte(0x177) & 0x40){
+        k_print_line("\t\tSecondary Slave: Present");
+    } else {
+        k_print_line("\t\tSecondary Slave: Not Present");
     }
 }
 
