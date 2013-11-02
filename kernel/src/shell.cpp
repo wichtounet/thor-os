@@ -138,13 +138,13 @@ void uptime_command(const char*){
 #define cmos_data           0x71
 
 int get_update_in_progress_flag() {
-      out_byte(cmos_address, 0x0A);
-      return (in_byte(cmos_data) & 0x80);
+    out_byte(cmos_address, 0x0A);
+    return (in_byte(cmos_data) & 0x80);
 }
 
 uint8_t get_RTC_register(int reg) {
-      out_byte(cmos_address, reg);
-      return in_byte(cmos_data);
+    out_byte(cmos_address, reg);
+    return in_byte(cmos_data);
 }
 
 void date_command(const char*){
@@ -222,7 +222,7 @@ void date_command(const char*){
         year += 100;
     }
 
-    k_printf("%d.%d.%d %d:%d:%d\n", day, month, year, hour, minute, second);
+    k_printf("%d.%d.%d %d:%.2d:%.2d\n", day, month, year, hour, minute, second);
 }
 
 void sleep_command(const char* params){
