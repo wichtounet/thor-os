@@ -227,7 +227,7 @@ void echo_command(const char* params){
     k_print_line(params + 5);
 }
 
-//std::vector<std::size_t> test;
+std::vector<std::size_t> test;
 
 void memory_command(const char*){
     if(mmap_failed()){
@@ -258,10 +258,6 @@ void memory_command(const char*){
             k_printf("Total available memory: %dB\n", available_memory);
         }
     }
-
-    std::size_t address;
-    __asm__ __volatile__ ("mov %0, rsp" : : "a" (address));
-    k_printf("%h\n", address);
 }
 
 } //end of anonymous namespace
