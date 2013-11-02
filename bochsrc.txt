@@ -1,2 +1,4 @@
+display_library: sdl
+magic_break: enabled=1
 floppya: 1_44=thor.flp, status=inserted
 boot:floppy

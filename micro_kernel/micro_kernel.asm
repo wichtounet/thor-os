@@ -192,18 +192,18 @@ GDT64:
         db 0x0
 
     DATA_SELECTOR:          ; flat data selector (ring 0)
-        dw  0x0FFFF
-        db  0x0, 0x0, 0x0
-        db  10010010b
-        db  10001111b
-        db  0x0
+        dw 0x0FFFF
+        db 0x0, 0x0, 0x0
+        db 10010010b
+        db 10001111b
+        db 0x0
 
     LONG_SELECTOR:  ; 64-bit code selector (ring 0)
-        dw  0x0FFFF
-        db  0x0, 0x0, 0x0
-        db  10011010b
-        db  10101111b
-        db  0x0
+        dw 0x0FFFF
+        db 0x0, 0x0, 0x0
+        db 10011010b
+        db 10101111b
+        db 0x0
 
 GDTR64:
     dw 4 * 8 - 1 ; Length of GDT

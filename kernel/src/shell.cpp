@@ -10,6 +10,8 @@
 #include "utils.hpp"
 #include "memory.hpp"
 
+#include <vector>
+
 namespace {
 
 //Declarations of the different functions
@@ -225,6 +227,8 @@ void echo_command(const char* params){
     k_print_line(params + 5);
 }
 
+//std::vector<std::size_t> test;
+
 void memory_command(const char*){
     if(mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");
@@ -254,6 +258,10 @@ void memory_command(const char*){
             k_printf("Total available memory: %dB\n", available_memory);
         }
     }
+
+    std::size_t address;
+    __asm__ __volatile__ ("mov %0, rsp" : : "a" (address));
+    k_printf("%h\n", address);
 }
 
 } //end of anonymous namespace

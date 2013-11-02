@@ -6,7 +6,6 @@ jmp rm_start
 
 ; Start in real mode
 rm_start:
-
     ; Set stack space (4K) and stack segment
 
     mov ax, 0x7C0
@@ -63,16 +62,12 @@ rm_start:
 
     ; Loading the assembly kernel from floppy
 
-    ASM_KERNEL_BASE equ 0x100   ; 0x0100:0x0 = 0x1000
-    sectors equ 0x30            ; sectors to read
-    bootdev equ 0x0
-
-    mov ax, ASM_KERNEL_BASE
+    mov ax, 0x90
     mov es, ax
     xor bx, bx
 
     mov ah, 0x2         ; Read sectors from memory
-    mov al, sectors ; Number of sectors to read
+    mov al, 1           ; Number of sectors to read
     xor ch, ch          ; Cylinder 0
     mov cl, 2           ; Sector 2
     xor dh, dh          ; Head 0
@@ -81,12 +76,12 @@ rm_start:
 
     jc read_failed
 
-    cmp al, sectors
+    cmp al, 1
     jne read_failed
 
     ; Run the assembly kernel
 
-    jmp dword ASM_KERNEL_BASE:0x0
+    jmp dword 0x90:0x0
 
     reset_failed:
     mov si, reset_failed_msg
@@ -121,3 +116,32 @@ error_end:
 
     times 510-($-$$) db 0
     dw 0xAA55
+
+second_step:
+    ; Reset disk drive
+    xor ax, ax
+    xor ah, ah
+    mov dl, 0
+    int 0x13
+
+    ; Loading the assembly kernel from floppy
+
+    KERNEL_BASE equ 0x100      ; 0x100:0x0 = 0x1000
+    sectors equ 0x40           ; sectors to read
+    bootdev equ 0x0
+
+    mov ax, KERNEL_BASE
+    mov es, ax
+    xor bx, bx
+
+    mov ah, 0x2         ; Read sectors from memory
+    mov al, sectors     ; Number of sectors to read
+    xor ch, ch          ; Cylinder 0
+    mov cl, 3           ; Sector 2
+    xor dh, dh          ; Head 0
+    mov dl, bootdev     ; Drive
+    int 0x13
+
+    jmp dword KERNEL_BASE:0x0
+
+    times 1024-($-$$) db 0

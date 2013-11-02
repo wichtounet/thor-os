@@ -23,7 +23,14 @@ qemu: thor.flp
 	qemu-kvm -cpu host -fda thor.flp
 
 bochs: thor.flp
-	bochs -q -f bochsrc.txt
+	echo "c" > commands
+	bochs -qf bochsrc.txt -rc commands
+	rm commands
+
+debug: thor.flp
+	echo "c" > commands
+	bochs -qf bochsrc.txt -rc commands
+	rm commands
 
 force_look:
 	true
