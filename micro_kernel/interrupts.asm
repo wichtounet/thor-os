@@ -36,6 +36,8 @@ STRING isr31_msg, "31: Reserved Exception "
 
 STRING cr2_str, "cr2: "
 STRING rsp_str, "rsp: "
+STRING error_code_str, "Error code: "
+STRING rip_str, "rip: "
 
 ; Macros
 
@@ -44,7 +46,8 @@ _isr%1:
     ; Disable interruptions to avoid being interrupted
     cli
 
-    push r8
+    mov r10, [rsp]
+    mov r11, [rsp+8]
 
     lea rdi, [12 * 8 * 0x14 + 30 * 2 + TRAM]
     mov dl, STYLE(RED_F, WHITE_B)
@@ -55,7 +58,7 @@ _isr%1:
     cmp rax, 14
     jne .end
 
-    .page_fault_exception
+    .page_fault_exception:
 
     ; print cr2
 
@@ -77,13 +80,30 @@ _isr%1:
     mov r8, rsp
     call print_int
 
-    .end
+    ; print rip
+
+    lea rdi, [15 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, rip_str
+    call print_string
+
+    lea rdi, [15* 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, r11
+    call print_int
+
+    ; print error code
+
+    lea rdi, [16 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, error_code_str
+    call print_string
+
+    lea rdi, [16 * 8 * 0x14 + 30 * 2 + TRAM + error_code_str_length * 2]
+    mov r8, r10
+    call print_int
+
+    .end:
 
     ; Simply halt the CPU because we don't know how to solve the problem
     hlt
-
-    pop r8
-
     iretq
 %endmacro
 
