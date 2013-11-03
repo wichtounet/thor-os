@@ -259,6 +259,20 @@ void memory_command(const char*){
         k_printf("Total used memory: %m\n", used_memory());
         k_printf("Total free memory: %m\n", free_memory());
     }
+
+    uint16_t* buffer = reinterpret_cast<uint16_t*>(k_malloc(512));
+
+    if(!ata_read_sectors(drive(0), 2048, 1, buffer)){
+        k_print_line("Read failed");
+    } else {
+        for(int i = 0; i < 80; i += 8){
+            k_printf("%h %h %h %h %h %h %h %h\n",
+                buffer[i+0], buffer[i+1], buffer[i+2], buffer[i+3],
+                buffer[i+4], buffer[i+5], buffer[i+6], buffer[i+7]);
+        }
+
+        k_free(reinterpret_cast<std::size_t*>(buffer));
+    }
 }
 
 void disks_command(const char*){
