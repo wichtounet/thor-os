@@ -43,6 +43,9 @@ drive_descriptor* drives;
 volatile bool primary_invoked = false;
 volatile bool secondary_invoked = false;
 
+//TODO In the future, the wait for IRQs, could
+//be done with a semaphore
+
 void primary_controller_handler(){
     primary_invoked = true;
 }
@@ -73,6 +76,33 @@ void ata_wait_irq_secondary(){
     }
 
     secondary_invoked = false;
+}
+
+static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
+    uint8_t status;
+    do {
+        status = in_byte(controller + ATA_STATUS);
+        sleep_ms(1);
+    } while ((status & mask) != value && --timeout);
+
+    return timeout;
+}
+
+bool select_device(drive_descriptor& drive){
+    auto controller = drive.controller;
+
+    if(in_byte(controller + ATA_STATUS) & (ATA_STATUS_BSY | ATA_STATUS_DRQ)){
+        return false;
+    }
+
+    out_byte(controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
+    sleep_ms(1);
+
+    if(in_byte(controller + ATA_STATUS) & (ATA_STATUS_BSY | ATA_STATUS_DRQ)){
+        return false;
+    }
+
+    return true;
 }
 
 } //end of anonymous namespace
@@ -115,35 +145,6 @@ drive_descriptor& drive(uint8_t disk){
     }
 
     return drives[disk];
-}
-
-//TODO MOVE to anonymous
-
-static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
-    uint8_t status;
-    do {
-        status = in_byte(controller + ATA_STATUS);
-        sleep_ms(1);
-    } while ((status & mask) != value && --timeout);
-
-    return timeout;
-}
-
-bool select_device(drive_descriptor& drive){
-    auto controller = drive.controller;
-
-    if(in_byte(controller + ATA_STATUS) & (ATA_STATUS_BSY | ATA_STATUS_DRQ)){
-        return false;
-    }
-
-    out_byte(controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
-    sleep_ms(1);
-
-    if(in_byte(controller + ATA_STATUS) & (ATA_STATUS_BSY | ATA_STATUS_DRQ)){
-        return false;
-    }
-
-    return true;
 }
 
 bool ata_read_sectors(drive_descriptor& drive, std::size_t start, uint8_t count, void* destination){
