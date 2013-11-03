@@ -34,6 +34,9 @@ STRING isr29_msg, "29: Reserved Exception "
 STRING isr30_msg, "30: Reserved Exception "
 STRING isr31_msg, "31: Reserved Exception "
 
+STRING cr2_str, "cr2: "
+STRING rsp_str, "rsp: "
+
 ; Macros
 
 %macro CREATE_ISR 1
@@ -42,19 +45,43 @@ _isr%1:
     cli
 
     push r8
-    push r9
 
     lea rdi, [12 * 8 * 0x14 + 30 * 2 + TRAM]
-
-    mov rbx, isr%1_msg
-    mov r9, isr%1_msg_length
     mov dl, STYLE(RED_F, WHITE_B)
+    mov rbx, isr%1_msg
     call print_string
+
+    mov rax, %1
+    cmp rax, 14
+    jne .end
+
+    .page_fault_exception
+
+    ; print cr2
+
+    lea rdi, [13 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, cr2_str
+    call print_string
+
+    lea rdi, [13 * 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, cr2
+    call print_int
+
+    ; print rsp
+
+    lea rdi, [14 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, rsp_str
+    call print_string
+
+    lea rdi, [14 * 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, rsp
+    call print_int
+
+    .end
 
     ; Simply halt the CPU because we don't know how to solve the problem
     hlt
 
-    pop r9
     pop r8
 
     iretq
