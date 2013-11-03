@@ -266,9 +266,9 @@ void memory_command(const char*){
         k_print_line("Read failed");
     } else {
         for(int i = 0; i < 80; i += 8){
-            k_printf("%h %h %h %h %h %h %h %h\n",
-                buffer[i+0], buffer[i+1], buffer[i+2], buffer[i+3],
-                buffer[i+4], buffer[i+5], buffer[i+6], buffer[i+7]);
+            k_printf("%.4h %.4h %.4h %.4h %.4h %.4h %.4h %.4h\n",
+                (std::size_t) buffer[i+0], (std::size_t) buffer[i+1], (std::size_t) buffer[i+2], (std::size_t) buffer[i+3],
+                (std::size_t) buffer[i+4], (std::size_t) buffer[i+5], (std::size_t) buffer[i+6], (std::size_t) buffer[i+7]);
         }
 
         k_free(reinterpret_cast<std::size_t*>(buffer));

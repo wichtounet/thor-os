@@ -29,7 +29,7 @@ bochs: thor.flp
 
 debug: thor.flp
 	echo "c" > commands
-	bochs -qf bochsrc.txt -rc commands
+	bochs -qf debug_bochsrc.txt -rc commands
 	rm commands
 
 force_look:

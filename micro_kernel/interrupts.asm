@@ -46,28 +46,22 @@ _isr%1:
     ; Disable interruptions to avoid being interrupted
     cli
 
-    mov r10, [rsp]
-    mov r11, [rsp+8]
+    mov r10, [rsp] ; error code
+    mov r11, [rsp+8] ; saved rip
 
     lea rdi, [12 * 8 * 0x14 + 30 * 2 + TRAM]
     mov dl, STYLE(RED_F, WHITE_B)
     mov rbx, isr%1_msg
     call print_string
 
-    mov rax, %1
-    cmp rax, 14
-    jne .end
-
-    .page_fault_exception:
-
-    ; print cr2
+    ; print rip
 
     lea rdi, [13 * 8 * 0x14 + 30 * 2 + TRAM]
-    mov rbx, cr2_str
+    mov rbx, rip_str
     call print_string
 
-    lea rdi, [13 * 8 * 0x14 + 35 * 2 + TRAM]
-    mov r8, cr2
+    lea rdi, [13* 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, r11
     call print_int
 
     ; print rsp
@@ -80,14 +74,22 @@ _isr%1:
     mov r8, rsp
     call print_int
 
-    ; print rip
+    ; More informations for some specific exceptions
+
+    mov rax, %1
+    cmp rax, 14
+    jne .end
+
+    .page_fault_exception:
+
+    ; print cr2
 
     lea rdi, [15 * 8 * 0x14 + 30 * 2 + TRAM]
-    mov rbx, rip_str
+    mov rbx, cr2_str
     call print_string
 
-    lea rdi, [15* 8 * 0x14 + 35 * 2 + TRAM]
-    mov r8, r11
+    lea rdi, [15 * 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, cr2
     call print_int
 
     ; print error code
@@ -112,14 +114,32 @@ _irq%1:
     ; Disable interruptions to avoid being interrupted
     cli
 
+    push rax
+
     mov rax, [irq_handlers + 8 *%1]
 
     ; If there are no handler, just send EOI
     test rax, rax
     je .eoi
 
+    push rbx
+    push rcx
+    push rdx
+    push rsi
+    push rdi
+    push r8
+    push r9
+
     ; Call the handler
     call rax
+
+    push r9
+    push r8
+    pop rdi
+    pop rsi
+    pop rdx
+    pop rcx
+    pop rbx
 
     .eoi:
 
@@ -137,6 +157,8 @@ _irq%1:
     ; Send EOI to PIC1
     mov al, 0x20
     out 0x20, al
+
+    pop rax
 
     iretq
 %endmacro
