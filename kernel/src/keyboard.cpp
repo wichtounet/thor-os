@@ -1,4 +1,5 @@
 #include "keyboard.hpp"
+#include "kernel_utils.hpp"
 
 namespace {
 
@@ -42,8 +43,50 @@ char qwertz[128] =
     0,	/* All other keys are undefined */
 };
 
+const uint8_t BUFFER_SIZE = 64;
+
+char input_buffer[BUFFER_SIZE];
+volatile uint8_t start;
+volatile uint8_t count;
+
+void keyboard_handler(){
+    auto key = static_cast<char>(in_byte(0x60));
+
+    if(count == BUFFER_SIZE){
+        //The buffer is full, we loose the characters
+    } else {
+        auto end = (start + count) % BUFFER_SIZE;
+        input_buffer[end] = key;
+        ++count;
+    }
 }
 
-char key_to_ascii(uint8_t key){
+}
+
+void keyboard::install_driver(){
+    register_irq_handler<1>(keyboard_handler);
+
+    start = 0;
+    count = 0;
+}
+
+char keyboard::get_char(){
+    //Wait for the buffer to contains something
+    while(count == 0){
+        __asm__  __volatile__ ("nop");
+        __asm__  __volatile__ ("nop");
+        __asm__  __volatile__ ("nop");
+        __asm__  __volatile__ ("nop");
+        __asm__  __volatile__ ("nop");
+    }
+
+    auto key = input_buffer[start];
+    start = (start + 1) % BUFFER_SIZE;
+    --count;
+
+    return key;
+}
+
+char keyboard::key_to_ascii(uint8_t key){
     return qwertz[key];
 }

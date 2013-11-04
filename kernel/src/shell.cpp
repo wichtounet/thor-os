@@ -46,45 +46,44 @@ char current_input[50];
 
 void exec_command();
 
-#define KEY_ENTER 0x1C
-#define KEY_BACKSPACE 0x0E
+void start_shell(){
+    while(true){
+        auto key = keyboard::get_char();
 
-void keyboard_handler(){
-    uint8_t key = in_byte(0x60);
-
-    if(key & 0x80){
-        //TODO Handle shift
-    } else {
-        if(key == KEY_ENTER){
-            current_input[current_input_length] = '\0';
-
-            k_print_line();
-
-            exec_command();
-
-            if(get_column() != 0){
-                set_column(0);
-                set_line(get_line() + 1);
-            }
-
-            current_input_length = 0;
-
-            k_print("thor> ");
-        } else if(key == KEY_BACKSPACE){
-            if(current_input_length > 0){
-                set_column(get_column() - 1);
-                k_print(' ');
-                set_column(get_column() - 1);
-
-                --current_input_length;
-            }
+        if(key & 0x80){
+            //TODO Handle shift
         } else {
-           auto qwertz_key = key_to_ascii(key);
+            if(key == keyboard::KEY_ENTER){
+                current_input[current_input_length] = '\0';
 
-           if(qwertz_key > 0){
-               current_input[current_input_length++] = qwertz_key;
-               k_print(qwertz_key);
-           }
+                k_print_line();
+
+                exec_command();
+
+                if(get_column() != 0){
+                    set_column(0);
+                    set_line(get_line() + 1);
+                }
+
+                current_input_length = 0;
+
+                k_print("thor> ");
+            } else if(key == keyboard::KEY_BACKSPACE){
+                if(current_input_length > 0){
+                    set_column(get_column() - 1);
+                    k_print(' ');
+                    set_column(get_column() - 1);
+
+                    --current_input_length;
+                }
+            } else {
+                auto qwertz_key = keyboard::key_to_ascii(key);
+
+                if(qwertz_key > 0){
+                    current_input[current_input_length++] = qwertz_key;
+                    k_print(qwertz_key);
+                }
+            }
         }
     }
 }
@@ -291,5 +290,5 @@ void init_shell(){
 
     k_print("thor> ");
 
-    register_irq_handler<1>(keyboard_handler);
+    start_shell();
 }
