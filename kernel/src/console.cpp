@@ -1,5 +1,4 @@
-#include <cstddef>
-#include <cstdarg>
+#include <stdarg.h>
 
 #include "console.hpp"
 #include "types.hpp"
@@ -68,7 +67,7 @@ void k_print_line(const char* string){
     ++current_line;
 }
 
-std::size_t digits(std::size_t number){
+uint64_t digits(uint64_t number){
     if(number < 10){
         return 1;
     }
@@ -83,7 +82,7 @@ std::size_t digits(std::size_t number){
     return i;
 }
 
-void k_print(std::size_t number){
+void k_print(uint64_t number){
     if(number == 0){
         k_print('0');
         return;
@@ -130,7 +129,7 @@ void wipeout(){
     current_column = 0;
 
     for(int line = 0; line < 25; ++line){
-        for(std::size_t column = 0; column < 80; ++column){
+        for(uint64_t column = 0; column < 80; ++column){
             k_print(' ');
         }
     }
@@ -151,13 +150,13 @@ void k_printf(const char* fmt, ...){
         } else {
             ch = *(fmt++);
 
-            std::size_t min_width = 0;
+            uint64_t min_width = 0;
             while(ch >= '0' && ch <= '9'){
                 min_width = 10 * min_width + (ch - '0');
                 ch = *(fmt++);
             }
 
-            std::size_t min_digits = 0;
+            uint64_t min_digits = 0;
             if(ch == '.'){
                 ch = *(fmt++);
 
@@ -171,7 +170,7 @@ void k_printf(const char* fmt, ...){
 
             //Decimal
             if(ch == 'd'){
-                auto arg = va_arg(va, std::size_t);
+                auto arg = va_arg(va, uint64_t);
 
                 if(min_digits > 0){
                     auto d = digits(arg);
@@ -194,7 +193,7 @@ void k_printf(const char* fmt, ...){
 
                 uint8_t buffer[20];
 
-                auto arg = va_arg(va, std::size_t);
+                auto arg = va_arg(va, uint64_t);
                 int i = 0;
 
                 while(arg / 16 != 0){
@@ -245,7 +244,7 @@ void k_printf(const char* fmt, ...){
             }
             //Memory
             else if(ch == 'm'){
-                auto memory= va_arg(va, std::size_t);
+                auto memory= va_arg(va, uint64_t);
 
                 if(memory > 1024 * 1024 * 1024){
                     k_print(memory / (1024 * 1024 * 1024));

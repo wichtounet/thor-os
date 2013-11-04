@@ -9,7 +9,7 @@ bool str_equals(const char* a, const char* b){
     return *a == *b;
 }
 
-std::size_t parse(const char* str){
+uint64_t parse(const char* str){
     int i = 0;
 
     const char* it = str;
@@ -17,8 +17,8 @@ std::size_t parse(const char* str){
         ++i;
     }
 
-    std::size_t factor = 1;
-    std::size_t acc = 0;
+    uint64_t factor = 1;
+    uint64_t acc = 0;
 
     for(; i >= 0; --i){
         acc += (str[i] - '0') * factor;

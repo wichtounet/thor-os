@@ -1,9 +1,9 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <cstddef>
+#include "types.hpp"
 
-std::size_t parse(const char* str);
+uint64_t parse(const char* str);
 
 bool str_equals(const char* a, const char* b);
 bool str_contains(const char* a, char c);

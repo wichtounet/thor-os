@@ -14,6 +14,6 @@ void detect_disks();
 uint8_t number_of_disks();
 drive_descriptor& drive(uint8_t disk);
 
-bool ata_read_sectors(drive_descriptor& drive, std::size_t start, uint8_t count, void* destination);
+bool ata_read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination);
 
 #endif

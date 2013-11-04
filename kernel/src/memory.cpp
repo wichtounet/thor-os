@@ -12,63 +12,63 @@ struct bios_mmap_entry {
     uint32_t damn_padding;
 } __attribute__((packed));
 
-std::size_t e820_failed = 0;
-std::size_t entry_count = 0;
+uint64_t e820_failed = 0;
+uint64_t entry_count = 0;
 bios_mmap_entry* e820_address = 0;
 
 mmapentry e820_mmap[32];
 
-void mmap_query(std::size_t cmd, std::size_t* result){
-    std::size_t tmp;
+void mmap_query(uint64_t cmd, uint64_t* result){
+    uint64_t tmp;
     __asm__ __volatile__ ("mov r8, %0; int 62; mov %1, rax" : : "dN" (cmd), "a" (tmp));
     *result = tmp;
 }
 
-std::size_t _available_memory;
-std::size_t _used_memory;
+uint64_t _available_memory;
+uint64_t _used_memory;
 
 struct malloc_header_chunk {
-    std::size_t size;
+    uint64_t size;
     malloc_header_chunk* next;
     malloc_header_chunk* prev;
 };
 
 struct malloc_footer_chunk {
-    std::size_t size;
+    uint64_t size;
 };
 
 struct fake_head {
-    std::size_t size;
+    uint64_t size;
     malloc_header_chunk* next;
     malloc_header_chunk* prev;
-    std::size_t size_2;
+    uint64_t size_2;
 };
 
-const std::size_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
-const std::size_t MIN_SPLIT = 32;
-const std::size_t BLOCK_SIZE = 4096;
-const std::size_t MIN_BLOCKS = 4;
+const uint64_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
+const uint64_t MIN_SPLIT = 32;
+const uint64_t BLOCK_SIZE = 4096;
+const uint64_t MIN_BLOCKS = 4;
 
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
 
-typedef std::size_t* page_entry;
+typedef uint64_t* page_entry;
 typedef page_entry* pt_t;
 typedef pt_t* pdt_t;
 typedef pdt_t* pdpt_t;
 typedef pdpt_t* pml4t_t;
 
 mmapentry* current_mmap_entry = nullptr;
-std::size_t current_mmap_entry_position;
+uint64_t current_mmap_entry_position;
 
-std::size_t pml4t_index = 0;
-std::size_t pdpt_index = 0;
-std::size_t pdt_index = 0;
-std::size_t pt_index = 256;
+uint64_t pml4t_index = 0;
+uint64_t pdpt_index = 0;
+uint64_t pdt_index = 0;
+uint64_t pt_index = 256;
 
-std::size_t* allocate_block(std::size_t blocks){
+uint64_t* allocate_block(uint64_t blocks){
     if(!current_mmap_entry){
-        for(std::size_t i = 0; i < entry_count; ++i){
+        for(uint64_t i = 0; i < entry_count; ++i){
             auto& entry = e820_mmap[i];
 
             if(entry.type == 1 && entry.base >= 0x100000 && entry.size >= 16384){
@@ -92,11 +92,11 @@ std::size_t* allocate_block(std::size_t blocks){
         //TODO Go to a new page table
     }
 
-    for(std::size_t i = 0; i < blocks; ++i){
+    for(uint64_t i = 0; i < blocks; ++i){
         pt[pt_index + i] = reinterpret_cast<page_entry>((current_mmap_entry_position + i * BLOCK_SIZE) | 0x3);
     }
 
-    auto block = reinterpret_cast<std::size_t*>(current_mmap_entry_position);
+    auto block = reinterpret_cast<uint64_t*>(current_mmap_entry_position);
 
     pt_index += blocks;
     current_mmap_entry_position += blocks * BLOCK_SIZE;
@@ -130,14 +130,14 @@ void init_memory_manager(){
     malloc_head->prev = header;
 }
 
-std::size_t* k_malloc(std::size_t bytes){
+uint64_t* k_malloc(uint64_t bytes){
     auto current = malloc_head->next;
 
     while(true){
         if(current == malloc_head){
             //There are no blocks big enough to hold this request
 
-            std::size_t* block = allocate_block(MIN_BLOCKS);
+            uint64_t* block = allocate_block(MIN_BLOCKS);
             auto header = reinterpret_cast<malloc_header_chunk*>(block);
             header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
 
@@ -196,11 +196,11 @@ std::size_t* k_malloc(std::size_t bytes){
     current->prev = nullptr;
     current->next = nullptr;
 
-    return reinterpret_cast<std::size_t*>(
+    return reinterpret_cast<uint64_t*>(
         reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
 }
 
-void k_free(std::size_t* block){
+void k_free(uint64_t* block){
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 
@@ -218,15 +218,15 @@ void k_free(std::size_t* block){
 void load_memory_map(){
     mmap_query(0, &e820_failed);
     mmap_query(1, &entry_count);
-    mmap_query(2, reinterpret_cast<std::size_t*>(&e820_address));
+    mmap_query(2, reinterpret_cast<uint64_t*>(&e820_address));
 
     if(!e820_failed && e820_address){
-        for(std::size_t i = 0; i < entry_count; ++i){
+        for(uint64_t i = 0; i < entry_count; ++i){
             auto& bios_entry = e820_address[i];
             auto& os_entry = e820_mmap[i];
 
-            std::size_t base = bios_entry.base_low + (static_cast<std::size_t>(bios_entry.base_high) << 32);
-            std::size_t length = bios_entry.length_low + (static_cast<std::size_t>(bios_entry.length_high) << 32);
+            uint64_t base = bios_entry.base_low + (static_cast<uint64_t>(bios_entry.base_high) << 32);
+            uint64_t length = bios_entry.length_low + (static_cast<uint64_t>(bios_entry.length_high) << 32);
 
             os_entry.base = base;
             os_entry.size = length;
@@ -243,7 +243,7 @@ void load_memory_map(){
     }
 }
 
-std::size_t mmap_entry_count(){
+uint64_t mmap_entry_count(){
     return entry_count;
 }
 
@@ -251,11 +251,11 @@ bool mmap_failed(){
     return e820_failed;
 }
 
-const mmapentry& mmap_entry(std::size_t i){
+const mmapentry& mmap_entry(uint64_t i){
     return e820_mmap[i];
 }
 
-const char* str_e820_type(std::size_t type){
+const char* str_e820_type(uint64_t type){
     switch(type){
         case 1:
             return "Free";
@@ -275,14 +275,14 @@ const char* str_e820_type(std::size_t type){
     }
 }
 
-std::size_t available_memory(){
+uint64_t available_memory(){
     return _available_memory;
 }
 
-std::size_t used_memory(){
+uint64_t used_memory(){
     return _used_memory;
 }
 
-std::size_t free_memory(){
+uint64_t free_memory(){
     return _available_memory - _used_memory;
 }

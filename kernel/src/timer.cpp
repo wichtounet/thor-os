@@ -4,10 +4,10 @@
 
 namespace {
 
-std::size_t _timer_ticks = 0;
-std::size_t _timer_seconds = 0;
+uint64_t _timer_ticks = 0;
+uint64_t _timer_seconds = 0;
 
-volatile std::size_t _timer_countdown = 0;
+volatile uint64_t _timer_countdown = 0;
 
 void timer_handler(){
     ++_timer_ticks;
@@ -24,7 +24,7 @@ void timer_handler(){
 }
 
 void install_timer(){
-    std::size_t divisor = 1193180 / 1000;
+    uint64_t divisor = 1193180 / 1000;
 
     out_byte(0x43, 0x36);
     out_byte(0x40, static_cast<uint8_t>(divisor));
@@ -33,7 +33,7 @@ void install_timer(){
     register_irq_handler<0>(timer_handler);
 }
 
-void sleep_ms(std::size_t delay){
+void sleep_ms(uint64_t delay){
     _timer_countdown = delay;
 
     while(true){
@@ -54,10 +54,10 @@ void sleep_ms(std::size_t delay){
     __asm__  __volatile__ ("sti");
 }
 
-std::size_t timer_ticks(){
+uint64_t timer_ticks(){
     return _timer_ticks;
 }
 
-std::size_t timer_seconds(){
+uint64_t timer_seconds(){
     return _timer_seconds;
 }
