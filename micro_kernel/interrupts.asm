@@ -111,10 +111,10 @@ _isr%1:
 
 %macro CREATE_IRQ 1
 _irq%1:
+    push rax
+
     ; Disable interruptions to avoid being interrupted
     cli
-
-    push rax
 
     mov rax, [irq_handlers + 8 *%1]
 
@@ -122,24 +122,8 @@ _irq%1:
     test rax, rax
     je .eoi
 
-    push rbx
-    push rcx
-    push rdx
-    push rsi
-    push rdi
-    push r8
-    push r9
-
     ; Call the handler
     call rax
-
-    push r9
-    push r8
-    pop rdi
-    pop rsi
-    pop rdx
-    pop rcx
-    pop rbx
 
     .eoi:
 
