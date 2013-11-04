@@ -22,13 +22,14 @@ void echo_command(const char* params);
 void mmap_command(const char* params);
 void memory_command(const char* params);
 void disks_command(const char* params);
+void ls_command(const char* params);
 
 struct command_definition {
     const char* name;
     void (*function)(const char*);
 };
 
-command_definition commands[10] = {
+command_definition commands[11] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -39,6 +40,7 @@ command_definition commands[10] = {
     {"mmap", mmap_command},
     {"memory", memory_command},
     {"disks", disks_command},
+    {"ls", ls_command},
 };
 
 uint64_t current_input_length = 0;
@@ -264,6 +266,22 @@ void disks_command(const char*){
         auto& descriptor = drive(i);
 
         k_printf("%12h %8h %s\n", descriptor.controller, descriptor.drive, descriptor.present ? "Yes" : "No");
+    }
+}
+
+void ls_command(const char*){
+    uint16_t* buffer = reinterpret_cast<uint16_t*>(k_malloc(512));
+
+    if(!ata_read_sectors(drive(0), 1, 1, buffer)){
+        k_print_line("Read failed");
+    } else {
+        for(int i = 0; i < 128; i += 8){
+            k_printf("%.4h %.4h %.4h %.4h %.4h %.4h %.4h %.4h\n",
+                (uint64_t) buffer[i+0], (uint64_t) buffer[i+1], (uint64_t) buffer[i+2], (uint64_t) buffer[i+3],
+                (uint64_t) buffer[i+4], (uint64_t) buffer[i+5], (uint64_t) buffer[i+6], (uint64_t) buffer[i+7]);
+        }
+
+        k_free(reinterpret_cast<uint64_t*>(buffer));
     }
 }
 
