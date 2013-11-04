@@ -1,4 +1,5 @@
 #include "memory.hpp"
+#include "console.hpp"
 
 namespace {
 
@@ -20,7 +21,12 @@ mmapentry e820_mmap[32];
 
 void mmap_query(uint64_t cmd, uint64_t* result){
     uint64_t tmp;
-    __asm__ __volatile__ ("mov r8, %0; int 62; mov %1, rax" : : "dN" (cmd), "a" (tmp));
+
+    __asm__ __volatile__ ("mov r8, %[port]; int 62; mov %[dst], rax"
+        : [dst] "=a" (tmp)
+        : [port] "dN" (cmd)
+        : "cc", "memory", "r8");
+
     *result = tmp;
 }
 
