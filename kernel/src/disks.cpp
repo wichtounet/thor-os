@@ -3,6 +3,8 @@
 #include "thor.hpp"
 #include "console.hpp"
 
+#include "unique_ptr.hpp"
+
 namespace {
 
 bool detected = false;
@@ -110,7 +112,7 @@ bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t co
     }
 }
 
-unique_ptr<disks::partition_descriptor> disks::partitions(const disk_descriptor& disk){
+unique_heap_array<disks::partition_descriptor> disks::partitions(const disk_descriptor& disk){
     unique_ptr<uint64_t> buffer(k_malloc(512));
 
     if(!read_sectors(disk, 0, 1, buffer.get())){
@@ -133,7 +135,7 @@ unique_ptr<disks::partition_descriptor> disks::partitions(const disk_descriptor&
             }
         }
 
-        auto* partitions = reinterpret_cast<partition_descriptor*>(k_malloc(n * sizeof(partition_descriptor)));
+        unique_heap_array<partition_descriptor> partitions(n);
         uint64_t p = 0;
 
         for(uint64_t i = 0; i < 4; ++i){
@@ -151,6 +153,6 @@ unique_ptr<disks::partition_descriptor> disks::partitions(const disk_descriptor&
             }
         }
 
-        return unique_ptr<disks::partition_descriptor>(partitions);
+        return partitions;
     }
 }
