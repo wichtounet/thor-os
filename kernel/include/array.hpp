@@ -3,6 +3,25 @@
 
 #include "thor.hpp"
 
+template<typename T, uint64_t N>
+class array {
+private:
+    T data[N];
+
+public:
+    const T& operator[](uint64_t pos) const {
+        return data[pos];
+    }
+
+    T& operator[](uint64_t pos){
+        return data[pos];
+    }
+
+    uint64_t size(){
+        return N;
+    }
+};
+
 template<typename T>
 class unique_heap_array {
 public:
