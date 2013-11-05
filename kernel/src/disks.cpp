@@ -15,21 +15,6 @@ array<disks::disk_descriptor, 4> _disks;
 
 uint64_t number_of_disks = 0;
 
-void detect_disks(){
-    ata::detect_disks();
-
-    for(uint8_t i = 0; i < ata::number_of_disks(); ++i){
-        auto& descriptor = ata::drive(i);
-
-        if(descriptor.present){
-            _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATA, &descriptor};
-            ++number_of_disks;
-        }
-    }
-
-    detected = true;
-}
-
 struct partition_descriptor_t {
     uint8_t boot_flag;
     uint8_t chs_begin[3];
@@ -51,11 +36,23 @@ static_assert(sizeof(boot_record_t) == 512, "The boot record is 512 bytes long")
 
 } //end of anonymous namespace
 
-uint64_t disks::detected_disks(){
-    if(!detected){
-        detect_disks();
+void disks::detect_disks(){
+    ata::detect_disks();
+
+    for(uint8_t i = 0; i < ata::number_of_disks(); ++i){
+        auto& descriptor = ata::drive(i);
+
+        if(descriptor.present){
+            _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATA, &descriptor};
+            ++number_of_disks;
+        }
     }
 
+    detected = true;
+}
+
+
+uint64_t disks::detected_disks(){
     return number_of_disks;
 }
 

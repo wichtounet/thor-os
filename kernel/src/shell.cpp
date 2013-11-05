@@ -282,10 +282,10 @@ void partitions_command(const char* params){
         if(partitions.size() > 0){
             k_print_line("UUID       Type         Start      Sectors");
 
-            for(uint64_t i = 0; i < partitions.size(); ++i){
-                k_printf("%10d %12s %10d %d\n", partitions[i].uuid,
-                    disks::partition_type_to_string(partitions[i].type),
-                    partitions[i].start, partitions[i].sectors);
+            for(auto& partition : partitions){
+                k_printf("%10d %12s %10d %d\n", partition.uuid,
+                    disks::partition_type_to_string(partition.type),
+                    partition.start, partition.sectors);
             }
         }
     } else {

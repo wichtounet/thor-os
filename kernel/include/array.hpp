@@ -9,23 +9,48 @@ private:
     T data[N];
 
 public:
-    const T& operator[](uint64_t pos) const {
+    typedef T                       value_type;
+    typedef value_type*             iterator;
+    typedef const value_type*       const_iterator;
+    typedef uint64_t                size_type;
+
+    T& operator[](size_type pos){
         return data[pos];
     }
 
-    T& operator[](uint64_t pos){
+    const T& operator[](size_type pos) const {
         return data[pos];
     }
 
-    uint64_t size(){
+    size_type size(){
         return N;
+    }
+
+    iterator begin(){
+        return iterator(&data[0]);
+    }
+
+    const_iterator begin() const {
+        return const_iterator(&data[0]);
+    }
+
+    iterator end(){
+        return iterator(&data[N]);
+    }
+
+    const_iterator end() const {
+        return const_iterator(&data[N]);
     }
 };
 
 template<typename T>
 class unique_heap_array {
 public:
-    typedef T* pointer_type;
+    typedef T                       value_type;
+    typedef value_type*             pointer_type;
+    typedef value_type*             iterator;
+    typedef const value_type*       const_iterator;
+    typedef uint64_t                size_type;
 
 private:
     T* array;
@@ -34,8 +59,8 @@ private:
 public:
     unique_heap_array() : array(nullptr), _size(0) {}
 
-    explicit unique_heap_array(T* a, uint64_t s) : array(a), _size(s) {}
-    explicit unique_heap_array(uint64_t s) : _size(s) {
+    explicit unique_heap_array(T* a, size_type s) : array(a), _size(s) {}
+    explicit unique_heap_array(size_type s) : _size(s) {
         array = reinterpret_cast<T*>(k_malloc(sizeof(T) * s));
     }
 
@@ -59,15 +84,15 @@ public:
     unique_heap_array(const unique_heap_array& rhs) = delete;
     unique_heap_array& operator=(const unique_heap_array& rhs) = delete;
 
-    uint64_t size() const {
+    size_type size() const {
         return _size;
     }
 
-    const T& operator[](uint64_t pos) const {
+    const T& operator[](size_type pos) const {
         return array[pos];
     }
 
-    T& operator[](uint64_t pos){
+    T& operator[](size_type pos){
         return array[pos];
     }
 
@@ -82,6 +107,22 @@ public:
             k_free(reinterpret_cast<uint64_t*>(array));
             array= nullptr;
         }
+    }
+
+    iterator begin(){
+        return iterator(&array[0]);
+    }
+
+    const_iterator begin() const {
+        return const_iterator(&array[0]);
+    }
+
+    iterator end(){
+        return iterator(&array[_size]);
+    }
+
+    const_iterator end() const {
+        return const_iterator(&array[_size]);
     }
 };
 

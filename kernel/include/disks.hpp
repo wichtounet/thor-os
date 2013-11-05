@@ -28,6 +28,8 @@ struct partition_descriptor {
     uint64_t sectors;
 };
 
+void detect_disks();
+
 uint64_t detected_disks();
 
 bool disk_exists(uint64_t uuid);
