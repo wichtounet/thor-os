@@ -2,6 +2,7 @@
 #define DISKS_H
 
 #include "types.hpp"
+#include "unique_ptr.hpp"
 
 namespace disks {
 
@@ -39,7 +40,7 @@ const char* partition_type_to_string(partition_type type);
 
 bool read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);
 
-partition_descriptor* partitions(const disk_descriptor& disk);
+unique_ptr<partition_descriptor> partitions(const disk_descriptor& disk);
 
 }
 
