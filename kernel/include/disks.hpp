@@ -41,8 +41,13 @@ const char* disk_type_to_string(disk_type type);
 const char* partition_type_to_string(partition_type type);
 
 bool read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);
-
 unique_heap_array<partition_descriptor> partitions(const disk_descriptor& disk);
+bool partition_exists(const disk_descriptor& disk, uint64_t uuid);
+
+void mount(const disk_descriptor& disk, uint64_t uuid);
+
+const disk_descriptor* mounted_disk();
+const partition_descriptor* mounted_partition();
 
 }
 

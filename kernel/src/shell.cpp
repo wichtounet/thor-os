@@ -23,6 +23,7 @@ void mmap_command(const char* params);
 void memory_command(const char* params);
 void disks_command(const char* params);
 void partitions_command(const char* params);
+void mount_command(const char* params);
 void ls_command(const char* params);
 
 struct command_definition {
@@ -30,7 +31,7 @@ struct command_definition {
     void (*function)(const char*);
 };
 
-command_definition commands[12] = {
+command_definition commands[13] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -42,6 +43,7 @@ command_definition commands[12] = {
     {"memory", memory_command},
     {"disks", disks_command},
     {"partitions", partitions_command},
+    {"mount", mount_command},
     {"ls", ls_command},
 };
 
@@ -290,6 +292,40 @@ void partitions_command(const char* params){
         }
     } else {
         k_printf("Disks %d does not exist\n", uuid);
+    }
+}
+
+void mount_command(const char* params){
+    if(!*(params+5)){
+        auto md = disks::mounted_disk();
+        auto mp = disks::mounted_partition();
+
+        if(md && mp){
+            k_printf("%d:%d is mounted\n", md->uuid, mp->uuid);
+        } else {
+            k_print_line("Nothing is mounted");
+        }
+    } else {
+        const char* it = params + 6;
+        const char* it_end = it;
+
+        while(*it_end != ' '){
+            ++it_end;
+        }
+
+        auto disk_uuid = parse(it, it_end);
+        auto partition_uuid = parse(it_end + 1);
+
+        if(disks::disk_exists(disk_uuid)){
+            auto& disk = disks::disk_by_uuid(disk_uuid);
+            if(disks::partition_exists(disk, partition_uuid)){
+                disks::mount(disk, partition_uuid);
+            } else {
+                k_printf("Partition %d does not exist\n", partition_uuid);
+            }
+        } else {
+            k_printf("Disk %d does not exist\n", disk_uuid);
+        }
     }
 }
 

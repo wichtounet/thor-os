@@ -4,6 +4,7 @@
 #include "types.hpp"
 
 uint64_t parse(const char* str);
+uint64_t parse(const char* str, const char* end);
 
 bool str_equals(const char* a, const char* b);
 bool str_contains(const char* a, char c);
