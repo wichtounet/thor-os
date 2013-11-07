@@ -1,3 +1,10 @@
+//=======================================================================
+// Copyright Baptiste Wicht 2013.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+//=======================================================================
+
 %define BLACK_F 0x0
 %define BLUE_F 0x1
 %define GREEN_F 0x2

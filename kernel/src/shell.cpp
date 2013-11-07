@@ -1,3 +1,10 @@
+//=======================================================================
+// Copyright Baptiste Wicht 2013.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+//=======================================================================
+
 #include "types.hpp"
 #include "keyboard.hpp"
 #include "kernel_utils.hpp"
@@ -6,7 +13,7 @@
 #include "timer.hpp"
 #include "utils.hpp"
 #include "memory.hpp"
-#include "ata.hpp"
+#include "disks.hpp"
 
 namespace {
 
@@ -22,13 +29,16 @@ void echo_command(const char* params);
 void mmap_command(const char* params);
 void memory_command(const char* params);
 void disks_command(const char* params);
+void partitions_command(const char* params);
+void mount_command(const char* params);
+void ls_command(const char* params);
 
 struct command_definition {
     const char* name;
     void (*function)(const char*);
 };
 
-command_definition commands[10] = {
+command_definition commands[13] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -39,6 +49,9 @@ command_definition commands[10] = {
     {"mmap", mmap_command},
     {"memory", memory_command},
     {"disks", disks_command},
+    {"partitions", partitions_command},
+    {"mount", mount_command},
+    {"ls", ls_command},
 };
 
 uint64_t current_input_length = 0;
@@ -46,45 +59,44 @@ char current_input[50];
 
 void exec_command();
 
-#define KEY_ENTER 0x1C
-#define KEY_BACKSPACE 0x0E
+void start_shell(){
+    while(true){
+        auto key = keyboard::get_char();
 
-void keyboard_handler(){
-    uint8_t key = in_byte(0x60);
-
-    if(key & 0x80){
-        //TODO Handle shift
-    } else {
-        if(key == KEY_ENTER){
-            current_input[current_input_length] = '\0';
-
-            k_print_line();
-
-            exec_command();
-
-            if(get_column() != 0){
-                set_column(0);
-                set_line(get_line() + 1);
-            }
-
-            current_input_length = 0;
-
-            k_print("thor> ");
-        } else if(key == KEY_BACKSPACE){
-            if(current_input_length > 0){
-                set_column(get_column() - 1);
-                k_print(' ');
-                set_column(get_column() - 1);
-
-                --current_input_length;
-            }
+        if(key & 0x80){
+            //TODO Handle shift
         } else {
-           auto qwertz_key = key_to_ascii(key);
+            if(key == keyboard::KEY_ENTER){
+                current_input[current_input_length] = '\0';
 
-           if(qwertz_key > 0){
-               current_input[current_input_length++] = qwertz_key;
-               k_print(qwertz_key);
-           }
+                k_print_line();
+
+                exec_command();
+
+                if(get_column() != 0){
+                    set_column(0);
+                    set_line(get_line() + 1);
+                }
+
+                current_input_length = 0;
+
+                k_print("thor> ");
+            } else if(key == keyboard::KEY_BACKSPACE){
+                if(current_input_length > 0){
+                    set_column(get_column() - 1);
+                    k_print(' ');
+                    set_column(get_column() - 1);
+
+                    --current_input_length;
+                }
+            } else {
+                auto qwertz_key = keyboard::key_to_ascii(key);
+
+                if(qwertz_key > 0){
+                    current_input[current_input_length++] = qwertz_key;
+                    k_print(qwertz_key);
+                }
+            }
         }
     }
 }
@@ -256,30 +268,77 @@ void memory_command(const char*){
         k_printf("Total used memory: %m\n", used_memory());
         k_printf("Total free memory: %m\n", free_memory());
     }
-
-    uint16_t* buffer = reinterpret_cast<uint16_t*>(k_malloc(512));
-
-    if(!ata_read_sectors(drive(0), 2048, 1, buffer)){
-        k_print_line("Read failed");
-    } else {
-        for(int i = 0; i < 80; i += 8){
-            k_printf("%.4h %.4h %.4h %.4h %.4h %.4h %.4h %.4h\n",
-                (uint64_t) buffer[i+0], (uint64_t) buffer[i+1], (uint64_t) buffer[i+2], (uint64_t) buffer[i+3],
-                (uint64_t) buffer[i+4], (uint64_t) buffer[i+5], (uint64_t) buffer[i+6], (uint64_t) buffer[i+7]);
-        }
-
-        k_free(reinterpret_cast<uint64_t*>(buffer));
-    }
 }
 
 void disks_command(const char*){
-    k_print_line("Controller   Drive    Present");
+    k_print_line("UUID       Type");
 
-    for(uint64_t i = 0; i < number_of_disks(); ++i){
-        auto& descriptor = drive(i);
+    for(uint64_t i = 0; i < disks::detected_disks(); ++i){
+        auto& descriptor = disks::disk_by_index(i);
 
-        k_printf("%12h %8h %s\n", descriptor.controller, descriptor.drive, descriptor.present ? "Yes" : "No");
+        k_printf("%10d %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type));
     }
+}
+
+void partitions_command(const char* params){
+    const char* delay_str = params + 11;
+
+    auto uuid = parse(delay_str);
+
+    if(disks::disk_exists(uuid)){
+        auto partitions = disks::partitions(disks::disk_by_uuid(uuid));
+
+        if(partitions.size() > 0){
+            k_print_line("UUID       Type         Start      Sectors");
+
+            for(auto& partition : partitions){
+                k_printf("%10d %12s %10d %d\n", partition.uuid,
+                    disks::partition_type_to_string(partition.type),
+                    partition.start, partition.sectors);
+            }
+        }
+    } else {
+        k_printf("Disks %d does not exist\n", uuid);
+    }
+}
+
+void mount_command(const char* params){
+    if(!*(params+5)){
+        auto md = disks::mounted_disk();
+        auto mp = disks::mounted_partition();
+
+        if(md && mp){
+            k_printf("%d:%d is mounted\n", md->uuid, mp->uuid);
+        } else {
+            k_print_line("Nothing is mounted");
+        }
+    } else {
+        const char* it = params + 6;
+        const char* it_end = it;
+
+        while(*it_end != ' '){
+            ++it_end;
+        }
+
+        auto disk_uuid = parse(it, it_end);
+        auto partition_uuid = parse(it_end + 1);
+
+        if(disks::disk_exists(disk_uuid)){
+            auto& disk = disks::disk_by_uuid(disk_uuid);
+            if(disks::partition_exists(disk, partition_uuid)){
+                disks::mount(disk, partition_uuid);
+            } else {
+                k_printf("Partition %d does not exist\n", partition_uuid);
+            }
+        } else {
+            k_printf("Disk %d does not exist\n", disk_uuid);
+        }
+    }
+}
+
+void ls_command(const char*){
+    //TODO Implement mount first
+    //TODO Implement ls
 }
 
 } //end of anonymous namespace
@@ -291,5 +350,5 @@ void init_shell(){
 
     k_print("thor> ");
 
-    register_irq_handler<1>(keyboard_handler);
+    start_shell();
 }

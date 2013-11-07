@@ -1,3 +1,10 @@
+//=======================================================================
+// Copyright Baptiste Wicht 2013.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+//=======================================================================
+
 #include "utils.hpp"
 
 bool str_equals(const char* a, const char* b){
@@ -7,6 +14,20 @@ bool str_equals(const char* a, const char* b){
     }
 
     return *a == *b;
+}
+
+uint64_t parse(const char* it, const char* end){
+    int i = end - it - 1;
+
+    uint64_t factor = 1;
+    uint64_t acc = 0;
+
+    for(; i >= 0; --i){
+        acc += (it[i] - '0') * factor;
+        factor *= 10;
+    }
+
+    return acc;
 }
 
 uint64_t parse(const char* str){

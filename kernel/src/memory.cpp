@@ -1,6 +1,18 @@
+//=======================================================================
+// Copyright Baptiste Wicht 2013.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+//=======================================================================
+
 #include "memory.hpp"
+#include "console.hpp"
 
 namespace {
+
+//Used to compile with malloc operations in the console
+//can produce a lot of output
+const bool DEBUG_MALLOC = false;
 
 struct bios_mmap_entry {
     uint32_t base_low;
@@ -20,7 +32,12 @@ mmapentry e820_mmap[32];
 
 void mmap_query(uint64_t cmd, uint64_t* result){
     uint64_t tmp;
-    __asm__ __volatile__ ("mov r8, %0; int 62; mov %1, rax" : : "dN" (cmd), "a" (tmp));
+
+    __asm__ __volatile__ ("mov r8, %[port]; int 62; mov %[dst], rax"
+        : [dst] "=a" (tmp)
+        : [port] "dN" (cmd)
+        : "cc", "memory", "r8");
+
     *result = tmp;
 }
 
@@ -104,6 +121,35 @@ uint64_t* allocate_block(uint64_t blocks){
     return block;
 }
 
+template<bool Debug>
+void debug_malloc(const char* point = nullptr){
+    if(Debug){
+        if(point){
+            k_print_line(point);
+        }
+
+        auto it = malloc_head;
+
+        k_print("next: ");
+        do {
+            k_printf("%h -> ", reinterpret_cast<uint64_t>(it));
+            it = it->next;
+        } while(it != malloc_head);
+
+        k_printf("%h\n", malloc_head);
+
+        it = malloc_head;
+
+        k_print("prev: ");
+        do {
+            k_printf("%h <- ", reinterpret_cast<uint64_t>(it));
+            it = it->prev;
+        } while(it != malloc_head);
+
+        k_printf("%h\n", malloc_head);
+    }
+}
+
 } //end of anonymous namespace
 
 void init_memory_manager(){
@@ -141,11 +187,11 @@ uint64_t* k_malloc(uint64_t bytes){
             auto header = reinterpret_cast<malloc_header_chunk*>(block);
             header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
 
+            header->next = current->next;
+            header->prev = current;
+
             current->next->prev = header;
             current->next = header;
-
-            header->next  = current->next;
-            header->prev = current;
 
             auto footer = reinterpret_cast<malloc_footer_chunk*>(
                 reinterpret_cast<uintptr_t>(block) + header->size + sizeof(malloc_header_chunk));
@@ -154,7 +200,7 @@ uint64_t* k_malloc(uint64_t bytes){
             //This block is big enough
 
             //Is it worth splitting the block ?
-            if(current->size - bytes - META_SIZE > MIN_SPLIT){
+            if(current->size > bytes + META_SIZE + MIN_SPLIT){
                 auto new_block_size = current->size - bytes - META_SIZE;
 
                 //Set the new size;
@@ -177,11 +223,15 @@ uint64_t* k_malloc(uint64_t bytes){
                     reinterpret_cast<uintptr_t>(new_block) + new_block_size + sizeof(malloc_header_chunk));
                 new_footer->size = new_block_size;
 
+                debug_malloc<DEBUG_MALLOC>("after malloc split");
+
                 break;
             } else {
                 //Remove this node from the free list
                 current->prev->next = current->next;
                 current->next->prev = current->prev;
+
+                debug_malloc<DEBUG_MALLOC>("after malloc no split");
 
                 break;
             }
@@ -213,6 +263,8 @@ void k_free(uint64_t* block){
 
     header->next->prev = free_header;
     header->next = free_header;
+
+    debug_malloc<DEBUG_MALLOC>("after free");
 }
 
 void load_memory_map(){

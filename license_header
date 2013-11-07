@@ -5,9 +5,3 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef SHELL_H
-#define SHELL_
-
-void init_shell();
-
-#endif
