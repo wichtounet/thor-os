@@ -1,9 +1,9 @@
-//=======================================================================
-// Copyright Baptiste Wicht 2013.
-// Distributed under the Boost Software License, Version 1.0.
-// (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
-//=======================================================================
+;=======================================================================
+; Copyright Baptiste Wicht 2013.
+; Distributed under the Boost Software License, Version 1.0.
+; (See accompanying file LICENSE_1_0.txt or copy at
+;  http://www.boost.org/LICENSE_1_0.txt)
+;=======================================================================
 
 ; Compute the length of string representation of the integer
 ; in r8 = integer to print

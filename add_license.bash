@@ -5,7 +5,16 @@ do
     if [[ $lines == 0 ]]
     then
         cp ${file} ${file}.orig
-        cat license_header ${file}.orig > ${file}
+
+        asm=`echo $file | grep ".asm" |  wc -l`
+
+        if [[ $asm == 0 ]]
+        then
+            cat cpp_license_header ${file}.orig > ${file}
+        else
+            cat asm_license_header ${file}.orig > ${file}
+        fi
+
         rm ${file}.orig
     fi
 done
