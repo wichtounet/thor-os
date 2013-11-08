@@ -337,8 +337,7 @@ void mount_command(const char* params){
 }
 
 void ls_command(const char*){
-    //TODO Implement mount first
-    //TODO Implement ls
+    disks::ls();
 }
 
 } //end of anonymous namespace
