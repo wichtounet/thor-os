@@ -121,15 +121,13 @@ bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t co
 }
 
 unique_heap_array<disks::partition_descriptor> disks::partitions(const disk_descriptor& disk){
-    unique_ptr<uint64_t, malloc_delete<uint64_t>> buffer(k_malloc(512));
+    unique_ptr<boot_record_t> boot_record(new boot_record_t());
 
-    if(!read_sectors(disk, 0, 1, buffer.get())){
+    if(!read_sectors(disk, 0, 1, boot_record.get())){
         k_print_line("Read Boot Record failed");
 
         return {};
     } else {
-        auto* boot_record = reinterpret_cast<boot_record_t*>(buffer.get());
-
         if(boot_record->signature != 0xAA55){
             k_print_line("Invalid boot record signature");
 

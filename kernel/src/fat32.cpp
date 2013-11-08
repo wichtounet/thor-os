@@ -54,25 +54,21 @@ struct fat_is_t {
 } //end of anonymous namespace
 
 void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
-    unique_ptr<uint64_t, malloc_delete<uint64_t>> fat_bs_buffer(k_malloc(512));
+    unique_ptr<fat_bs_t> fat_bs(new fat_bs_t());
 
-    if(!read_sectors(disk, partition.start, 1, fat_bs_buffer.get())){
+    if(!read_sectors(disk, partition.start, 1, fat_bs.get())){
         //TODO
     } else {
-        auto* fat_bs = reinterpret_cast<fat_bs_t*>(fat_bs_buffer.get());
-
         //fat_bs->signature should be 0xAA55
         //fat_bs->file_system_type should be FAT32
 
         auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
 
-        unique_ptr<uint64_t, malloc_delete<uint64_t>> fat_is_buffer(k_malloc(512));
+        unique_ptr<fat_is_t> fat_is(new fat_is_t());
 
-        if(!read_sectors(disk, fs_information_sector, 1, fat_is_buffer.get())){
+        if(!read_sectors(disk, fs_information_sector, 1, fat_is.get())){
             //TODO
         } else {
-            auto* fat_is = reinterpret_cast<fat_is_t*>(fat_is_buffer.get());
-
             //fat_is->signature_start should be 0x52 0x52 0x61 0x41
             //fat_is->signature_middle should be 0x72 0x72 0x41 0x61
             //fat_is->signature_end should be 0x00 0x00 0x55 0xAA
