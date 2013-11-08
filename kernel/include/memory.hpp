@@ -24,8 +24,8 @@ const char* str_e820_type(uint64_t type);
 
 void init_memory_manager();
 
-uint64_t* k_malloc(uint64_t bytes);
-void k_free(uint64_t* block);
+void* k_malloc(uint64_t bytes);
+void k_free(void* block);
 
 template<typename T>
 T* k_malloc(){

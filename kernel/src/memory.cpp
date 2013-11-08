@@ -176,7 +176,7 @@ void init_memory_manager(){
     malloc_head->prev = header;
 }
 
-uint64_t* k_malloc(uint64_t bytes){
+void* k_malloc(uint64_t bytes){
     auto current = malloc_head->next;
 
     while(true){
@@ -246,11 +246,11 @@ uint64_t* k_malloc(uint64_t bytes){
     current->prev = nullptr;
     current->next = nullptr;
 
-    return reinterpret_cast<uint64_t*>(
+    return reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
 }
 
-void k_free(uint64_t* block){
+void k_free(void* block){
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 

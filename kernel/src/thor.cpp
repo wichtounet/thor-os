@@ -13,7 +13,7 @@ void* operator new(uint64_t size){
 }
 
 void operator delete(void* p){
-    k_free(reinterpret_cast<uint64_t*>(p));
+    k_free(p);
 }
 
 void* operator new[](uint64_t size){
@@ -21,5 +21,5 @@ void* operator new[](uint64_t size){
 }
 
 void operator delete[](void* p){
-    return k_free(reinterpret_cast<uint64_t*>(p));
+    return k_free(p);
 }
