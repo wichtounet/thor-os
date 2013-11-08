@@ -68,7 +68,7 @@ public:
 
     explicit unique_heap_array(T* a, size_type s) : array(a), _size(s) {}
     explicit unique_heap_array(size_type s) : _size(s) {
-        array = reinterpret_cast<T*>(k_malloc(sizeof(T) * s));
+        array = new T[s];
     }
 
     unique_heap_array(unique_heap_array&& u) : array(u.release()), _size(u._size) {
@@ -111,7 +111,7 @@ public:
 
     void reset(pointer_type p = pointer_type()){
         if(array!= p){
-            k_free(reinterpret_cast<uint64_t*>(array));
+            delete[] array;
             array= nullptr;
         }
     }
