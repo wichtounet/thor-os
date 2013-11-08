@@ -121,7 +121,7 @@ bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t co
 }
 
 unique_heap_array<disks::partition_descriptor> disks::partitions(const disk_descriptor& disk){
-    unique_ptr<uint64_t> buffer(k_malloc(512));
+    unique_ptr<uint64_t, malloc_delete<uint64_t>> buffer(k_malloc(512));
 
     if(!read_sectors(disk, 0, 1, buffer.get())){
         k_print_line("Read Boot Record failed");

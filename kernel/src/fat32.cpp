@@ -54,7 +54,7 @@ struct fat_is_t {
 } //end of anonymous namespace
 
 void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
-    unique_ptr<uint64_t> fat_bs_buffer(k_malloc(512));
+    unique_ptr<uint64_t, malloc_delete<uint64_t>> fat_bs_buffer(k_malloc(512));
 
     if(!read_sectors(disk, partition.start, 1, fat_bs_buffer.get())){
         //TODO
@@ -66,7 +66,7 @@ void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descri
 
         auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
 
-        unique_ptr<uint64_t> fat_is_buffer(k_malloc(512));
+        unique_ptr<uint64_t, malloc_delete<uint64_t>> fat_is_buffer(k_malloc(512));
 
         if(!read_sectors(disk, fs_information_sector, 1, fat_is_buffer.get())){
             //TODO
