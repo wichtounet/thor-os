@@ -8,9 +8,12 @@
 #ifndef THOR_H
 #define THOR_H
 
-#include "memory.hpp"
+#include "types.hpp"
 
-void* operator new (uint64_t size);
-void operator delete (void *p);
+void* operator new(uint64_t size);
+void operator delete(void* p);
+
+void* operator new[](uint64_t size);
+void operator delete[](void* p);
 
 #endif
