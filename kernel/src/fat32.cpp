@@ -93,7 +93,7 @@ void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descri
             uint64_t fat_begin = partition.start + fat_bs->reserved_sectors;
             uint64_t cluster_begin = fat_begin + (fat_bs->number_of_fat * fat_bs->sectors_per_fat_long);
             uint64_t sectors_per_cluster = fat_bs->sectors_per_cluster;
-            uint64_t root_cluster_lba = fat_bs->root_directory_cluster_start;
+            uint64_t root_cluster_lba = cluster_begin + (fat_bs->root_directory_cluster_start - 2) * sectors_per_cluster;
             uint64_t entries = 16 * sectors_per_cluster;
 
             unique_heap_array<cluster_entry> root_cluster(entries);
@@ -104,7 +104,6 @@ void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descri
             } else {
                 for(cluster_entry& entry : root_cluster){
                     if(entry.name[0] == 0x0 || static_cast<unsigned char>(entry.name[0]) == 0xE5){
-                        k_print("0");
                         //The entry does not exists
                         continue;
                     }
@@ -115,12 +114,20 @@ void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descri
                         //It is a normal file name
                     }
 
-                    k_print_line(entry.name, 11);
+                    k_print(entry.name, 11);
+
+                    if(entry.attrib & 0x1){
+                        k_print(" hidden ");
+                    }
+
+                    if(entry.attrib & 0x2){
+                        k_print(" os ");
+                    }
 
                     if(entry.attrib & 0x10){
-                        k_print_line("Directory");
+                        k_print(" Directory ");
                     } else {
-                        k_print_line("File");
+                        k_print(" File ");
                     }
 
                     k_print_line(entry.file_size);
