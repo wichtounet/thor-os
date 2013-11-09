@@ -49,7 +49,24 @@ struct fat_is_t {
     uint32_t signature_end;
 }__attribute__ ((packed));
 
-//static_assert(sizeof(fat_bs_t) == 512, "FAT Boot Sector is exactly one disk sector");
+static_assert(sizeof(fat_bs_t) == 512, "FAT Boot Sector is exactly one disk sector");
+
+struct cluster_entry {
+    char name[11];
+    uint8_t attrib;
+    uint8_t reserved;
+    uint8_t creation_time_seconds;
+    uint16_t creation_time;
+    uint16_t creation_date;
+    uint16_t accessed_date;
+    uint16_t cluster_high;
+    uint16_t modification_time;
+    uint16_t modification_date;
+    uint16_t cluster_low;
+    uint32_t file_size;
+};
+
+static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
 
 } //end of anonymous namespace
 
@@ -72,6 +89,45 @@ void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descri
             //fat_is->signature_start should be 0x52 0x52 0x61 0x41
             //fat_is->signature_middle should be 0x72 0x72 0x41 0x61
             //fat_is->signature_end should be 0x00 0x00 0x55 0xAA
+
+            uint64_t fat_begin = partition.start + fat_bs->reserved_sectors;
+            uint64_t cluster_begin = fat_begin + (fat_bs->number_of_fat * fat_bs->sectors_per_fat_long);
+            uint64_t sectors_per_cluster = fat_bs->sectors_per_cluster;
+            uint64_t root_cluster_lba = fat_bs->root_directory_cluster_start;
+            uint64_t entries = 16 * sectors_per_cluster;
+
+            unique_heap_array<cluster_entry> root_cluster(entries);
+
+            if(!read_sectors(disk, root_cluster_lba, sectors_per_cluster, root_cluster.get())){
+                //TODO
+                k_print("failed");
+            } else {
+                for(cluster_entry& entry : root_cluster){
+                    if(entry.name[0] == 0x0 || static_cast<unsigned char>(entry.name[0]) == 0xE5){
+                        k_print("0");
+                        //The entry does not exists
+                        continue;
+                    }
+
+                    if(entry.attrib == 0x0F){
+                        //It is a long file name
+                    } else {
+                        //It is a normal file name
+                    }
+
+                    k_print(entry.name, 11);
+                    k_print_line();
+
+                    if(entry.attrib & 0x10){
+                        k_print_line("Directory");
+                    } else {
+                        k_print_line("File");
+                    }
+
+                    k_print(static_cast<uint64_t>(entry.file_size));
+                    k_print_line();
+                }
+            }
         }
     }
 }
