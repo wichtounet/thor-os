@@ -198,8 +198,8 @@ const disks::partition_descriptor* disks::mounted_partition(){
     return _mounted_partition;
 }
 
-void disks::ls(){
+vector<disks::file> disks::ls(){
     //TODO Make some tests
 
-    fat32::ls(*_mounted_disk, *_mounted_partition);
+    return fat32::ls(*_mounted_disk, *_mounted_partition);
 }

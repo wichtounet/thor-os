@@ -64,13 +64,15 @@ struct cluster_entry {
     uint16_t modification_date;
     uint16_t cluster_low;
     uint32_t file_size;
-};
+} __attribute__ ((packed));
 
 static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
 
 } //end of anonymous namespace
 
-void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+    vector<disks::file> files;
+
     unique_ptr<fat_bs_t> fat_bs(new fat_bs_t());
 
     if(!read_sectors(disk, partition.start, 1, fat_bs.get())){
@@ -135,4 +137,6 @@ void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descri
             }
         }
     }
+
+    return files;
 }
