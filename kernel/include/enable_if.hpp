@@ -8,7 +8,7 @@ template<class T>
 struct enable_if<true, T> { typedef T type; };
 
 template<bool B, class T = void>
-struct dsable_if {};
+struct disable_if {};
 
 template<class T>
 struct disable_if<false, T> { typedef T type; };

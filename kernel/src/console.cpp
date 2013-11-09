@@ -44,6 +44,44 @@ uint16_t make_vga_entry(char c, uint8_t color){
     return c16 | color16 << 8;
 }
 
+template<typename N>
+uint64_t digits(N number){
+    if(number < 10){
+        return 1;
+    }
+
+    uint64_t i = 0;
+
+    while(number != 0){
+        number /= 10;
+        ++i;
+    }
+
+    return i;
+}
+
+template<int B, typename D>
+void print_unsigned(D number){
+    if(number == 0){
+        k_print('0');
+        return;
+    }
+
+    char buffer[B];
+    int i = 0;
+
+    while(number != 0){
+        buffer[i++] = '0' + number % 10;
+        number /= 10;
+    }
+
+    --i;
+
+    for(; i >= 0; --i){
+        k_print(buffer[i]);
+    }
+}
+
 } //end of anonymous namespace
 
 void set_column(long column){
@@ -62,40 +100,20 @@ long get_line(){
     return current_line;
 }
 
-uint64_t digits(uint64_t number){
-    if(number < 10){
-        return 1;
-    }
+void k_print(uint8_t number){
+    print_unsigned<3>(number);
+}
 
-    int i = 0;
+void k_print(uint16_t number){
+    print_unsigned<5>(number);
+}
 
-    while(number != 0){
-        number /= 10;
-        ++i;
-    }
-
-    return i;
+void k_print(uint32_t number){
+    print_unsigned<10>(number);
 }
 
 void k_print(uint64_t number){
-    if(number == 0){
-        k_print('0');
-        return;
-    }
-
-    char buffer[20];
-    int i = 0;
-
-    while(number != 0){
-        buffer[i++] = '0' + number % 10;
-        number /= 10;
-    }
-
-    --i;
-
-    for(; i >= 0; --i){
-        k_print(buffer[i]);
-    }
+    print_unsigned<20>(number);
 }
 
 void k_print(char key){

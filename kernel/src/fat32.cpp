@@ -123,7 +123,7 @@ void fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descri
                         k_print_line("File");
                     }
 
-                    k_print_line(static_cast<uint64_t>(entry.file_size));
+                    k_print_line(entry.file_size);
                 }
             }
         }
