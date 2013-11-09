@@ -62,18 +62,6 @@ long get_line(){
     return current_line;
 }
 
-void k_print_line(){
-    current_column = 0;
-    ++current_line;
-}
-
-void k_print_line(const char* string){
-    k_print(string);
-
-    current_column = 0;
-    ++current_line;
-}
-
 uint64_t digits(uint64_t number){
     if(number < 10){
         return 1;

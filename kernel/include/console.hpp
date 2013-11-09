@@ -23,7 +23,15 @@ void k_print(const char* string, uint64_t end);
 void k_print(uint64_t number);
 void k_printf(const char* fmt, ...);
 
-void k_print_line();
-void k_print_line(const char* string);
+template<typename... Arguments>
+typename enable_if<(sizeof...(Arguments) == 0), void>::type k_print_line(Arguments... args){
+    k_print('\n');
+}
+
+template<typename... Arguments>
+typename enable_if<(sizeof...(Arguments) > 0), void>::type k_print_line(Arguments... args){
+    k_print(args...);
+    k_print('\n');
+}
 
 #endif
