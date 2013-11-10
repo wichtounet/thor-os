@@ -14,8 +14,11 @@
 #include "utils.hpp"
 #include "memory.hpp"
 #include "disks.hpp"
+#include "vector.hpp"
 
 namespace {
+
+vector<char*> history;
 
 //Declarations of the different functions
 
@@ -84,6 +87,8 @@ void start_shell(){
                 }
 
                 k_print("thor> ");
+            } else if(key == keyboard::KEY_UP){
+                //TODO
             } else if(key == keyboard::KEY_BACKSPACE){
                 if(current_input_length > 0){
                     k_print('\b');
@@ -386,6 +391,7 @@ void init_shell(){
     clear_command(0);
 
     k_print("thor> ");
+    k_print_line(history.capacity());
 
     start_shell();
 }

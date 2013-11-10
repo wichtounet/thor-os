@@ -1,4 +1,5 @@
 CC=x86_64-elf-g++
+AS=x86_64-elf-as
 
 WARNING_FLAGS=-Wall -Wextra -pedantic -Wold-style-cast -Wshadow
 CPP_FLAGS=-masm=intel -Iinclude/ -nostdlib -O1 -std=c++11 -fno-exceptions -fno-rtti -ffreestanding -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow $(WARNING_FLAGS)
@@ -10,12 +11,17 @@ KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o shell.o util
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
 
-LINK_O_FILES=$(KERNEL_O_FILES)
-
+LINK_O_FILES=crti.o $(CRTBEGIN_OBJ) $(KERNEL_O_FILES) $(CRTEND_OBJ) crtn.o
 
 kernel.bin: $(LINK_O_FILES)
 	$(CC) $(KERNEL_LINK_FLAGS) -o kernel.bin.o $(LINK_O_FILES)
 	objcopy -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
+
+crti.o: src/crti.s
+	$(AS) -c src/crti.s -o crti.o
+
+crtn.o: src/crtn.s
+	$(AS) -c src/crtn.s -o crtn.o
 
 kernel.o: src/kernel.cpp
 	$(CC) $(KERNEL_FLAGS) -c src/kernel.cpp -o kernel.o

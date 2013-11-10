@@ -40,6 +40,8 @@ public:
         rhs.data = nullptr;
         rhs._size = 0;
         rhs._capacity = 0;
+
+        return *this;
     }
 
     ~vector(){
@@ -52,6 +54,10 @@ public:
 
     size_type size(){
         return _size;
+    }
+
+    size_type capacity(){
+        return _capacity;
     }
 
     //Modifiers

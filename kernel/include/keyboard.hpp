@@ -14,6 +14,7 @@ namespace keyboard {
 
 const char KEY_ENTER = 0x1C;
 const char KEY_BACKSPACE = 0x0E;
+const char KEY_UP = 0x48;
 
 void install_driver();
 char get_char();
