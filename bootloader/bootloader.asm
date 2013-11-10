@@ -134,7 +134,7 @@ second_step:
     ; Loading the assembly kernel from floppy
 
     KERNEL_BASE equ 0x100      ; 0x100:0x0 = 0x1000
-    sectors equ 0x40           ; sectors to read
+    sectors equ 0x42           ; sectors to read
     bootdev equ 0x0
 
     mov ax, KERNEL_BASE

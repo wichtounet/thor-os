@@ -60,6 +60,14 @@ public:
         return _capacity;
     }
 
+    const value_type& operator[](size_type pos) const {
+        return data[pos];
+    }
+
+    value_type& operator[](size_type pos){
+        return data[pos];
+    }
+
     //Modifiers
 
     void push_back(value_type& element){
