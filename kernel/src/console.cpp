@@ -116,10 +116,39 @@ void k_print(uint64_t number){
     print_unsigned<20>(number);
 }
 
+template<typename T>
+void memcopy(T* destination, const T* source, uint64_t size){
+    --source;
+    --destination;
+
+    while(size--){
+        *++destination = *++source;
+    }
+}
+
+void next_line(){
+    ++current_line;
+
+    if(current_line == 25){
+        uint16_t* vga_buffer = reinterpret_cast<uint16_t*>(0x0B8000);
+        uint16_t* destination = vga_buffer;;
+        uint16_t* source = &vga_buffer[80];
+
+        memcopy(destination, source, 24 * 80);
+
+        for(uint64_t i = 0; i < 80; ++i){
+            vga_buffer[24 * 80 + i] = make_vga_entry(' ', make_color(WHITE, BLACK));
+        }
+
+        current_line = 24;
+    }
+
+    current_column = 0;
+}
+
 void k_print(char key){
     if(key == '\n'){
-        ++current_line;
-        current_column = 0;
+        next_line();
     } else if(key == '\b'){
         --current_column;
         k_print(' ');
@@ -134,8 +163,7 @@ void k_print(char key){
         ++current_column;
 
         if(current_column == 80){
-            current_column = 0;
-            ++current_line;
+            next_line();
         }
     }
 }
