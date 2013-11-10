@@ -77,8 +77,7 @@ void start_shell(){
                     exec_command();
 
                     if(get_column() != 0){
-                        set_column(0);
-                        set_line(get_line() + 1);
+                        k_print_line();
                     }
 
                     current_input_length = 0;
@@ -87,9 +86,7 @@ void start_shell(){
                 k_print("thor> ");
             } else if(key == keyboard::KEY_BACKSPACE){
                 if(current_input_length > 0){
-                    set_column(get_column() - 1);
-                    k_print(' ');
-                    set_column(get_column() - 1);
+                    k_print('\b');
 
                     --current_input_length;
                 }

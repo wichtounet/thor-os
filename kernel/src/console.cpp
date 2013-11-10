@@ -120,6 +120,10 @@ void k_print(char key){
     if(key == '\n'){
         ++current_line;
         current_column = 0;
+    } else if(key == '\b'){
+        --current_column;
+        k_print(' ');
+        --current_column;
     } else if(key == '\t'){
         k_print("  ");
     } else {
