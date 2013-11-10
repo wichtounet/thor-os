@@ -59,7 +59,14 @@ public:
     void push_back(T& element){
         if(_capacity == _size){
             _capacity= _capacity == 0 ? 1 : _capacity * 2;
-            data = new T[_capacity];
+            auto new_data = new T[_capacity];
+
+            for(size_type i = 0; i < _size; ++i){
+                new_data[i] = data[i];
+            }
+
+            delete[] data;
+            data = new_data;
         }
 
         data[_size++] = element;

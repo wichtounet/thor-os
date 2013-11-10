@@ -68,6 +68,16 @@ struct cluster_entry {
 
 static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
 
+template<typename T>
+void memcopy(T* destination, T* source, uint64_t size){
+    --source;
+    --destination;
+
+    while(size--){
+        *++destination = *++source;
+    }
+}
+
 } //end of anonymous namespace
 
 vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
@@ -76,7 +86,7 @@ vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::p
     unique_ptr<fat_bs_t> fat_bs(new fat_bs_t());
 
     if(!read_sectors(disk, partition.start, 1, fat_bs.get())){
-        //TODO
+        return files;
     } else {
         //fat_bs->signature should be 0xAA55
         //fat_bs->file_system_type should be FAT32
@@ -86,7 +96,7 @@ vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::p
         unique_ptr<fat_is_t> fat_is(new fat_is_t());
 
         if(!read_sectors(disk, fs_information_sector, 1, fat_is.get())){
-            //TODO
+            return files;
         } else {
             //fat_is->signature_start should be 0x52 0x52 0x61 0x41
             //fat_is->signature_middle should be 0x72 0x72 0x41 0x61
@@ -101,8 +111,7 @@ vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::p
             unique_heap_array<cluster_entry> root_cluster(entries);
 
             if(!read_sectors(disk, root_cluster_lba, sectors_per_cluster, root_cluster.get())){
-                //TODO
-                k_print("failed");
+                return files;
             } else {
                 for(cluster_entry& entry : root_cluster){
                     if(entry.name[0] == 0x0 || static_cast<unsigned char>(entry.name[0]) == 0xE5){
@@ -110,29 +119,22 @@ vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::p
                         continue;
                     }
 
+                    disks::file file;
+
                     if(entry.attrib == 0x0F){
                         //It is a long file name
+                        //TODO Add suppport for long file name
                     } else {
                         //It is a normal file name
                     }
 
-                    k_print(entry.name, 11);
+                    file.hidden = entry.attrib & 0x1;
+                    file.system = entry.attrib & 0x2;
+                    file.directory = entry.attrib & 0x10;
+                    file.size = entry.file_size;
+                    memcopy(file.name, entry.name, 11);
 
-                    if(entry.attrib & 0x1){
-                        k_print(" hidden ");
-                    }
-
-                    if(entry.attrib & 0x2){
-                        k_print(" os ");
-                    }
-
-                    if(entry.attrib & 0x10){
-                        k_print(" Directory ");
-                    } else {
-                        k_print(" File ");
-                    }
-
-                    k_print_line(entry.file_size);
+                    files.push_back(file);
                 }
             }
         }

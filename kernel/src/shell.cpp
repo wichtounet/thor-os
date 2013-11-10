@@ -337,7 +337,29 @@ void mount_command(const char* params){
 }
 
 void ls_command(const char*){
-    disks::ls();
+    auto files = disks::ls();
+
+    for(auto& file : files){
+        k_print(file.name, 11);
+
+        if(file.directory){
+            k_print(" directory ");
+        } else {
+            k_print(" file ");
+        }
+
+        if(file.hidden){
+            k_print(" hidden ");
+        }
+
+        if(file.system){
+            k_print(" os ");
+        }
+
+        if(!file.directory){
+            k_print_line(file.size);
+        }
+    }
 }
 
 } //end of anonymous namespace
