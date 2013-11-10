@@ -1,10 +1,11 @@
-/* x86_64 crti.s */
+.intel_syntax noprefix
+
 .section .init
 .global _init
 .type _init, @function
 _init:
-push %rbp
-movq %rsp, %rbp
+push rbp
+mov rbp, rsp
 
 /* gcc will nicely put the contents of crtbegin.o's .init section here. */
 
@@ -12,7 +13,7 @@ movq %rsp, %rbp
 .global _fini
 .type _fini, @function
 _fini:
-push %rbp
-movq %rsp, %rbp
+push rbp
+mov rbp, rsp
 
 /* gcc will nicely put the contents of crtbegin.o's .fini section here. */
