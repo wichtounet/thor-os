@@ -9,6 +9,7 @@
 
 #include "console.hpp"
 #include "types.hpp"
+#include "utils.hpp"
 
 namespace {
 
@@ -114,16 +115,6 @@ void k_print(uint32_t number){
 
 void k_print(uint64_t number){
     print_unsigned<20>(number);
-}
-
-template<typename T>
-void memcopy(T* destination, const T* source, uint64_t size){
-    --source;
-    --destination;
-
-    while(size--){
-        *++destination = *++source;
-    }
 }
 
 void next_line(){

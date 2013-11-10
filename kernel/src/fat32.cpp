@@ -3,6 +3,7 @@
 #include "fat32.hpp"
 #include "types.hpp"
 #include "console.hpp"
+#include "utils.hpp"
 
 namespace {
 
@@ -67,16 +68,6 @@ struct cluster_entry {
 } __attribute__ ((packed));
 
 static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
-
-template<typename T>
-void memcopy(T* destination, const T* source, uint64_t size){
-    --source;
-    --destination;
-
-    while(size--){
-        *++destination = *++source;
-    }
-}
 
 uint64_t cached_disk = -1;
 uint64_t cached_partition = -1;
