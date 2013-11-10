@@ -78,66 +78,97 @@ void memcopy(T* destination, const T* source, uint64_t size){
     }
 }
 
+uint64_t cached_disk = -1;
+uint64_t cached_partition = -1;
+uint64_t partition_start;
+
+fat_bs_t* fat_bs = nullptr;
+fat_is_t* fat_is = nullptr;
+
+void cache_bs(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+    unique_ptr<fat_bs_t> fat_bs_tmp(new fat_bs_t());
+
+    if(read_sectors(disk, partition.start, 1, fat_bs_tmp.get())){
+        fat_bs = fat_bs_tmp.release();
+
+        //TODO fat_bs->signature should be 0xAA55
+        //TODO fat_bs->file_system_type should be FAT32
+    } else {
+        fat_bs = nullptr;
+    }
+}
+
+void cache_is(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+    auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
+
+    unique_ptr<fat_is_t> fat_is_tmp(new fat_is_t());
+
+    if(read_sectors(disk, fs_information_sector, 1, fat_is_tmp.get())){
+        fat_is = fat_is_tmp.release();
+
+        //TODO fat_is->signature_start should be 0x52 0x52 0x61 0x41
+        //TODO fat_is->signature_middle should be 0x72 0x72 0x41 0x61
+        //TODO fat_is->signature_end should be 0x00 0x00 0x55 0xAA
+    } else {
+        fat_is = nullptr;
+    }
+}
+
+uint64_t cluster_lba(uint64_t cluster){
+    uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
+    uint64_t cluster_begin = fat_begin + (fat_bs->number_of_fat * fat_bs->sectors_per_fat_long);
+
+    return cluster_begin + (cluster - 2 ) * fat_bs->sectors_per_cluster;
+}
+
 } //end of anonymous namespace
 
 vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+    if(cached_disk != disk.uuid || cached_partition != partition.uuid){
+        partition_start = partition.start;
+
+        cache_bs(disk, partition);
+        cache_is(disk, partition);
+
+        cached_disk = disk.uuid;
+        cached_partition = partition.uuid;
+    }
+
+    if(!fat_bs || !fat_is){
+        //Something went wrong when reading the two base vectors
+        return {};
+    }
+
     vector<disks::file> files;
 
-    unique_ptr<fat_bs_t> fat_bs(new fat_bs_t());
+    unique_heap_array<cluster_entry> root_cluster(16 * fat_bs->sectors_per_cluster);
 
-    if(!read_sectors(disk, partition.start, 1, fat_bs.get())){
+    if(!read_sectors(disk, cluster_lba(fat_bs->root_directory_cluster_start), fat_bs->sectors_per_cluster, root_cluster.get())){
         return files;
     } else {
-        //fat_bs->signature should be 0xAA55
-        //fat_bs->file_system_type should be FAT32
-
-        auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
-
-        unique_ptr<fat_is_t> fat_is(new fat_is_t());
-
-        if(!read_sectors(disk, fs_information_sector, 1, fat_is.get())){
-            return files;
-        } else {
-            //fat_is->signature_start should be 0x52 0x52 0x61 0x41
-            //fat_is->signature_middle should be 0x72 0x72 0x41 0x61
-            //fat_is->signature_end should be 0x00 0x00 0x55 0xAA
-
-            uint64_t fat_begin = partition.start + fat_bs->reserved_sectors;
-            uint64_t cluster_begin = fat_begin + (fat_bs->number_of_fat * fat_bs->sectors_per_fat_long);
-            uint64_t sectors_per_cluster = fat_bs->sectors_per_cluster;
-            uint64_t root_cluster_lba = cluster_begin + (fat_bs->root_directory_cluster_start - 2) * sectors_per_cluster;
-            uint64_t entries = 16 * sectors_per_cluster;
-
-            unique_heap_array<cluster_entry> root_cluster(entries);
-
-            if(!read_sectors(disk, root_cluster_lba, sectors_per_cluster, root_cluster.get())){
-                return files;
-            } else {
-                for(cluster_entry& entry : root_cluster){
-                    if(entry.name[0] == 0x0 || static_cast<unsigned char>(entry.name[0]) == 0xE5){
-                        //The entry does not exists
-                        continue;
-                    }
-
-                    disks::file file;
-
-                    if(entry.attrib == 0x0F){
-                        //It is a long file name
-                        //TODO Add suppport for long file name
-                        memcopy(file.name, "LONG", 4);
-                    } else {
-                        //It is a normal file name
-                        memcopy(file.name, entry.name, 11);
-                    }
-
-                    file.hidden = entry.attrib & 0x1;
-                    file.system = entry.attrib & 0x2;
-                    file.directory = entry.attrib & 0x10;
-                    file.size = entry.file_size;
-
-                    files.push_back(file);
-                }
+        for(cluster_entry& entry : root_cluster){
+            if(entry.name[0] == 0x0 || static_cast<unsigned char>(entry.name[0]) == 0xE5){
+                //The entry does not exists
+                continue;
             }
+
+            disks::file file;
+
+            if(entry.attrib == 0x0F){
+                //It is a long file name
+                //TODO Add suppport for long file name
+                memcopy(file.name, "LONG", 4);
+            } else {
+                //It is a normal file name
+                memcopy(file.name, entry.name, 11);
+            }
+
+            file.hidden = entry.attrib & 0x1;
+            file.system = entry.attrib & 0x2;
+            file.directory = entry.attrib & 0x10;
+            file.size = entry.file_size;
+
+            files.push_back(file);
         }
     }
 
