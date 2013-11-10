@@ -338,6 +338,12 @@ void mount_command(const char* params){
 }
 
 void ls_command(const char*){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
     auto files = disks::ls();
 
     for(auto& file : files){
