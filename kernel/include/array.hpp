@@ -114,9 +114,9 @@ public:
     }
 
     void reset(pointer_type p = pointer_type()){
-        if(array!= p){
+        if(array != p){
             delete[] array;
-            array= nullptr;
+            array= p;
         }
     }
 
