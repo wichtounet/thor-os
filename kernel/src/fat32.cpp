@@ -69,7 +69,7 @@ struct cluster_entry {
 static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
 
 template<typename T>
-void memcopy(T* destination, T* source, uint64_t size){
+void memcopy(T* destination, const T* source, uint64_t size){
     --source;
     --destination;
 
@@ -124,15 +124,16 @@ vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::p
                     if(entry.attrib == 0x0F){
                         //It is a long file name
                         //TODO Add suppport for long file name
+                        memcopy(file.name, "LONG", 4);
                     } else {
                         //It is a normal file name
+                        memcopy(file.name, entry.name, 11);
                     }
 
                     file.hidden = entry.attrib & 0x1;
                     file.system = entry.attrib & 0x2;
                     file.directory = entry.attrib & 0x10;
                     file.size = entry.file_size;
-                    memcopy(file.name, entry.name, 11);
 
                     files.push_back(file);
                 }

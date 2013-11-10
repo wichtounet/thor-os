@@ -267,6 +267,7 @@ void memory_command(const char*){
         k_printf("Total available memory: %m\n", available_memory());
         k_printf("Total used memory: %m\n", used_memory());
         k_printf("Total free memory: %m\n", free_memory());
+        k_printf("Total allocated memory: %m\n", allocated_memory());
     }
 }
 

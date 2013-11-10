@@ -13,6 +13,7 @@ namespace {
 //Used to compile with malloc operations in the console
 //can produce a lot of output
 const bool DEBUG_MALLOC = false;
+const bool TRACE_MALLOC = true;
 
 struct bios_mmap_entry {
     uint32_t base_low;
@@ -43,6 +44,7 @@ void mmap_query(uint64_t cmd, uint64_t* result){
 
 uint64_t _available_memory;
 uint64_t _used_memory;
+uint64_t _allocated_memory;
 
 struct malloc_header_chunk {
     uint64_t size;
@@ -118,6 +120,8 @@ uint64_t* allocate_block(uint64_t blocks){
     pt_index += blocks;
     current_mmap_entry_position += blocks * BLOCK_SIZE;
 
+    _allocated_memory += blocks * BLOCK_SIZE;
+
     return block;
 }
 
@@ -177,6 +181,7 @@ void init_memory_manager(){
 }
 
 void* k_malloc(uint64_t bytes){
+
     auto current = malloc_head->next;
 
     while(true){
@@ -240,19 +245,29 @@ void* k_malloc(uint64_t bytes){
         current = current->next;
     }
 
-    _used_memory += bytes + META_SIZE;
+    _used_memory += current->size + META_SIZE;
 
     //Make sure the node is clean
     current->prev = nullptr;
     current->next = nullptr;
 
-    return reinterpret_cast<void*>(
+    auto b = reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
+
+    if(TRACE_MALLOC){
+        k_printf("m %d %h ", bytes, reinterpret_cast<uint64_t>(b));
+    }
+
+    return b;
 }
 
 void k_free(void* block){
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
+
+    if(TRACE_MALLOC){
+        k_printf("f %d %h ",free_header->size, reinterpret_cast<uint64_t>(block));
+    }
 
     _used_memory -= free_header->size + META_SIZE;
 
@@ -333,6 +348,10 @@ uint64_t available_memory(){
 
 uint64_t used_memory(){
     return _used_memory;
+}
+
+uint64_t allocated_memory(){
+    return _allocated_memory;
 }
 
 uint64_t free_memory(){
