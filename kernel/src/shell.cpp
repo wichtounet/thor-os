@@ -19,6 +19,7 @@
 namespace {
 
 vector<char*> history;
+uint64_t history_index;
 
 //Declarations of the different functions
 
@@ -387,11 +388,11 @@ void free_command(const char*){
 
 void init_shell(){
     current_input_length = 0;
+    history_index = 0;
 
     clear_command(0);
 
     k_print("thor> ");
-    k_print_line(history.capacity());
 
     start_shell();
 }
