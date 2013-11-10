@@ -356,9 +356,7 @@ void ls_command(const char*){
             k_print(" os ");
         }
 
-        if(!file.directory){
-            k_print_line(file.size);
-        }
+        k_print_line(file.size);
     }
 }
 
