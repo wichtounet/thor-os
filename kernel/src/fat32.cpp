@@ -174,3 +174,22 @@ vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::p
 
     return files;
 }
+
+uint64_t fat32::free_size(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+    if(cached_disk != disk.uuid || cached_partition != partition.uuid){
+        partition_start = partition.start;
+
+        cache_bs(disk, partition);
+        cache_is(disk, partition);
+
+        cached_disk = disk.uuid;
+        cached_partition = partition.uuid;
+    }
+
+    if(!fat_bs || !fat_is){
+        //Something went wrong when reading the two base vectors
+        return 0;
+    }
+
+    return fat_is->free_clusters * fat_bs->sectors_per_cluster * 512;
+}

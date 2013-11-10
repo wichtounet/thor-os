@@ -32,13 +32,14 @@ void disks_command(const char* params);
 void partitions_command(const char* params);
 void mount_command(const char* params);
 void ls_command(const char* params);
+void free_command(const char* params);
 
 struct command_definition {
     const char* name;
     void (*function)(const char*);
 };
 
-command_definition commands[13] = {
+command_definition commands[14] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -52,6 +53,7 @@ command_definition commands[13] = {
     {"partitions", partitions_command},
     {"mount", mount_command},
     {"ls", ls_command},
+    {"free", free_command},
 };
 
 uint64_t current_input_length = 0;
@@ -365,6 +367,16 @@ void ls_command(const char*){
 
         k_print_line(file.size);
     }
+}
+
+void free_command(const char*){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    k_printf("Free size: %m\n", disks::free_size());
 }
 
 } //end of anonymous namespace

@@ -62,6 +62,7 @@ bool partition_exists(const disk_descriptor& disk, uint64_t uuid);
 
 void mount(const disk_descriptor& disk, uint64_t uuid);
 vector<file> ls();
+uint64_t free_size();
 
 const disk_descriptor* mounted_disk();
 const partition_descriptor* mounted_partition();
