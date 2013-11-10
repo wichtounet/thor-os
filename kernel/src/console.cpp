@@ -130,12 +130,13 @@ void next_line(){
     ++current_line;
 
     if(current_line == 25){
-        uint16_t* vga_buffer = reinterpret_cast<uint16_t*>(0x0B8000);
-        uint16_t* destination = vga_buffer;;
-        uint16_t* source = &vga_buffer[80];
+        auto vga_buffer_fast = reinterpret_cast<uint64_t*>(0x0B8000);
+        auto destination = vga_buffer_fast;
+        auto source = &vga_buffer_fast[20];
 
-        memcopy(destination, source, 24 * 80);
+        memcopy(destination, source, 24 * 20);
 
+        auto vga_buffer = reinterpret_cast<uint16_t*>(0x0B8000);
         for(uint64_t i = 0; i < 80; ++i){
             vga_buffer[24 * 80 + i] = make_vga_entry(' ', make_color(WHITE, BLACK));
         }
