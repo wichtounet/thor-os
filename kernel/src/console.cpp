@@ -128,6 +128,11 @@ void k_print(char key){
         vga_buffer[current_line * 80 + current_column] = make_vga_entry(key, make_color(WHITE, BLACK));
 
         ++current_column;
+
+        if(current_column == 80){
+            current_column = 0;
+            ++current_line;
+        }
     }
 }
 
