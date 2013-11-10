@@ -73,14 +73,16 @@ void start_shell(){
 
                 k_print_line();
 
-                exec_command();
+                if(current_input_length > 0){
+                    exec_command();
 
-                if(get_column() != 0){
-                    set_column(0);
-                    set_line(get_line() + 1);
+                    if(get_column() != 0){
+                        set_column(0);
+                        set_line(get_line() + 1);
+                    }
+
+                    current_input_length = 0;
                 }
-
-                current_input_length = 0;
 
                 k_print("thor> ");
             } else if(key == keyboard::KEY_BACKSPACE){
