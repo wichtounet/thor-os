@@ -61,6 +61,7 @@ unique_heap_array<partition_descriptor> partitions(const disk_descriptor& disk);
 bool partition_exists(const disk_descriptor& disk, uint64_t uuid);
 
 void mount(const disk_descriptor& disk, uint64_t uuid);
+void unmount();
 vector<file> ls();
 uint64_t free_size();
 

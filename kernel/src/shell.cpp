@@ -35,6 +35,7 @@ void memory_command(const char* params);
 void disks_command(const char* params);
 void partitions_command(const char* params);
 void mount_command(const char* params);
+void unmount_command(const char* params);
 void ls_command(const char* params);
 void free_command(const char* params);
 
@@ -43,7 +44,7 @@ struct command_definition {
     void (*function)(const char*);
 };
 
-command_definition commands[14] = {
+command_definition commands[15] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -56,6 +57,7 @@ command_definition commands[14] = {
     {"disks", disks_command},
     {"partitions", partitions_command},
     {"mount", mount_command},
+    {"unmount", unmount_command},
     {"ls", ls_command},
     {"free", free_command},
 };
@@ -383,6 +385,16 @@ void mount_command(const char* params){
             k_printf("Disk %d does not exist\n", disk_uuid);
         }
     }
+}
+
+void unmount_command(const char* ){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    disks::unmount();
 }
 
 void ls_command(const char*){
