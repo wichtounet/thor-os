@@ -68,6 +68,14 @@ void str_copy(const char* a, char* b){
     *b = '\0';
 }
 
+uint64_t str_len(const char* a){
+    uint64_t length = 0;
+    while(*a++){
+        ++length;
+    }
+    return length;
+}
+
 const char* str_until(char* a, char c){
     char* it = a;
     while(*it){

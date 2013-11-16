@@ -13,6 +13,7 @@
 #include "thor.hpp"
 #include "console.hpp"
 #include "fat32.hpp"
+#include "utils.hpp"
 
 namespace {
 
@@ -42,6 +43,9 @@ static_assert(sizeof(boot_record_t) == 512, "The boot record is 512 bytes long")
 
 const disks::disk_descriptor* _mounted_disk;
 const disks::partition_descriptor* _mounted_partition;
+
+//TODO This should be improved to suppport multi level
+char* pwd = nullptr;
 
 } //end of anonymous namespace
 
@@ -222,4 +226,21 @@ uint64_t disks::free_size(){
     }
 
     return fat32::free_size(*_mounted_disk, *_mounted_partition);
+}
+
+const char* disks::current_directory(){
+    return pwd;
+}
+
+void disks::set_current_directory(const char* directory){
+    if(pwd){
+        delete[] pwd;
+    }
+
+    if(!directory){
+        pwd = nullptr;
+    } else {
+        pwd = new char[str_len(directory) + 1];
+        str_copy(directory, pwd);
+    }
 }
