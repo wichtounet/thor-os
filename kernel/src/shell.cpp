@@ -426,6 +426,11 @@ void ls_command(const char*){
     auto files = disks::ls();
 
     for(auto& file : files){
+        //By default hidden files are not shown
+        if(file.hidden){
+            continue;
+        }
+
         k_print(file.name, 11);
 
         if(file.directory){
