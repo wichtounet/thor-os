@@ -6,7 +6,7 @@ CPP_FLAGS=-masm=intel -Iinclude/ -nostdlib -Os -std=c++11 -fno-exceptions -fno-r
 KERNEL_FLAGS=$(CPP_FLAGS)
 KERNEL_LINK_FLAGS=-lgcc -T linker.ld $(CPP_FLAGS)
 
-KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o shell.o utils.o memory.o ata.o thor.o disks.o fat32.o string.o
+KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o shell.o utils.o memory.o ata.o thor.o disks.o fat32.o string.o algorithms.o
 
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
@@ -61,6 +61,9 @@ fat32.o: src/fat32.cpp
 
 string.o: src/string.cpp
 	$(CC) $(KERNEL_FLAGS) -c src/string.cpp -o string.o
+
+algorithms.o: src/algorithms.cpp
+	$(CC) $(KERNEL_FLAGS) -c src/algorithms.cpp -o algorithms.o
 
 clean:
 	rm -f *.o

@@ -16,6 +16,7 @@ private:
 public:
     //Constructors
 
+    string();
     string(const char* s);
     explicit string(size_t capacity);
 
@@ -33,9 +34,19 @@ public:
 
     ~string();
 
+    //Accessors
+
     size_t size() const;
+    bool empty() const;
 
     const char* c_str() const;
+
+    //Operators
+
+    string operator+(char c) const;
+    string& operator+=(char c);
+
+    //Iterators
 
     iterator begin();
     iterator end();

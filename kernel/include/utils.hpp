@@ -30,4 +30,13 @@ void memcopy(T* destination, const T* source, uint64_t size){
     }
 }
 
+template< class T > struct remove_reference      {typedef T type;};
+template< class T > struct remove_reference<T&>  {typedef T type;};
+template< class T > struct remove_reference<T&&> {typedef T type;};
+
+template< class T >
+constexpr typename remove_reference<T>::type&& move( T&& t ){
+    return static_cast<typename remove_reference<T>::type&&>(t);
+}
+
 #endif
