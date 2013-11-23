@@ -2,11 +2,11 @@ CC=x86_64-elf-g++
 AS=x86_64-elf-as
 
 WARNING_FLAGS=-Wall -Wextra -pedantic -Wold-style-cast -Wshadow
-CPP_FLAGS=-masm=intel -Iinclude/ -nostdlib -O1 -std=c++11 -fno-exceptions -fno-rtti -ffreestanding -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow $(WARNING_FLAGS)
+CPP_FLAGS=-masm=intel -Iinclude/ -nostdlib -Os -std=c++11 -fno-exceptions -fno-rtti -ffreestanding -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow $(WARNING_FLAGS)
 KERNEL_FLAGS=$(CPP_FLAGS)
 KERNEL_LINK_FLAGS=-lgcc -T linker.ld $(CPP_FLAGS)
 
-KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o shell.o utils.o memory.o ata.o thor.o disks.o fat32.o
+KERNEL_O_FILES=kernel.o keyboard.o console.o kernel_utils.o timer.o shell.o utils.o memory.o ata.o thor.o disks.o fat32.o string.o
 
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
@@ -58,6 +58,9 @@ disks.o: src/disks.cpp
 
 fat32.o: src/fat32.cpp
 	$(CC) $(KERNEL_FLAGS) -c src/fat32.cpp -o fat32.o
+
+string.o: src/string.cpp
+	$(CC) $(KERNEL_FLAGS) -c src/string.cpp -o string.o
 
 clean:
 	rm -f *.o

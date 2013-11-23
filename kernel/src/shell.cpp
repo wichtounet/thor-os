@@ -14,6 +14,7 @@
 #include "utils.hpp"
 #include "memory.hpp"
 #include "disks.hpp"
+#include "string.hpp"
 #include "vector.hpp"
 
 namespace {
@@ -416,7 +417,9 @@ void unmount_command(const char* ){
     disks::unmount();
 }
 
-void ls_command(const char*){
+void ls_command(const char* params){
+    string p(params);
+
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
 
