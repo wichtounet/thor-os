@@ -1,20 +1,23 @@
-default: thor.flp
+.PHONY: default clean bootloader kernel micro_kernel force_look qemu bochs debug
 
-bootloader.bin: force_look
+default: bootloader micro_kernel kernel thor.flp
+
+bootloader: force_look
 	cd bootloader; $(MAKE)
 
-micro_kernel.bin: force_look
+micro_kernel: force_look
 	cd micro_kernel; $(MAKE)
 
-kernel.bin: force_look
+kernel: force_look
 	cd kernel; $(MAKE)
 
-filler.bin: kernel.bin
+filler.bin: kernel/kernel.bin micro_kernel/micro_kernel.bin bootloader/stage1.bin bootloader/stage2.bin bootloader/padding.bin
 	bash fill.bash
 
-thor.flp: bootloader.bin micro_kernel.bin kernel.bin filler.bin
+thor.flp: filler.bin
 	cat bootloader/stage1.bin > thor.bin
 	cat bootloader/stage2.bin >> thor.bin
+	cat bootloader/padding.bin >> thor.bin
 	cat micro_kernel/micro_kernel.bin >> thor.bin
 	cat kernel/kernel.bin >> thor.bin
 	cat filler.bin >> thor.bin

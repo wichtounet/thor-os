@@ -14,7 +14,6 @@ jmp rm_start
 ; Start in real mode
 rm_start:
     ; Set stack space (4K) and stack segment
-
     mov ax, 0x7C0
     add ax, 288
     mov ss, ax
@@ -24,6 +23,7 @@ rm_start:
     mov ax, 0x7C0
     mov ds, ax
 
+    ; Set video mode
     mov ah, 0x01
     mov cx, 0x2607
     int 0x10
@@ -70,13 +70,14 @@ rm_start:
     ; Loading the stage 2 from floppy
 
     bootdev equ 0x0
+    sectors equ 1
 
     mov ax, 0x90
     mov es, ax
     xor bx, bx
 
     mov ah, 0x2         ; Read sectors from memory
-    mov al, 1           ; Number of sectors to read
+    mov al, sectors     ; Number of sectors to read
     xor ch, ch          ; Cylinder 0
     mov cl, 2           ; Sector 2
     xor dh, dh          ; Head 0
@@ -85,14 +86,14 @@ rm_start:
 
     jc read_failed
 
-    cmp al, 1
+    cmp al, sectors
     jne read_failed
 
     ; Run the assembly kernel
 
     jmp dword 0x90:0x0
 
-    reset_failed:
+reset_failed:
     mov si, reset_failed_msg
     call print_line_16
 
@@ -115,11 +116,11 @@ error_end:
     header_2 db '******************************', 0
 
     press_key_msg db 'Press any key to load the kernel...', 0
-    load_kernel db 'Attempt to load the kernel...', 0
+    load_kernel db 'Attempt to load the stage 2...', 0
 
     reset_failed_msg db 'Reset disk failed', 0
     read_failed_msg db 'Read disk failed', 0
-    load_failed db 'Kernel loading failed', 0
+    load_failed db 'Stage 2 loading failed', 0
 
 ; Make a real bootsector
 
