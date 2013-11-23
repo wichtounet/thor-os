@@ -67,7 +67,9 @@ rm_start:
 
     jc reset_failed
 
-    ; Loading the assembly kernel from floppy
+    ; Loading the stage 2 from floppy
+
+    bootdev equ 0x0
 
     mov ax, 0x90
     mov es, ax
@@ -123,32 +125,3 @@ error_end:
 
     times 510-($-$$) db 0
     dw 0xAA55
-
-second_step:
-    ; Reset disk drive
-    xor ax, ax
-    xor ah, ah
-    mov dl, 0
-    int 0x13
-
-    ; Loading the assembly kernel from floppy
-
-    KERNEL_BASE equ 0x100      ; 0x100:0x0 = 0x1000
-    sectors equ 0x42           ; sectors to read
-    bootdev equ 0x0
-
-    mov ax, KERNEL_BASE
-    mov es, ax
-    xor bx, bx
-
-    mov ah, 0x2         ; Read sectors from memory
-    mov al, sectors     ; Number of sectors to read
-    xor ch, ch          ; Cylinder 0
-    mov cl, 3           ; Sector 2
-    xor dh, dh          ; Head 0
-    mov dl, bootdev     ; Drive
-    int 0x13
-
-    jmp dword KERNEL_BASE:0x0
-
-    times 1024-($-$$) db 0

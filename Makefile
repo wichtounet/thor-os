@@ -13,7 +13,8 @@ filler.bin: kernel.bin
 	bash fill.bash
 
 thor.flp: bootloader.bin micro_kernel.bin kernel.bin filler.bin
-	cat bootloader/bootloader.bin > thor.bin
+	cat bootloader/stage1.bin > thor.bin
+	cat bootloader/stage2.bin >> thor.bin
 	cat micro_kernel/micro_kernel.bin >> thor.bin
 	cat kernel/kernel.bin >> thor.bin
 	cat filler.bin >> thor.bin
