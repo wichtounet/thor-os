@@ -35,11 +35,13 @@ second_step:
 
     mov ax, KERNEL_BASE
     mov es, ax
-    xor bx, bx
 
-    xor si, si
+    xor di, di
+    xchg bx, bx
 
 .next:
+    xor bx, bx
+
     ; Read one sector
     mov ah, 0x2         ; Read sectors from memory
     mov al, 1           ; Number of sectors to read
@@ -51,14 +53,17 @@ second_step:
 
     jc read_failed
 
+    test ah, ah
+    jne read_failed
+
     cmp al, 1
     jne read_failed
 
     mov si, star
     call print_16
 
-    inc si
-    cmp si, sectors
+    inc di
+    cmp di, sectors
     jne .continue
 
     mov si, kernel_loaded
@@ -97,7 +102,6 @@ second_step:
     mov ax, es
     add ax, 0x20    ; 0x20:0x0 = 512 (sector size)
     mov es, ax
-    xor bx, bx
 
     jmp .next
 
