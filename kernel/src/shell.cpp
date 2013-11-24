@@ -44,13 +44,14 @@ void ls_command(const vector<string>& params);
 void cd_command(const vector<string>& params);
 void pwd_command(const vector<string>& params);
 void free_command(const vector<string>& params);
+void sysinfo_command(const vector<string>& params);
 
 struct command_definition {
     const char* name;
     void (*function)(const vector<string>&);
 };
 
-command_definition commands[17] = {
+command_definition commands[18] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -68,6 +69,7 @@ command_definition commands[17] = {
     {"free", free_command},
     {"cd", cd_command},
     {"pwd", pwd_command},
+    {"sysinfo", sysinfo_command},
 };
 
 uint64_t current_input_length = 0;
@@ -472,10 +474,10 @@ void free_command(const vector<string>&){
 void pwd_command(const vector<string>&){
     auto cd = disks::current_directory();
 
-    if(!cd){
+    if(cd.empty()){
         k_print_line("/");
     } else {
-        k_printf("/%s\n", cd);
+        k_printf("/%s\n", cd.c_str());
     }
 }
 
@@ -485,6 +487,41 @@ void cd_command(const vector<string>& params){
     } else {
         disks::set_current_directory(params[1]);
     }
+}
+
+void native_cpuid(uint32_t* eax, uint32_t* ebx, uint32_t* ecx, uint32_t* edx){
+        /* ecx is often an input as well as an output. */
+        asm volatile("cpuid"
+            : "=a" (*eax),
+              "=b" (*ebx),
+              "=c" (*ecx),
+              "=d" (*edx)
+            : "0" (*eax), "2" (*ecx));
+}
+
+void sysinfo_command(const vector<string>&){
+    uint32_t eax, ebx, ecx, edx;
+
+    eax = 1;
+    native_cpuid(&eax, &ebx, &ecx, &edx);
+
+    k_printf("Stepping: %d\n", eax & 0xF);
+    k_printf("Model: %d\n", (eax >> 4) & 0xF);
+    k_printf("Family: %d\n", (eax >> 8) & 0xF);
+    k_printf("Processor Type: %d\n", (eax >> 12) & 0x3);
+    k_printf("Extended Model: %d\n", (eax >> 16) & 0xF);
+    k_printf("Extended Family: %d\n", (eax >> 20) & 0xFF);
+
+    eax = 0;
+    native_cpuid(&eax, &ebx, &ecx, &edx);
+
+    char vendor_id[13];
+    *(reinterpret_cast<uint32_t*>(vendor_id)+0) = ebx;
+    *(reinterpret_cast<uint32_t*>(vendor_id)+1) = edx;
+    *(reinterpret_cast<uint32_t*>(vendor_id)+2) = ecx;
+    vendor_id[12] = '\0';
+
+    k_printf("Vendor ID: %s\n", vendor_id);
 }
 
 } //end of anonymous namespace
