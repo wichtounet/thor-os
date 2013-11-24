@@ -37,7 +37,6 @@ second_step:
     mov es, ax
 
     xor di, di
-    xchg bx, bx
 
 .next:
     xor bx, bx
