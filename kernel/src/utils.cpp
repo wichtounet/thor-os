@@ -49,6 +49,10 @@ uint64_t parse(const char* str){
     return acc;
 }
 
+uint64_t parse(const string& str){
+    return parse(str.begin(), str.end());
+}
+
 bool str_contains(const char* a, char c){
     while(*a){
         if(*a == c){

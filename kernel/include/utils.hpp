@@ -9,9 +9,11 @@
 #define UTILS_H
 
 #include "types.hpp"
+#include "string.hpp"
 
 uint64_t parse(const char* str);
 uint64_t parse(const char* str, const char* end);
+uint64_t parse(const string& str);
 
 bool str_equals(const char* a, const char* b);
 bool str_contains(const char* a, char c);

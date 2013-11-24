@@ -11,6 +11,7 @@
 #include "types.hpp"
 #include "array.hpp"
 #include "vector.hpp"
+#include "string.hpp"
 
 namespace disks {
 
@@ -68,8 +69,8 @@ uint64_t free_size();
 const disk_descriptor* mounted_disk();
 const partition_descriptor* mounted_partition();
 
-const char* current_directory();
-void set_current_directory(const char* directory = nullptr);
+const string& current_directory();
+void set_current_directory(const string& directory = string());
 
 }
 

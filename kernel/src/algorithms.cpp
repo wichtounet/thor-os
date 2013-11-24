@@ -9,7 +9,7 @@ vector<string> split(const string& s){
     for(char c : s){
         if(c == ' ' && !current.empty()){
             parts.push_back(current);
-            current = "";
+            current.clear();
         } else {
             current += c;
         }

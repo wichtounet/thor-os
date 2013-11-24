@@ -52,11 +52,11 @@ public:
 
     //Getters
 
-    size_type size(){
+    size_type size() const {
         return _size;
     }
 
-    size_type capacity(){
+    size_type capacity() const {
         return _capacity;
     }
 

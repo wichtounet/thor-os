@@ -34,6 +34,10 @@ public:
 
     ~string();
 
+    //Modifiers
+
+    void clear();
+
     //Accessors
 
     size_t size() const;

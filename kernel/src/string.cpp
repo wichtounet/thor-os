@@ -4,8 +4,9 @@
 
 string::string(){
     _size = 0;
-    _capacity = 0;
-    _data = nullptr;
+    _capacity = 1;
+    _data = new char[_capacity];
+    _data[0] = '\0';
 }
 
 string::string(const char* s){
@@ -68,6 +69,11 @@ string::~string(){
     if(_data){
         delete[] _data;
     }
+}
+
+void string::clear(){
+    _size = 0;
+    _data[0] = '\0';
 }
 
 size_t string::size() const {
