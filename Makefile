@@ -23,15 +23,15 @@ thor.flp: filler.bin
 	cat filler.bin >> thor.bin
 	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
 
-qemu: thor.flp
+qemu: default
 	qemu-kvm -cpu host -fda thor.flp -hda hdd.img -boot order=a
 
-bochs: thor.flp
+bochs: default
 	echo "c" > commands
 	bochs -qf bochsrc.txt -rc commands
 	rm commands
 
-debug: thor.flp
+debug: default
 	echo "c" > commands
 	bochs -qf debug_bochsrc.txt -rc commands
 	rm commands
