@@ -15,5 +15,9 @@ vector<string> split(const string& s){
         }
     }
 
+    if(!current.empty()){
+        parts.push_back(current);
+    }
+
     return move(parts);
 }

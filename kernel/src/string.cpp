@@ -1,5 +1,6 @@
 #include "string.hpp"
 #include "utils.hpp"
+#include "console.hpp"
 
 string::string(){
     _size = 0;
@@ -24,9 +25,10 @@ string::string(const string& rhs){
     *this = rhs;
 }
 
+//TODO Does not seem to work
 string& string::operator=(const string& rhs){
     if(this != &rhs){
-        if(_capacity < rhs._capacity){
+        if(_capacity < rhs._capacity || !_data){
             if(_data){
                 delete[] _data;
             }
@@ -63,15 +65,21 @@ string& string::operator=(string&& rhs){
 }
 
 string::~string(){
-    delete[] _data;
+    if(_data){
+        delete[] _data;
+    }
 }
 
 size_t string::size() const {
     return _size;
 }
 
+size_t string::capacity() const {
+    return _capacity;
+}
+
 bool string::empty() const {
-    return _size;
+    return !_size;
 }
 
 const char* string::c_str() const {
@@ -103,17 +111,17 @@ string& string::operator+=(char c){
 }
 
 string::iterator string::begin(){
-    return _data;
+    return iterator(&_data[0]);
 }
 
 string::iterator string::end(){
-    return _data + _size;
+    return iterator(&_data[_size]);
 }
 
 string::const_iterator string::begin() const {
-    return _data;
+    return const_iterator(&_data[0]);
 }
 
 string::const_iterator string::end() const {
-    return _data + _size;
+    return const_iterator(&_data[_size]);
 }

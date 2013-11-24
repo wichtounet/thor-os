@@ -37,6 +37,7 @@ public:
     //Accessors
 
     size_t size() const;
+    size_t capacity() const;
     bool empty() const;
 
     const char* c_str() const;

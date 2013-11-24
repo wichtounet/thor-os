@@ -16,6 +16,7 @@
 #include "disks.hpp"
 #include "string.hpp"
 #include "vector.hpp"
+#include "algorithms.hpp"
 
 namespace {
 
@@ -418,7 +419,23 @@ void unmount_command(const char* ){
 }
 
 void ls_command(const char* params){
-    string p(params);
+    string par(params);
+    k_printf("%h\n", reinterpret_cast<size_t>(&par));
+
+    k_printf("%h\n", reinterpret_cast<size_t>(par.c_str()));
+    k_print_line(par.size());
+    k_print_line(par.capacity());
+
+    k_print_line(par.c_str());
+    k_print_line(par);
+
+    auto parts = split(par);
+
+    k_print_line(parts.size());
+
+    for(auto& part : parts){
+        k_print_line(part);
+    }
 
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
