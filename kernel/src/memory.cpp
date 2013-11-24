@@ -255,7 +255,7 @@ void* k_malloc(uint64_t bytes){
         reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
 
     if(TRACE_MALLOC){
-        k_printf("m %d %h ", bytes, reinterpret_cast<uint64_t>(b));
+        k_printf("m %d(%d) %h ", bytes, current->size, reinterpret_cast<uint64_t>(b));
     }
 
     return b;
