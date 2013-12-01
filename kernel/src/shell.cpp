@@ -499,8 +499,29 @@ void native_cpuid(uint32_t* eax, uint32_t* ebx, uint32_t* ecx, uint32_t* edx){
             : "0" (*eax), "2" (*ecx));
 }
 
+// EDX Features
+const int FPU = 1 << 0;
+const int MMX = 1 << 23;
+const int SSE = 1 << 25;
+const int SSE2 = 1 << 26;
+const int HT = 1 << 28;
+
+//EAX Features
+const int SSE3 = 1 << 9;
+const int SSE41 = 1 << 19;
+const int SSE42 = 1 << 20;
+const int AES = 1 << 25;
+const int AVX = 1 << 28;
+
+void test_feature(uint32_t reg, int mask, const char* s){
+    if(reg & mask){
+        k_print(' ');
+        k_print(s);
+    }
+}
+
 void sysinfo_command(const vector<string>&){
-    uint32_t eax, ebx, ecx, edx;
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 
     eax = 1;
     native_cpuid(&eax, &ebx, &ecx, &edx);
@@ -522,6 +543,23 @@ void sysinfo_command(const vector<string>&){
     vendor_id[12] = '\0';
 
     k_printf("Vendor ID: %s\n", vendor_id);
+
+    eax = 1;
+    native_cpuid(&eax, &ebx, &ecx, &edx);
+
+    k_print("Features:");
+
+    test_feature(edx, FPU, "fpu");
+    test_feature(edx, MMX, "mmx");
+    test_feature(edx, SSE, "sse");
+    test_feature(edx, SSE2, "sse2");
+    test_feature(edx, HT, "ht");
+
+    test_feature(ecx, SSE3, "sse3");
+    test_feature(ecx, SSE41, "sse4_1");
+    test_feature(ecx, SSE42, "sse4_2");
+    test_feature(ecx, AES, "aes");
+    test_feature(ecx, AVX, "avx");
 }
 
 } //end of anonymous namespace
