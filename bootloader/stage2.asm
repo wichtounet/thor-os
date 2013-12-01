@@ -12,7 +12,7 @@ jmp second_step
 %include "intel_16.asm"
 
 KERNEL_BASE equ 0x100      ; 0x100:0x0 = 0x1000
-sectors equ 0x48           ; sectors to read
+sectors equ 0x52           ; sectors to read
 bootdev equ 0x0
 
 ; Loaded at 0x90:0x0
