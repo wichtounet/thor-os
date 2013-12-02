@@ -92,6 +92,14 @@ const char* string::c_str() const {
     return _data;
 }
 
+char& string::operator[](size_t i){
+    return _data[i];
+}
+
+const char& string::operator[](size_t i) const {
+    return _data[i];
+}
+
 string string::operator+(char c) const {
     string copy = *this;
 
@@ -114,6 +122,20 @@ string& string::operator+=(char c){
     _data[++_size] = '\0';
 
     return *this;
+}
+
+bool string::operator==(const char* s) const {
+    if(size() != str_len(s)){
+        return false;
+    }
+
+    for(size_t i = 0; i < size(); ++i){
+        if(_data[i] != s[i]){
+            return false;
+        }
+    }
+
+    return true;
 }
 
 string::iterator string::begin(){

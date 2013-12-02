@@ -38,6 +38,9 @@ public:
 
     void clear();
 
+    string operator+(char c) const;
+    string& operator+=(char c);
+
     //Accessors
 
     size_t size() const;
@@ -46,10 +49,12 @@ public:
 
     const char* c_str() const;
 
+    char& operator[](size_t i);
+    const char& operator[](size_t i) const;
+
     //Operators
 
-    string operator+(char c) const;
-    string& operator+=(char c);
+    bool operator==(const char* s) const;
 
     //Iterators
 

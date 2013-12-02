@@ -98,14 +98,19 @@ static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t va
 bool select_device(ata::drive_descriptor& drive){
     auto controller = drive.controller;
 
-    if(in_byte(controller + ATA_STATUS) & (ATA_STATUS_BSY | ATA_STATUS_DRQ)){
+    auto wait_mask = ATA_STATUS_BSY | ATA_STATUS_DRQ;
+
+    if(!wait_for_controller(controller, wait_mask, 0, 10000)){
         return false;
     }
 
+    //Indicate the selected device
     out_byte(controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
+
+    //Sleep at least 400ns before reading the status register
     sleep_ms(1);
 
-    if(in_byte(controller + ATA_STATUS) & (ATA_STATUS_BSY | ATA_STATUS_DRQ)){
+    if(!wait_for_controller(controller, wait_mask, 0, 10000)){
         return false;
     }
 
@@ -163,6 +168,7 @@ bool ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, v
     out_byte(controller + ATA_DRV_HEAD, (1 << 6) | (drive.slave << 4) | hd);
     out_byte(controller + ATA_COMMAND, ATA_READ_BLOCK);
 
+    //Wait at least 400ns before reading status register
     sleep_ms(1);
 
     //Wait at most 30 seconds for BSY flag to be cleared

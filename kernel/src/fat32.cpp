@@ -76,7 +76,7 @@ uint64_t partition_start;
 fat_bs_t* fat_bs = nullptr;
 fat_is_t* fat_is = nullptr;
 
-void cache_bs(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+void cache_bs(fat32::dd disk, const disks::partition_descriptor& partition){
     unique_ptr<fat_bs_t> fat_bs_tmp(new fat_bs_t());
 
     if(read_sectors(disk, partition.start, 1, fat_bs_tmp.get())){
@@ -89,7 +89,7 @@ void cache_bs(const disks::disk_descriptor& disk, const disks::partition_descrip
     }
 }
 
-void cache_is(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+void cache_is(fat32::dd disk, const disks::partition_descriptor& partition){
     auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
 
     unique_ptr<fat_is_t> fat_is_tmp(new fat_is_t());
@@ -112,40 +112,22 @@ uint64_t cluster_lba(uint64_t cluster){
     return cluster_begin + (cluster - 2 ) * fat_bs->sectors_per_cluster;
 }
 
-} //end of anonymous namespace
+bool entry_exists(const cluster_entry& entry){
+    return !(entry.name[0] == 0x0 || static_cast<unsigned char>(entry.name[0]) == 0xE5);
+}
 
-vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
-    if(cached_disk != disk.uuid || cached_partition != partition.uuid){
-        partition_start = partition.start;
+bool is_long_name(const cluster_entry& entry){
+    return entry.attrib == 0x0F;
+}
 
-        cache_bs(disk, partition);
-        cache_is(disk, partition);
-
-        cached_disk = disk.uuid;
-        cached_partition = partition.uuid;
-    }
-
-    if(!fat_bs || !fat_is){
-        //Something went wrong when reading the two base vectors
-        return {};
-    }
-
+vector<disks::file> files(const unique_heap_array<cluster_entry>& cluster){
     vector<disks::file> files;
 
-    unique_heap_array<cluster_entry> root_cluster(16 * fat_bs->sectors_per_cluster);
-
-    if(!read_sectors(disk, cluster_lba(fat_bs->root_directory_cluster_start), fat_bs->sectors_per_cluster, root_cluster.get())){
-        return files;
-    } else {
-        for(cluster_entry& entry : root_cluster){
-            if(entry.name[0] == 0x0 || static_cast<unsigned char>(entry.name[0]) == 0xE5){
-                //The entry does not exists
-                continue;
-            }
-
+    for(auto& entry : cluster){
+        if(entry_exists(entry)){
             disks::file file;
 
-            if(entry.attrib == 0x0F){
+            if(is_long_name(entry)){
                 //It is a long file name
                 //TODO Add suppport for long file name
                 memcopy(file.name, "LONG", 4);
@@ -163,10 +145,59 @@ vector<disks::file> fat32::ls(const disks::disk_descriptor& disk, const disks::p
         }
     }
 
-    return files;
+    return move(files);
 }
 
-uint64_t fat32::free_size(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition){
+vector<disks::file> files(fat32::dd disk, uint64_t cluster_addr){
+    unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
+
+    if(read_sectors(disk, cluster_lba(cluster_addr), fat_bs->sectors_per_cluster, cluster.get())){
+        return files(cluster);
+    } else {
+        return {};
+    }
+}
+
+} //end of anonymous namespace
+
+vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const string& path){
+    if(cached_disk != disk.uuid || cached_partition != partition.uuid){
+        partition_start = partition.start;
+
+        cache_bs(disk, partition);
+        cache_is(disk, partition);
+
+        cached_disk = disk.uuid;
+        cached_partition = partition.uuid;
+    }
+
+    if(!fat_bs || !fat_is){
+        //Something went wrong when reading the two base vectors
+        return {};
+    }
+
+    auto cluster_addr = cluster_lba(fat_bs->root_directory_cluster_start);
+
+    unique_heap_array<cluster_entry> root_cluster(16 * fat_bs->sectors_per_cluster);
+
+    if(read_sectors(disk, cluster_addr, fat_bs->sectors_per_cluster, root_cluster.get())){
+        if(path.empty()){
+            return files(root_cluster);
+        } else {
+            for(auto& entry : root_cluster){
+                if(entry_exists(entry) && !is_long_name(entry)){
+                    if(path == entry.name){
+                        return files(disk, entry.cluster_low + (entry.cluster_high << 16));
+                    }
+                }
+            }
+        }
+    }
+
+    return {};
+}
+
+uint64_t fat32::free_size(dd disk, const disks::partition_descriptor& partition){
     if(cached_disk != disk.uuid || cached_partition != partition.uuid){
         partition_start = partition.start;
 

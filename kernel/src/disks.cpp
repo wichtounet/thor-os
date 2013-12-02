@@ -217,9 +217,7 @@ vector<disks::file> disks::ls(){
         return {};
     }
 
-    //TODO Indicate to the file system the current directory
-
-    return fat32::ls(*_mounted_disk, *_mounted_partition);
+    return fat32::ls(*_mounted_disk, *_mounted_partition, pwd);
 }
 
 uint64_t disks::free_size(){

@@ -1,1 +1,1 @@
-sectors equ 79
+sectors equ 81

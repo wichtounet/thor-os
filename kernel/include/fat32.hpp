@@ -3,11 +3,14 @@
 
 #include "disks.hpp"
 #include "vector.hpp"
+#include "string.hpp"
 
 namespace fat32 {
 
-vector<disks::file> ls(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition);
-uint64_t free_size(const disks::disk_descriptor& disk, const disks::partition_descriptor& partition);
+typedef const disks::disk_descriptor& dd;
+
+vector<disks::file> ls(dd disk, const disks::partition_descriptor& partition, const string& path);
+uint64_t free_size(dd disk, const disks::partition_descriptor& partition);
 
 }
 
