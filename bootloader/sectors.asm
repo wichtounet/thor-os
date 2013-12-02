@@ -1,0 +1,1 @@
+sectors equ 79

@@ -1,9 +1,6 @@
-.PHONY: default clean force_look qemu bochs debug
+.PHONY: default clean force_look qemu bochs debug sectors
 
 default: thor.flp
-
-bootloader/bootloader.bin: force_look
-	cd bootloader; $(MAKE)
 
 micro_kernel/micro_kernel.bin: force_look
 	cd micro_kernel; $(MAKE)
@@ -11,10 +8,16 @@ micro_kernel/micro_kernel.bin: force_look
 kernel/kernel.bin: force_look
 	cd kernel; $(MAKE)
 
-filler.bin: kernel/kernel.bin micro_kernel/micro_kernel.bin bootloader/bootloader.bin
+filler.bin: kernel/kernel.bin micro_kernel/micro_kernel.bin
 	bash fill.bash
 
-thor.flp: filler.bin
+sectors: force_look filler.bin
+	cd bootloader; $(MAKE) sectors
+
+bootloader/bootloader.bin: force_look sectors
+	cd bootloader; $(MAKE)
+
+thor.flp: bootloader/bootloader.bin
 	cat bootloader/bootloader.bin > thor.bin
 	cat micro_kernel/micro_kernel.bin >> thor.bin
 	cat kernel/kernel.bin >> thor.bin

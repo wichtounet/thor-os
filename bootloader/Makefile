@@ -1,9 +1,14 @@
 default: bootloader.bin
 
+.PHONY: sectors clean
+
+sectors:
+	bash compute_sectors.bash
+
 stage1.bin: stage1.asm
 	nasm -w+all -f bin -o stage1.bin stage1.asm
 
-stage2.bin: stage2.asm
+stage2.bin: stage2.asm sectors.asm
 	nasm -w+all -f bin -o stage2.bin stage2.asm
 
 padding.bin:
