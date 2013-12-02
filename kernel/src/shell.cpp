@@ -727,6 +727,51 @@ void get_features(){
     k_print_line();
 }
 
+void get_deterministic_cache_parameters(){
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+
+    eax = 0;
+    native_cpuid(&eax, &ebx, &ecx, &edx);
+
+    if(eax < 4){
+        //Not supported on this processor
+        return;
+    }
+
+    size_t caches = 0;
+
+    while(caches < 1000){
+        eax = 4;
+        native_cpuid(&eax, &ebx, &ecx, &edx);
+
+        if ( (eax & 0x1F) == 0 ) {
+            // No more caches
+            break;
+        }
+
+        if ((eax & 0x1F) == 1){
+            k_print("Data Cache:        ");
+        }
+
+        if ((eax & 0x1F) == 2){
+            k_print("Instruction Cache: ");
+        }
+
+        if ((eax & 0x1F) == 3){
+            k_print("Unified Cache:     ");
+        }
+
+        k_printf( "Level %d: ", (eax & 0xE0)/32 );
+        k_printf( "Max Threads %d: ", ((eax & 0x03FFC000)/(8192))+1 );
+        k_printf( "Max Procs. %d: " ,  ((eax & 0xFC000000)/(4*256*65536))+1 );
+        k_printf( "Line Size = %d: ", (ebx & 0xFFF ) + 1 );
+        k_printf( "Associativity = %d: ", ((ebx & 0xFFC00000)/4*16*65536) + 1 );
+        k_printf( "Sets = %d:\n", ecx + 1 );
+
+        ++caches;
+    }
+}
+
 void sysinfo_command(const vector<string>&){
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 
@@ -751,9 +796,36 @@ void sysinfo_command(const vector<string>&){
 
     k_printf("Vendor ID: %s\n", vendor_id);
 
-    get_features();
+    char brand_string[49];
 
+    eax = 0x80000002;
+    native_cpuid(&eax, &ebx, &ecx, &edx);
+    *(reinterpret_cast<uint32_t*>(brand_string)+0) = eax;
+    *(reinterpret_cast<uint32_t*>(brand_string)+1) = ebx;
+    *(reinterpret_cast<uint32_t*>(brand_string)+2) = ecx;
+    *(reinterpret_cast<uint32_t*>(brand_string)+3) = edx;
+
+    eax = 0x80000003;
+    native_cpuid(&eax, &ebx, &ecx, &edx);
+    *(reinterpret_cast<uint32_t*>(brand_string)+4) = eax;
+    *(reinterpret_cast<uint32_t*>(brand_string)+5) = ebx;
+    *(reinterpret_cast<uint32_t*>(brand_string)+6) = ecx;
+    *(reinterpret_cast<uint32_t*>(brand_string)+7) = edx;
+
+    eax = 0x80000004;
+    native_cpuid(&eax, &ebx, &ecx, &edx);
+    *(reinterpret_cast<uint32_t*>(brand_string)+8) = eax;
+    *(reinterpret_cast<uint32_t*>(brand_string)+9) = ebx;
+    *(reinterpret_cast<uint32_t*>(brand_string)+10) = ecx;
+    *(reinterpret_cast<uint32_t*>(brand_string)+11) = edx;
+
+    brand_string[48] = '\0';
+
+    k_printf("Brand String: %s\n", brand_string);
+
+    get_features();
     get_cache_info();
+    get_deterministic_cache_parameters();
 }
 
 } //end of anonymous namespace
