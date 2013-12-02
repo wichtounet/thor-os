@@ -489,7 +489,9 @@ void cd_command(const vector<string>& params){
     }
 }
 
-void native_cpuid(uint32_t* eax, uint32_t* ebx, uint32_t* ecx, uint32_t* edx){
+void native_cpuid(uint32_t key, uint32_t* eax, uint32_t* ebx, uint32_t* ecx, uint32_t* edx){
+    *eax = key;
+
     /* ecx is often an input as well as an output. */
     asm volatile("cpuid"
         : "=a" (*eax),
@@ -543,16 +545,14 @@ void get_cache_info() {
 
     k_print_line("Cache and TLB:");
 
-    eax = 0;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
+    native_cpuid(0, &eax, &ebx, &ecx, &edx);
 
     if (eax < 2){
         k_print_line("   CPUID(2) not supported");
         return;
     }
 
-    eax = 2;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
+    native_cpuid(2, &eax, &ebx, &ecx, &edx);
 
     mem_count = eax & 0x000000FF;        // 1st byte is the count
     eax &= 0xFFFFFF00;                   // mask off the count
@@ -567,9 +567,8 @@ void get_cache_info() {
 
         ++i;
 
-        eax = 2;
         ecx = i;
-        native_cpuid(&eax, &ebx, &ecx, &edx);
+        native_cpuid(2, &eax, &ebx, &ecx, &edx);
         desc += 16;
     }
 
@@ -707,8 +706,7 @@ void get_cache_info() {
 void get_features(){
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 
-    eax = 1;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
+    native_cpuid(1, &eax, &ebx, &ecx, &edx);
 
     k_print("Features:");
 
@@ -730,8 +728,7 @@ void get_features(){
 void get_deterministic_cache_parameters(){
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 
-    eax = 0;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
+    native_cpuid(0, &eax, &ebx, &ecx, &edx);
 
     if(eax < 4){
         //Not supported on this processor
@@ -741,8 +738,7 @@ void get_deterministic_cache_parameters(){
     size_t caches = 0;
 
     while(caches < 1000){
-        eax = 4;
-        native_cpuid(&eax, &ebx, &ecx, &edx);
+        native_cpuid(4, &eax, &ebx, &ecx, &edx);
 
         if ( (eax & 0x1F) == 0 ) {
             // No more caches
@@ -772,48 +768,24 @@ void get_deterministic_cache_parameters(){
     }
 }
 
-void sysinfo_command(const vector<string>&){
+void get_brand_string(){
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
-
-    eax = 1;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
-
-    k_printf("Stepping: %d\n", eax & 0xF);
-    k_printf("Model: %d\n", (eax >> 4) & 0xF);
-    k_printf("Family: %d\n", (eax >> 8) & 0xF);
-    k_printf("Processor Type: %d\n", (eax >> 12) & 0x3);
-    k_printf("Extended Model: %d\n", (eax >> 16) & 0xF);
-    k_printf("Extended Family: %d\n", (eax >> 20) & 0xFF);
-
-    eax = 0;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
-
-    char vendor_id[13];
-    *(reinterpret_cast<uint32_t*>(vendor_id)+0) = ebx;
-    *(reinterpret_cast<uint32_t*>(vendor_id)+1) = edx;
-    *(reinterpret_cast<uint32_t*>(vendor_id)+2) = ecx;
-    vendor_id[12] = '\0';
-
-    k_printf("Vendor ID: %s\n", vendor_id);
 
     char brand_string[49];
 
-    eax = 0x80000002;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
+    native_cpuid(0x80000002, &eax, &ebx, &ecx, &edx);
     *(reinterpret_cast<uint32_t*>(brand_string)+0) = eax;
     *(reinterpret_cast<uint32_t*>(brand_string)+1) = ebx;
     *(reinterpret_cast<uint32_t*>(brand_string)+2) = ecx;
     *(reinterpret_cast<uint32_t*>(brand_string)+3) = edx;
 
-    eax = 0x80000003;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
+    native_cpuid(0x80000003, &eax, &ebx, &ecx, &edx);
     *(reinterpret_cast<uint32_t*>(brand_string)+4) = eax;
     *(reinterpret_cast<uint32_t*>(brand_string)+5) = ebx;
     *(reinterpret_cast<uint32_t*>(brand_string)+6) = ecx;
     *(reinterpret_cast<uint32_t*>(brand_string)+7) = edx;
 
-    eax = 0x80000004;
-    native_cpuid(&eax, &ebx, &ecx, &edx);
+    native_cpuid(0x80000004, &eax, &ebx, &ecx, &edx);
     *(reinterpret_cast<uint32_t*>(brand_string)+8) = eax;
     *(reinterpret_cast<uint32_t*>(brand_string)+9) = ebx;
     *(reinterpret_cast<uint32_t*>(brand_string)+10) = ecx;
@@ -822,7 +794,38 @@ void sysinfo_command(const vector<string>&){
     brand_string[48] = '\0';
 
     k_printf("Brand String: %s\n", brand_string);
+}
 
+void get_vendor_id(){
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+    native_cpuid(0, &eax, &ebx, &ecx, &edx);
+
+    char vendor_id[13];
+    *(reinterpret_cast<uint32_t*>(vendor_id)+0) = ebx;
+    *(reinterpret_cast<uint32_t*>(vendor_id)+1) = edx;
+    *(reinterpret_cast<uint32_t*>(vendor_id)+2) = ecx;
+    vendor_id[12] = '\0';
+
+    k_printf("Vendor ID: %s\n", vendor_id);
+}
+
+void get_base_info(){
+    uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
+
+    native_cpuid(1, &eax, &ebx, &ecx, &edx);
+
+    k_printf("Stepping: %d\n", eax & 0xF);
+    k_printf("Model: %d\n", (eax >> 4) & 0xF);
+    k_printf("Family: %d\n", (eax >> 8) & 0xF);
+    k_printf("Processor Type: %d\n", (eax >> 12) & 0x3);
+    k_printf("Extended Model: %d\n", (eax >> 16) & 0xF);
+    k_printf("Extended Family: %d\n", (eax >> 20) & 0xFF);
+}
+
+void sysinfo_command(const vector<string>&){
+    get_base_info();
+    get_vendor_id();
+    get_brand_string();
     get_features();
     get_cache_info();
     get_deterministic_cache_parameters();
