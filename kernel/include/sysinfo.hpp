@@ -5,9 +5,12 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef SHELL_H
-#define SHELL_H
+#ifndef SYSINFO_H
+#define SYSINFO_H
 
-void init_shell();
+#include "string.hpp"
+#include "vector.hpp"
+
+void sysinfo_command(const vector<string>& params);
 
 #endif
