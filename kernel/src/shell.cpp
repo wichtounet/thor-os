@@ -182,8 +182,6 @@ void start_shell(){
 }
 
 void exec_command(){
-    char buffer[50];
-
     history_save();
 
     auto params = split(current_input);;
@@ -498,9 +496,6 @@ void init_shell(){
     wipeout();
 
     k_print("thor> ");
-
-    k_printf("%d\n", history.capacity());
-    k_printf("%d\n", current_input.capacity());
 
     start_shell();
 }
