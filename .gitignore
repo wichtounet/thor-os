@@ -2,3 +2,4 @@
 *.flp
 *.o
 *.img
+bootloader/sectors.asm
