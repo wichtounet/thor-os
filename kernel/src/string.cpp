@@ -113,7 +113,7 @@ const char& string::operator[](size_t i) const {
 }
 
 string string::operator+(char c) const {
-    string copy = *this;
+    string copy(*this);
 
     copy += c;
 
@@ -122,12 +122,15 @@ string string::operator+(char c) const {
 
 string& string::operator+=(char c){
     if(!_data || _capacity <= _size + 1){
+        _capacity = _capacity ? _capacity * 2 : 1;
+        auto new_data = new char[_capacity];
+
         if(_data){
+            memcopy(new_data, _data, _size);
             delete[] _data;
         }
 
-        _capacity = _size + 3;
-        _data = new char[_capacity];
+        _data = new_data;
     }
 
     _data[_size] = c;
