@@ -3,9 +3,10 @@ default: kernel.bin
 CC=x86_64-elf-g++
 AS=x86_64-elf-as
 
+THOR_FLAGS=-DCONFIG_HISTORY=y
 WARNING_FLAGS=-Wall -Wextra -pedantic -Wold-style-cast -Wshadow
 CPP_FLAGS=-masm=intel -Iinclude/ -nostdlib -Os -std=c++11 -fno-exceptions -fno-rtti -ffreestanding -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-sse3 -mno-3dnow $(WARNING_FLAGS)
-KERNEL_FLAGS=$(CPP_FLAGS)
+KERNEL_FLAGS=$(CPP_FLAGS) $(THOR_FLAGS)
 KERNEL_LINK_FLAGS=-lgcc -T linker.ld $(CPP_FLAGS)
 
 KERNEL_CPP_FILES=$(wildcard src/*.cpp)

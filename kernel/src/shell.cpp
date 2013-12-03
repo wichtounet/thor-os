@@ -23,8 +23,14 @@
 
 namespace {
 
+#ifdef CONFIG_HISTORY
+static constexpr bool History = true;
+#else
+static constexpr bool History = false;
+#endif
+
 vector<char*> history;
-uint64_t history_index;
+uint64_t history_index = 0;
 
 bool shift = false;
 
@@ -79,6 +85,59 @@ char current_input[50];
 
 void exec_command();
 
+template<bool Enable = History>
+void history_key(char key){
+    if(history.size() > 0){
+        if(key == keyboard::KEY_UP){
+            if(history_index == 0){
+                return;
+            }
+
+            --history_index;
+        } else { //KEY_DOWN
+            if(history_index == history.size()){
+                return;
+            }
+
+            ++history_index;
+        }
+
+        set_column(6);
+
+        for(uint64_t i = 0; i < current_input_length; ++i){
+            k_print(' ');
+        }
+
+        set_column(6);
+
+        current_input_length = 0;
+
+        if(history_index < history.size()){
+            auto saved = history[history_index];
+            while(*saved){
+                current_input[current_input_length++] = *saved;
+                k_print(*saved);
+
+                ++saved;
+            }
+        }
+    }
+}
+
+template<> void history_key<false>(char){}
+
+template<bool Enable = History>
+void history_save(){
+    auto saved = new char[current_input_length + 1];
+    memcopy(saved, current_input, current_input_length);
+    saved[current_input_length] = '\0';
+
+    history.push_back(saved);
+    history_index = history.size();
+}
+
+template<> void history_save<false>(){}
+
 void start_shell(){
     while(true){
         auto key = keyboard::get_char();
@@ -112,41 +171,7 @@ void start_shell(){
             } else if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
                 shift = true;
             } else if(key == keyboard::KEY_UP || key == keyboard::KEY_DOWN){
-                if(history.size() > 0){
-                    if(key == keyboard::KEY_UP){
-                        if(history_index == 0){
-                            continue;
-                        }
-
-                        --history_index;
-                    } else { //KEY_DOWN
-                        if(history_index == history.size()){
-                            continue;
-                        }
-
-                        ++history_index;
-                    }
-
-                    set_column(6);
-
-                    for(uint64_t i = 0; i < current_input_length; ++i){
-                        k_print(' ');
-                    }
-
-                    set_column(6);
-
-                    current_input_length = 0;
-
-                    if(history_index < history.size()){
-                        auto saved = history[history_index];
-                        while(*saved){
-                            current_input[current_input_length++] = *saved;
-                            k_print(*saved);
-
-                            ++saved;
-                        }
-                    }
-                }
+                history_key(key);
             } else if(key == keyboard::KEY_BACKSPACE){
                 if(current_input_length > 0){
                     k_print('\b');
@@ -172,12 +197,7 @@ void start_shell(){
 void exec_command(){
     char buffer[50];
 
-    auto saved = new char[current_input_length + 1];
-    memcopy(saved, current_input, current_input_length);
-    saved[current_input_length] = '\0';
-
-    history.push_back(saved);
-    history_index = history.size();
+    history_save();
 
     for(auto& command : commands){
         const char* input_command = current_input;
@@ -495,7 +515,6 @@ void cd_command(const vector<string>& params){
 
 void init_shell(){
     current_input_length = 0;
-    history_index = 0;
 
     wipeout();
 
