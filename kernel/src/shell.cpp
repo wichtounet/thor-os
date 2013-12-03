@@ -29,7 +29,7 @@ static constexpr bool History = true;
 static constexpr bool History = false;
 #endif
 
-vector<char*> history;
+vector<string> history;
 uint64_t history_index = 0;
 
 bool shift = false;
@@ -80,8 +80,7 @@ command_definition commands[18] = {
     {"sysinfo", sysinfo_command},
 };
 
-uint64_t current_input_length = 0;
-char current_input[50];
+string current_input;
 
 void exec_command();
 
@@ -104,23 +103,17 @@ void history_key(char key){
 
         set_column(6);
 
-        for(uint64_t i = 0; i < current_input_length; ++i){
+        for(uint64_t i = 0; i < current_input.size(); ++i){
             k_print(' ');
         }
 
         set_column(6);
 
-        current_input_length = 0;
-
         if(history_index < history.size()){
-            auto saved = history[history_index];
-            while(*saved){
-                current_input[current_input_length++] = *saved;
-                k_print(*saved);
-
-                ++saved;
-            }
+            current_input = history[history_index];
         }
+
+        k_print(current_input);
     }
 }
 
@@ -128,11 +121,7 @@ template<> void history_key<false>(char){}
 
 template<bool Enable = History>
 void history_save(){
-    auto saved = new char[current_input_length + 1];
-    memcopy(saved, current_input, current_input_length);
-    saved[current_input_length] = '\0';
-
-    history.push_back(saved);
+    history.push_back(current_input);
     history_index = history.size();
 }
 
@@ -153,18 +142,16 @@ void start_shell(){
         else {
             //ENTER validate the command
             if(key == keyboard::KEY_ENTER){
-                current_input[current_input_length] = '\0';
-
                 k_print_line();
 
-                if(current_input_length > 0){
+                if(current_input.size() > 0){
                     exec_command();
 
                     if(get_column() != 0){
                         k_print_line();
                     }
 
-                    current_input_length = 0;
+                    current_input.clear();
                 }
 
                 k_print("thor> ");
@@ -173,10 +160,10 @@ void start_shell(){
             } else if(key == keyboard::KEY_UP || key == keyboard::KEY_DOWN){
                 history_key(key);
             } else if(key == keyboard::KEY_BACKSPACE){
-                if(current_input_length > 0){
+                if(current_input.size() > 0){
                     k_print('\b');
 
-                    --current_input_length;
+                    current_input.pop_back();
                 }
             } else {
                 auto qwertz_key =
@@ -185,7 +172,7 @@ void start_shell(){
                     : keyboard::key_to_ascii(key);
 
                 if(qwertz_key){
-                    current_input[current_input_length++] = qwertz_key;
+                    current_input += qwertz_key;
 
                     k_print(qwertz_key);
                 }
@@ -199,23 +186,17 @@ void exec_command(){
 
     history_save();
 
+    auto params = split(current_input);;
+
     for(auto& command : commands){
-        const char* input_command = current_input;
-        if(str_contains(current_input, ' ')){
-            str_copy(current_input, buffer);
-            input_command = str_until(buffer, ' ');
-        }
-
-        if(str_equals(input_command, command.name)){
-            auto params = split(string(current_input));;
-
+        if(params[0] == command.name){
             command.function(params);
 
             return;
         }
     }
 
-    k_printf("The command \"%s\" does not exist\n", current_input);
+    k_printf("The command \"%s\" does not exist\n", current_input.c_str());
 }
 
 void clear_command(const vector<string>&){
@@ -514,11 +495,12 @@ void cd_command(const vector<string>& params){
 } //end of anonymous namespace
 
 void init_shell(){
-    current_input_length = 0;
-
     wipeout();
 
     k_print("thor> ");
+
+    k_printf("%d\n", history.capacity());
+    k_printf("%d\n", current_input.capacity());
 
     start_shell();
 }

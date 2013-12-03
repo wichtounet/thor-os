@@ -38,6 +38,8 @@ public:
 
     void clear();
 
+    void pop_back();
+
     string operator+(char c) const;
     string& operator+=(char c);
 

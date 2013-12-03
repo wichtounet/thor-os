@@ -84,6 +84,10 @@ void string::clear(){
     _data[0] = '\0';
 }
 
+void string::pop_back(){
+    _data[--_size] = '\0';
+}
+
 size_t string::size() const {
     return _size;
 }
