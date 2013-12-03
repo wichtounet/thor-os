@@ -23,10 +23,12 @@ string::string(size_t capacity){
 }
 
 string::string(const string& rhs){
-    *this = rhs;
+    _capacity = rhs._capacity;
+    _size = rhs._size;
+    _data = new char[_capacity];
+    memcopy(_data, rhs._data, _size + 1);
 }
 
-//TODO Does not seem to work
 string& string::operator=(const string& rhs){
     if(this != &rhs){
         if(_capacity < rhs._capacity || !_data){
@@ -46,7 +48,13 @@ string& string::operator=(const string& rhs){
 }
 
 string::string(string&& rhs){
-    *this = rhs;
+    _size = rhs._size;
+    _capacity = rhs._capacity;
+    _data = rhs._data;
+
+    rhs._size = 0;
+    rhs._capacity = 0;
+    rhs._data = nullptr;
 }
 
 string& string::operator=(string&& rhs){
