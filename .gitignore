@@ -3,3 +3,4 @@
 *.o
 *.img
 bootloader/sectors.asm
+commands
