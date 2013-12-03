@@ -52,15 +52,15 @@ public:
 
     //Getters
 
-    size_type size() const {
+    constexpr size_type size() const {
         return _size;
     }
 
-    size_type capacity() const {
+    constexpr size_type capacity() const {
         return _capacity;
     }
 
-    const value_type& operator[](size_type pos) const {
+    constexpr const value_type& operator[](size_type pos) const {
         return data[pos];
     }
 
@@ -95,7 +95,7 @@ public:
         return iterator(&data[0]);
     }
 
-    const_iterator begin() const {
+    constexpr const_iterator begin() const {
         return const_iterator(&data[0]);
     }
 
@@ -103,7 +103,7 @@ public:
         return iterator(&data[_size]);
     }
 
-    const_iterator end() const {
+    constexpr const_iterator end() const {
         return const_iterator(&data[_size]);
     }
 };
