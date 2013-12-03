@@ -473,7 +473,7 @@ void free_command(const vector<string>&){
 }
 
 void pwd_command(const vector<string>&){
-    auto cd = disks::current_directory();
+    auto& cd = disks::current_directory();
 
     if(cd.empty()){
         k_print_line("/");
