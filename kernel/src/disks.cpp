@@ -45,7 +45,7 @@ const disks::disk_descriptor* _mounted_disk;
 const disks::partition_descriptor* _mounted_partition;
 
 //TODO This should be improved to suppport multi level
-string pwd;
+vector<string> pwd;
 
 } //end of anonymous namespace
 
@@ -228,10 +228,6 @@ uint64_t disks::free_size(){
     return fat32::free_size(*_mounted_disk, *_mounted_partition);
 }
 
-const string& disks::current_directory(){
+const vector<string>& disks::current_directory(){
     return pwd;
-}
-
-void disks::set_current_directory(const string& directory){
-    pwd = directory;
 }

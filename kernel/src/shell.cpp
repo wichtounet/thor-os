@@ -475,18 +475,22 @@ void free_command(const vector<string>&){
 void pwd_command(const vector<string>&){
     auto& cd = disks::current_directory();
 
-    if(cd.empty()){
-        k_print_line("/");
-    } else {
-        k_printf("/%s\n", cd.c_str());
+    k_print('/');
+
+    for(auto& p : cd){
+        k_print(p);
+        k_print('/');
     }
+
+    k_print_line();
 }
 
 void cd_command(const vector<string>& params){
+    //If there are no params, go to /
     if(params.size() == 1){
-        disks::set_current_directory();
+        disks::current_directory().clear();
     } else {
-        disks::set_current_directory(params[1]);
+        disks::current_directory().push_back(params[1]);
     }
 }
 

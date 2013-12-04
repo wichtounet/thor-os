@@ -56,6 +56,10 @@ public:
         return _size;
     }
 
+    bool empty() const {
+        return _size;
+    }
+
     constexpr size_type capacity() const {
         return _capacity;
     }
@@ -70,7 +74,7 @@ public:
 
     //Modifiers
 
-    void push_back(value_type& element){
+    void push_back(const value_type& element){
         if(_capacity == 0){
             _capacity = 1;
             data = new T[_capacity];
@@ -87,6 +91,10 @@ public:
         }
 
         data[_size++] = element;
+    }
+
+    void clear(){
+        _size = 0;
     }
 
     //Iterators

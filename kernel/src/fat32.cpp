@@ -186,7 +186,7 @@ bool filename_equals(char* name, const string& path){
 
 } //end of anonymous namespace
 
-vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const string& path){
+vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const vector<string>& path){
     if(cached_disk != disk.uuid || cached_partition != partition.uuid){
         partition_start = partition.start;
 
@@ -204,22 +204,38 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
 
     auto cluster_addr = cluster_lba(fat_bs->root_directory_cluster_start);
 
-    unique_heap_array<cluster_entry> root_cluster(16 * fat_bs->sectors_per_cluster);
+    unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
 
-    if(read_sectors(disk, cluster_addr, fat_bs->sectors_per_cluster, root_cluster.get())){
-        if(path.empty()){
-            return files(root_cluster);
-        } else {
-            for(auto& entry : root_cluster){
+    k_print_line(path.size());
+
+    if(read_sectors(disk, cluster_addr, fat_bs->sectors_per_cluster, current_cluster.get())){
+        for(auto& p : path){
+            bool found = false;
+
+            for(auto& entry : current_cluster){
                 if(entry_exists(entry) && !is_long_name(entry) && entry.attrib & 0x10){
                     //entry.name is not a real c_string, cannot be compared
                     //directly
-                    if(filename_equals(entry.name, path)){
-                        return files(disk, entry.cluster_low + (entry.cluster_high << 16));
+                    if(filename_equals(entry.name, p)){
+                        unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
+
+                        if(read_sectors(disk, cluster_lba(entry.cluster_low + (entry.cluster_high << 16)),
+                                fat_bs->sectors_per_cluster, cluster.get())){
+                            current_cluster = move(cluster);
+                            found = true;
+                        } else {
+                            return {};
+                        }
                     }
                 }
             }
+
+            if(!found){
+                return {};
+            }
         }
+
+        return files(current_cluster);
     }
 
     return {};

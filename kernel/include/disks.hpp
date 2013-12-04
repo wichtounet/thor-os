@@ -69,8 +69,8 @@ uint64_t free_size();
 const disk_descriptor* mounted_disk();
 const partition_descriptor* mounted_partition();
 
-const string& current_directory();
-void set_current_directory(const string& directory = string());
+//TODO It is not a really good practice to directly expose the vector
+vector<string>& current_directory();
 
 }
 
