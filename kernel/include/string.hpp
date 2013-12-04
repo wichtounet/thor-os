@@ -11,39 +11,28 @@ public:
     typedef const CharT*       const_iterator;
 
 private:
-    CharT* _data;
     size_t _size;
     size_t _capacity;
+    CharT* _data;
 
 public:
     //Constructors
 
-    basic_string(){
-        _size = 0;
-        _capacity = 1;
-        _data = new CharT[_capacity];
+    basic_string() : _size(0), _capacity(1), _data(new CharT[1]) {
         _data[0] = '\0';
     }
 
-    basic_string(const CharT* s){
-        _size = str_len(s);
-        _capacity = _size + 1;
-        _data = new CharT[_capacity];
+    basic_string(const CharT* s) : _size(str_len(s)), _capacity(_size + 1), _data(new CharT[_capacity]) {
         memcopy(_data, s, _capacity);
     }
 
-    explicit basic_string(size_t __capacity){
-        _size = 0;
-        _capacity = __capacity;
-        _data = new CharT[_capacity];
+    explicit basic_string(size_t __capacity) : _size(0), _capacity(__capacity), _data(new CharT[_capacity]) {
+        _data[0] = '\0';
     }
 
     //Copy constructors
 
-    basic_string(const basic_string& rhs){
-        _capacity = rhs._capacity;
-        _size = rhs._size;
-        _data = new CharT[_capacity];
+    basic_string(const basic_string& rhs) : _capacity(rhs._capacity), _size(rhs._size), _data(new CharT[_capacity]) {
         memcopy(_data, rhs._data, _size + 1);
     }
 
@@ -67,11 +56,7 @@ public:
 
     //Move constructors
 
-    basic_string(basic_string&& rhs){
-        _size = rhs._size;
-        _capacity = rhs._capacity;
-        _data = rhs._data;
-
+    basic_string(basic_string&& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data(rhs._data) {
         rhs._size = 0;
         rhs._capacity = 0;
         rhs._data = nullptr;
