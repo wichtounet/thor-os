@@ -204,13 +204,13 @@ void k_printf(const char* fmt, ...){
         } else {
             ch = *(fmt++);
 
-            uint64_t min_width = 0;
+            size_t min_width = 0;
             while(ch >= '0' && ch <= '9'){
                 min_width = 10 * min_width + (ch - '0');
                 ch = *(fmt++);
             }
 
-            uint64_t min_digits = 0;
+            size_t min_digits = 0;
             if(ch == '.'){
                 ch = *(fmt++);
 
@@ -220,14 +220,14 @@ void k_printf(const char* fmt, ...){
                 }
             }
 
-            auto prev  = current_column;
+            auto prev = current_column;
 
             //Decimal
             if(ch == 'd'){
                 auto arg = va_arg(va, uint64_t);
 
                 if(min_digits > 0){
-                    auto d = digits(arg);
+                    size_t d = digits(arg);
                     if(min_digits > d){
                         min_digits -= d;
                         while(min_digits > 0){
@@ -248,7 +248,7 @@ void k_printf(const char* fmt, ...){
                 uint8_t buffer[20];
 
                 auto arg = va_arg(va, uint64_t);
-                int i = 0;
+                size_t i = 0;
 
                 while(arg / 16 != 0){
                     buffer[i++] = arg % 16;
@@ -265,32 +265,36 @@ void k_printf(const char* fmt, ...){
                     }
                 }
 
-                while(i >= 0){
+                while(true){
                     uint8_t digit = buffer[i];
 
                     if(digit < 10){
                         k_print(static_cast<char>('0' + digit));
                     } else {
                         switch(digit){
-                            case 10:
-                                k_print('A');
-                                break;
-                            case 11:
-                                k_print('B');
-                                break;
-                            case 12:
-                                k_print('C');
-                                break;
-                            case 13:
-                                k_print('D');
-                                break;
-                            case 14:
-                                k_print('E');
-                                break;
-                            case 15:
-                                k_print('F');
-                                break;
+                        case 10:
+                            k_print('A');
+                            break;
+                        case 11:
+                            k_print('B');
+                            break;
+                        case 12:
+                            k_print('C');
+                            break;
+                        case 13:
+                            k_print('D');
+                            break;
+                        case 14:
+                            k_print('E');
+                            break;
+                        case 15:
+                            k_print('F');
+                            break;
                         }
+                    }
+
+                    if(i == 0){
+                        break;
                     }
 
                     --i;
@@ -321,7 +325,7 @@ void k_printf(const char* fmt, ...){
             }
 
             if(min_width > 0){
-                auto width = current_column - prev;
+                size_t width = current_column - prev;
 
                 if(min_width > width){
                     min_width -= width;

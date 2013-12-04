@@ -80,7 +80,7 @@ const disks::disk_descriptor& disks::disk_by_uuid(uint64_t uuid){
         }
     }
 
-    //Unreachable
+    __builtin_unreachable();
 }
 
 bool disks::disk_exists(uint64_t uuid){

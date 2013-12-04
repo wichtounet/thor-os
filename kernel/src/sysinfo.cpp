@@ -291,42 +291,39 @@ void get_deterministic_cache_parameters(){
 void get_brand_string(){
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
 
-    char brand_string[49];
+    uint32_t brand_string[12];
 
     native_cpuid(0x80000002, &eax, &ebx, &ecx, &edx);
-    *(reinterpret_cast<uint32_t*>(brand_string)+0) = eax;
-    *(reinterpret_cast<uint32_t*>(brand_string)+1) = ebx;
-    *(reinterpret_cast<uint32_t*>(brand_string)+2) = ecx;
-    *(reinterpret_cast<uint32_t*>(brand_string)+3) = edx;
+    brand_string[0] = eax;
+    brand_string[1] = ebx;
+    brand_string[2] = ecx;
+    brand_string[3] = edx;
 
     native_cpuid(0x80000003, &eax, &ebx, &ecx, &edx);
-    *(reinterpret_cast<uint32_t*>(brand_string)+4) = eax;
-    *(reinterpret_cast<uint32_t*>(brand_string)+5) = ebx;
-    *(reinterpret_cast<uint32_t*>(brand_string)+6) = ecx;
-    *(reinterpret_cast<uint32_t*>(brand_string)+7) = edx;
+    brand_string[4] = eax;
+    brand_string[5] = ebx;
+    brand_string[6] = ecx;
+    brand_string[7] = edx;
 
     native_cpuid(0x80000004, &eax, &ebx, &ecx, &edx);
-    *(reinterpret_cast<uint32_t*>(brand_string)+8) = eax;
-    *(reinterpret_cast<uint32_t*>(brand_string)+9) = ebx;
-    *(reinterpret_cast<uint32_t*>(brand_string)+10) = ecx;
-    *(reinterpret_cast<uint32_t*>(brand_string)+11) = edx;
+    brand_string[8] = eax;
+    brand_string[9] = ebx;
+    brand_string[10] = ecx;
+    brand_string[11] = edx;
 
-    brand_string[48] = '\0';
-
-    k_printf("Brand String: %s\n", brand_string);
+    k_printf("Brand String: %s\n", reinterpret_cast<const char*>(brand_string));
 }
 
 void get_vendor_id(){
     uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
     native_cpuid(0, &eax, &ebx, &ecx, &edx);
 
-    char vendor_id[13];
-    *(reinterpret_cast<uint32_t*>(vendor_id)+0) = ebx;
-    *(reinterpret_cast<uint32_t*>(vendor_id)+1) = edx;
-    *(reinterpret_cast<uint32_t*>(vendor_id)+2) = ecx;
-    vendor_id[12] = '\0';
+    uint32_t vendor_id[3];
+    vendor_id[0] = ebx;
+    vendor_id[1] = edx;
+    vendor_id[2] = ecx;
 
-    k_printf("Vendor ID: %s\n", vendor_id);
+    k_printf("Vendor ID: %s\n", reinterpret_cast<const char*>(vendor_id));
 }
 
 void get_base_info(){
