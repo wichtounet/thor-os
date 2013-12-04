@@ -158,6 +158,32 @@ vector<disks::file> files(fat32::dd disk, uint64_t cluster_addr){
     }
 }
 
+size_t filename_length(char* filename){
+    for(size_t s = 0; s < 11; ++s){
+        if(filename[s] == ' '){
+            return s;
+        }
+    }
+
+    return 11;
+}
+
+bool filename_equals(char* name, const string& path){
+    auto length = filename_length(name);
+
+    if(path.size() != length){
+        return false;
+    }
+
+    for(size_t i = 0; i < length; ++i){
+        if(path[i] != name[i]){
+            return false;
+        }
+    }
+
+    return true;
+}
+
 } //end of anonymous namespace
 
 vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const string& path){
@@ -185,8 +211,10 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
             return files(root_cluster);
         } else {
             for(auto& entry : root_cluster){
-                if(entry_exists(entry) && !is_long_name(entry)){
-                    if(path == entry.name){
+                if(entry_exists(entry) && !is_long_name(entry) && entry.attrib & 0x10){
+                    //entry.name is not a real c_string, cannot be compared
+                    //directly
+                    if(filename_equals(entry.name, path)){
                         return files(disk, entry.cluster_low + (entry.cluster_high << 16));
                     }
                 }
