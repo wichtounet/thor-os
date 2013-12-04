@@ -160,9 +160,9 @@ void k_print(char key){
     }
 }
 
-void k_print(const char* string){
-    for(uint64_t i = 0; string[i] != 0; ++i){
-        k_print(string[i]);
+void k_print(const char* str){
+    for(uint64_t i = 0; str[i] != 0; ++i){
+        k_print(str[i]);
     }
 }
 
@@ -172,9 +172,9 @@ void k_print(const string& s){
     }
 }
 
-void k_print(const char* string, uint64_t end){
-    for(uint64_t i = 0; string[i] != 0 && i < end; ++i){
-        k_print(string[i]);
+void k_print(const char* str, uint64_t end){
+    for(uint64_t i = 0; str[i] != 0 && i < end; ++i){
+        k_print(str[i]);
     }
 }
 

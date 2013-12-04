@@ -9,7 +9,10 @@
 #define UTILS_H
 
 #include "types.hpp"
-#include "string.hpp"
+
+template<typename CharT>
+struct basic_string;
+typedef basic_string<char> string;
 
 uint64_t parse(const char* str);
 uint64_t parse(const char* str, const char* end);

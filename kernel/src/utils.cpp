@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include "utils.hpp"
+#include "string.hpp"
 
 bool str_equals(const char* a, const char* b){
     while(*a && *a == *b){
