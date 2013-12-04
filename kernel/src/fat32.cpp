@@ -206,8 +206,6 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
 
     unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
 
-    k_print_line(path.size());
-
     if(read_sectors(disk, cluster_addr, fat_bs->sectors_per_cluster, current_cluster.get())){
         for(auto& p : path){
             bool found = false;

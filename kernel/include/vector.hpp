@@ -93,6 +93,10 @@ public:
         data[_size++] = element;
     }
 
+    void pop_back(){
+        --_size;
+    }
+
     void clear(){
         _size = 0;
     }

@@ -490,7 +490,13 @@ void cd_command(const vector<string>& params){
     if(params.size() == 1){
         disks::current_directory().clear();
     } else {
-        disks::current_directory().push_back(params[1]);
+        if(params[1] == ".."){
+            if(disks::current_directory().size() > 0){
+                disks::current_directory().pop_back();
+            }
+        } else {
+            disks::current_directory().push_back(params[1]);
+        }
     }
 }
 
