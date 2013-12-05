@@ -133,7 +133,6 @@ vector<disks::file> files(const unique_heap_array<cluster_entry>& cluster){
     for(auto& entry : cluster){
         if(end_of_directory(entry)){
             end_reached = true;
-            k_print_line("end_reached");
             break;
         }
 
@@ -258,6 +257,8 @@ pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const 
 
         return make_pair(true, move(current_cluster));
     }
+
+    return make_pair(false, unique_heap_array<cluster_entry>());
 }
 
 } //end of anonymous namespace
@@ -291,8 +292,42 @@ string fat32::read_file(dd disk, const disks::partition_descriptor& partition, c
 
     string content = "";
 
-    auto cluster = find_cluster(disk, path);
+    auto result = find_cluster(disk, path);
 
+    if(result.first){
+        auto& cluster = result.second;
+
+        bool found = false;
+        bool end_reached = false;
+
+        for(auto& entry : cluster){
+            if(end_of_directory(entry)){
+                end_reached = true;
+                break;
+            }
+
+            if(entry_used(entry) && !is_long_name(entry) && !(entry.attrib & 0x10)){
+                if(filename_equals(entry.name, file)){
+                    unique_heap_array<char> sector(512 * fat_bs->sectors_per_cluster);
+
+                    if(read_sectors(disk, cluster_lba(entry.cluster_low + (entry.cluster_high << 16)),
+                        fat_bs->sectors_per_cluster, sector.get())){
+                        found = true;
+
+                        for(size_t i = 0; i < entry.file_size; ++i){
+                            content += sector[i];
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        if(!found && end_reached){
+            //TODO Read the next cluster to find the file
+        }
+    }
 
     return move(content);
 }

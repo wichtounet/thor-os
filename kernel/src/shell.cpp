@@ -507,6 +507,8 @@ void cat_command(const vector<string>& params){
         k_print_line("No file provided");
     } else {
         auto content = disks::read_file(params[1]);
+
+        k_print(content);
     }
 }
 
