@@ -112,19 +112,31 @@ uint64_t cluster_lba(uint64_t cluster){
     return cluster_begin + (cluster - 2 ) * fat_bs->sectors_per_cluster;
 }
 
-bool entry_exists(const cluster_entry& entry){
-    return !(entry.name[0] == 0x0 || static_cast<unsigned char>(entry.name[0]) == 0xE5);
+inline bool entry_used(const cluster_entry& entry){
+    return static_cast<unsigned char>(entry.name[0]) != 0xE5;
 }
 
-bool is_long_name(const cluster_entry& entry){
+inline bool end_of_directory(const cluster_entry& entry){
+    return entry.name[0] == 0x0;
+}
+
+inline bool is_long_name(const cluster_entry& entry){
     return entry.attrib == 0x0F;
 }
 
 vector<disks::file> files(const unique_heap_array<cluster_entry>& cluster){
     vector<disks::file> files;
 
+    bool end_reached = false;
+
     for(auto& entry : cluster){
-        if(entry_exists(entry)){
+        if(end_of_directory(entry)){
+            end_reached = true;
+            k_print_line("end_reached");
+            break;
+        }
+
+        if(entry_used(entry)){
             disks::file file;
 
             if(is_long_name(entry)){
@@ -144,6 +156,8 @@ vector<disks::file> files(const unique_heap_array<cluster_entry>& cluster){
             files.push_back(file);
         }
     }
+
+    //TODO If end_reached not true, we should read the next cluster
 
     return move(files);
 }
@@ -209,9 +223,15 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
     if(read_sectors(disk, cluster_addr, fat_bs->sectors_per_cluster, current_cluster.get())){
         for(auto& p : path){
             bool found = false;
+            bool end_reached = false;
 
             for(auto& entry : current_cluster){
-                if(entry_exists(entry) && !is_long_name(entry) && entry.attrib & 0x10){
+                if(end_of_directory(entry)){
+                    end_reached = true;
+                    break;
+                }
+
+                if(entry_used(entry) && !is_long_name(entry) && entry.attrib & 0x10){
                     //entry.name is not a real c_string, cannot be compared
                     //directly
                     if(filename_equals(entry.name, p)){
@@ -221,6 +241,8 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
                                 fat_bs->sectors_per_cluster, cluster.get())){
                             current_cluster = move(cluster);
                             found = true;
+
+                            break;
                         } else {
                             return {};
                         }
@@ -229,6 +251,8 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
             }
 
             if(!found){
+                //TODO If not end_reached, read the next cluster
+
                 return {};
             }
         }
