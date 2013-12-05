@@ -9,8 +9,9 @@ namespace fat32 {
 
 typedef const disks::disk_descriptor& dd;
 
-vector<disks::file> ls(dd disk, const disks::partition_descriptor& partition, const vector<string>& path);
 uint64_t free_size(dd disk, const disks::partition_descriptor& partition);
+vector<disks::file> ls(dd disk, const disks::partition_descriptor& partition, const vector<string>& path);
+string read_file(dd disk, const disks::partition_descriptor& partition, const vector<string>& path, const string& file);
 
 }
 

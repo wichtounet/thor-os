@@ -4,6 +4,7 @@
 #include "types.hpp"
 #include "console.hpp"
 #include "utils.hpp"
+#include "pair.hpp"
 
 namespace {
 
@@ -198,9 +199,7 @@ bool filename_equals(char* name, const string& path){
     return true;
 }
 
-} //end of anonymous namespace
-
-vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const vector<string>& path){
+bool cache_disk_partition(fat32::dd disk, const disks::partition_descriptor& partition){
     if(cached_disk != disk.uuid || cached_partition != partition.uuid){
         partition_start = partition.start;
 
@@ -211,11 +210,11 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
         cached_partition = partition.uuid;
     }
 
-    if(!fat_bs || !fat_is){
-        //Something went wrong when reading the two base vectors
-        return {};
-    }
+    //Something may go wrong when reading the two base vectors
+    return fat_bs && fat_is;
+}
 
+pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const vector<string>& path){
     auto cluster_addr = cluster_lba(fat_bs->root_directory_cluster_start);
 
     unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
@@ -244,7 +243,7 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
 
                             break;
                         } else {
-                            return {};
+                            return make_pair(false, unique_heap_array<cluster_entry>());
                         }
                     }
                 }
@@ -253,31 +252,47 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
             if(!found){
                 //TODO If not end_reached, read the next cluster
 
-                return {};
+                return make_pair(false, unique_heap_array<cluster_entry>());
             }
         }
 
-        return files(current_cluster);
+        return make_pair(true, move(current_cluster));
     }
-
-    return {};
 }
 
+} //end of anonymous namespace
+
 uint64_t fat32::free_size(dd disk, const disks::partition_descriptor& partition){
-    if(cached_disk != disk.uuid || cached_partition != partition.uuid){
-        partition_start = partition.start;
-
-        cache_bs(disk, partition);
-        cache_is(disk, partition);
-
-        cached_disk = disk.uuid;
-        cached_partition = partition.uuid;
-    }
-
-    if(!fat_bs || !fat_is){
-        //Something went wrong when reading the two base vectors
+    if(!cache_disk_partition(disk, partition)){
         return 0;
     }
 
     return fat_is->free_clusters * fat_bs->sectors_per_cluster * 512;
+}
+
+vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const vector<string>& path){
+    if(!cache_disk_partition(disk, partition)){
+        return {};
+    }
+
+    auto cluster = find_cluster(disk, path);
+
+    if(cluster.first){
+        return files(cluster.second);
+    } else {
+        return {};
+    }
+}
+
+string fat32::read_file(dd disk, const disks::partition_descriptor& partition, const vector<string>& path, const string& file){
+    if(!cache_disk_partition(disk, partition)){
+        return "";
+    }
+
+    string content = "";
+
+    auto cluster = find_cluster(disk, path);
+
+
+    return move(content);
 }

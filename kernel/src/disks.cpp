@@ -228,6 +228,14 @@ uint64_t disks::free_size(){
     return fat32::free_size(*_mounted_disk, *_mounted_partition);
 }
 
-const vector<string>& disks::current_directory(){
+vector<string>& disks::current_directory(){
     return pwd;
+}
+
+string disks::read_file(const string& file){
+    if(!_mounted_disk || !_mounted_partition){
+        return "";
+    }
+
+    return fat32::read_file(*_mounted_disk, *_mounted_partition, pwd, file);
 }

@@ -53,13 +53,14 @@ void ls_command(const vector<string>& params);
 void cd_command(const vector<string>& params);
 void pwd_command(const vector<string>& params);
 void free_command(const vector<string>& params);
+void cat_command(const vector<string>& params);
 
 struct command_definition {
     const char* name;
     void (*function)(const vector<string>&);
 };
 
-command_definition commands[18] = {
+command_definition commands[19] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -78,6 +79,7 @@ command_definition commands[18] = {
     {"cd", cd_command},
     {"pwd", pwd_command},
     {"sysinfo", sysinfo_command},
+    {"cat", cat_command},
 };
 
 string current_input;
@@ -497,6 +499,14 @@ void cd_command(const vector<string>& params){
         } else {
             disks::current_directory().push_back(params[1]);
         }
+    }
+}
+
+void cat_command(const vector<string>& params){
+    if(params.size() == 1){
+        k_print_line("No file provided");
+    } else {
+        auto content = disks::read_file(params[1]);
     }
 }
 

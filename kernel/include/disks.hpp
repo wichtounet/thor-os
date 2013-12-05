@@ -66,6 +66,8 @@ void unmount();
 vector<file> ls();
 uint64_t free_size();
 
+string read_file(const string& file);
+
 const disk_descriptor* mounted_disk();
 const partition_descriptor* mounted_partition();
 
