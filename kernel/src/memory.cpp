@@ -85,6 +85,23 @@ uint64_t pdpt_index = 0;
 uint64_t pdt_index = 0;
 uint64_t pt_index = 256;
 
+void identity_map(void* physical){
+    //Find the correct indexes inside the paging table for the physical address
+    auto table = (reinterpret_cast<uintptr_t>(physical) >> 12) & 0x1FF;
+    auto directory = (reinterpret_cast<uintptr_t>(physical) >> 21) & 0x1FF;
+    auto directory_ptr = (reinterpret_cast<uintptr_t>(physical) >> 30) & 0x1FF;
+    auto pml4 = (reinterpret_cast<uintptr_t>(physical) >> 39) & 0x1FF;
+
+    //Find the entries
+    pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
+    auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
+    auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
+    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[directory]) & ~0xFFF);
+
+    //Identity map  the physical address
+    pt[table] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(physical) | 0x3);
+}
+
 uint64_t* allocate_block(uint64_t blocks){
     if(!current_mmap_entry){
         for(uint64_t i = 0; i < entry_count; ++i){
@@ -101,6 +118,8 @@ uint64_t* allocate_block(uint64_t blocks){
     if(!current_mmap_entry){
         return nullptr;
     }
+
+    //TODO This only works if the first mmap entry is starting at 1Mib
 
     pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
     auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4t_index]) & ~0xFFF);
@@ -181,7 +200,6 @@ void init_memory_manager(){
 }
 
 void* k_malloc(uint64_t bytes){
-
     auto current = malloc_head->next;
 
     while(true){
