@@ -10,6 +10,7 @@
 #include "shell.hpp"
 #include "keyboard.hpp"
 #include "disks.hpp"
+#include "acpi.hpp"
 
 extern "C" {
 
@@ -19,11 +20,14 @@ void  __attribute__ ((section ("main_section"))) kernel_main(){
     load_memory_map();
     init_memory_manager();
     install_timer();
+    //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();
 
+    //Call global cosntructors
     _init();
 
+    //Launch the shell
     init_shell();
 
     return;

@@ -17,6 +17,7 @@
 #include "string.hpp"
 #include "vector.hpp"
 #include "algorithms.hpp"
+#include "acpi.hpp"
 
 //Commands
 #include "sysinfo.hpp"
@@ -54,13 +55,14 @@ void cd_command(const vector<string>& params);
 void pwd_command(const vector<string>& params);
 void free_command(const vector<string>& params);
 void cat_command(const vector<string>& params);
+void shutdown_command(const vector<string>& params);
 
 struct command_definition {
     const char* name;
     void (*function)(const vector<string>&);
 };
 
-command_definition commands[19] = {
+command_definition commands[20] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -80,6 +82,7 @@ command_definition commands[19] = {
     {"pwd", pwd_command},
     {"sysinfo", sysinfo_command},
     {"cat", cat_command},
+    {"shutdown", shutdown_command},
 };
 
 string current_input;
@@ -510,6 +513,12 @@ void cat_command(const vector<string>& params){
 
         k_print(content);
     }
+}
+
+void shutdown_command(const vector<string>&){
+    k_print_line("Init ACPI");
+
+    acpi::init();
 }
 
 } //end of anonymous namespace
