@@ -9,6 +9,7 @@
 #include "types.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"
+#include "paging.hpp"
 
 #include "console.hpp"
 
@@ -200,8 +201,15 @@ int init_acpi(){
 
    k_printf("%h\n", reinterpret_cast<uintptr_t>(ptr));
 
+   if(!paging::identity_map(ptr, 16)){
+       k_print_line("Impossible to map the ACPI tables");
+
+       return -1;
+   }
+
    // check if address is correct  ( if acpi is available on this pc )
    if (ptr && check_header(ptr, "RSDT") == 0){
+      //k_print_line("2");
       // the RSDT contains an unknown number of pointers to acpi tables
       int entrys = *(ptr + 1);
       entrys = (entrys-36) /4;
