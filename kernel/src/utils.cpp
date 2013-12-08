@@ -18,6 +18,22 @@ void memset(void* ptr, unsigned char value, size_t num){
     }
 }
 
+int memcmp(const void* s1, const void* s2, size_t n){
+    auto p1 = static_cast<const unsigned char*>(s1);
+    auto p2 = static_cast<const unsigned char*>(s2);
+
+    while(n--){
+        if( *p1 != *p2 ){
+            return *p1 - *p2;
+        } else {
+            p1++;
+            p2++;
+        }
+    }
+
+    return 0;
+}
+
 bool str_equals(const char* a, const char* b){
     while(*a && *a == *b){
         ++a;

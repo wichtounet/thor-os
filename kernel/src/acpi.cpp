@@ -52,22 +52,6 @@ struct FACP {
    uint8_t PM1_CNT_LEN;
 };
 
-int memcmp(const void* s1, const void* s2, size_t n){
-    auto p1 = static_cast<const unsigned char*>(s1);
-    auto p2 = static_cast<const unsigned char*>(s2);
-
-    while(n--){
-        if( *p1 != *p2 ){
-            return *p1 - *p2;
-        } else {
-            p1++;
-            p2++;
-        }
-    }
-
-    return 0;
-}
-
 // check if the given address has a valid header
 unsigned int* check_rsd_ptr(unsigned int *ptr) {
    const char* sig = "RSD PTR ";
