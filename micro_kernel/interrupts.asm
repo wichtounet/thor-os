@@ -52,7 +52,6 @@ _isr%1:
     ; Disable interruptions to avoid being interrupted
     cli
 
-    mov r10, [rsp] ; error code
     mov r11, [rsp+8] ; saved rip
 
     lea rdi, [12 * 8 * 0x14 + 30 * 2 + TRAM]
@@ -80,38 +79,9 @@ _isr%1:
     mov r8, rsp
     call print_int
 
-    ; More informations for some specific exceptions
-
-    mov rax, %1
-    cmp rax, 14
-    jne .end
-
-    .page_fault_exception:
-
-    ; print cr2
-
-    lea rdi, [15 * 8 * 0x14 + 30 * 2 + TRAM]
-    mov rbx, cr2_str
-    call print_string
-
-    lea rdi, [15 * 8 * 0x14 + 35 * 2 + TRAM]
-    mov r8, cr2
-    call print_int
-
-    ; print error code
-
-    lea rdi, [16 * 8 * 0x14 + 30 * 2 + TRAM]
-    mov rbx, error_code_str
-    call print_string
-
-    lea rdi, [16 * 8 * 0x14 + 30 * 2 + TRAM + error_code_str_length * 2]
-    mov r8, r10
-    call print_int
-
-    .end:
-
     ; Simply halt the CPU because we don't know how to solve the problem
     hlt
+
     iretq
 %endmacro
 
@@ -190,11 +160,143 @@ _irq%1:
     mov dword [rdi+12], 0  ; zero
 %endmacro
 
-%assign i 0
-%rep 32
-CREATE_ISR i
-%assign i i+1
-%endrep
+; Custom ISRs
+
+_isr13:
+    ; Disable interruptions to avoid being interrupted
+    cli
+
+    mov r10, [rsp] ; error code
+    mov r11, [rsp+8] ; saved rip
+
+    lea rdi, [12 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov dl, STYLE(RED_F, WHITE_B)
+    mov rbx, isr13_msg
+    call print_string
+
+    ; print rip
+
+    lea rdi, [13 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, rip_str
+    call print_string
+
+    lea rdi, [13* 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, r11
+    call print_int
+
+    ; print rsp
+
+    lea rdi, [14 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, rsp_str
+    call print_string
+
+    lea rdi, [14 * 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, rsp
+    call print_int
+
+    ; print error code
+
+    lea rdi, [15 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, error_code_str
+    call print_string
+
+    lea rdi, [15 * 8 * 0x14 + 30 * 2 + TRAM + error_code_str_length * 2]
+    mov r8, r10
+    call print_int
+
+    ; Simply halt the CPU because we don't know how to solve the problem
+    hlt
+
+    iretq
+
+_isr14:
+    ; Disable interruptions to avoid being interrupted
+    cli
+
+    mov r10, [rsp] ; error code
+    mov r11, [rsp+8] ; saved rip
+
+    lea rdi, [12 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov dl, STYLE(RED_F, WHITE_B)
+    mov rbx, isr14_msg
+    call print_string
+
+    ; print rip
+
+    lea rdi, [13 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, rip_str
+    call print_string
+
+    lea rdi, [13* 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, r11
+    call print_int
+
+    ; print rsp
+
+    lea rdi, [14 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, rsp_str
+    call print_string
+
+    lea rdi, [14 * 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, rsp
+    call print_int
+
+    ; print cr2
+
+    lea rdi, [15 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, cr2_str
+    call print_string
+
+    lea rdi, [15 * 8 * 0x14 + 35 * 2 + TRAM]
+    mov r8, cr2
+    call print_int
+
+    ; print error code
+
+    lea rdi, [16 * 8 * 0x14 + 30 * 2 + TRAM]
+    mov rbx, error_code_str
+    call print_string
+
+    lea rdi, [16 * 8 * 0x14 + 30 * 2 + TRAM + error_code_str_length * 2]
+    mov r8, r10
+    call print_int
+
+    ; Simply halt the CPU because we don't know how to solve the problem
+    hlt
+
+    iretq
+
+; Normal ISRs
+CREATE_ISR 0
+CREATE_ISR 1
+CREATE_ISR 2
+CREATE_ISR 3
+CREATE_ISR 4
+CREATE_ISR 5
+CREATE_ISR 6
+CREATE_ISR 7
+CREATE_ISR 8
+CREATE_ISR 9
+CREATE_ISR 10
+CREATE_ISR 11
+CREATE_ISR 12
+CREATE_ISR 15
+CREATE_ISR 16
+CREATE_ISR 17
+CREATE_ISR 18
+CREATE_ISR 19
+CREATE_ISR 20
+CREATE_ISR 21
+CREATE_ISR 22
+CREATE_ISR 23
+CREATE_ISR 24
+CREATE_ISR 25
+CREATE_ISR 26
+CREATE_ISR 27
+CREATE_ISR 28
+CREATE_ISR 29
+CREATE_ISR 30
+CREATE_ISR 31
 
 %assign i 0
 %rep 16
