@@ -42,9 +42,10 @@ constexpr bool page_aligned(void* addr){
 
 } //end of anonymous namespace
 
+//TODO Update to support offsets at the end of virt
+//TODO Improve to support a status
 void* paging::physical_address(void* virt){
     if(!page_present(virt)){
-        //TODO Not a very good value since 0x0 is a valid physical address
         return nullptr;
     }
 
