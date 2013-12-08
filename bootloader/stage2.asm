@@ -39,6 +39,7 @@ second_step:
     xor di, di
 
 .next:
+    ; Make sure the second part of the address is 0x0
     xor bx, bx
 
     ; Read one sector
@@ -90,7 +91,7 @@ second_step:
     cmp dh, 2
     jne .next_sector
 
-    mov dh, 0
+    xor dh, dh
     mov [head], dh
 
     mov ch, [cylinder]
