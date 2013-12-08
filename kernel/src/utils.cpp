@@ -34,6 +34,18 @@ int memcmp(const void* s1, const void* s2, size_t n){
     return 0;
 }
 
+void memcopy(void* destination, const void* source, size_t n){
+    auto dest = static_cast<unsigned char*>(destination);
+    auto src = static_cast<const unsigned char*>(source);
+
+    --dest;
+    --src;
+
+    while(n--){
+        *++dest = *++src;
+    }
+}
+
 bool str_equals(const char* a, const char* b){
     while(*a && *a == *b){
         ++a;

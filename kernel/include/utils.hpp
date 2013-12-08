@@ -27,16 +27,7 @@ const char* str_from(char* a, char c);
 
 void memset(void * ptr, uint8_t value, size_t num);
 int memcmp(const void* s1, const void* s2, size_t n);
-
-template<typename T>
-void memcopy(T* destination, const T* source, size_t size){
-    --source;
-    --destination;
-
-    while(size--){
-        *++destination = *++source;
-    }
-}
+void memcopy(void* destination, const void* source, size_t n);
 
 template< class T > struct remove_reference      {typedef T type;};
 template< class T > struct remove_reference<T&>  {typedef T type;};
