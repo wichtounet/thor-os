@@ -14,8 +14,11 @@ namespace paging {
 
 const int PAGE_SIZE = 4096;
 
-bool identity_map(void* physical);
-bool identity_map(void* physical, size_t pages);
+void* physical_address(void* virt);
+bool page_present(void* virt);
+bool page_free_or_set(void* virt, void* physical);
+bool identity_map(void* virt);
+bool identity_map(void* virt, size_t pages);
 
 } //end of namespace paging
 

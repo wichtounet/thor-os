@@ -516,9 +516,11 @@ void cat_command(const vector<string>& params){
 }
 
 void shutdown_command(const vector<string>&){
-    k_print_line("Init ACPI");
+    if(!acpi::init()){
+        k_print_line("Unable to init ACPI");
+    }
 
-    acpi::init();
+    acpi::shutdown();
 }
 
 } //end of anonymous namespace

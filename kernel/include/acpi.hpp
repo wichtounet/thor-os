@@ -10,7 +10,7 @@
 
 namespace acpi {
 
-void init();
+bool init();
 void shutdown();
 
 } //end of acpi namespace

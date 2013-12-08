@@ -25,6 +25,8 @@ uint64_t str_len(const char* a);
 const char* str_until(char* a, char c);
 const char* str_from(char* a, char c);
 
+void memset(void * ptr, uint8_t value, size_t num);
+
 template<typename T>
 void memcopy(T* destination, const T* source, size_t size){
     --source;

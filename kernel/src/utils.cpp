@@ -8,6 +8,16 @@
 #include "utils.hpp"
 #include "string.hpp"
 
+void memset(void* ptr, unsigned char value, size_t num){
+    auto p = static_cast<unsigned char*>(ptr);
+
+    --p;
+
+    while(num--){
+        *++p = value;
+    }
+}
+
 bool str_equals(const char* a, const char* b){
     while(*a && *a == *b){
         ++a;
