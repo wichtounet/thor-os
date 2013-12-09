@@ -142,10 +142,10 @@ vector<disks::file> files(const unique_heap_array<cluster_entry>& cluster){
             if(is_long_name(entry)){
                 //It is a long file name
                 //TODO Add suppport for long file name
-                memcopy(file.name, "LONG", 4);
+                std::copy_n(file.name, "LONG", 4);
             } else {
                 //It is a normal file name
-                memcopy(file.name, entry.name, 11);
+                std::copy_n(file.name, entry.name, 11);
             }
 
             file.hidden = entry.attrib & 0x1;

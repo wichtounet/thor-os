@@ -8,18 +8,6 @@
 #include "utils.hpp"
 #include "string.hpp"
 
-void memcopy(void* destination, const void* source, size_t n){
-    auto dest = static_cast<unsigned char*>(destination);
-    auto src = static_cast<const unsigned char*>(source);
-
-    --dest;
-    --src;
-
-    while(n--){
-        *++dest = *++src;
-    }
-}
-
 uint64_t parse(const char* it, const char* end){
     int i = end - it - 1;
 

@@ -12,6 +12,24 @@
 
 namespace std {
 
+template<typename InputIterator, typename OutputIterator>
+void copy(OutputIterator out, InputIterator it, InputIterator end){
+    while(it != end){
+        *out = *it;
+        ++out;
+        ++it;
+    }
+}
+
+template<typename InputIterator, typename OutputIterator>
+void copy_n(OutputIterator out, InputIterator in, size_t n){
+    while(n--){
+        *out = *in;
+        ++out;
+        ++in;
+    }
+}
+
 template<typename ForwardIterator, typename T>
 void fill(ForwardIterator it, ForwardIterator end, const T& value){
     while(it != end){
@@ -58,8 +76,6 @@ uint64_t parse(const char* str, const char* end);
 uint64_t parse(const string& str);
 
 uint64_t str_len(const char* a);
-
-void memcopy(void* destination, const void* source, size_t n);
 
 template< class T > struct remove_reference      {typedef T type;};
 template< class T > struct remove_reference<T&>  {typedef T type;};

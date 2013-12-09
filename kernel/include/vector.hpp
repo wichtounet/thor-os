@@ -9,6 +9,7 @@
 #define VECTOR_H
 
 #include "types.hpp"
+#include "utils.hpp"
 
 template<typename T>
 class vector {
@@ -87,11 +88,9 @@ public:
             data = new T[_capacity];
         } else if(_capacity == _size){
             _capacity= _capacity * 2;
-            auto new_data = new T[_capacity];
 
-            for(size_type i = 0; i < _size; ++i){
-                new_data[i] = data[i];
-            }
+            auto new_data = new T[_capacity];
+            std::copy_n(new_data, data, _size);
 
             delete[] data;
             data = new_data;

@@ -30,7 +30,7 @@ public:
     }
 
     basic_string(const CharT* s) : _size(str_len(s)), _capacity(_size + 1), _data(new CharT[_capacity]) {
-        memcopy(_data, s, _capacity);
+        std::copy_n(_data, s, _capacity);
     }
 
     explicit basic_string(size_t __capacity) : _size(0), _capacity(__capacity), _data(new CharT[_capacity]) {
@@ -40,7 +40,7 @@ public:
     //Copy constructors
 
     basic_string(const basic_string& rhs) : _capacity(rhs._capacity), _size(rhs._size), _data(new CharT[_capacity]) {
-        memcopy(_data, rhs._data, _size + 1);
+        std::copy_n(_data, rhs._data, _size + 1);
     }
 
     basic_string& operator=(const basic_string& rhs){
@@ -55,7 +55,7 @@ public:
             }
 
             _size = rhs._size;
-            memcopy(_data, rhs._data, _size + 1);
+            std::copy_n(_data, rhs._data, _size + 1);
         }
 
         return *this;
@@ -118,7 +118,7 @@ public:
             auto new_data = new CharT[_capacity];
 
             if(_data){
-                memcopy(new_data, _data, _size);
+                std::copy_n(new_data, _data, _size);
                 delete[] _data;
             }
 

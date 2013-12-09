@@ -125,7 +125,7 @@ void next_line(){
         auto destination = vga_buffer_fast;
         auto source = &vga_buffer_fast[20];
 
-        memcopy(destination, source, 24 * 160);
+        std::copy_n(destination, source, 24 * 20);
 
         auto vga_buffer = reinterpret_cast<uint16_t*>(0x0B8000);
         for(uint64_t i = 0; i < 80; ++i){
