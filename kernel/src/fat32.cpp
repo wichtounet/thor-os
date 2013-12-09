@@ -159,7 +159,7 @@ vector<disks::file> files(const unique_heap_array<cluster_entry>& cluster){
 
     //TODO If end_reached not true, we should read the next cluster
 
-    return move(files);
+    return std::move(files);
 }
 
 vector<disks::file> files(fat32::dd disk, uint64_t cluster_addr){
@@ -237,7 +237,7 @@ pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const 
 
                         if(read_sectors(disk, cluster_lba(entry.cluster_low + (entry.cluster_high << 16)),
                                 fat_bs->sectors_per_cluster, cluster.get())){
-                            current_cluster = move(cluster);
+                            current_cluster = std::move(cluster);
                             found = true;
 
                             break;
@@ -255,7 +255,7 @@ pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const 
             }
         }
 
-        return make_pair(true, move(current_cluster));
+        return make_pair(true, std::move(current_cluster));
     }
 
     return make_pair(false, unique_heap_array<cluster_entry>());
@@ -329,5 +329,5 @@ string fat32::read_file(dd disk, const disks::partition_descriptor& partition, c
         }
     }
 
-    return move(content);
+    return std::move(content);
 }

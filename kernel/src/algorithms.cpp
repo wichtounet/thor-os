@@ -19,5 +19,5 @@ vector<string> split(const string& s){
         parts.push_back(current);
     }
 
-    return move(parts);
+    return std::move(parts);
 }

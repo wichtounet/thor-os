@@ -17,7 +17,7 @@ public:
     }
 
     template<typename U1, typename U2>
-    constexpr pair(U1&& x, U2&& y) : first(forward<U1>(x)), second(forward<U2>(y)){
+    constexpr pair(U1&& x, U2&& y) : first(std::forward<U1>(x)), second(std::forward<U2>(y)){
         //Nothing to init
     }
 
@@ -42,21 +42,21 @@ public:
     constexpr pair(pair&&) = default;
 
     template<typename U1, typename U2>
-    constexpr pair(pair<U1, U2>&& p) : first(move(p.first)), second((p.second)) {
+    constexpr pair(pair<U1, U2>&& p) : first(std::move(p.first)), second(std::move(p.second)) {
         //Nothing to init
     }
 
     template<typename U1, typename U2>
     pair& operator=(pair<U1, U2>&& p){
-        first = forward<U1>(p.first);
-        second = forward<U2>(p.second);
+        first = std::forward<U1>(p.first);
+        second = std::forward<U2>(p.second);
         return *this;
     }
 };
 
 template<typename T1, typename T2>
 inline constexpr pair<T1, T2> make_pair(T1&& x, T2&& y){
-    return pair<T1, T2>(forward<T1>(x), forward<T2>(y));
+    return pair<T1, T2>(std::forward<T1>(x), std::forward<T2>(y));
 }
 
 #endif

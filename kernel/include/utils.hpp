@@ -65,18 +65,6 @@ bool equal_n(Iterator1 it1, Iterator2 it2, size_t n){
     return compare_n(it1, it2, n) == 0;
 }
 
-} //end of namespace std
-
-template<typename CharT>
-struct basic_string;
-typedef basic_string<char> string;
-
-uint64_t parse(const char* str);
-uint64_t parse(const char* str, const char* end);
-uint64_t parse(const string& str);
-
-uint64_t str_len(const char* a);
-
 template< class T > struct remove_reference      {typedef T type;};
 template< class T > struct remove_reference<T&>  {typedef T type;};
 template< class T > struct remove_reference<T&&> {typedef T type;};
@@ -90,5 +78,17 @@ template<typename T>
 constexpr T&& forward(typename remove_reference<T>::type& t ){
     return static_cast<T&&>(t);
 }
+
+} //end of namespace std
+
+template<typename CharT>
+struct basic_string;
+typedef basic_string<char> string;
+
+uint64_t parse(const char* str);
+uint64_t parse(const char* str, const char* end);
+uint64_t parse(const string& str);
+
+uint64_t str_len(const char* a);
 
 #endif
