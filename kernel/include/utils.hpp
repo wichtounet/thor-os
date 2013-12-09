@@ -28,6 +28,25 @@ void fill_n(ForwardIterator it, size_t n, const T& value){
     }
 }
 
+template<typename Iterator1, typename Iterator2>
+size_t compare_n(Iterator1 it1, Iterator2 it2, size_t n){
+    while(n--){
+        if(*it1 != *it2){
+            return *it1- *it2;
+        } else {
+            ++it1;
+            ++it2;
+        }
+    }
+
+    return 0;
+}
+
+template<typename Iterator1, typename Iterator2>
+bool equal_n(Iterator1 it1, Iterator2 it2, size_t n){
+    return compare_n(it1, it2, n) == 0;
+}
+
 } //end of namespace std
 
 template<typename CharT>
@@ -40,7 +59,6 @@ uint64_t parse(const string& str);
 
 uint64_t str_len(const char* a);
 
-int memcmp(const void* s1, const void* s2, size_t n);
 void memcopy(void* destination, const void* source, size_t n);
 
 template< class T > struct remove_reference      {typedef T type;};

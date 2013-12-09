@@ -8,22 +8,6 @@
 #include "utils.hpp"
 #include "string.hpp"
 
-int memcmp(const void* s1, const void* s2, size_t n){
-    auto p1 = static_cast<const unsigned char*>(s1);
-    auto p2 = static_cast<const unsigned char*>(s2);
-
-    while(n--){
-        if( *p1 != *p2 ){
-            return *p1 - *p2;
-        } else {
-            p1++;
-            p2++;
-        }
-    }
-
-    return 0;
-}
-
 void memcopy(void* destination, const void* source, size_t n){
     auto dest = static_cast<unsigned char*>(destination);
     auto src = static_cast<const unsigned char*>(source);

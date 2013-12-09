@@ -57,7 +57,7 @@ unsigned int* check_rsd_ptr(unsigned int *ptr) {
    const char* sig = "RSD PTR ";
    auto rsdp = reinterpret_cast<RSDPtr*>(ptr);
 
-   if (memcmp(sig, rsdp, 8) == 0){
+   if (std::equal_n(sig, reinterpret_cast<const char*>(rsdp), 8)){
        uint8_t check = 0;
 
       // check checksum rsdpd
@@ -106,7 +106,7 @@ unsigned int *get_rsd_ptr(void){
 
 // checks for a given header and validates checksum
 int check_header(unsigned int *ptr, const char* sig){
-    if (memcmp(ptr, sig, 4) == 0){
+    if (std::equal_n(reinterpret_cast<const char*>(ptr), sig, 4)){
         char *checkPtr = reinterpret_cast<char *>(ptr);
         int len = *(ptr + 1);
         char check = 0;
@@ -183,7 +183,11 @@ int acpiEnable(void){
 int init_acpi(){
    unsigned int *ptr = get_rsd_ptr();
 
+   k_printf("%h\n", reinterpret_cast<uintptr_t>(ptr));
+
    if(!paging::identity_map(ptr, 16)){
+       k_print_line("Impossible to identity map the ACPI tables");
+
        return -1;
    }
 
@@ -206,8 +210,10 @@ int init_acpi(){
                char *S5Addr = reinterpret_cast<char *>(facp->DSDT + 36); // skip header
                int dsdtLength = *(reinterpret_cast<uint32_t*>(static_cast<uintptr_t>(facp->DSDT)+1)) - 36;
                while (0 < dsdtLength--){
-                  if ( memcmp(S5Addr, "_S5_", 4) == 0)
+                  if (std::equal_n(S5Addr, "_S5_", 4)){
                      break;
+                  }
+
                   S5Addr++;
                }
 
