@@ -258,17 +258,17 @@ int init_acpi(){
                      k_print_line("\\_S5 parse error.");
                   }
                } else {
-                  k_print_line("\\_S5 not present.\n");
+                  k_print_line("\\_S5 not present.");
                }
             } else {
-               k_print_line("DSDT invalid.\n");
+               k_print_line("DSDT invalid.");
             }
          }
          ptr++;
       }
-      k_print_line("no valid FACP present.\n");
+      k_print_line("no valid FACP present.");
    } else {
-      k_print_line("no acpi.\n");
+      k_print_line("no acpi.");
    }
 
    return -1;
