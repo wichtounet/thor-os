@@ -19,17 +19,18 @@ typedef pt_t* pdt_t;
 typedef pdt_t* pdpt_t;
 typedef pdpt_t* pml4t_t;
 
-constexpr int PRESENT = 0x1;
-constexpr int WRITEABLE = 0x2;
-constexpr int USER = 0x4;
+constexpr const int PRESENT = 0x1;
+constexpr const int WRITEABLE = 0x2;
+constexpr const int USER = 0x4;
 
 //Memory from 0x70000 can be used for pages
 uintptr_t last_page = 0x73000;
 
 uintptr_t init_new_page(){
     auto new_page = last_page + paging::PAGE_SIZE;
+    auto it = reinterpret_cast<size_t*>(new_page);
 
-    memset(reinterpret_cast<void*>(new_page), 0, paging::PAGE_SIZE);
+    std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
 
     last_page = new_page;
 

@@ -12,7 +12,7 @@
 
 namespace paging {
 
-const int PAGE_SIZE = 4096;
+constexpr const int PAGE_SIZE = 4096;
 
 void* physical_address(void* virt);
 bool page_present(void* virt);

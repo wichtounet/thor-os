@@ -25,9 +25,9 @@
 namespace {
 
 #ifdef CONFIG_HISTORY
-static constexpr bool History = true;
+static constexpr const bool History = true;
 #else
-static constexpr bool History = false;
+static constexpr const bool History = false;
 #endif
 
 vector<string> history;

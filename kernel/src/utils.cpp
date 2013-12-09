@@ -8,16 +8,6 @@
 #include "utils.hpp"
 #include "string.hpp"
 
-void memset(void* ptr, unsigned char value, size_t num){
-    auto p = static_cast<unsigned char*>(ptr);
-
-    --p;
-
-    while(num--){
-        *++p = value;
-    }
-}
-
 int memcmp(const void* s1, const void* s2, size_t n){
     auto p1 = static_cast<const unsigned char*>(s1);
     auto p2 = static_cast<const unsigned char*>(s2);

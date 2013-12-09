@@ -10,6 +10,26 @@
 
 #include "types.hpp"
 
+namespace std {
+
+template<typename ForwardIterator, typename T>
+void fill(ForwardIterator it, ForwardIterator end, const T& value){
+    while(it != end){
+        *it = value;
+        ++it;
+    }
+}
+
+template<typename ForwardIterator, typename T>
+void fill_n(ForwardIterator it, size_t n, const T& value){
+    while(n--){
+        *it = value;
+        ++it;
+    }
+}
+
+} //end of namespace std
+
 template<typename CharT>
 struct basic_string;
 typedef basic_string<char> string;
@@ -20,7 +40,6 @@ uint64_t parse(const string& str);
 
 uint64_t str_len(const char* a);
 
-void memset(void * ptr, uint8_t value, size_t num);
 int memcmp(const void* s1, const void* s2, size_t n);
 void memcopy(void* destination, const void* source, size_t n);
 
