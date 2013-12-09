@@ -183,9 +183,12 @@ int acpiEnable(void){
 int init_acpi(){
    unsigned int *ptr = get_rsd_ptr();
 
-   k_printf("%h\n", reinterpret_cast<uintptr_t>(ptr));
+   auto aligned_ptr = ptr;
+   if(!paging::page_aligned(ptr)){
+       aligned_ptr = reinterpret_cast<unsigned int*>(reinterpret_cast<uintptr_t>(ptr) & ~(paging::PAGE_SIZE - 1));
+   }
 
-   if(!paging::identity_map(ptr, 16)){
+   if(!paging::identity_map(aligned_ptr, 2)){
        k_print_line("Impossible to identity map the ACPI tables");
 
        return -1;

@@ -37,10 +37,6 @@ uintptr_t init_new_page(){
     return new_page;
 }
 
-constexpr bool page_aligned(void* addr){
-    return !(reinterpret_cast<uintptr_t>(addr) & (paging::PAGE_SIZE - 1));
-}
-
 } //end of anonymous namespace
 
 //TODO Update to support offsets at the end of virt
