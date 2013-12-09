@@ -44,7 +44,6 @@ static_assert(sizeof(boot_record_t) == 512, "The boot record is 512 bytes long")
 const disks::disk_descriptor* _mounted_disk;
 const disks::partition_descriptor* _mounted_partition;
 
-//TODO This should be improved to suppport multi level
 vector<string> pwd;
 
 } //end of anonymous namespace
@@ -119,7 +118,6 @@ bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t co
             return ata::read_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), start, count, destination);
 
         default:
-            k_print_line("BOOH");
             return false;
     }
 }
