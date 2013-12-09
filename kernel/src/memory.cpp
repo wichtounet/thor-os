@@ -7,6 +7,7 @@
 
 #include "memory.hpp"
 #include "console.hpp"
+#include "paging.hpp"
 
 namespace {
 
@@ -63,27 +64,16 @@ struct fake_head {
     uint64_t size_2;
 };
 
-const uint64_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
-const uint64_t MIN_SPLIT = 32;
-const uint64_t BLOCK_SIZE = 4096;
-const uint64_t MIN_BLOCKS = 4;
+constexpr const uint64_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
+constexpr const uint64_t MIN_SPLIT = 32;
+constexpr const uint64_t BLOCK_SIZE = paging::PAGE_SIZE;
+constexpr const uint64_t MIN_BLOCKS = 4;
 
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
 
-typedef uint64_t* page_entry;
-typedef page_entry* pt_t;
-typedef pt_t* pdt_t;
-typedef pdt_t* pdpt_t;
-typedef pdpt_t* pml4t_t;
-
 mmapentry* current_mmap_entry = nullptr;
 uint64_t current_mmap_entry_position;
-
-uint64_t pml4t_index = 0;
-uint64_t pdpt_index = 0;
-uint64_t pdt_index = 0;
-uint64_t pt_index = 256;
 
 uint64_t* allocate_block(uint64_t blocks){
     if(!current_mmap_entry){
@@ -102,24 +92,10 @@ uint64_t* allocate_block(uint64_t blocks){
         return nullptr;
     }
 
-    //TODO This only works if the first mmap entry is starting at 1Mib
-
-    pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
-    auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4t_index]) & ~0xFFF);
-    auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[pdpt_index]) & ~0xFFF);
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[pdt_index]) & ~0xFFF);
-
-    if(pt_index + blocks >= 512){
-        //TODO Go to a new page table
-    }
-
-    for(uint64_t i = 0; i < blocks; ++i){
-        pt[pt_index + i] = reinterpret_cast<page_entry>((current_mmap_entry_position + i * BLOCK_SIZE) | 0x3);
-    }
-
     auto block = reinterpret_cast<uint64_t*>(current_mmap_entry_position);
 
-    pt_index += blocks;
+    paging::identity_map(block, blocks);
+
     current_mmap_entry_position += blocks * BLOCK_SIZE;
 
     _allocated_memory += blocks * BLOCK_SIZE;
