@@ -304,13 +304,13 @@ void k_printf(const char* fmt, ...){
             else if(ch == 'm'){
                 auto memory= va_arg(va, uint64_t);
 
-                if(memory > 1024 * 1024 * 1024){
+                if(memory >= 1024 * 1024 * 1024){
                     k_print(memory / (1024 * 1024 * 1024));
                     k_print("GiB");
-                } else if(memory > 1024 * 1024){
+                } else if(memory >= 1024 * 1024){
                     k_print(memory / (1024 * 1024));
                     k_print("MiB");
-                } else if(memory > 1024){
+                } else if(memory >= 1024){
                     k_print(memory / 1024);
                     k_print("KiB");
                 } else {
