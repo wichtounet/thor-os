@@ -157,6 +157,9 @@ pm_start:
 [BITS 64]
 
 lm_start:
+    ; Enable SSE
+    call enable_sse
+
     ; Install IDT
     call install_idt
 
@@ -171,8 +174,6 @@ lm_start:
 
     ; Install custom syscalls
     call install_syscalls
-
-    call enable_sse
 
     sti
 
