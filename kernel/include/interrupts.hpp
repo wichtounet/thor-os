@@ -11,6 +11,7 @@
 namespace interrupt {
 
 void install_idt();
+void install_isrs();
 
 } //end of interrupt namespace
 
