@@ -28,7 +28,7 @@ struct bios_mmap_entry {
 
 uint64_t e820_failed = 0;
 uint64_t entry_count = 0;
-bios_mmap_entry* e820_address = 0;
+//bios_mmap_entry* e820_address = 0;
 
 mmapentry e820_mmap[32];
 
@@ -260,7 +260,24 @@ void k_free(void* block){
 }
 
 void load_memory_map(){
-    mmap_query(0, &e820_failed);
+    //TODO Rewrite the correct version, once the boot process has been fixed
+
+    e820_failed = false;
+    entry_count = 2;
+
+    _available_memory = 16 * 1024 * 1024;
+
+    auto& os_entry = e820_mmap[0];
+    os_entry.base = 0x0;
+    os_entry.size = 0x100000;
+    os_entry.type = 7;
+
+    auto& free_entry = e820_mmap[1];
+    free_entry.base = 0x100000;
+    free_entry.size = _available_memory;
+    free_entry.type = 1;
+
+    /*mmap_query(0, &e820_failed);
     mmap_query(1, &entry_count);
     mmap_query(2, reinterpret_cast<uint64_t*>(&e820_address));
 
@@ -284,7 +301,7 @@ void load_memory_map(){
                 _available_memory += os_entry.size;
             }
         }
-    }
+    }*/
 }
 
 uint64_t mmap_entry_count(){
