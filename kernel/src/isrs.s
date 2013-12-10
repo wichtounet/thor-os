@@ -7,9 +7,6 @@
 
 .intel_syntax noprefix
 
-// The fault handler provided by the C++ kernel
-//extern _fault_handler
-
 // Define the base ISRs
 
 .global _isr0
@@ -276,8 +273,8 @@ isr_common_handler:
     // TODO At this point, it is absolutely not safe to return since most
     // registers will get trashed the fault handler must hang
 
-    add rsp, 2 // Cleans the pushed error code
+    add rsp, 8 // Cleans the pushed error code
 
     pop rax // Clean the pushed stack
 
-    iret // iret will clean the other automatically pushed stuff
+    iretq // iret will clean the other automatically pushed stuff

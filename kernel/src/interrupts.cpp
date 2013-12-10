@@ -8,8 +8,11 @@
 #include "interrupts.hpp"
 #include "types.hpp"
 #include "utils.hpp"
-#include "isrs.hpp"
 #include "console.hpp"
+#include "kernel_utils.hpp"
+
+#include "isrs.hpp"
+#include "irqs.hpp"
 
 namespace {
 
@@ -43,6 +46,8 @@ void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, ui
     entry.offset_high= function_address  >> 32;
 }
 
+void (*irq_handlers[16])();
+
 } //end of anonymous namespace
 
 struct regs {
@@ -63,6 +68,23 @@ void _fault_handler(regs* regs){
     while(true){};
 }
 
+void _irq_handler(size_t code){
+    //If there is an handler, call it
+    if(irq_handlers[code - 32]){
+        irq_handlers[code - 32]();
+    }
+
+    //TODO Pass the control to the correct handler
+
+    //If the IRQ is on the slaved controller, send EOI to it
+    if(code >= 40){
+        out_byte(0xA0, 0x20);
+    }
+
+    //Send EOI to the master controller
+    out_byte(0x20, 0x20);
+}
+
 } //end of extern "C"
 
 void interrupt::install_idt(){
@@ -72,6 +94,7 @@ void interrupt::install_idt(){
 
     //Clear the IDT
     std::fill_n(reinterpret_cast<size_t*>(idt_64), 64 * 2, 0);
+    std::fill_n(irq_handlers, 16, nullptr);
 
     //Give the IDTR address to the CPU
     asm volatile("lidt [%0]" : : "m" (idtr_64));
@@ -112,4 +135,50 @@ void interrupt::install_isrs(){
     idt_set_gate(29, _isr29, 0x18, 0x8E);
     idt_set_gate(30, _isr30, 0x18, 0x8E);
     idt_set_gate(31, _isr31, 0x18, 0x8E);
+}
+
+void interrupt::remap_irqs(){
+    //Restart the both PICs
+    out_byte(0x20, 0x11);
+    out_byte(0xA0, 0x11);
+
+    out_byte(0x21, 0x20); //Make PIC1 start at 32
+    out_byte(0xA1, 0x28); //Make PIC2 start at 40
+
+    //Setup cascading for both PICs
+    out_byte(0x21, 0x04);
+    out_byte(0xA1, 0x02);
+
+    //8086 mode for both PICs
+    out_byte(0x21, 0x01);
+    out_byte(0xA1, 0x01);
+
+    //Activate all IRQs in both PICs
+    out_byte(0x21, 0x0);
+    out_byte(0xA1, 0x0);
+}
+
+void interrupt::install_irqs(){
+    //TODO The GDT Selector should be computed in a better way
+
+    idt_set_gate(32, _irq0, 0x18, 0x8E);
+    idt_set_gate(33, _irq1, 0x18, 0x8E);
+    idt_set_gate(34, _irq2, 0x18, 0x8E);
+    idt_set_gate(35, _irq3, 0x18, 0x8E);
+    idt_set_gate(36, _irq4, 0x18, 0x8E);
+    idt_set_gate(37, _irq5, 0x18, 0x8E);
+    idt_set_gate(38, _irq6, 0x18, 0x8E);
+    idt_set_gate(39, _irq7, 0x18, 0x8E);
+    idt_set_gate(40, _irq8, 0x18, 0x8E);
+    idt_set_gate(41, _irq9, 0x18, 0x8E);
+    idt_set_gate(42, _irq10, 0x18, 0x8E);
+    idt_set_gate(43, _irq11, 0x18, 0x8E);
+    idt_set_gate(44, _irq12, 0x18, 0x8E);
+    idt_set_gate(45, _irq13, 0x18, 0x8E);
+    idt_set_gate(46, _irq14, 0x18, 0x8E);
+    idt_set_gate(47, _irq15, 0x18, 0x8E);
+}
+
+void interrupt::register_irq_handler(size_t irq, void (*handler)()){
+    irq_handlers[irq] = handler;
 }
