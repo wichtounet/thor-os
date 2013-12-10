@@ -160,25 +160,10 @@ lm_start:
     ; Enable SSE
     call enable_sse
 
-    ; Install IDT
-    ;call install_idt
-
-    ; Install ISRs
-    ;call install_isrs
-
-    ; Remap IRQs with wrong numbers
-    ;call remap_irqs
-
-    ; Install all IRQs
-    ;call install_irqs
-
-    ; Install custom syscalls
-    ;call install_syscalls
-
-    ;sti
-
+    ; Go to the kernel
     call 0x5000
 
+    ; Normally should never arrive here
     jmp $
 
 ; Functions
@@ -203,13 +188,6 @@ enable_sse:
     .no_sse:
 
     ret
-
-; Includes
-
-%include "utils/macros.asm"
-%include "utils/console.asm"
-
-%include "interrupts.asm"
 
 ; Global Descriptors Table
 
