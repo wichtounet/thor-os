@@ -10,6 +10,7 @@ SECTIONS
 	{
 		*(main_section)
 		*(.text)
+        *(.text.*)
 	}
 
 	/* 4K of Read-only data */
