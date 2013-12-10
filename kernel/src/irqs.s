@@ -133,6 +133,12 @@ _irq14:
 
     jmp irq_common_handler
 
+_irq15:
+    cli
+    push 15
+
+    jmp irq_common_handler
+
 // Common handler
 
 //TODO Check if really safe to trash r12
