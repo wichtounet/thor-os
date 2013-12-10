@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include "keyboard.hpp"
+#include "interrupts.hpp"
 #include "kernel_utils.hpp"
 
 namespace {
@@ -109,7 +110,7 @@ void keyboard_handler(){
 }
 
 void keyboard::install_driver(){
-    register_irq_handler<1>(keyboard_handler);
+    interrupt::register_irq_handler(1, keyboard_handler);
 
     start = 0;
     count = 0;

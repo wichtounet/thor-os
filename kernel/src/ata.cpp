@@ -10,6 +10,7 @@
 #include "timer.hpp"
 #include "memory.hpp"
 #include "thor.hpp"
+#include "interrupts.hpp"
 
 namespace {
 
@@ -131,12 +132,13 @@ void ata::detect_disks(){
         auto& drive = drives[i];
 
         out_byte(drive.controller + 0x6, drive.drive);
+
         sleep_ms(4);
         drive.present = in_byte(drive.controller + 0x7) & 0x40;
     }
 
-    register_irq_handler<14>(primary_controller_handler);
-    register_irq_handler<15>(secondary_controller_handler);
+    interrupt::register_irq_handler(14, primary_controller_handler);
+    interrupt::register_irq_handler(15, secondary_controller_handler);
 }
 
 uint8_t ata::number_of_disks(){

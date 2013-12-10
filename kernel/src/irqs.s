@@ -45,97 +45,129 @@
 
 _irq0:
     cli
-    push 0
+
+    push rdi
+    mov rdi, 0
 
     jmp irq_common_handler
 
 _irq1:
     cli
-    push 1
+
+    push rdi
+    mov rdi, 1
 
     jmp irq_common_handler
 
 _irq2:
     cli
-    push 2
+
+    push rdi
+    mov rdi, 2
 
     jmp irq_common_handler
 
 _irq3:
     cli
-    push 3
+
+    push rdi
+    mov rdi, 3
 
     jmp irq_common_handler
 
 _irq4:
     cli
-    push 4
+
+    push rdi
+    mov rdi, 4
 
     jmp irq_common_handler
 
 _irq5:
     cli
-    push 5
+
+    push rdi
+    mov rdi, 5
 
     jmp irq_common_handler
 
 _irq6:
     cli
-    push 6
+
+    push rdi
+    mov rdi, 6
 
     jmp irq_common_handler
 
 _irq7:
     cli
-    push 7
+
+    push rdi
+    mov rdi, 7
 
     jmp irq_common_handler
 
 _irq8:
     cli
-    push 8
+
+    push rdi
+    mov rdi, 8
 
     jmp irq_common_handler
 
 _irq9:
     cli
-    push 9
+
+    push rdi
+    mov rdi, 9
 
     jmp irq_common_handler
 
 _irq10:
     cli
-    push 10
+
+    push rdi
+    mov rdi, 10
 
     jmp irq_common_handler
 
 _irq11:
     cli
-    push 11
+
+    push rdi
+    mov rdi, 11
 
     jmp irq_common_handler
 
 _irq12:
     cli
-    push 12
+
+    push rdi
+    mov rdi, 12
 
     jmp irq_common_handler
 
 _irq13:
     cli
-    push 13
+
+    push rdi
+    mov rdi, 13
 
     jmp irq_common_handler
 
 _irq14:
     cli
-    push 14
+
+    push rdi
+    mov rdi, 14
 
     jmp irq_common_handler
 
 _irq15:
     cli
-    push 15
+
+    push rdi
+    mov rdi, 15
 
     jmp irq_common_handler
 
@@ -143,9 +175,6 @@ _irq15:
 
 //TODO Check if really safe to trash r12
 irq_common_handler:
-    //Get the error code
-    pop r12
-
     push rax
     push rcx
     push rdx
@@ -155,15 +184,11 @@ irq_common_handler:
     push r9
     push r10
     push r11
-
-    //Push the error
     push r12
 
-    mov rax, _irq_handler
-    call rax
+    call _irq_handler
 
     pop r12
-
     pop r11
     pop r10
     pop r9
@@ -174,6 +199,7 @@ irq_common_handler:
     pop rcx
     pop rax
 
-    add rsp, 8 // Cleans the pushed error code
+    //Was pushed by the base handler code
+    pop rdi
 
     iretq // iret will clean the other automatically pushed stuff

@@ -264,17 +264,13 @@ _isr31:
 // Common handler
 
 isr_common_handler:
-    mov rax, rsp
-    push rax
 
-    mov rax, _fault_handler
-    call rax
+    //mov rax, _fault_handler
+    call _fault_handler
 
     // TODO At this point, it is absolutely not safe to return since most
     // registers will get trashed the fault handler must hang
 
-    add rsp, 8 // Cleans the pushed error code
-
-    pop rax // Clean the pushed stack
+    add rsp, 8 // Cleans the pushed error number
 
     iretq // iret will clean the other automatically pushed stuff

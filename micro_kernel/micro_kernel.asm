@@ -161,21 +161,21 @@ lm_start:
     call enable_sse
 
     ; Install IDT
-    call install_idt
+    ;call install_idt
 
     ; Install ISRs
-    call install_isrs
+    ;call install_isrs
 
     ; Remap IRQs with wrong numbers
-    call remap_irqs
+    ;call remap_irqs
 
     ; Install all IRQs
-    call install_irqs
+    ;call install_irqs
 
     ; Install custom syscalls
-    call install_syscalls
+    ;call install_syscalls
 
-    sti
+    ;sti
 
     call 0x5000
 

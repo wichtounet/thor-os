@@ -11,12 +11,22 @@
 #include "keyboard.hpp"
 #include "disks.hpp"
 #include "acpi.hpp"
+#include "interrupts.hpp"
+
+//TODO Remove later
+#include "console.hpp"
 
 extern "C" {
 
 void _init();
 
 void  __attribute__ ((section ("main_section"))) kernel_main(){
+    interrupt::install_idt();
+    interrupt::install_isrs();
+    interrupt::remap_irqs();
+    interrupt::install_irqs();
+    interrupt::enable_interrupts();
+
     load_memory_map();
     init_memory_manager();
     install_timer();

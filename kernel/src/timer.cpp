@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include "timer.hpp"
+#include "interrupts.hpp"
 
 #include "kernel_utils.hpp"
 
@@ -37,7 +38,7 @@ void install_timer(){
     out_byte(0x40, static_cast<uint8_t>(divisor));
     out_byte(0x40, static_cast<uint8_t>(divisor >> 8));
 
-    register_irq_handler<0>(timer_handler);
+    interrupt::register_irq_handler(0, timer_handler);
 }
 
 void sleep_ms(uint64_t delay){

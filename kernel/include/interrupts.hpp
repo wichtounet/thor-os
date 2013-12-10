@@ -16,6 +16,7 @@ void install_idt();
 void install_isrs();
 void remap_irqs();
 void install_irqs();
+void enable_interrupts();
 
 void register_irq_handler(size_t irq, void (*handler)());
 

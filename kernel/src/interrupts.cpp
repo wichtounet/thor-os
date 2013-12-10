@@ -19,26 +19,30 @@ namespace {
 struct idt_entry {
     uint16_t offset_low;
     uint16_t segment_selector;
-    uint16_t flags;
+    uint8_t  zero;
+    uint8_t flags;
     uint16_t offset_middle;
     uint32_t offset_high;
     uint32_t reserved;
 } __attribute__((packed));
 
+static_assert(sizeof(idt_entry) == 16, "The size of an IDT entry should be 16 bits");
+
 struct idtr {
     uint16_t limit;
-    idt_entry* base;
+    uint64_t base;
 } __attribute__((packed));
 
 idt_entry idt_64[64];
 idtr idtr_64;
 
-void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, uint16_t flags){
+void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, uint8_t flags){
     auto& entry = idt_64[gate];
 
     entry.segment_selector = gdt_selector;
     entry.flags = flags;
     entry.reserved = 0;
+    entry.zero = 0;
 
     auto function_address = reinterpret_cast<uintptr_t>(function);
     entry.offset_low = function_address & 0xFFFF;
@@ -54,30 +58,38 @@ struct regs {
     uint64_t error_no;
     uint64_t error_code;
     uint64_t rip;
-    uint64_t cs;
     uint64_t rflags;
+    uint64_t cs;
     uint64_t rsp;
     uint64_t ss;
 } __attribute__((packed));
 
 extern "C" {
 
-void _fault_handler(regs* regs){
-    k_printf("Exception (%d) occured\n", regs->error_no);
-    //TODO Complete that
-    while(true){};
+void _fault_handler(regs regs){
+    k_printf("Exception (%d) occured\n", regs.error_no);
+    k_printf("error_code=%d\n", regs.error_code);
+    k_printf("rip=%h\n", regs.rip);
+    k_printf("rflags=%h\n", regs.rflags);
+    k_printf("cs=%h\n", regs.cs);
+    k_printf("rsp=%h\n", regs.rsp);
+    k_printf("ss=%h\n", regs.ss);
+
+    //TODO Improve that with kind of blue screen
+
+    asm volatile("hlt" : : );
 }
 
 void _irq_handler(size_t code){
     //If there is an handler, call it
-    if(irq_handlers[code - 32]){
-        irq_handlers[code - 32]();
+    if(irq_handlers[code]){
+        irq_handlers[code]();
     }
 
     //TODO Pass the control to the correct handler
 
     //If the IRQ is on the slaved controller, send EOI to it
-    if(code >= 40){
+    if(code >= 8){
         out_byte(0xA0, 0x20);
     }
 
@@ -90,10 +102,12 @@ void _irq_handler(size_t code){
 void interrupt::install_idt(){
     //Set the correct values inside IDTR
     idtr_64.limit = (64 * 16) - 1;
-    idtr_64.base = &idt_64[0];
+    idtr_64.base = reinterpret_cast<size_t>(&idt_64[0]);
 
     //Clear the IDT
-    std::fill_n(reinterpret_cast<size_t*>(idt_64), 64 * 2, 0);
+    std::fill_n(reinterpret_cast<size_t*>(idt_64), 64 * sizeof(idt_entry) / sizeof(size_t), 0);
+
+    //Clear the IRQ handlers
     std::fill_n(irq_handlers, 16, nullptr);
 
     //Give the IDTR address to the CPU
@@ -181,4 +195,8 @@ void interrupt::install_irqs(){
 
 void interrupt::register_irq_handler(size_t irq, void (*handler)()){
     irq_handlers[irq] = handler;
+}
+
+void interrupt::enable_interrupts(){
+    asm volatile("sti" : : );
 }
