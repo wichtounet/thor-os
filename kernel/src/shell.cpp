@@ -206,8 +206,12 @@ void clear_command(const vector<string>&){
     wipeout();
 }
 
-void reboot_command(const vector<string>&){
+void __attribute__((noreturn)) reboot_command(const vector<string>&){
     interrupt<60>();
+
+    asm volatile("mov al, 0x64; or al, 0xFE; out 0x64, al; mov al, 0xFE; out 0x64, al; " : : );
+
+    __builtin_unreachable();
 }
 
 void help_command(const vector<string>&){
