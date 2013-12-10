@@ -14,7 +14,7 @@ void native_cpuid(uint32_t key, uint32_t* eax, uint32_t* ebx, uint32_t* ecx, uin
     *eax = key;
 
     /* ecx is often an input as well as an output. */
-    asm volatile("cpuid"
+    __asm__ __volatile__("cpuid"
         : "=a" (*eax),
           "=b" (*ebx),
           "=c" (*ecx),

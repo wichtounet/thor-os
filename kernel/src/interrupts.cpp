@@ -76,8 +76,9 @@ void _fault_handler(regs regs){
     k_printf("ss=%h\n", regs.ss);
 
     //TODO Improve that with kind of blue screen
+    //TODO Display the title of the exception
 
-    asm volatile("hlt" : : );
+    __asm__ __volatile__("hlt" : : );
 }
 
 void _irq_handler(size_t code){
@@ -85,8 +86,6 @@ void _irq_handler(size_t code){
     if(irq_handlers[code]){
         irq_handlers[code]();
     }
-
-    //TODO Pass the control to the correct handler
 
     //If the IRQ is on the slaved controller, send EOI to it
     if(code >= 8){
@@ -111,7 +110,7 @@ void interrupt::install_idt(){
     std::fill_n(irq_handlers, 16, nullptr);
 
     //Give the IDTR address to the CPU
-    asm volatile("lidt [%0]" : : "m" (idtr_64));
+    __asm__ __volatile__("lidt [%0]" : : "m" (idtr_64));
 }
 
 void interrupt::install_isrs(){
@@ -198,5 +197,5 @@ void interrupt::register_irq_handler(size_t irq, void (*handler)()){
 }
 
 void interrupt::enable_interrupts(){
-    asm volatile("sti" : : );
+    __asm__ __volatile__("sti" : : );
 }
