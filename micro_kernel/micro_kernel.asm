@@ -160,11 +160,6 @@ lm_start:
     ; Go to the kernel
     call 0x5000
 
-    ; Normally should never arrive here
-    jmp $
-
-; Functions
-
 ; Global Descriptors Table
 
 GDT64:
