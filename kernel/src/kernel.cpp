@@ -12,15 +12,15 @@
 #include "disks.hpp"
 #include "acpi.hpp"
 #include "interrupts.hpp"
-
-//TODO Remove later
-#include "console.hpp"
+#include "arch.hpp"
 
 extern "C" {
 
 void _init();
 
 void  __attribute__ ((section ("main_section"))) kernel_main(){
+    arch::enable_sse();
+
     interrupt::install_idt();
     interrupt::install_isrs();
     interrupt::remap_irqs();

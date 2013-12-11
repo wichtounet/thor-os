@@ -12,7 +12,7 @@ KERNEL_LINK_FLAGS=-lgcc -T linker.ld $(CPP_FLAGS)
 KERNEL_CPP_FILES=$(wildcard src/*.cpp)
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-KERNEL_O_FILES=$(KERNEL_CPP_FILES:src/%.cpp=%.o) isrs.o irqs.o
+KERNEL_O_FILES=$(KERNEL_CPP_FILES:src/%.cpp=%.cpp.o) isrs.o irqs.o arch.o
 
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
@@ -25,13 +25,16 @@ crti.o: src/crti.s
 crtn.o: src/crtn.s
 	$(AS) -c src/crtn.s -o crtn.o
 
-isrs.o: src/isrs.o
+isrs.o: src/isrs.s
 	$(AS) -c src/isrs.s -o isrs.o
 
-irqs.o: src/irqs.o
+irqs.o: src/irqs.s
 	$(AS) -c src/irqs.s -o irqs.o
 
-%.o : src/%.cpp
+arch.o: src/arch.s
+	$(AS) -c src/arch.s -o arch.o
+
+%.cpp.o : src/%.cpp
 	$(CC) $(KERNEL_FLAGS) -c $< -o $@
 
 kernel.bin: $(LINK_O_FILES)
