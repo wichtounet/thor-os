@@ -1,0 +1,110 @@
+//=======================================================================
+// Copyright Baptiste Wicht 2013.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
+//  http://www.boost.org/LICENSE_1_0.txt)
+//=======================================================================
+
+namespace {
+
+typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
+typedef unsigned int uint16_t __attribute__ ((__mode__ (__HI__)));
+typedef unsigned int uint32_t __attribute__ ((__mode__ (__SI__)));
+typedef unsigned int uint64_t __attribute__ ((__mode__ (__DI__)));
+
+static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
+static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
+static_assert(sizeof(uint32_t) == 4, "uint32_t must be 4 bytes long");
+
+struct gdt_ptr {
+    uint16_t length;
+    uint32_t pointer;
+} __attribute__ ((packed));
+
+void out_byte(uint8_t value, uint16_t port){
+    __asm__ __volatile__("out %1, %0" : : "a" (value), "dN" (port));
+}
+
+uint8_t in_byte(uint16_t port){
+    uint8_t value;
+    __asm__ __volatile__("in %0,%1" : "=a" (value) : "dN" (port));
+    return value;
+}
+
+void set_ds(uint16_t seg){
+    asm volatile("mov ds, %0" : : "rm" (seg));
+}
+
+void reset_segments(){
+    set_ds(0);
+}
+
+void disable_interrupts(){
+    __asm__ __volatile__ ("cli");
+}
+
+void enable_a20_gate(){
+    //TODO This should really be improved:
+    // 1. Test if a20 already enabled
+    // 2- Use several methods of enabling if necessary until one succeeds
+
+    //Enable A20 gate using fast method
+    auto port_a = in_byte(0x92);
+    port_a |=  0x02;
+    port_a &= ~0x01;
+    out_byte(port_a, 0x92);
+}
+
+void setup_idt(){
+    static const gdt_ptr null_idt = {0, 0};
+    asm volatile("lidt %0" : : "m" (null_idt));
+}
+
+#define GDT_ENTRY(f1, f2)                       \
+    ((0x0FFFF << 48) |                          \
+     (0x0 << 40) | (0x0 << 32) | (0x0 << 24) |  \
+     (((f1)) << 16) |                           \
+     (((f2)) << 8) |                            \
+     (0x0))
+
+void setup_gdt(){
+    //TODO On some machines, this should be aligned to 16 bits
+    static const uint64_t gdt[] = {
+        0,                                      //Null Selector
+        GDT_ENTRY(0b10011010, 0b11001111),      //32-bit Code Selector (ring 0)
+        GDT_ENTRY(0b10010010, 0b10001111),      //Data Selector (ring 0)
+        GDT_ENTRY(0b10011010, 0b10101111)       //64-bit Code Selector (ring 0)
+    };
+
+    static gdt_ptr gdtr;
+    gdtr.length  = sizeof(gdt);
+    gdtr.pointer = reinterpret_cast<uint32_t>(&gdt);
+
+    asm volatile("lgdt %0" : : "m" (gdtr));
+}
+
+} //end of anonymous namespace
+
+void  __attribute__ ((section("main_section"), noreturn)) kernel_main(){
+    //Make sure segments are clean
+    reset_segments();
+
+    //TODO Detect memory
+
+    //Disable interrupts
+    disable_interrupts();
+
+    //Make sure a20 gate is enabled
+    enable_a20_gate();
+
+    //Setup an IDT with null limits to prevents interrupts from being used in
+    //protected mode
+    setup_idt();
+
+    //Setup the GDT
+    setup_gdt();
+
+    //TODO Switch to protected mode by activate PE bit of CR0
+    //TODO Disable paging
+    //TODO protected mode jump
+}
