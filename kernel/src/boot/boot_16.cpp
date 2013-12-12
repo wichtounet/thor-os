@@ -5,6 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include "boot/code16gcc.h"
+
 namespace {
 
 typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
@@ -77,10 +79,10 @@ void setup_gdt(){
     };
 
     static gdt_ptr gdtr;
-    gdtr.length  = sizeof(gdt);
+    gdtr.length  = sizeof(gdt) - 1;
     gdtr.pointer = reinterpret_cast<uint32_t>(&gdt);
 
-    asm volatile("lgdt %0" : : "m" (gdtr));
+    asm volatile("lgdt [%0]" : : "m" (gdtr));
 }
 
 } //end of anonymous namespace
