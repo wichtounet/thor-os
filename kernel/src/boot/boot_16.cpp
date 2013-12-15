@@ -72,41 +72,57 @@ constexpr uint64_t gdt_entry(uint32_t base, uint32_t limit, uint16_t flags){
             (((limit) & 0x0000ffffULL)));
 }
 
-#define GDT_ENTRY(f1, f2)                       \
-    ((static_cast<uint64_t>(0x0FFFF) << 48) |   \
-     (((f1)) << 16) |                           \
-     (((f2)) << 8))                             \
+// Descriptor type (0 for system, 1 for code/data)
+constexpr uint16_t SEG_DESCTYPE(uint16_t x){
+    return x << 0x04;
+}
 
-#define B_10011010 0x9A
-#define B_11001111 0xCF
-#define B_10010010 0x92
-#define B_10001111 0x8F
-#define B_10101111 0xAF
+// Present
+constexpr uint16_t SEG_PRES(uint16_t x){
+    return x << 0x07;
+}
 
-#define SEG_DESCTYPE(x)  ((x) << 0x04) // Descriptor type (0 for system, 1 for code/data)
-#define SEG_PRES(x)      ((x) << 0x07) // Present
-#define SEG_SAVL(x)      ((x) << 0x0C) // Available for system use
-#define SEG_LONG(x)      ((x) << 0x0D) // Long mode
-#define SEG_SIZE(x)      ((x) << 0x0E) // Size (0 for 16-bit, 1 for 32)
-#define SEG_GRAN(x)      ((x) << 0x0F) // Granularity (0 for 1B - 1MB, 1 for 4KB - 4GB)
-#define SEG_PRIV(x)     (((x) &  0x03) << 0x05)   // Set privilege level (0 - 3)
+// Available for system use
+constexpr uint16_t SEG_SAVL(uint16_t x){
+    return x << 0x0C;
+}
 
-#define SEG_DATA_RD        0x00 // Read-Only
-#define SEG_DATA_RDA       0x01 // Read-Only, accessed
-#define SEG_DATA_RDWR      0x02 // Read/Write
-#define SEG_DATA_RDWRA     0x03 // Read/Write, accessed
-#define SEG_DATA_RDEXPD    0x04 // Read-Only, expand-down
-#define SEG_DATA_RDEXPDA   0x05 // Read-Only, expand-down, accessed
-#define SEG_DATA_RDWREXPD  0x06 // Read/Write, expand-down
-#define SEG_DATA_RDWREXPDA 0x07 // Read/Write, expand-down, accessed
-#define SEG_CODE_EX        0x08 // Execute-Only
-#define SEG_CODE_EXA       0x09 // Execute-Only, accessed
-#define SEG_CODE_EXRD      0x0A // Execute/Read
-#define SEG_CODE_EXRDA     0x0B // Execute/Read, accessed
-#define SEG_CODE_EXC       0x0C // Execute-Only, conforming
-#define SEG_CODE_EXCA      0x0D // Execute-Only, conforming, accessed
-#define SEG_CODE_EXRDC     0x0E // Execute/Read, conforming
-#define SEG_CODE_EXRDCA    0x0F // Execute/Read, conforming, accessed
+// Long mode
+constexpr uint16_t SEG_LONG(uint16_t x){
+    return x << 0x0D;
+}
+
+// Size (0 for 16-bit, 1 for 32) (must be 0 for 64)
+constexpr uint16_t SEG_SIZE(uint16_t x){
+    return x << 0x0E;
+}
+
+// Granularity (0 for 1B->1MB, 1 for 4KB->4GB)
+constexpr uint16_t SEG_GRAN(uint16_t x){
+    return x << 0x0F;
+}
+
+// Privilege level (0 - 3)
+constexpr uint16_t SEG_PRIV(uint16_t x){
+    return (x & 0x03) << 0x05;
+}
+
+constexpr const uint16_t SEG_DATA_RD         = 0x00; // Read-Only
+constexpr const uint16_t SEG_DATA_RDA        = 0x01; // Read-Only, accessed
+constexpr const uint16_t SEG_DATA_RDWR       = 0x02; // Read/Write
+constexpr const uint16_t SEG_DATA_RDWRA      = 0x03; // Read/Write, accessed
+constexpr const uint16_t SEG_DATA_RDEXPD     = 0x04; // Read-Only, expand-down
+constexpr const uint16_t SEG_DATA_RDEXPDA    = 0x05; // Read-Only, expand-down, accessed
+constexpr const uint16_t SEG_DATA_RDWREXPD   = 0x06; // Read/Write, expand-down
+constexpr const uint16_t SEG_DATA_RDWREXPDA  = 0x07; // Read/Write, expand-down, accessed
+constexpr const uint16_t SEG_CODE_EX         = 0x08; // Execute-Only
+constexpr const uint16_t SEG_CODE_EXA        = 0x09; // Execute-Only, accessed
+constexpr const uint16_t SEG_CODE_EXRD       = 0x0A; // Execute/Read
+constexpr const uint16_t SEG_CODE_EXRDA      = 0x0B; // Execute/Read, accessed
+constexpr const uint16_t SEG_CODE_EXC        = 0x0C; // Execute-Only, conforming
+constexpr const uint16_t SEG_CODE_EXCA       = 0x0D; // Execute-Only, conforming, accessed
+constexpr const uint16_t SEG_CODE_EXRDC      = 0x0E; // Execute/Read, conforming
+constexpr const uint16_t SEG_CODE_EXRDCA     = 0x0F; // Execute/Read, conforming, accessed
 
 constexpr uint16_t code_32_selector(){
     return
