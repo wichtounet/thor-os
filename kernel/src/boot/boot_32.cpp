@@ -96,7 +96,8 @@ void enable_paging(){
 }
 
 void __attribute__((noreturn)) lm_jump(){
-
+    //The trick done in boot_16 does not work, so just jump at the same
+    //place and then call the function
     asm volatile("jmp 0x18:fake_label; fake_label:");
 
     kernel_main();
