@@ -63,19 +63,23 @@ void setup_idt(){
 }
 
 #define GDT_ENTRY(f1, f2)                       \
-    ((0x0FFFF << 48) |                          \
-     (0x0 << 40) | (0x0 << 32) | (0x0 << 24) |  \
+    ((static_cast<uint64_t>(0x0FFFF) << 48) |   \
      (((f1)) << 16) |                           \
-     (((f2)) << 8) |                            \
-     (0x0))
+     (((f2)) << 8))                             \
+
+#define B_10011010 0x9A
+#define B_11001111 0xCF
+#define B_10010010 0x92
+#define B_10001111 0x8F
+#define B_10101111 0xAF
 
 void setup_gdt(){
     //TODO On some machines, this should be aligned to 16 bits
     static const uint64_t gdt[] = {
         0,                                      //Null Selector
-        GDT_ENTRY(0b10011010, 0b11001111),      //32-bit Code Selector (ring 0)
-        GDT_ENTRY(0b10010010, 0b10001111),      //Data Selector (ring 0)
-        GDT_ENTRY(0b10011010, 0b10101111)       //64-bit Code Selector (ring 0)
+        GDT_ENTRY(B_10011010, B_11001111),      //32-bit Code Selector (ring 0)
+        GDT_ENTRY(B_10010010, B_10001111),      //Data Selector (ring 0)
+        GDT_ENTRY(B_10011010, B_10101111)       //64-bit Code Selector (ring 0)
     };
 
     static gdt_ptr gdtr;
