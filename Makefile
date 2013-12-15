@@ -2,13 +2,10 @@
 
 default: thor.flp
 
-micro_kernel/micro_kernel.bin: force_look
-	cd micro_kernel; $(MAKE)
-
 kernel/kernel.bin: force_look
 	cd kernel; $(MAKE)
 
-filler.bin: kernel/kernel.bin micro_kernel/micro_kernel.bin
+filler.bin: kernel/kernel.bin
 	bash fill.bash
 
 sectors: force_look filler.bin
@@ -42,6 +39,5 @@ force_look:
 clean:
 	cd bootloader; $(MAKE) clean
 	cd kernel; $(MAKE) clean
-	cd micro_kernel; $(MAKE) clean
 	rm -f *.bin
 	rm -f *.flp
