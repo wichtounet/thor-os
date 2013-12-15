@@ -85,6 +85,10 @@ void setup_gdt(){
     asm volatile("lgdt [%0]" : : "m" (gdtr));
 }
 
+void protected_mode_enable(){
+    asm volatile("mov eax, cr0; or al, 1; mov cr0, eax;");
+}
+
 } //end of anonymous namespace
 
 void  __attribute__ ((section("main_section"), noreturn)) kernel_main(){
@@ -106,7 +110,9 @@ void  __attribute__ ((section("main_section"), noreturn)) kernel_main(){
     //Setup the GDT
     setup_gdt();
 
-    //TODO Switch to protected mode by activate PE bit of CR0
+    //Switch to protected mode by activate PE bit of CR0
+    protected_mode_enable();
+
     //TODO Disable paging
     //TODO protected mode jump
 }
