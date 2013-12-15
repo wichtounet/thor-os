@@ -93,6 +93,10 @@ void protected_mode_enable(){
     asm volatile("mov eax, cr0; or al, 1; mov cr0, eax;");
 }
 
+void disable_paging(){
+    asm volatile("mov eax, cr0; and eax, 0b01111111111111111111111111111111; mov cr0, eax;");
+}
+
 } //end of anonymous namespace
 
 void  __attribute__ ((section("main_section"), noreturn)) kernel_main(){
@@ -117,6 +121,8 @@ void  __attribute__ ((section("main_section"), noreturn)) kernel_main(){
     //Switch to protected mode by activate PE bit of CR0
     protected_mode_enable();
 
-    //TODO Disable paging
+    //Disable paging
+    disable_paging();
+
     //TODO protected mode jump
 }
