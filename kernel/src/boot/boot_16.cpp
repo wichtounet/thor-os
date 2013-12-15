@@ -118,7 +118,7 @@ constexpr uint16_t code_32_selector(){
 constexpr uint16_t code_64_selector(){
     return
         SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
-        SEG_LONG(1)     | SEG_SIZE(1) | SEG_GRAN(1) |
+        SEG_LONG(1)     | SEG_SIZE(0) | SEG_GRAN(1) |
         SEG_PRIV(0)     | SEG_CODE_EXRD;
 }
 
@@ -136,10 +136,6 @@ void setup_gdt(){
         gdt_entry(0, 0xFFFFF, code_32_selector()),
         gdt_entry(0, 0xFFFFF, data_selector()),
         gdt_entry(0, 0xFFFFF, code_64_selector())
-
-        //GDT_ENTRY(B_10011010, B_11001111),      //32-bit Code Selector (ring 0)
-        //GDT_ENTRY(, ),      //Data Selector (ring 0)
-        //GDT_ENTRY(, )       //64-bit Code Selector (ring 0)
     };
 
     static gdt_ptr gdtr;

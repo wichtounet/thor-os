@@ -96,7 +96,10 @@ void enable_paging(){
 }
 
 void __attribute__((noreturn)) lm_jump(){
-    asm volatile(".byte 0x66, 0xea; .long kernel_main; .word 0x18;");
+
+    asm volatile("jmp 0x18:fake_label; fake_label:");
+
+    kernel_main();
 
     __builtin_unreachable();
 }
