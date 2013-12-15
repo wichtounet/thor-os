@@ -107,7 +107,7 @@ void __attribute__((noreturn)) pm_jump(){
 
 } //end of anonymous namespace
 
-void  __attribute__ ((section("boot_16_section"), noreturn)) rm_main(){
+void  __attribute__ ((noreturn)) rm_main(){
     //Make sure segments are clean
     reset_segments();
 

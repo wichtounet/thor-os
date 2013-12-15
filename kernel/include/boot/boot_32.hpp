@@ -8,6 +8,10 @@
 #ifndef BOOT_32_HPP
 #define BOOT_32_HPP
 
-void __attribute((section("boot_32_section"), noreturn)) pm_main();
+extern "C" {
+
+void __attribute((noreturn)) pm_main();
+
+} //end of exern "C"
 
 #endif

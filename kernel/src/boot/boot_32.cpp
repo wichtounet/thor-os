@@ -103,6 +103,8 @@ void __attribute__((noreturn)) lm_jump(){
 
 } //end of anonymous namespace
 
+extern "C" {
+
 void pm_main(){
     //Update segments
     set_segments();
@@ -125,3 +127,5 @@ void pm_main(){
     //long mode jump
     lm_jump();
 }
+
+} //end of exern "C"

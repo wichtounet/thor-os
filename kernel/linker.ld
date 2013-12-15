@@ -7,12 +7,12 @@ SECTIONS
 
     .text_16 BLOCK(512) : ALIGN(512)
 	{
-		*(boot_16)
+		boot_16_64.o(.text)
 	}
 
     .text_32 BLOCK(512) : ALIGN(512)
 	{
-		*(boot_32)
+		boot_32_64.o(.text)
 	}
 
     /* 4K of code */
