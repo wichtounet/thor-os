@@ -19,7 +19,6 @@ bootloader/bootloader.bin: force_look sectors
 
 thor.flp: bootloader/bootloader.bin
 	cat bootloader/bootloader.bin > thor.bin
-	cat micro_kernel/micro_kernel.bin >> thor.bin
 	cat kernel/kernel.bin >> thor.bin
 	cat filler.bin >> thor.bin
 	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
