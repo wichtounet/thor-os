@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include "boot/code16gcc.h"
+#include "boot/boot_32.hpp"
 
 namespace {
 
@@ -17,6 +18,7 @@ typedef unsigned int uint64_t __attribute__ ((__mode__ (__DI__)));
 static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
 static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
 static_assert(sizeof(uint32_t) == 4, "uint32_t must be 4 bytes long");
+static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes long");
 
 struct gdt_ptr {
     uint16_t length;
@@ -97,9 +99,15 @@ void disable_paging(){
     asm volatile("mov eax, cr0; and eax, 0b01111111111111111111111111111111; mov cr0, eax;");
 }
 
+void __attribute__((noreturn)) pm_jump(){
+    asm volatile(".byte 0x66, 0xea; .long pm_main; .word 0x8;");
+
+    __builtin_unreachable();
+}
+
 } //end of anonymous namespace
 
-void  __attribute__ ((section("main_section"), noreturn)) kernel_main(){
+void  __attribute__ ((section("boot_16_section"), noreturn)) rm_main(){
     //Make sure segments are clean
     reset_segments();
 
@@ -124,5 +132,6 @@ void  __attribute__ ((section("main_section"), noreturn)) kernel_main(){
     //Disable paging
     disable_paging();
 
-    //TODO protected mode jump
+    //Protected mode jump
+    pm_jump();
 }

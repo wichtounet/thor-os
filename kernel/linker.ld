@@ -5,10 +5,19 @@ SECTIONS
     /* This is where the micro kernel will load the code */
 	. = 0x5000;
 
+    .text_16 BLOCK(512) : ALIGN(512)
+	{
+		*(boot_16)
+	}
+
+    .text_32 BLOCK(512) : ALIGN(512)
+	{
+		*(boot_32)
+	}
+
     /* 4K of code */
 	.text BLOCK(1K) : ALIGN(1K)
 	{
-		*(main_section)
 		*(.text)
         *(.text.*)
 	}

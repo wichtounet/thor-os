@@ -2,6 +2,7 @@ default: kernel.bin
 
 CC=x86_64-elf-g++
 AS=x86_64-elf-as
+OC=x86_64-elf-objcopy
 
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
@@ -9,6 +10,7 @@ WARNING_FLAGS=-Wall -Wextra -pedantic -Wold-style-cast -Wshadow
 COMMON_CPP_FLAGS=-masm=intel -Iinclude/ -nostdlib -Os -std=c++11 -fno-stack-protector -fno-exceptions -fno-rtti -ffreestanding -fomit-frame-pointer -mno-red-zone -mno-3dnow -mno-mmx
 
 CPP_FLAGS_16=$(COMMON_CPP_FLAGS) -march=i386 -m32 -mpreferred-stack-boundary=2 -fno-strict-aliasing -fno-pic -fno-toplevel-reorder -include include/boot/code16gcc.h -mno-sse -mno-sse2 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 $(WARNING_FLAGS)
+CPP_FLAGS_32=$(COMMON_CPP_FLAGS) -march=i386 -m32 -mpreferred-stack-boundary=4 -fno-strict-aliasing -fno-pic -fno-toplevel-reorder -mno-sse -mno-sse2 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 $(WARNING_FLAGS)
 CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2
 
 LINK_FLAGS=-lgcc -T linker.ld
@@ -16,7 +18,7 @@ LINK_FLAGS=-lgcc -T linker.ld
 KERNEL_CPP_FILES=$(wildcard src/*.cpp)
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-KERNEL_O_FILES=$(KERNEL_CPP_FILES:src/%.cpp=%.cpp.o) isrs.o irqs.o arch.o
+KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:src/%.cpp=%.cpp.o) isrs.o irqs.o arch.o
 
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
@@ -25,6 +27,15 @@ LINK_O_FILES=crti.o $(CRTBEGIN_OBJ) $(KERNEL_O_FILES) $(CRTEND_OBJ) crtn.o
 
 boot_16.o: src/boot/boot_16.cpp
 	$(CC) $(CPP_FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
+
+boot_32.o: src/boot/boot_32.cpp
+	$(CC) $(CPP_FLAGS_32) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_32.cpp -o boot_32.o
+
+boot_16_64.o: boot_16.o
+	$(OC) -I elf32-i386 -O elf64-x86-64 boot_16.o boot_16_64.o
+
+boot_32_64.o: boot_32.o
+	$(OC) -I elf32-i386 -O elf64-x86-64 boot_32.o boot_32_64.o
 
 crti.o: src/crti.s
 	$(AS) -c src/crti.s -o crti.o
