@@ -14,6 +14,7 @@
 #include "acpi.hpp"
 #include "interrupts.hpp"
 #include "arch.hpp"
+#include "e820.hpp"
 
 extern "C" {
 
@@ -21,6 +22,8 @@ void _init();
 
 void  kernel_main(){
     arch::enable_sse();
+
+    e820::finalize_memory_detection();
 
     interrupt::install_idt();
     interrupt::install_isrs();

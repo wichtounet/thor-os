@@ -12,13 +12,26 @@ namespace {
 
 typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
 typedef unsigned int uint16_t __attribute__ ((__mode__ (__HI__)));
+typedef int int16_t __attribute__ ((__mode__ (__HI__)));
 typedef unsigned int uint32_t __attribute__ ((__mode__ (__SI__)));
 typedef unsigned int uint64_t __attribute__ ((__mode__ (__DI__)));
 
 static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
 static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
+static_assert(sizeof(int16_t) == 2, "int16_t must be 2 bytes long");
 static_assert(sizeof(uint32_t) == 4, "uint32_t must be 4 bytes long");
 static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes long");
+
+//Just here to be able to compile e820.hpp, should not be
+//used in boot_16.cpp
+typedef uint64_t size_t;
+
+} //end of anonymous namespace
+
+#define CODE_16
+#include "e820.hpp" //Just for the address of the e820 map
+
+namespace {
 
 struct gdt_ptr {
     uint16_t length;
@@ -41,6 +54,41 @@ void set_ds(uint16_t seg){
 
 void reset_segments(){
     set_ds(0);
+}
+
+int detect_memory_e820(){
+    auto* smap = &e820::bios_e820_entries[0];
+
+    uint16_t entries = 0;
+
+    uint32_t contID = 0;
+    int signature;
+    int bytes;
+
+    do {
+        asm volatile ("int 0x15"
+            : "=a"(signature), "=c"(bytes), "=b"(contID)
+            : "a"(0xE820), "b"(contID), "c"(24), "d"(0x534D4150), "D"(smap));
+
+        if (signature != 0x534D4150){
+            return -1;
+        }
+
+        if (bytes > 20 && (smap->acpi & 0x0001) == 0){
+            // ignore this entry
+        } else {
+            smap++;
+            entries++;
+        }
+    } while (contID != 0 && entries < e820::MAX_E820_ENTRIES);
+
+    return entries;
+}
+
+void detect_memory(){
+    //TODO If e820 fails, try other solutions to get memory map
+
+    e820::bios_e820_entry_count = detect_memory_e820();
 }
 
 void disable_interrupts(){
@@ -181,7 +229,8 @@ void  __attribute__ ((noreturn)) rm_main(){
     //Make sure segments are clean
     reset_segments();
 
-    //TODO Detect memory
+    //Analyze memory
+    detect_memory();
 
     //Disable interrupts
     disable_interrupts();
