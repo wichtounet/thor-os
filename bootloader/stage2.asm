@@ -71,7 +71,7 @@ second_step:
 
     ;Run the kernel
 
-    jmp dword 0x100:0x0
+    jmp dword KERNEL_BASE:0x0
 
 .continue:
     mov cl, [sector]
