@@ -16,7 +16,7 @@ void operator delete(void* p);
 void* operator new[](uint64_t size);
 void operator delete[](void* p);
 
-#define ATEXIT_MAX_FUNCS	128
+#define ATEXIT_MAX_FUNCS 32
 
 extern "C" {
 

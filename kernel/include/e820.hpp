@@ -20,7 +20,7 @@
 
 namespace e820 {
 
-constexpr const uint32_t MAX_E820_ENTRIES = 25;
+constexpr const uint32_t MAX_E820_ENTRIES = 20;
 
 struct bios_e820_entry {
     uint32_t base_low;
