@@ -29,7 +29,6 @@ struct bios_e820_entry {
     uint32_t length_high;
     uint16_t type;
     uint16_t acpi;
-//    uint32_t damn_padding;
 } __attribute__((packed));
 
 extern int16_t bios_e820_entry_count;

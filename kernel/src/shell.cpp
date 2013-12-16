@@ -18,6 +18,7 @@
 #include "vector.hpp"
 #include "algorithms.hpp"
 #include "acpi.hpp"
+#include "e820.hpp"
 
 //Commands
 #include "sysinfo.hpp"
@@ -330,26 +331,26 @@ void echo_command(const vector<string>& params){
 }
 
 void mmap_command(const vector<string>&){
-    if(mmap_failed()){
+    if(e820::mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");
     } else {
-        k_printf("There are %d mmap entry\n", mmap_entry_count());
+        k_printf("There are %d mmap entry\n", e820::mmap_entry_count());
 
         k_print_line("Base         End          Size                  Type");
-        for(uint64_t i = 0; i < mmap_entry_count(); ++i){
-            auto& entry = mmap_entry(i);
+        for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
+            auto& entry = e820::mmap_entry(i);
 
             k_printf("%.10h %.10h %.10h %8m %s\n",
-                entry.base, entry.base + entry.size, entry.size, entry.size, str_e820_type(entry.type));
+                entry.base, entry.base + entry.size, entry.size, entry.size, e820::str_e820_type(entry.type));
         }
     }
 }
 
 void memory_command(const vector<string>&){
-    if(mmap_failed()){
+    if(e820::mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");
     } else {
-        k_printf("Total available memory: %m\n", available_memory());
+        k_printf("Total available memory: %m\n", e820::available_memory());
         k_printf("Total used memory: %m\n", used_memory());
         k_printf("Total free memory: %m\n", free_memory());
         k_printf("Total allocated memory: %m\n", allocated_memory());

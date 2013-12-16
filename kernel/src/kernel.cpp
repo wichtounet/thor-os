@@ -23,15 +23,14 @@ void _init();
 void  kernel_main(){
     arch::enable_sse();
 
-    e820::finalize_memory_detection();
-
     interrupt::install_idt();
     interrupt::install_isrs();
     interrupt::remap_irqs();
     interrupt::install_irqs();
     interrupt::enable_interrupts();
 
-    load_memory_map();
+    e820::finalize_memory_detection();
+
     init_memory_manager();
     install_timer();
     //acpi::init();

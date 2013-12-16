@@ -7,6 +7,7 @@
 
 #include "e820.hpp"
 
+
 e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
 int16_t e820::bios_e820_entry_count = 0;
 
@@ -18,7 +19,7 @@ size_t _available_memory;
 } //end of namespace anonymous
 
 void e820::finalize_memory_detection(){
-    if(!mmap_failed()){
+    if(bios_e820_entry_count > 0){
         for(uint64_t i = 0; i < bios_e820_entry_count; ++i){
             auto& bios_entry = bios_e820_entries[i];
             auto& os_entry = e820_mmap[i];

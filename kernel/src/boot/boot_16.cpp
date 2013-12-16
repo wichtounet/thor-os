@@ -52,12 +52,17 @@ void set_ds(uint16_t seg){
     asm volatile("mov ds, %0" : : "rm" (seg));
 }
 
+void set_es(uint16_t seg){
+    asm volatile("mov es, %0" : : "rm" (seg));
+}
+
 void reset_segments(){
     set_ds(0);
+    set_es(0);
 }
 
 int detect_memory_e820(){
-    auto* smap = &e820::bios_e820_entries[0];
+    auto smap = &e820::bios_e820_entries[0];
 
     uint16_t entries = 0;
 
@@ -65,10 +70,12 @@ int detect_memory_e820(){
     int signature;
     int bytes;
 
+    static e820::bios_e820_entry buf;
+
     do {
         asm volatile ("int 0x15"
             : "=a"(signature), "=c"(bytes), "=b"(contID)
-            : "a"(0xE820), "b"(contID), "c"(24), "d"(0x534D4150), "D"(smap));
+            : "a"(0xE820), "b"(contID), "c"(24), "d"(0x534D4150), "D"(&buf));
 
         if (signature != 0x534D4150){
             return -1;
@@ -77,7 +84,7 @@ int detect_memory_e820(){
         if (bytes > 20 && (smap->acpi & 0x0001) == 0){
             // ignore this entry
         } else {
-            smap++;
+            *smap++ = buf;
             entries++;
         }
     } while (contID != 0 && entries < e820::MAX_E820_ENTRIES);
