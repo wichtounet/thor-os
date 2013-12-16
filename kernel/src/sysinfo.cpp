@@ -36,7 +36,7 @@ void decode_bytes (int data, int descriptor[16], int *next){
 }
 
 void get_cache_info() {
-    /*int next = 0, i = 0;
+    int next = 0, i = 0;
     int descriptor[256];
     int mem_count;
 
@@ -199,7 +199,7 @@ void get_cache_info() {
             k_print_line("  64-byte prefetching");
         if ( descriptor[i] ==  0xF1)
             k_print_line("  128-byte prefetching");
-    }*/
+    }
 }
 
 // EDX Features
