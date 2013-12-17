@@ -47,7 +47,7 @@ boot_32_64.o: boot_32.o
 
 kernel.bin: $(LINK_O_FILES)
 	$(CC) $(LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
-	objcopy -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
+	$(OC) -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
 
 clean:
 	rm -f *.o
