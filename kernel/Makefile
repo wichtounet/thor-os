@@ -18,12 +18,12 @@ LINK_FLAGS=-lgcc -T linker.ld
 KERNEL_CPP_FILES=$(wildcard src/*.cpp)
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:src/%.cpp=%.cpp.o) isrs.o irqs.o arch.o
+KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:src/%.cpp=%.cpp.o) isrs.s.o irqs.s.o arch.s.o
 
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
 
-LINK_O_FILES=crti.o $(CRTBEGIN_OBJ) $(KERNEL_O_FILES) $(CRTEND_OBJ) crtn.o
+LINK_O_FILES=crti.s.o $(CRTBEGIN_OBJ) $(KERNEL_O_FILES) $(CRTEND_OBJ) crtn.s.o
 
 boot_16.o: src/boot/boot_16.cpp
 	$(CC) $(CPP_FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
@@ -37,20 +37,8 @@ boot_16_64.o: boot_16.o
 boot_32_64.o: boot_32.o
 	$(OC) -I elf32-i386 -O elf64-x86-64 boot_32.o boot_32_64.o
 
-crti.o: src/crti.s
-	$(AS) -c src/crti.s -o crti.o
-
-crtn.o: src/crtn.s
-	$(AS) -c src/crtn.s -o crtn.o
-
-isrs.o: src/isrs.s
-	$(AS) -c src/isrs.s -o isrs.o
-
-irqs.o: src/irqs.s
-	$(AS) -c src/irqs.s -o irqs.o
-
-arch.o: src/arch.s
-	$(AS) -c src/arch.s -o arch.o
+%.s.o: src/%.s
+	$(AS) -c $< -o $@
 
 %.cpp.o : src/%.cpp
 	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
