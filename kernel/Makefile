@@ -22,6 +22,8 @@ KERNEL_CPP_FILES=$(wildcard src/*.cpp)
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
 KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:src/%.cpp=%.cpp.o) isrs.s.o irqs.s.o arch.s.o
 
+KERNEL_D_FILES=$(KERNEL_CPP_FILES:src/%.cpp=%.cpp.d)
+
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
 
@@ -42,8 +44,13 @@ boot_32_64.o: boot_32.o
 %.s.o: src/%.s
 	$(AS) -c $< -o $@
 
-%.cpp.o : src/%.cpp
+%.cpp.d: $(KERNEL_CPP_FILES)
+	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT $*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+%.cpp.o:
 	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+
+-include $(KERNEL_D_FILES)
 
 kernel.bin: $(LINK_O_FILES)
 	$(CC) $(LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
@@ -52,3 +59,4 @@ kernel.bin: $(LINK_O_FILES)
 clean:
 	rm -f *.o
 	rm -f *.bin
+	rm -f *.d

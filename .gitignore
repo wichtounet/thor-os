@@ -2,5 +2,6 @@
 *.flp
 *.o
 *.img
+*.d
 bootloader/sectors.asm
 commands
