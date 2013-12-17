@@ -19,6 +19,7 @@
 #include "algorithms.hpp"
 #include "acpi.hpp"
 #include "e820.hpp"
+#include "optional.hpp"
 
 //Commands
 #include "sysinfo.hpp"
@@ -499,16 +500,16 @@ void pwd_command(const vector<string>&){
     k_print_line();
 }
 
-bool directory_exists(const string& name){
+optional<disks::file> find_file(const string& name){
     auto files = disks::ls();
 
     for(auto& file : files){
-        if(file.directory && file.file_name == name){
-            return true;
+        if(file.file_name == name){
+            return {file};
         }
     }
 
-    return false;
+    return {};
 }
 
 void cd_command(const vector<string>& params){
@@ -527,26 +528,21 @@ void cd_command(const vector<string>& params){
                 disks::current_directory().pop_back();
             }
         } else {
-            if(directory_exists(params[1])){
-                disks::current_directory().push_back(params[1]);
+            auto file = find_file(params[1]);
+
+            if(file){
+                if(file->directory){
+                    disks::current_directory().push_back(params[1]);
+                } else {
+                    k_print("cd: Not a directory: ");
+                    k_print_line(params[1]);
+                }
             } else {
                 k_print("cd: No such file or directory: ");
                 k_print_line(params[1]);
             }
         }
     }
-}
-
-bool file_exists(const string& name){
-    auto files = disks::ls();
-
-    for(auto& file : files){
-        if(!file.directory && file.file_name == name){
-            return true;
-        }
-    }
-
-    return false;
 }
 
 void cat_command(const vector<string>& params){
@@ -559,9 +555,16 @@ void cat_command(const vector<string>& params){
     if(params.size() == 1){
         k_print_line("No file provided");
     } else {
-        if(file_exists(params[1])){
-            auto content = disks::read_file(params[1]);
-            k_print(content);
+        auto file = find_file(params[1]);
+
+        if(file){
+            if(!file->directory){
+                auto content = disks::read_file(params[1]);
+                k_print(content);
+            } else {
+                k_print("cd: Not a file: ");
+                k_print_line(params[1]);
+            }
         } else {
             k_print("cd: No such file or directory: ");
             k_print_line(params[1]);

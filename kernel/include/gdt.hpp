@@ -11,8 +11,8 @@
 namespace gdt {
 
 constexpr const uint16_t CODE_SELECTOR = 0x08;
-constexpr const uint16_t DATA_SELECTOR = 0x10;;
-constexpr const uint16_t LONG_SELECTOR = 0x18;;
+constexpr const uint16_t DATA_SELECTOR = 0x10;
+constexpr const uint16_t LONG_SELECTOR = 0x18;
 
 } //end of namespace gdt
 

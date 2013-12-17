@@ -39,7 +39,7 @@ public:
 
     //Copy constructors
 
-    basic_string(const basic_string& rhs) : _capacity(rhs._capacity), _size(rhs._size), _data(new CharT[_capacity]) {
+    basic_string(const basic_string& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data(new CharT[_capacity]) {
         std::copy_n(_data, rhs._data, _size + 1);
     }
 
