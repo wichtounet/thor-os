@@ -38,7 +38,7 @@ struct partition_descriptor {
 };
 
 struct file {
-    char name[11];
+    string file_name;
     bool directory;
     bool hidden;
     bool system;

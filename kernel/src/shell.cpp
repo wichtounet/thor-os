@@ -450,7 +450,7 @@ void ls_command(const vector<string>& params){
             continue;
         }
 
-        k_print(file.name, 11);
+        k_print(file.file_name);
 
         if(file.directory){
             k_print(" directory ");
