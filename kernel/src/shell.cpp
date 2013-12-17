@@ -499,6 +499,18 @@ void pwd_command(const vector<string>&){
     k_print_line();
 }
 
+bool directory_exists(const string& name){
+    auto files = disks::ls();
+
+    for(auto& file : files){
+        if(file.directory && file.file_name == name){
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void cd_command(const vector<string>& params){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
@@ -515,9 +527,26 @@ void cd_command(const vector<string>& params){
                 disks::current_directory().pop_back();
             }
         } else {
-            disks::current_directory().push_back(params[1]);
+            if(directory_exists(params[1])){
+                disks::current_directory().push_back(params[1]);
+            } else {
+                k_print("cd: No such file or directory: ");
+                k_print_line(params[1]);
+            }
         }
     }
+}
+
+bool file_exists(const string& name){
+    auto files = disks::ls();
+
+    for(auto& file : files){
+        if(!file.directory && file.file_name == name){
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void cat_command(const vector<string>& params){
@@ -530,9 +559,13 @@ void cat_command(const vector<string>& params){
     if(params.size() == 1){
         k_print_line("No file provided");
     } else {
-        auto content = disks::read_file(params[1]);
-
-        k_print(content);
+        if(file_exists(params[1])){
+            auto content = disks::read_file(params[1]);
+            k_print(content);
+        } else {
+            k_print("cd: No such file or directory: ");
+            k_print_line(params[1]);
+        }
     }
 }
 

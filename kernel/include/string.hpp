@@ -173,6 +173,20 @@ public:
         return true;
     }
 
+    bool operator==(const basic_string& rhs) const {
+        if(size() != rhs.size()){
+            return false;
+        }
+
+        for(size_t i = 0; i < size(); ++i){
+            if(_data[i] != rhs._data[i]){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     //Iterators
 
     iterator begin(){
