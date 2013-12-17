@@ -425,22 +425,22 @@ void unmount_command(const vector<string>& ){
 }
 
 void ls_command(const vector<string>& params){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
     //By default hidden files are not shown
     bool show_hidden_files = false;
 
     //Read options if any
     if(params.size() > 1){
         for(size_t i = 1; i < params.size(); ++i){
-            /*if(params[i] == "-a"){
+            if(params[i] == "-a"){
                 show_hidden_files = true;
-            }*/
+            }
         }
-    }
-
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
     }
 
     auto files = disks::ls();
@@ -481,6 +481,12 @@ void free_command(const vector<string>&){
 }
 
 void pwd_command(const vector<string>&){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
     auto& cd = disks::current_directory();
 
     k_print('/');
@@ -494,6 +500,12 @@ void pwd_command(const vector<string>&){
 }
 
 void cd_command(const vector<string>& params){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
     //If there are no params, go to /
     if(params.size() == 1){
         disks::current_directory().clear();
@@ -509,6 +521,12 @@ void cd_command(const vector<string>& params){
 }
 
 void cat_command(const vector<string>& params){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
     if(params.size() == 1){
         k_print_line("No file provided");
     } else {
