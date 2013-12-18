@@ -89,7 +89,7 @@ command_definition commands[21] = {
     {"shutdown", shutdown_command},
 };
 
-string current_input;
+string current_input(16);
 
 void exec_command();
 
