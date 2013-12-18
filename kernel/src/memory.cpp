@@ -131,12 +131,19 @@ void init_memory_manager(){
     malloc_head->prev = header;
 }
 
+constexpr const size_t ALIGNMENT = 8;
+constexpr const size_t aligned_size(size_t bytes){
+    return (bytes + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
+}
+
 void* k_malloc(uint64_t bytes){
     auto current = malloc_head->next;
 
     if(bytes < MIN_SPLIT){
         bytes = MIN_SPLIT;
     }
+
+    bytes = aligned_size(bytes);
 
     while(true){
         if(current == malloc_head){
