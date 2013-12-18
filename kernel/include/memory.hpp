@@ -24,4 +24,6 @@ uint64_t free_memory();
 uint64_t used_memory();
 uint64_t allocated_memory();
 
+void memory_debug();
+
 #endif

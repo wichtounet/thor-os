@@ -48,6 +48,7 @@ void sleep_command(const vector<string>& params);
 void echo_command(const vector<string>& params);
 void mmap_command(const vector<string>& params);
 void memory_command(const vector<string>& params);
+void memorydebug_command(const vector<string>& params);
 void disks_command(const vector<string>& params);
 void partitions_command(const vector<string>& params);
 void mount_command(const vector<string>& params);
@@ -64,7 +65,7 @@ struct command_definition {
     void (*function)(const vector<string>&);
 };
 
-command_definition commands[20] = {
+command_definition commands[21] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -74,6 +75,7 @@ command_definition commands[20] = {
     {"echo", echo_command},
     {"mmap", mmap_command},
     {"memory", memory_command},
+    {"memorydebug", memorydebug_command},
     {"disks", disks_command},
     {"partitions", partitions_command},
     {"mount", mount_command},
@@ -356,6 +358,10 @@ void memory_command(const vector<string>&){
         k_printf("Total free memory: %m\n", free_memory());
         k_printf("Total allocated memory: %m\n", allocated_memory());
     }
+}
+
+void memorydebug_command(const vector<string>&){
+    memory_debug();
 }
 
 void disks_command(const vector<string>&){

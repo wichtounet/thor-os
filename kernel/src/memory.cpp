@@ -243,3 +243,18 @@ uint64_t allocated_memory(){
 uint64_t free_memory(){
     return e820::available_memory() - _used_memory;
 }
+
+void memory_debug(){
+    size_t memory_free = 0;
+
+    auto it = malloc_head;
+
+    k_print("Free blocks:");
+    do {
+        k_printf("b(%d) ", it->size);
+        memory_free += it->size;
+        it = it->next;
+    } while(it != malloc_head);
+
+    k_printf("memory free in malloc chain: %m (%d)", memory_free, memory_free);
+}
