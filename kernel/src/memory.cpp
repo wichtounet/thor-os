@@ -294,6 +294,10 @@ void k_free(void* block){
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 
+    if(free_header->is_free()){
+        k_print_line("ERROR: free block getting freed");
+    }
+
     if(TRACE_MALLOC){
         k_printf("f %d %h ", free_header->size(), reinterpret_cast<uint64_t>(block));
     }
