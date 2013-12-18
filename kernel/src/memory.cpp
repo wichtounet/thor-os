@@ -21,13 +21,49 @@ uint64_t _used_memory;
 uint64_t _allocated_memory;
 
 struct malloc_header_chunk {
-    uint64_t size;
-    malloc_header_chunk* next;
-    malloc_header_chunk* prev;
+    size_t __size;
+    malloc_header_chunk* __next;
+    malloc_header_chunk* __prev;
+
+    size_t& size(){
+        return __size;
+    }
+
+    constexpr malloc_header_chunk* next() const {
+        return __next;
+    }
+
+    malloc_header_chunk*& next_ref(){
+        return __next;
+    }
+
+    constexpr malloc_header_chunk* prev() const {
+        return reinterpret_cast<malloc_header_chunk*>(reinterpret_cast<uintptr_t>(__prev) & (~0l - 1));
+    }
+
+    malloc_header_chunk*& prev_ref(){
+        return __prev;
+    }
+
+    void set_free(){
+        __prev = reinterpret_cast<malloc_header_chunk*>(reinterpret_cast<uintptr_t>(__prev) | 0x1);
+    }
+
+    void set_not_free(){
+        __prev = reinterpret_cast<malloc_header_chunk*>(reinterpret_cast<uintptr_t>(__prev) & (~0l - 1));
+    }
+
+    bool is_free(){
+        return reinterpret_cast<uintptr_t>(__prev) & 0x1;
+    }
 };
 
 struct malloc_footer_chunk {
-    uint64_t size;
+    uint64_t __size;
+
+    size_t& size(){
+        return __size;
+    }
 };
 
 struct fake_head {
@@ -42,11 +78,23 @@ constexpr const uint64_t MIN_SPLIT = 32;
 constexpr const uint64_t BLOCK_SIZE = paging::PAGE_SIZE;
 constexpr const uint64_t MIN_BLOCKS = 4;
 
+constexpr size_t ALIGNMENT = 8;
+constexpr size_t aligned_size(size_t bytes){
+    return (bytes + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
+}
+
+static_assert(META_SIZE == aligned_size(META_SIZE), "The size of headers must be aligned");
+static_assert(MIN_SPLIT == aligned_size(MIN_SPLIT), "The size of minimum split must be aligned");
+
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
 
 const e820::mmapentry* current_mmap_entry = nullptr;
-uint64_t current_mmap_entry_position;
+uintptr_t current_mmap_entry_position;
+
+//All allocated memory is in [min_address, max_address[
+uintptr_t min_address; //Address of the first block being allocated
+uintptr_t max_address; //Address of the next block being allocated
 
 uint64_t* allocate_block(uint64_t blocks){
     if(!current_mmap_entry){
@@ -56,6 +104,8 @@ uint64_t* allocate_block(uint64_t blocks){
             if(entry.type == 1 && entry.base >= 0x100000 && entry.size >= 16384){
                 current_mmap_entry = &entry;
                 current_mmap_entry_position = entry.base;
+                min_address = current_mmap_entry_position;
+
                 break;
             }
         }
@@ -73,6 +123,10 @@ uint64_t* allocate_block(uint64_t blocks){
 
     _allocated_memory += blocks * BLOCK_SIZE;
 
+    max_address = current_mmap_entry_position;
+
+    //TODO If we are at the end of the block, we gonna have a problem
+
     return block;
 }
 
@@ -88,7 +142,7 @@ void debug_malloc(const char* point = nullptr){
         k_print("next: ");
         do {
             k_printf("%h -> ", reinterpret_cast<uint64_t>(it));
-            it = it->next;
+            it = it->next();
         } while(it != malloc_head);
 
         k_printf("%h\n", malloc_head);
@@ -98,7 +152,7 @@ void debug_malloc(const char* point = nullptr){
         k_print("prev: ");
         do {
             k_printf("%h <- ", reinterpret_cast<uint64_t>(it));
-            it = it->prev;
+            it = it->prev();
         } while(it != malloc_head);
 
         k_printf("%h\n", malloc_head);
@@ -119,25 +173,20 @@ void init_memory_manager(){
     auto block = allocate_block(MIN_BLOCKS);
     auto header = reinterpret_cast<malloc_header_chunk*>(block);
 
-    header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
-    header->next = malloc_head;
-    header->prev = malloc_head;
+    header->size() = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
+    header->next_ref() = malloc_head;
+    header->prev_ref() = malloc_head;
 
     auto footer = reinterpret_cast<malloc_footer_chunk*>(
-        reinterpret_cast<uintptr_t>(block) + header->size + sizeof(malloc_header_chunk));
-    footer->size = header->size;
+        reinterpret_cast<uintptr_t>(block) + header->size() + sizeof(malloc_header_chunk));
+    footer->size() = header->size();
 
-    malloc_head->next = header;
-    malloc_head->prev = header;
-}
-
-constexpr const size_t ALIGNMENT = 8;
-constexpr const size_t aligned_size(size_t bytes){
-    return (bytes + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
+    malloc_head->next_ref() = header;
+    malloc_head->prev_ref() = header;
 }
 
 void* k_malloc(uint64_t bytes){
-    auto current = malloc_head->next;
+    auto current = malloc_head->next();
 
     if(bytes < MIN_SPLIT){
         bytes = MIN_SPLIT;
@@ -151,54 +200,54 @@ void* k_malloc(uint64_t bytes){
 
             uint64_t* block = allocate_block(MIN_BLOCKS);
             auto header = reinterpret_cast<malloc_header_chunk*>(block);
-            header->size = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
+            header->size() = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
 
-            header->next = current->next;
-            header->prev = current;
+            header->next_ref() = current->next();
+            header->prev_ref() = current;
 
-            current->next->prev = header;
-            current->next = header;
+            current->next()->prev_ref() = header;
+            current->next_ref() = header;
 
             auto footer = reinterpret_cast<malloc_footer_chunk*>(
-                reinterpret_cast<uintptr_t>(block) + header->size + sizeof(malloc_header_chunk));
-            footer->size = header->size;
-        } else if(current->size >= bytes){
+                reinterpret_cast<uintptr_t>(block) + header->size() + sizeof(malloc_header_chunk));
+            footer->size() = header->size();
+        } else if(current->size() >= bytes){
             //This block is big enough
 
             //Space necessary to hold a new block inside this one
             auto necessary_space = bytes + META_SIZE;
 
             //Is it worth splitting the block ?
-            if(current->size > necessary_space + MIN_SPLIT + META_SIZE){
-                auto new_block_size = current->size - necessary_space;
+            if(current->size() > necessary_space + MIN_SPLIT + META_SIZE){
+                auto new_block_size = current->size() - necessary_space;
 
                 //Set the new size;
-                current->size = bytes;
+                current->size() = bytes;
 
                 auto footer = reinterpret_cast<malloc_footer_chunk*>(
                     reinterpret_cast<uintptr_t>(current) + bytes + sizeof(malloc_header_chunk));
-                footer->size = bytes;
+                footer->size() = bytes;
 
                 auto new_block = reinterpret_cast<malloc_header_chunk*>(
                     reinterpret_cast<uintptr_t>(current) + bytes + META_SIZE);
 
-                new_block->size = new_block_size;
-                new_block->next = current->next;
-                new_block->prev = current->prev;
-                current->prev->next = new_block;
-                current->next->prev = new_block;
+                new_block->size() = new_block_size;
+                new_block->next_ref() = current->next();
+                new_block->prev_ref() = current->prev();
+                current->prev()->next_ref() = new_block;
+                current->next()->prev_ref() = new_block;
 
                 auto new_footer = reinterpret_cast<malloc_footer_chunk*>(
                     reinterpret_cast<uintptr_t>(new_block) + new_block_size + sizeof(malloc_header_chunk));
-                new_footer->size = new_block_size;
+                new_footer->size() = new_block_size;
 
                 debug_malloc<DEBUG_MALLOC>("after malloc split");
 
                 break;
             } else {
                 //Remove this node from the free list
-                current->prev->next = current->next;
-                current->next->prev = current->prev;
+                current->prev()->next_ref() = current->next();
+                current->next()->prev_ref() = current->prev();
 
                 debug_malloc<DEBUG_MALLOC>("after malloc no split");
 
@@ -206,20 +255,22 @@ void* k_malloc(uint64_t bytes){
             }
         }
 
-        current = current->next;
+        current = current->next();
     }
 
-    _used_memory += current->size + META_SIZE;
+    _used_memory += current->size() + META_SIZE;
 
     //Make sure the node is clean
-    current->prev = nullptr;
-    current->next = nullptr;
+    current->prev_ref() = nullptr;
+    current->next_ref() = nullptr;
+
+    //No need to unmark the free bit here as we set current->next to zero
 
     auto b = reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
 
     if(TRACE_MALLOC){
-        k_printf("m %d(%d) %h ", bytes, current->size, reinterpret_cast<uint64_t>(b));
+        k_printf("m %d(%d) %h ", bytes, current->size(), reinterpret_cast<uint64_t>(b));
     }
 
     return b;
@@ -230,18 +281,18 @@ void k_free(void* block){
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 
     if(TRACE_MALLOC){
-        k_printf("f %d %h ",free_header->size, reinterpret_cast<uint64_t>(block));
+        k_printf("f %d %h ", free_header->size(), reinterpret_cast<uint64_t>(block));
     }
 
-    _used_memory -= free_header->size + META_SIZE;
+    _used_memory -= free_header->size() + META_SIZE;
 
     auto header = malloc_head;
 
-    free_header->prev = header;
-    free_header->next = header->next;
+    free_header->prev_ref() = header;
+    free_header->next_ref() = header->next();
 
-    header->next->prev = free_header;
-    header->next = free_header;
+    header->next()->prev_ref() = free_header;
+    header->next_ref() = free_header;
 
     debug_malloc<DEBUG_MALLOC>("after free");
 }
@@ -266,9 +317,9 @@ void memory_debug(){
     k_printf("malloc overhead: %d\n", META_SIZE);
     k_print("Free blocks:");
     do {
-        k_printf("b(%d) ", it->size);
-        memory_free += it->size;
-        it = it->next;
+        k_printf("b(%d) ", it->size());
+        memory_free += it->size();
+        it = it->next();
     } while(it != malloc_head);
 
     k_print_line();
