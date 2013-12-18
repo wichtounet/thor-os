@@ -302,10 +302,8 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
 
 string fat32::read_file(dd disk, const disks::partition_descriptor& partition, const vector<string>& path, const string& file){
     if(!cache_disk_partition(disk, partition)){
-        return "";
+        return {};
     }
-
-    string content = "";
 
     auto result = find_cluster(disk, path);
 
@@ -326,12 +324,16 @@ string fat32::read_file(dd disk, const disks::partition_descriptor& partition, c
                     unique_heap_array<char> sector(512 * fat_bs->sectors_per_cluster);
 
                     if(read_sectors(disk, cluster_lba(entry.cluster_low + (entry.cluster_high << 16)),
-                        fat_bs->sectors_per_cluster, sector.get())){
+                            fat_bs->sectors_per_cluster, sector.get())){
                         found = true;
+
+                        string content(entry.file_size + 1);
 
                         for(size_t i = 0; i < entry.file_size; ++i){
                             content += sector[i];
                         }
+
+                        return std::move(content);
                     }
 
                     break;
@@ -344,5 +346,5 @@ string fat32::read_file(dd disk, const disks::partition_descriptor& partition, c
         }
     }
 
-    return std::move(content);
+    return {};
 }
