@@ -134,6 +134,10 @@ void init_memory_manager(){
 void* k_malloc(uint64_t bytes){
     auto current = malloc_head->next;
 
+    if(bytes < MIN_SPLIT){
+        bytes = MIN_SPLIT;
+    }
+
     while(true){
         if(current == malloc_head){
             //There are no blocks big enough to hold this request
@@ -154,9 +158,12 @@ void* k_malloc(uint64_t bytes){
         } else if(current->size >= bytes){
             //This block is big enough
 
+            //Space necessary to hold a new block inside this one
+            auto necessary_space = bytes + META_SIZE;
+
             //Is it worth splitting the block ?
-            if(current->size > bytes + META_SIZE + MIN_SPLIT){
-                auto new_block_size = current->size - bytes - META_SIZE;
+            if(current->size > necessary_space + MIN_SPLIT + META_SIZE){
+                auto new_block_size = current->size - necessary_space;
 
                 //Set the new size;
                 current->size = bytes;
@@ -249,6 +256,7 @@ void memory_debug(){
 
     auto it = malloc_head;
 
+    k_printf("malloc overhead: %d\n", META_SIZE);
     k_print("Free blocks:");
     do {
         k_printf("b(%d) ", it->size);
@@ -256,5 +264,6 @@ void memory_debug(){
         it = it->next;
     } while(it != malloc_head);
 
+    k_print_line();
     k_printf("memory free in malloc chain: %m (%d)", memory_free, memory_free);
 }
