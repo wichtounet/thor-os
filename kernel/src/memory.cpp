@@ -20,6 +20,8 @@ const bool TRACE_MALLOC = false;
 uint64_t _used_memory;
 uint64_t _allocated_memory;
 
+struct malloc_footer_chunk;
+
 class malloc_header_chunk {
 private:
     size_t __size;
@@ -57,6 +59,11 @@ public:
 
     bool is_free(){
         return reinterpret_cast<uintptr_t>(__prev) & 0x1;
+    }
+
+    constexpr malloc_footer_chunk* footer() const {
+        return reinterpret_cast<malloc_footer_chunk*>(
+            reinterpret_cast<uintptr_t>(this) + __size + sizeof(malloc_header_chunk));
     }
 };
 
@@ -161,65 +168,84 @@ void debug_malloc(const char* point = nullptr){
     }
 }
 
-} //end of anonymous namespace
+//Insert new_block after current in the free list and update
+//all the necessary links
+void insert_after(malloc_header_chunk* current, malloc_header_chunk* new_block){
+    new_block->next_ref() = current->next();
+    new_block->prev_ref() = current;
+    new_block->set_free();
 
-void init_memory_manager(){
-    //Init the fake head
+    current->next()->prev_ref() = new_block;
+    current->next()->set_free();
+    current->next_ref() = new_block;
+}
+
+//Remove the given block from the free list
+//The node is directly marked as not free
+void remove(malloc_header_chunk* current){
+    current->prev()->next_ref() = current->next();
+    current->next()->prev_ref() = current->prev();
+    current->next()->set_free();
+
+    //Make sure the node is clean
+    current->prev_ref() = nullptr;
+    current->next_ref() = nullptr;
+
+    //No need to unmark the free bit here as we set current->next to zero
+}
+
+void init_head(){
     head.size = 0;
     head.next = nullptr;
     head.prev = nullptr;
     head.size_2 = 0;
 
     malloc_head = reinterpret_cast<malloc_header_chunk*>(&head);
+    malloc_head->next_ref() = malloc_head;
+    malloc_head->prev_ref() = malloc_head;
+}
 
-    auto block = allocate_block(MIN_BLOCKS);
+void expand_heap(malloc_header_chunk* current){
+    //Allocate a new block of memory
+    uint64_t* block = allocate_block(MIN_BLOCKS);
+
+    //Transform it into a malloc chunk
     auto header = reinterpret_cast<malloc_header_chunk*>(block);
 
+    //Update the sizes
     header->size() = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
-    header->next_ref() = malloc_head;
-    header->prev_ref() = malloc_head;
-    header->set_free();
+    header->footer()->size() = header->size();
 
-    auto footer = reinterpret_cast<malloc_footer_chunk*>(
-        reinterpret_cast<uintptr_t>(block) + header->size() + sizeof(malloc_header_chunk));
-    footer->size() = header->size();
+    //Insert the new block into the free list
+    insert_after(current, header);
+}
 
-    malloc_head->next_ref() = header;
-    malloc_head->prev_ref() = header;
+} //end of anonymous namespace
 
-    malloc_head->set_free();
+void init_memory_manager(){
+    //Init the fake head
+    init_head();
+
+    //Allocate a first block
+    expand_heap(malloc_head);
 }
 
 void* k_malloc(uint64_t bytes){
     auto current = malloc_head->next();
 
+    //Try not to create too small blocks
     if(bytes < MIN_SPLIT){
         bytes = MIN_SPLIT;
     }
 
+    //Make sure the addresses will be aligned on ALIGNMENT bytes
     bytes = aligned_size(bytes);
 
     while(true){
         if(current == malloc_head){
             //There are no blocks big enough to hold this request
-
-            uint64_t* block = allocate_block(MIN_BLOCKS);
-            auto header = reinterpret_cast<malloc_header_chunk*>(block);
-            header->size() = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
-
-            header->next_ref() = current->next();
-            header->prev_ref() = current;
-            header->set_free();
-
-            current->next()->prev_ref() = header;
-            current->next_ref() = header;
-
-            //Because the value gets erased just before
-            current->next()->set_free();
-
-            auto footer = reinterpret_cast<malloc_footer_chunk*>(
-                reinterpret_cast<uintptr_t>(block) + header->size() + sizeof(malloc_header_chunk));
-            footer->size() = header->size();
+            //So expand the heap
+            expand_heap(current);
         } else if(current->size() >= bytes){
             //This block is big enough
 
@@ -230,38 +256,30 @@ void* k_malloc(uint64_t bytes){
             if(current->size() > necessary_space + MIN_SPLIT + META_SIZE){
                 auto new_block_size = current->size() - necessary_space;
 
-                //Set the new size;
+                //Set the new size of the current block
                 current->size() = bytes;
+                current->footer()->size() = bytes;
 
-                auto footer = reinterpret_cast<malloc_footer_chunk*>(
-                    reinterpret_cast<uintptr_t>(current) + bytes + sizeof(malloc_header_chunk));
-                footer->size() = bytes;
-
+                //Create a new block inside the current one
                 auto new_block = reinterpret_cast<malloc_header_chunk*>(
                     reinterpret_cast<uintptr_t>(current) + bytes + META_SIZE);
 
+                //Update the size of the new block
                 new_block->size() = new_block_size;
-                new_block->next_ref() = current->next();
-                new_block->prev_ref() = current->prev();
-                current->prev()->next_ref() = new_block;
-                current->next()->prev_ref() = new_block;
+                new_block->footer()->size() = new_block->size();
 
-                new_block->set_free();
-                current->next()->set_free();
+                //Add the new block to the free list
+                insert_after(current, new_block);
 
-                auto new_footer = reinterpret_cast<malloc_footer_chunk*>(
-                    reinterpret_cast<uintptr_t>(new_block) + new_block_size + sizeof(malloc_header_chunk));
-                new_footer->size() = new_block_size;
+                //Remove the current block from the free list
+                remove(current);
 
                 debug_malloc<DEBUG_MALLOC>("after malloc split");
 
                 break;
             } else {
                 //Remove this node from the free list
-                current->prev()->next_ref() = current->next();
-                current->next()->prev_ref() = current->prev();
-
-                current->next()->set_free();
+                remove(current);
 
                 debug_malloc<DEBUG_MALLOC>("after malloc no split");
 
@@ -274,17 +292,69 @@ void* k_malloc(uint64_t bytes){
 
     _used_memory += current->size() + META_SIZE;
 
-    //Make sure the node is clean
-    current->prev_ref() = nullptr;
-    current->next_ref() = nullptr;
-
-    //No need to unmark the free bit here as we set current->next to zero
-
     auto b = reinterpret_cast<void*>(
         reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
 
     if(TRACE_MALLOC){
         k_printf("m %d(%d) %h ", bytes, current->size(), reinterpret_cast<uint64_t>(b));
+    }
+
+    return b;
+}
+
+malloc_header_chunk* left_block(malloc_header_chunk* b){
+    auto left_footer = reinterpret_cast<malloc_footer_chunk*>(
+        reinterpret_cast<uintptr_t>(b) - sizeof(malloc_footer_chunk));
+
+    if(reinterpret_cast<uintptr_t>(left_footer) >= min_address){
+        auto left_size = left_footer->size();
+
+        auto left_header = reinterpret_cast<malloc_header_chunk*>(
+            reinterpret_cast<uintptr_t>(left_footer) - left_size - sizeof(malloc_header_chunk));
+
+        if(reinterpret_cast<uintptr_t>(left_header) >= min_address){
+            return left_header;
+        }
+    }
+
+    return nullptr;
+}
+
+malloc_header_chunk* right_block(malloc_header_chunk* b){
+    auto right_header = reinterpret_cast<malloc_header_chunk*>(
+        reinterpret_cast<uintptr_t>(b) + META_SIZE + b->size());
+
+    if(reinterpret_cast<uintptr_t>(right_header) <= max_address){
+        auto right_size = right_header->size();
+
+        auto right_footer = right_header->footer();
+        if(reinterpret_cast<uintptr_t>(right_footer) <= max_address){
+            return right_header;
+        }
+    }
+
+    return nullptr;
+}
+
+malloc_header_chunk* coalesce(malloc_header_chunk* b){
+    auto a = left_block(b);
+    auto c = right_block(b);
+
+    k_printf("%h(%d), l:%h(%d), r:%h(%d)\n",
+        reinterpret_cast<uintptr_t>(b), b->size(),
+        reinterpret_cast<uintptr_t>(a), a ? a->size() : 0,
+        reinterpret_cast<uintptr_t>(c), c ? c->size() : 0);
+
+    if(a && a->is_free()){
+        k_print_line("coalesce a and b");
+    }
+
+    if(c && c->is_free()){
+        auto new_size = b->size() + c->size() + META_SIZE;
+
+        //TODO
+
+        k_print_line("coalesce b and c");
     }
 
     return b;
@@ -302,22 +372,14 @@ void k_free(void* block){
         k_printf("f %d %h ", free_header->size(), reinterpret_cast<uint64_t>(block));
     }
 
+    //Less memory is used
     _used_memory -= free_header->size() + META_SIZE;
 
-    auto header = malloc_head;
+    //Coalesce the block if possible
+//    free_header = coalesce(free_header);
 
-    free_header->prev_ref() = header;
-    free_header->next_ref() = header->next();
-
-    header->next()->prev_ref() = free_header;
-    header->next_ref() = free_header;
-
-    //Mark the freed block as free
-    free_header->set_free();
-
-    //The header free value is erased before
-    header->next()->set_free();
-    free_header->next()->set_free();
+    //Add the freed block in the free list
+    insert_after(malloc_head, free_header);
 
     debug_malloc<DEBUG_MALLOC>("after free");
 }
@@ -337,6 +399,7 @@ uint64_t free_memory(){
 void memory_debug(){
     size_t memory_free = 0;
     size_t non_free_blocks = 0;
+    size_t inconsistent = 0;
 
     auto it = malloc_head;
 
@@ -348,6 +411,10 @@ void memory_debug(){
             k_print("NF");
         }
 
+        if(it->size() != it->footer()->size()){
+            ++inconsistent;
+        }
+
         k_printf("b(%d) ", it->size());
         memory_free += it->size();
 
@@ -357,4 +424,5 @@ void memory_debug(){
     k_print_line();
     k_printf("memory free in malloc chain: %m (%d)\n", memory_free, memory_free);
     k_printf("There are %d non free blocks in the free list\n", non_free_blocks);
+    k_printf("There are %d inconsistent sized blocks in the free list\n", inconsistent);
 }
