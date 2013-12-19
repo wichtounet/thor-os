@@ -306,7 +306,7 @@ malloc_header_chunk* left_block(malloc_header_chunk* b){
     auto left_footer = reinterpret_cast<malloc_footer_chunk*>(
         reinterpret_cast<uintptr_t>(b) - sizeof(malloc_footer_chunk));
 
-    if(reinterpret_cast<uintptr_t>(left_footer) >= min_address){
+    if(reinterpret_cast<uintptr_t>(left_footer)>= min_address){
         auto left_size = left_footer->size();
 
         auto left_header = reinterpret_cast<malloc_header_chunk*>(
@@ -324,11 +324,9 @@ malloc_header_chunk* right_block(malloc_header_chunk* b){
     auto right_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(b) + META_SIZE + b->size());
 
-    if(reinterpret_cast<uintptr_t>(right_header) <= max_address){
-        auto right_size = right_header->size();
-
+    if(reinterpret_cast<uintptr_t>(right_header) < max_address){
         auto right_footer = right_header->footer();
-        if(reinterpret_cast<uintptr_t>(right_footer) <= max_address){
+        if(reinterpret_cast<uintptr_t>(right_footer) < max_address){
             return right_header;
         }
     }
@@ -340,21 +338,26 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
     auto a = left_block(b);
     auto c = right_block(b);
 
-    k_printf("%h(%d), l:%h(%d), r:%h(%d)\n",
-        reinterpret_cast<uintptr_t>(b), b->size(),
-        reinterpret_cast<uintptr_t>(a), a ? a->size() : 0,
-        reinterpret_cast<uintptr_t>(c), c ? c->size() : 0);
-
     if(a && a->is_free()){
-        k_print_line("coalesce a and b");
+        auto new_size = a->size() + b->size() + META_SIZE;
+
+        //Remove a from the free list
+        remove(a);
+
+        b = a;
+
+        b->size() = new_size;
+        b->footer()->size() = new_size;
     }
 
     if(c && c->is_free()){
         auto new_size = b->size() + c->size() + META_SIZE;
 
-        //TODO
+        //Remove c from the free list
+        remove(c);
 
-        k_print_line("coalesce b and c");
+        b->size() = new_size;
+        b->footer()->size() = new_size;
     }
 
     return b;
@@ -376,7 +379,7 @@ void k_free(void* block){
     _used_memory -= free_header->size() + META_SIZE;
 
     //Coalesce the block if possible
-//    free_header = coalesce(free_header);
+    free_header = coalesce(free_header);
 
     //Add the freed block in the free list
     insert_after(malloc_head, free_header);
