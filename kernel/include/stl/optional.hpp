@@ -8,7 +8,7 @@
 #ifndef OPTIONAL_H
 #define OPTIONAL_H
 
-#include "utils.hpp"
+#include "algorithms.hpp"
 
 struct dummy_t {};
 

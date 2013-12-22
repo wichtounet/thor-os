@@ -8,8 +8,13 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "types.hpp"
-#include "utils.hpp"
+#include "stl/types.hpp"
+#include "stl/algorithms.hpp"
+#include "stl/vector.hpp"
+
+namespace std {
+
+uint64_t str_len(const char* a);
 
 template<typename CharT>
 struct basic_string {
@@ -207,5 +212,13 @@ public:
 };
 
 typedef basic_string<char> string;
+
+uint64_t parse(const char* str);
+uint64_t parse(const char* str, const char* end);
+uint64_t parse(const string& str);
+
+vector<string> split(const string& s);
+
+} //end of namespace std
 
 #endif

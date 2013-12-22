@@ -6,14 +6,14 @@
 //=======================================================================
 
 #include "interrupts.hpp"
-#include "types.hpp"
-#include "utils.hpp"
 #include "console.hpp"
 #include "kernel_utils.hpp"
 #include "gdt.hpp"
 
 #include "isrs.hpp"
 #include "irqs.hpp"
+
+#include "stl/types.hpp"
 
 namespace {
 

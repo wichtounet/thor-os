@@ -8,7 +8,7 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
-#include "types.hpp"
+#include "stl/types.hpp"
 
 void init_memory_manager();
 

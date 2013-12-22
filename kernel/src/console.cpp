@@ -8,8 +8,9 @@
 #include <stdarg.h>
 
 #include "console.hpp"
-#include "types.hpp"
-#include "utils.hpp"
+
+#include "stl/types.hpp"
+#include "stl/string.hpp"
 
 namespace {
 
@@ -166,7 +167,7 @@ void k_print(const char* str){
     }
 }
 
-void k_print(const string& s){
+void k_print(const std::string& s){
     for(auto c : s){
         k_print(c);
     }

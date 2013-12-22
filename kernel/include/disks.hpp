@@ -8,10 +8,10 @@
 #ifndef DISKS_H
 #define DISKS_H
 
-#include "types.hpp"
-#include "array.hpp"
-#include "vector.hpp"
-#include "string.hpp"
+#include "stl/types.hpp"
+#include "stl/array.hpp"
+#include "stl/vector.hpp"
+#include "stl/string.hpp"
 
 namespace disks {
 
@@ -38,7 +38,7 @@ struct partition_descriptor {
 };
 
 struct file {
-    string file_name;
+    std::string file_name;
     bool directory;
     bool hidden;
     bool system;
@@ -66,13 +66,13 @@ void unmount();
 vector<file> ls();
 uint64_t free_size();
 
-string read_file(const string& file);
+std::string read_file(const std::string& file);
 
 const disk_descriptor* mounted_disk();
 const partition_descriptor* mounted_partition();
 
 //TODO It is not a really good practice to directly expose the vector
-vector<string>& current_directory();
+vector<std::string>& current_directory();
 
 }
 

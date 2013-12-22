@@ -8,15 +8,15 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "types.hpp"
-#include "utils.hpp"
+#include "stl/types.hpp"
+#include "stl/algorithms.hpp"
 
 template<typename T>
 class vector {
 public:
     typedef T                       value_type;
     typedef value_type*             pointer_type;
-    typedef uint64_t                size_type;
+    typedef size_t                  size_type;
     typedef value_type*             iterator;
     typedef const value_type*       const_iterator;
 

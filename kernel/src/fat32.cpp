@@ -5,13 +5,13 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "unique_ptr.hpp"
-
 #include "fat32.hpp"
-#include "types.hpp"
 #include "console.hpp"
-#include "utils.hpp"
-#include "pair.hpp"
+
+#include "stl/types.hpp"
+#include "stl/unique_ptr.hpp"
+#include "stl/algorithms.hpp"
+#include "stl/pair.hpp"
 
 namespace {
 
@@ -197,7 +197,7 @@ size_t filename_length(char* filename){
     return 11;
 }
 
-bool filename_equals(char* name, const string& path){
+bool filename_equals(char* name, const std::string& path){
     auto length = filename_length(name);
 
     if(path.size() != length){
@@ -228,7 +228,7 @@ bool cache_disk_partition(fat32::dd disk, const disks::partition_descriptor& par
     return fat_bs && fat_is;
 }
 
-pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const vector<string>& path){
+pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const vector<std::string>& path){
     auto cluster_addr = cluster_lba(fat_bs->root_directory_cluster_start);
 
     unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
@@ -286,7 +286,7 @@ uint64_t fat32::free_size(dd disk, const disks::partition_descriptor& partition)
     return fat_is->free_clusters * fat_bs->sectors_per_cluster * 512;
 }
 
-vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const vector<string>& path){
+vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const vector<std::string>& path){
     if(!cache_disk_partition(disk, partition)){
         return {};
     }
@@ -300,7 +300,7 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
     }
 }
 
-string fat32::read_file(dd disk, const disks::partition_descriptor& partition, const vector<string>& path, const string& file){
+std::string fat32::read_file(dd disk, const disks::partition_descriptor& partition, const vector<std::string>& path, const std::string& file){
     if(!cache_disk_partition(disk, partition)){
         return {};
     }
@@ -327,7 +327,7 @@ string fat32::read_file(dd disk, const disks::partition_descriptor& partition, c
                             fat_bs->sectors_per_cluster, sector.get())){
                         found = true;
 
-                        string content(entry.file_size + 1);
+                        std::string content(entry.file_size + 1);
 
                         for(size_t i = 0; i < entry.file_size; ++i){
                             content += sector[i];

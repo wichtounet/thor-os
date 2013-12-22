@@ -5,10 +5,9 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "utils.hpp"
-#include "string.hpp"
+#include "stl/string.hpp"
 
-uint64_t parse(const char* it, const char* end){
+uint64_t std::parse(const char* it, const char* end){
     int i = end - it - 1;
 
     uint64_t factor = 1;
@@ -22,7 +21,7 @@ uint64_t parse(const char* it, const char* end){
     return acc;
 }
 
-uint64_t parse(const char* str){
+uint64_t std::parse(const char* str){
     int i = 0;
 
     const char* it = str;
@@ -41,14 +40,35 @@ uint64_t parse(const char* str){
     return acc;
 }
 
-uint64_t parse(const string& str){
+uint64_t std::parse(const string& str){
     return parse(str.begin(), str.end());
 }
 
-uint64_t str_len(const char* a){
+uint64_t std::str_len(const char* a){
     uint64_t length = 0;
     while(*a++){
         ++length;
     }
     return length;
+}
+
+vector<std::string> std::split(const string& s){
+    vector<string> parts;
+
+    string current(s.size());
+
+    for(char c : s){
+        if(c == ' ' && !current.empty()){
+            parts.push_back(current);
+            current.clear();
+        } else {
+            current += c;
+        }
+    }
+
+    if(!current.empty()){
+        parts.push_back(current);
+    }
+
+    return std::move(parts);
 }

@@ -18,11 +18,13 @@ CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2
 LINK_FLAGS=-lgcc -T linker.ld
 
 KERNEL_CPP_FILES=$(wildcard src/*.cpp)
+KERNEL_CPP_STL_FILES=$(wildcard src/stl/*.cpp)
+
+KERNEL_D_FILES=$(KERNEL_CPP_FILES:%.cpp=%.cpp.d)
+KERNEL_D_STL_FILES=$(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.d)
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:src/%.cpp=%.cpp.o) isrs.s.o irqs.s.o arch.s.o
-
-KERNEL_D_FILES=$(KERNEL_CPP_FILES:src/%.cpp=%.cpp.d)
+KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:%.cpp=%.cpp.o) $(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.o) isrs.s.o irqs.s.o arch.s.o
 
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
@@ -44,19 +46,33 @@ boot_32_64.o: boot_32.o
 %.s.o: src/%.s
 	$(AS) -c $< -o $@
 
-%.cpp.d: $(KERNEL_CPP_FILES)
-	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT $*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+src/%.cpp.d: $(KERNEL_CPP_FILES)
+	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
-%.cpp.o:
+src/stl/%.cpp.d: $(KERNEL_CPP_STL_FILES)
+	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/stl/$*.cpp.o src/stl/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+src/%.cpp.o:
+	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+
+src/stl/%.cpp.o:
 	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 -include $(KERNEL_D_FILES)
+-include $(KERNEL_D_STL_FILES)
 
 kernel.bin: $(LINK_O_FILES)
 	$(CC) $(LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
 	$(OC) -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
 
+debug:
+	echo $(KERNEL_CPP_STL_FILES)
+	echo $(KERNEL_D_STL_FILES)
+
 clean:
-	rm -f *.o
+	rm -f $(KERNEL_D_FILES)
+	rm -f $(KERNEL_D_STL_FILES)
+	rm -f $(KERNEL_O_FILES)
+	rm -f crti.o
+	rm -f crts.o
 	rm -f *.bin
-	rm -f *.d

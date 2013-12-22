@@ -8,9 +8,9 @@
 #ifndef SYSINFO_H
 #define SYSINFO_H
 
-#include "string.hpp"
-#include "vector.hpp"
+#include "stl/string.hpp"
+#include "stl/vector.hpp"
 
-void sysinfo_command(const vector<string>& params);
+void sysinfo_command(const vector<std::string>& params);
 
 #endif

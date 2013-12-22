@@ -6,12 +6,12 @@
 //=======================================================================
 
 #include "acpi.hpp"
-#include "types.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"
 #include "paging.hpp"
-
 #include "console.hpp"
+
+#include "stl/types.hpp"
 
 namespace {
 

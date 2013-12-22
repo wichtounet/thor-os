@@ -5,10 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef UTILS_H
-#define UTILS_H
-
-#include "types.hpp"
+#ifndef ALGORITHMS_H
+#define ALGORITHMS_H
 
 namespace std {
 
@@ -89,15 +87,5 @@ bool equal_n(Iterator1 it1, Iterator2 it2, size_t n){
 }
 
 } //end of namespace std
-
-template<typename CharT>
-struct basic_string;
-typedef basic_string<char> string;
-
-uint64_t parse(const char* str);
-uint64_t parse(const char* str, const char* end);
-uint64_t parse(const string& str);
-
-uint64_t str_len(const char* a);
 
 #endif

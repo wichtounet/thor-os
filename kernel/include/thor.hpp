@@ -8,7 +8,7 @@
 #ifndef THOR_H
 #define THOR_H
 
-#include "types.hpp"
+#include "stl/types.hpp"
 
 void* operator new(uint64_t size);
 void operator delete(void* p);

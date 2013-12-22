@@ -5,15 +5,15 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "unique_ptr.hpp"
-#include "array.hpp"
-
 #include "disks.hpp"
 #include "ata.hpp"
 #include "thor.hpp"
 #include "console.hpp"
 #include "fat32.hpp"
-#include "utils.hpp"
+
+#include "stl/unique_ptr.hpp"
+#include "stl/array.hpp"
+#include "stl/string.hpp"
 
 namespace {
 
@@ -44,7 +44,7 @@ static_assert(sizeof(boot_record_t) == 512, "The boot record is 512 bytes long")
 const disks::disk_descriptor* _mounted_disk;
 const disks::partition_descriptor* _mounted_partition;
 
-vector<string> pwd;
+vector<std::string> pwd;
 
 } //end of anonymous namespace
 
@@ -226,11 +226,11 @@ uint64_t disks::free_size(){
     return fat32::free_size(*_mounted_disk, *_mounted_partition);
 }
 
-vector<string>& disks::current_directory(){
+vector<std::string>& disks::current_directory(){
     return pwd;
 }
 
-string disks::read_file(const string& file){
+std::string disks::read_file(const std::string& file){
     if(!_mounted_disk || !_mounted_partition){
         return "";
     }

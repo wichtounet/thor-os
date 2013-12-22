@@ -6,10 +6,10 @@
 //=======================================================================
 
 #include "paging.hpp"
-#include "types.hpp"
-#include "utils.hpp"
-
 #include "console.hpp"
+
+#include "stl/types.hpp"
+#include "stl/algorithms.hpp"
 
 namespace {
 
