@@ -11,6 +11,6 @@
 #include "stl/string.hpp"
 #include "stl/vector.hpp"
 
-void sysinfo_command(const vector<std::string>& params);
+void sysinfo_command(const std::vector<std::string>& params);
 
 #endif

@@ -10,6 +10,8 @@
 
 #include "algorithms.hpp"
 
+namespace std {
+
 struct dummy_t {};
 
 template<typename T>
@@ -79,5 +81,7 @@ public:
         return initialized;
     }
 };
+
+} //end of namespace std
 
 #endif

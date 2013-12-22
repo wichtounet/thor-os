@@ -18,7 +18,7 @@
 namespace {
 
 //For now, 4 is enough as only the ata driver is implemented
-array<disks::disk_descriptor, 4> _disks;
+std::array<disks::disk_descriptor, 4> _disks;
 
 uint64_t number_of_disks = 0;
 
@@ -44,7 +44,7 @@ static_assert(sizeof(boot_record_t) == 512, "The boot record is 512 bytes long")
 const disks::disk_descriptor* _mounted_disk;
 const disks::partition_descriptor* _mounted_partition;
 
-vector<std::string> pwd;
+std::vector<std::string> pwd;
 
 } //end of anonymous namespace
 
@@ -122,8 +122,8 @@ bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t co
     }
 }
 
-unique_heap_array<disks::partition_descriptor> disks::partitions(const disk_descriptor& disk){
-    unique_ptr<boot_record_t> boot_record(new boot_record_t());
+std::unique_heap_array<disks::partition_descriptor> disks::partitions(const disk_descriptor& disk){
+    std::unique_ptr<boot_record_t> boot_record(new boot_record_t());
 
     if(!read_sectors(disk, 0, 1, boot_record.get())){
         k_print_line("Read Boot Record failed");
@@ -143,7 +143,7 @@ unique_heap_array<disks::partition_descriptor> disks::partitions(const disk_desc
             }
         }
 
-        unique_heap_array<partition_descriptor> partitions(n);
+        std::unique_heap_array<partition_descriptor> partitions(n);
         uint64_t p = 0;
 
         for(uint64_t i = 0; i < 4; ++i){
@@ -210,7 +210,7 @@ const disks::partition_descriptor* disks::mounted_partition(){
     return _mounted_partition;
 }
 
-vector<disks::file> disks::ls(){
+std::vector<disks::file> disks::ls(){
     if(!_mounted_disk || !_mounted_partition){
         return {};
     }
@@ -226,7 +226,7 @@ uint64_t disks::free_size(){
     return fat32::free_size(*_mounted_disk, *_mounted_partition);
 }
 
-vector<std::string>& disks::current_directory(){
+std::vector<std::string>& disks::current_directory(){
     return pwd;
 }
 

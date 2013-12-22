@@ -52,8 +52,8 @@ uint64_t std::str_len(const char* a){
     return length;
 }
 
-vector<std::string> std::split(const string& s){
-    vector<string> parts;
+std::vector<std::string> std::split(const string& s){
+    std::vector<string> parts;
 
     string current(s.size());
 

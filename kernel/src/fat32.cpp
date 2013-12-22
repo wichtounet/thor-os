@@ -85,7 +85,7 @@ fat_bs_t* fat_bs = nullptr;
 fat_is_t* fat_is = nullptr;
 
 void cache_bs(fat32::dd disk, const disks::partition_descriptor& partition){
-    unique_ptr<fat_bs_t> fat_bs_tmp(new fat_bs_t());
+    std::unique_ptr<fat_bs_t> fat_bs_tmp(new fat_bs_t());
 
     if(read_sectors(disk, partition.start, 1, fat_bs_tmp.get())){
         fat_bs = fat_bs_tmp.release();
@@ -100,7 +100,7 @@ void cache_bs(fat32::dd disk, const disks::partition_descriptor& partition){
 void cache_is(fat32::dd disk, const disks::partition_descriptor& partition){
     auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
 
-    unique_ptr<fat_is_t> fat_is_tmp(new fat_is_t());
+    std::unique_ptr<fat_is_t> fat_is_tmp(new fat_is_t());
 
     if(read_sectors(disk, fs_information_sector, 1, fat_is_tmp.get())){
         fat_is = fat_is_tmp.release();
@@ -132,8 +132,8 @@ inline bool is_long_name(const cluster_entry& entry){
     return entry.attrib == 0x0F;
 }
 
-vector<disks::file> files(const unique_heap_array<cluster_entry>& cluster){
-    vector<disks::file> files;
+std::vector<disks::file> files(const std::unique_heap_array<cluster_entry>& cluster){
+    std::vector<disks::file> files;
 
     bool end_reached = false;
 
@@ -177,8 +177,8 @@ vector<disks::file> files(const unique_heap_array<cluster_entry>& cluster){
     return std::move(files);
 }
 
-vector<disks::file> files(fat32::dd disk, uint64_t cluster_addr){
-    unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
+std::vector<disks::file> files(fat32::dd disk, uint64_t cluster_addr){
+    std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
 
     if(read_sectors(disk, cluster_lba(cluster_addr), fat_bs->sectors_per_cluster, cluster.get())){
         return files(cluster);
@@ -228,10 +228,10 @@ bool cache_disk_partition(fat32::dd disk, const disks::partition_descriptor& par
     return fat_bs && fat_is;
 }
 
-pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const vector<std::string>& path){
+std::pair<bool, std::unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const std::vector<std::string>& path){
     auto cluster_addr = cluster_lba(fat_bs->root_directory_cluster_start);
 
-    unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
+    std::unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
 
     if(read_sectors(disk, cluster_addr, fat_bs->sectors_per_cluster, current_cluster.get())){
         for(auto& p : path){
@@ -248,7 +248,7 @@ pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const 
                     //entry.name is not a real c_string, cannot be compared
                     //directly
                     if(filename_equals(entry.name, p)){
-                        unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
+                        std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
 
                         if(read_sectors(disk, cluster_lba(entry.cluster_low + (entry.cluster_high << 16)),
                                 fat_bs->sectors_per_cluster, cluster.get())){
@@ -257,7 +257,7 @@ pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const 
 
                             break;
                         } else {
-                            return make_pair(false, unique_heap_array<cluster_entry>());
+                            return std::make_pair(false, std::unique_heap_array<cluster_entry>());
                         }
                     }
                 }
@@ -266,14 +266,14 @@ pair<bool, unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const 
             if(!found){
                 //TODO If not end_reached, read the next cluster
 
-                return make_pair(false, unique_heap_array<cluster_entry>());
+                return std::make_pair(false, std::unique_heap_array<cluster_entry>());
             }
         }
 
-        return make_pair(true, std::move(current_cluster));
+        return std::make_pair(true, std::move(current_cluster));
     }
 
-    return make_pair(false, unique_heap_array<cluster_entry>());
+    return std::make_pair(false, std::unique_heap_array<cluster_entry>());
 }
 
 } //end of anonymous namespace
@@ -286,7 +286,7 @@ uint64_t fat32::free_size(dd disk, const disks::partition_descriptor& partition)
     return fat_is->free_clusters * fat_bs->sectors_per_cluster * 512;
 }
 
-vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const vector<std::string>& path){
+std::vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const std::vector<std::string>& path){
     if(!cache_disk_partition(disk, partition)){
         return {};
     }
@@ -300,7 +300,7 @@ vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partit
     }
 }
 
-std::string fat32::read_file(dd disk, const disks::partition_descriptor& partition, const vector<std::string>& path, const std::string& file){
+std::string fat32::read_file(dd disk, const disks::partition_descriptor& partition, const std::vector<std::string>& path, const std::string& file){
     if(!cache_disk_partition(disk, partition)){
         return {};
     }
@@ -321,7 +321,7 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
 
             if(entry_used(entry) && !is_long_name(entry) && !(entry.attrib & 0x10)){
                 if(filename_equals(entry.name, file)){
-                    unique_heap_array<char> sector(512 * fat_bs->sectors_per_cluster);
+                    std::unique_heap_array<char> sector(512 * fat_bs->sectors_per_cluster);
 
                     if(read_sectors(disk, cluster_lba(entry.cluster_low + (entry.cluster_high << 16)),
                             fat_bs->sectors_per_cluster, sector.get())){

@@ -58,12 +58,12 @@ const char* disk_type_to_string(disk_type type);
 const char* partition_type_to_string(partition_type type);
 
 bool read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);
-unique_heap_array<partition_descriptor> partitions(const disk_descriptor& disk);
+std::unique_heap_array<partition_descriptor> partitions(const disk_descriptor& disk);
 bool partition_exists(const disk_descriptor& disk, uint64_t uuid);
 
 void mount(const disk_descriptor& disk, uint64_t uuid);
 void unmount();
-vector<file> ls();
+std::vector<file> ls();
 uint64_t free_size();
 
 std::string read_file(const std::string& file);
@@ -71,8 +71,8 @@ std::string read_file(const std::string& file);
 const disk_descriptor* mounted_disk();
 const partition_descriptor* mounted_partition();
 
-//TODO It is not a really good practice to directly expose the vector
-vector<std::string>& current_directory();
+//TODO It is not a really good practice to directly expose the std::vector
+std::vector<std::string>& current_directory();
 
 }
 

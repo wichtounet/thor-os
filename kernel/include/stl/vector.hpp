@@ -11,6 +11,8 @@
 #include "stl/types.hpp"
 #include "stl/algorithms.hpp"
 
+namespace std {
+
 template<typename T>
 class vector {
 public:
@@ -125,5 +127,7 @@ public:
         return const_iterator(&data[_size]);
     }
 };
+
+} //end of namespace std
 
 #endif

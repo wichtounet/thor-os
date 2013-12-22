@@ -8,6 +8,8 @@
 #ifndef PAIR_H
 #define PAIR_H
 
+namespace std {
+
 template<typename T1, typename T2>
 class pair {
 public:
@@ -65,5 +67,7 @@ template<typename T1, typename T2>
 inline constexpr pair<T1, T2> make_pair(T1&& x, T2&& y){
     return pair<T1, T2>(std::forward<T1>(x), std::forward<T2>(y));
 }
+
+} //end of namespace std
 
 #endif

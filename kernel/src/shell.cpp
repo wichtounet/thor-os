@@ -32,37 +32,37 @@ static constexpr const bool History = true;
 static constexpr const bool History = false;
 #endif
 
-vector<std::string> history;
+std::vector<std::string> history;
 uint64_t history_index = 0;
 
 bool shift = false;
 
 //Declarations of the different functions
 
-void reboot_command(const vector<std::string>& params);
-void help_command(const vector<std::string>& params);
-void uptime_command(const vector<std::string>& params);
-void clear_command(const vector<std::string>& params);
-void date_command(const vector<std::string>& params);
-void sleep_command(const vector<std::string>& params);
-void echo_command(const vector<std::string>& params);
-void mmap_command(const vector<std::string>& params);
-void memory_command(const vector<std::string>& params);
-void memorydebug_command(const vector<std::string>& params);
-void disks_command(const vector<std::string>& params);
-void partitions_command(const vector<std::string>& params);
-void mount_command(const vector<std::string>& params);
-void unmount_command(const vector<std::string>& params);
-void ls_command(const vector<std::string>& params);
-void cd_command(const vector<std::string>& params);
-void pwd_command(const vector<std::string>& params);
-void free_command(const vector<std::string>& params);
-void cat_command(const vector<std::string>& params);
-void shutdown_command(const vector<std::string>& params);
+void reboot_command(const std::vector<std::string>& params);
+void help_command(const std::vector<std::string>& params);
+void uptime_command(const std::vector<std::string>& params);
+void clear_command(const std::vector<std::string>& params);
+void date_command(const std::vector<std::string>& params);
+void sleep_command(const std::vector<std::string>& params);
+void echo_command(const std::vector<std::string>& params);
+void mmap_command(const std::vector<std::string>& params);
+void memory_command(const std::vector<std::string>& params);
+void memorydebug_command(const std::vector<std::string>& params);
+void disks_command(const std::vector<std::string>& params);
+void partitions_command(const std::vector<std::string>& params);
+void mount_command(const std::vector<std::string>& params);
+void unmount_command(const std::vector<std::string>& params);
+void ls_command(const std::vector<std::string>& params);
+void cd_command(const std::vector<std::string>& params);
+void pwd_command(const std::vector<std::string>& params);
+void free_command(const std::vector<std::string>& params);
+void cat_command(const std::vector<std::string>& params);
+void shutdown_command(const std::vector<std::string>& params);
 
 struct command_definition {
     const char* name;
-    void (*function)(const vector<std::string>&);
+    void (*function)(const std::vector<std::string>&);
 };
 
 command_definition commands[21] = {
@@ -206,17 +206,17 @@ void exec_command(){
     k_printf("The command \"%s\" does not exist\n", current_input.c_str());
 }
 
-void clear_command(const vector<std::string>&){
+void clear_command(const std::vector<std::string>&){
     wipeout();
 }
 
-void __attribute__((noreturn)) reboot_command(const vector<std::string>&){
+void __attribute__((noreturn)) reboot_command(const std::vector<std::string>&){
     __asm__ __volatile__("mov al, 0x64; or al, 0xFE; out 0x64, al; mov al, 0xFE; out 0x64, al; " : : );
 
     __builtin_unreachable();
 }
 
-void help_command(const vector<std::string>&){
+void help_command(const std::vector<std::string>&){
     k_print("Available commands:\n");
 
     for(auto& command : commands){
@@ -225,7 +225,7 @@ void help_command(const vector<std::string>&){
     }
 }
 
-void uptime_command(const vector<std::string>&){
+void uptime_command(const std::vector<std::string>&){
     k_printf("Uptime: %ds\n", timer_seconds());
 }
 
@@ -243,7 +243,7 @@ uint8_t get_RTC_register(int reg) {
     return in_byte(cmos_data);
 }
 
-void date_command(const vector<std::string>&){
+void date_command(const std::vector<std::string>&){
     uint64_t second;
     uint64_t minute;
     uint64_t hour;
@@ -321,11 +321,11 @@ void date_command(const vector<std::string>&){
     k_printf("%d.%d.%d %d:%.2d:%.2d\n", day, month, year, hour, minute, second);
 }
 
-void sleep_command(const vector<std::string>& params){
+void sleep_command(const std::vector<std::string>& params){
     sleep_ms(parse(params[1]) * 1000);
 }
 
-void echo_command(const vector<std::string>& params){
+void echo_command(const std::vector<std::string>& params){
     for(uint64_t i = 1; i < params.size(); ++i){
         k_print(params[i]);
         k_print(' ');
@@ -333,7 +333,7 @@ void echo_command(const vector<std::string>& params){
     k_print_line();
 }
 
-void mmap_command(const vector<std::string>&){
+void mmap_command(const std::vector<std::string>&){
     if(e820::mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");
     } else {
@@ -349,7 +349,7 @@ void mmap_command(const vector<std::string>&){
     }
 }
 
-void memory_command(const vector<std::string>&){
+void memory_command(const std::vector<std::string>&){
     if(e820::mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");
     } else {
@@ -360,11 +360,11 @@ void memory_command(const vector<std::string>&){
     }
 }
 
-void memorydebug_command(const vector<std::string>&){
+void memorydebug_command(const std::vector<std::string>&){
     memory_debug();
 }
 
-void disks_command(const vector<std::string>&){
+void disks_command(const std::vector<std::string>&){
     k_print_line("UUID       Type");
 
     for(uint64_t i = 0; i < disks::detected_disks(); ++i){
@@ -374,7 +374,7 @@ void disks_command(const vector<std::string>&){
     }
 }
 
-void partitions_command(const vector<std::string>& params){
+void partitions_command(const std::vector<std::string>& params){
     auto uuid = parse(params[1]);
 
     if(disks::disk_exists(uuid)){
@@ -394,7 +394,7 @@ void partitions_command(const vector<std::string>& params){
     }
 }
 
-void mount_command(const vector<std::string>& params){
+void mount_command(const std::vector<std::string>& params){
     if(params.size() == 1){
         auto md = disks::mounted_disk();
         auto mp = disks::mounted_partition();
@@ -421,7 +421,7 @@ void mount_command(const vector<std::string>& params){
     }
 }
 
-void unmount_command(const vector<std::string>& ){
+void unmount_command(const std::vector<std::string>& ){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
 
@@ -431,7 +431,7 @@ void unmount_command(const vector<std::string>& ){
     disks::unmount();
 }
 
-void ls_command(const vector<std::string>& params){
+void ls_command(const std::vector<std::string>& params){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
 
@@ -477,7 +477,7 @@ void ls_command(const vector<std::string>& params){
     }
 }
 
-void free_command(const vector<std::string>&){
+void free_command(const std::vector<std::string>&){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
 
@@ -487,7 +487,7 @@ void free_command(const vector<std::string>&){
     k_printf("Free size: %m\n", disks::free_size());
 }
 
-void pwd_command(const vector<std::string>&){
+void pwd_command(const std::vector<std::string>&){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
 
@@ -506,7 +506,7 @@ void pwd_command(const vector<std::string>&){
     k_print_line();
 }
 
-optional<disks::file> find_file(const std::string& name){
+std::optional<disks::file> find_file(const std::string& name){
     auto files = disks::ls();
 
     for(auto& file : files){
@@ -518,7 +518,7 @@ optional<disks::file> find_file(const std::string& name){
     return {};
 }
 
-void cd_command(const vector<std::string>& params){
+void cd_command(const std::vector<std::string>& params){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
 
@@ -551,7 +551,7 @@ void cd_command(const vector<std::string>& params){
     }
 }
 
-void cat_command(const vector<std::string>& params){
+void cat_command(const std::vector<std::string>& params){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         k_print_line("Nothing is mounted");
 
@@ -578,7 +578,7 @@ void cat_command(const vector<std::string>& params){
     }
 }
 
-void shutdown_command(const vector<std::string>&){
+void shutdown_command(const std::vector<std::string>&){
     if(!acpi::init()){
         k_print_line("Unable to init ACPI");
     }

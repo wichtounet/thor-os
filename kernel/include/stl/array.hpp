@@ -8,7 +8,7 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
-#include "thor.hpp"
+namespace std {
 
 template<typename T, uint64_t N>
 class array {
@@ -136,5 +136,7 @@ public:
         return const_iterator(&array[_size]);
     }
 };
+
+} //end of namespace std
 
 #endif

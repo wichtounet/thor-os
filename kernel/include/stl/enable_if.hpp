@@ -8,6 +8,8 @@
 #ifndef ENABLE_IF_H
 #define ENABLE_IF_H
 
+namespace std {
+
 template<bool B, class T = void>
 struct enable_if {};
 
@@ -19,5 +21,7 @@ struct disable_if {};
 
 template<class T>
 struct disable_if<false, T> { typedef T type; };
+
+} //end of namespace std
 
 #endif

@@ -341,7 +341,7 @@ void get_base_info(){
 
 } //end of anonymous namespace
 
-void sysinfo_command(const vector<std::string>&){
+void sysinfo_command(const std::vector<std::string>&){
     get_base_info();
     get_vendor_id();
     get_brand_string();

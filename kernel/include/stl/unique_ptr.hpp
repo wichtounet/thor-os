@@ -10,6 +10,8 @@
 
 #include "thor.hpp"
 
+namespace std {
+
 template<typename T>
 struct default_delete {
     default_delete() {}
@@ -99,5 +101,7 @@ public:
         }
     }
 };
+
+} //end of namespace std
 
 #endif
