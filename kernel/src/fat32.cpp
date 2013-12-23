@@ -120,6 +120,30 @@ uint64_t cluster_lba(uint64_t cluster){
     return cluster_begin + (cluster - 2 ) * fat_bs->sectors_per_cluster;
 }
 
+uint32_t read_fat_value(fat32::dd disk, uint32_t cluster){
+    uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
+    uint32_t cluster_size = 512 * fat_bs->sectors_per_cluster;
+
+    uint64_t fat_sector = fat_begin + (cluster * 4) / cluster_size;
+
+    std::unique_heap_array<uint32_t> fat_table(cluster_size / sizeof(uint32_t));
+    if(read_sectors(disk, fat_sector, fat_bs->sectors_per_cluster, fat_table.get())){
+        uint64_t entry_offset = ((cluster * 4) % cluster_size) / 4;
+        return fat_table[entry_offset] & 0x0FFFFFFF;
+    } else {
+        return 0;
+    }
+}
+
+uint32_t next_cluster(fat32::dd disk, uint32_t cluster){
+    auto fat_value = read_fat_value(disk, cluster);
+    if(fat_value >= 0x0FFFFFF8){
+        return 0;
+    }
+
+    return fat_value;
+}
+
 inline bool entry_used(const cluster_entry& entry){
     return static_cast<unsigned char>(entry.name[0]) != 0xE5;
 }
@@ -308,12 +332,12 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
     auto result = find_cluster(disk, path);
 
     if(result.first){
-        auto& cluster = result.second;
+        auto& directory_cluster = result.second;
 
         bool found = false;
         bool end_reached = false;
 
-        for(auto& entry : cluster){
+        for(auto& entry : directory_cluster){
             if(end_of_directory(entry)){
                 end_reached = true;
                 break;
@@ -321,22 +345,45 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
 
             if(entry_used(entry) && !is_long_name(entry) && !(entry.attrib & 0x10)){
                 if(filename_equals(entry.name, file)){
-                    std::unique_heap_array<char> sector(512 * fat_bs->sectors_per_cluster);
+                    std::string content(entry.file_size + 1);
 
-                    if(read_sectors(disk, cluster_lba(entry.cluster_low + (entry.cluster_high << 16)),
-                            fat_bs->sectors_per_cluster, sector.get())){
-                        found = true;
+                    auto cluster = entry.cluster_low + (entry.cluster_high << 16);
 
-                        std::string content(entry.file_size + 1);
+                    size_t read = 0;
 
-                        for(size_t i = 0; i < entry.file_size; ++i){
-                            content += sector[i];
+                    while(read < entry.file_size){
+                        size_t cluster_size = 512 * fat_bs->sectors_per_cluster;
+                        std::unique_heap_array<char> sector(cluster_size);
+
+                        if(read_sectors(disk, cluster_lba(cluster), fat_bs->sectors_per_cluster, sector.get())){
+                            for(size_t i = 0; i < cluster_size && read < entry.file_size; ++i,++read){
+                                content += sector[i];
+                            }
+                        } else {
+                            break;
                         }
 
-                        return std::move(content);
+                        //If the file is not read completely, get the next
+                        //cluster
+                        if(read < entry.file_size){
+                            auto next = next_cluster(disk, cluster);
+
+                            //It may be possible that either the file size or
+                            //the FAT entry is wrong
+                            if(!next){
+                                break;
+                            }
+
+                            //The block is corrupted
+                            if(next == 0x0FFFFFF7){
+                                break;
+                            }
+
+                            cluster = next;
+                        }
                     }
 
-                    break;
+                    return std::move(content);
                 }
             }
         }
