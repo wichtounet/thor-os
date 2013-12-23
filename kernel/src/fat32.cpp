@@ -343,7 +343,12 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
                 file.hidden = entry.attrib & 0x1;
                 file.system = entry.attrib & 0x2;
                 file.directory = entry.attrib & 0x10;
-                file.size = entry.file_size;
+
+                if(file.directory){
+                    file.size = fat_bs->sectors_per_cluster * 512;
+                } else {
+                    file.size = entry.file_size;
+                }
 
                 files.push_back(file);
             }
