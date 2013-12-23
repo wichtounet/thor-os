@@ -355,11 +355,22 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
         }
 
         if(!end_reached){
+            auto next = next_cluster(disk, cluster_number);
 
+            //If there are no more cluster, return false
+            if(!next){
+                return std::move(files);
+            }
+
+            //The block is corrupted
+            if(next == 0x0FFFFFF7){
+                return std::move(files);
+            }
+
+            //Read the next cluster in the chain
+            cluster_number = next;
         }
     }
-
-    //TODO If end_reached not true, we should read the next cluster
 
     return std::move(files);
 }
