@@ -67,7 +67,7 @@ public:
     }
 
     bool empty() const {
-        return _size;
+        return _size == 0;
     }
 
     constexpr size_type capacity() const {
