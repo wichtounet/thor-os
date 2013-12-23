@@ -202,7 +202,8 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
         return std::make_pair(true, static_cast<uint32_t>(fat_bs->root_directory_cluster_start));
     }
 
-    auto cluster_addr = cluster_lba(fat_bs->root_directory_cluster_start);
+    auto cluster_number = fat_bs->root_directory_cluster_start;
+    auto cluster_addr = cluster_lba(cluster_number);
 
     std::unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
 
@@ -213,43 +214,63 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
             bool found = false;
             bool end_reached = false;
 
-            for(auto& entry : current_cluster){
-                if(end_of_directory(entry)){
-                    end_reached = true;
-                    break;
+            while(!found){
+                for(auto& entry : current_cluster){
+                    if(end_of_directory(entry)){
+                        end_reached = true;
+                        break;
+                    }
+
+                    if(entry_used(entry) && !is_long_name(entry) && entry.attrib & 0x10){
+                        //entry.name is not a real c_string, cannot be compared
+                        //directly
+                        if(filename_equals(entry.name, p)){
+                            cluster_number = entry.cluster_low + (entry.cluster_high << 16);
+
+                            //If it is the last part of the path, just return the
+                            //number
+                            if(i == path.size() - 1){
+                                return std::make_pair(true, cluster_number);
+                            }
+
+                            //Otherwise, continue deeper in the search
+
+                            if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, current_cluster.get())){
+                                found = true;
+
+                                break;
+                            } else {
+                                return std::make_pair(false, 0);
+                            }
+                        }
+                    }
                 }
 
-                if(entry_used(entry) && !is_long_name(entry) && entry.attrib & 0x10){
-                    //entry.name is not a real c_string, cannot be compared
-                    //directly
-                    if(filename_equals(entry.name, p)){
-                        auto cluster_number = entry.cluster_low + (entry.cluster_high << 16);
+                //If not found, try the next cluster, if any
+                if(!end_reached && !found){
+                    auto next = next_cluster(disk, cluster_number);
 
-                        //If it is the last part of the path, just return the
-                        //number
-                        if(i == path.size() - 1){
-                            return std::make_pair(true, cluster_number);
-                        }
+                    //If there are no more cluster, return false
+                    if(!next){
+                        return std::make_pair(false, 0);
+                    }
 
-                        //Otherwise, continue deeper in the search
+                    //The block is corrupted
+                    if(next == 0x0FFFFFF7){
+                        return std::make_pair(false, 0);
+                    }
 
-                        if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, current_cluster.get())){
-                            found = true;
 
-                            break;
-                        } else {
-                            return std::make_pair(false, 0);
-                        }
+                    //Read the next cluster in the chain
+                    cluster_number = next;
+                    if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, current_cluster.get())){
+                        return std::make_pair(false, 0);
                     }
                 }
             }
 
+            //If still not found at this point, return false
             if(!found){
-                //There are more cluster to read
-                if(!end_reached){
-                    //TODO If not end_reached, read the next cluster
-                }
-
                 return std::make_pair(false, 0);
             }
         }
@@ -274,59 +295,68 @@ std::pair<bool, std::unique_heap_array<cluster_entry>> find_directory_cluster(fa
     return std::make_pair(false, std::unique_heap_array<cluster_entry>());
 }
 
-std::vector<disks::file> files(const std::unique_heap_array<cluster_entry>& cluster){
+std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& path){
+    auto cluster_number_search = find_cluster_number(disk, path);
+    if(!cluster_number_search.first){
+        return {};
+    }
+
     std::vector<disks::file> files;
 
     bool end_reached = false;
 
-    for(auto& entry : cluster){
-        if(end_of_directory(entry)){
-            end_reached = true;
-            break;
+    while(!end_reached){
+        auto cluster_number = cluster_number_search.second;
+
+        std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
+
+        if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+            return std::move(files);
         }
 
-        if(entry_used(entry)){
-            disks::file file;
-
-            if(is_long_name(entry)){
-                //It is a long file name
-                //TODO Add suppport for long file name
-                file.file_name = "LONG";
-            } else {
-                //It is a normal file name
-                //Copy the name until the first space
-
-                for(size_t s = 0; s < 11; ++s){
-                    if(entry.name[s] == ' '){
-                        break;
-                    }
-
-                    file.file_name += entry.name[s];
-                }
+        for(auto& entry : cluster){
+            if(end_of_directory(entry)){
+                end_reached = true;
+                break;
             }
 
-            file.hidden = entry.attrib & 0x1;
-            file.system = entry.attrib & 0x2;
-            file.directory = entry.attrib & 0x10;
-            file.size = entry.file_size;
+            if(entry_used(entry)){
+                disks::file file;
 
-            files.push_back(file);
+                if(is_long_name(entry)){
+                    //It is a long file name
+                    //TODO Add suppport for long file name
+                    file.file_name = "LONG";
+                } else {
+                    //It is a normal file name
+                    //Copy the name until the first space
+
+                    for(size_t s = 0; s < 11; ++s){
+                        if(entry.name[s] == ' '){
+                            break;
+                        }
+
+                        file.file_name += entry.name[s];
+                    }
+                }
+
+                file.hidden = entry.attrib & 0x1;
+                file.system = entry.attrib & 0x2;
+                file.directory = entry.attrib & 0x10;
+                file.size = entry.file_size;
+
+                files.push_back(file);
+            }
+        }
+
+        if(!end_reached){
+
         }
     }
 
     //TODO If end_reached not true, we should read the next cluster
 
     return std::move(files);
-}
-
-std::vector<disks::file> files(fat32::dd disk, uint64_t cluster_addr){
-    std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
-
-    if(read_sectors(disk, cluster_lba(cluster_addr), fat_bs->sectors_per_cluster, cluster.get())){
-        return files(cluster);
-    } else {
-        return {};
-    }
 }
 
 } //end of anonymous namespace
@@ -344,12 +374,7 @@ std::vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& p
         return {};
     }
 
-    auto cluster = find_directory_cluster(disk, path);
-    if(cluster.first){
-        return files(cluster.second);
-    } else {
-        return {};
-    }
+    return files(disk, path);
 }
 
 std::string fat32::read_file(dd disk, const disks::partition_descriptor& partition, const std::vector<std::string>& path, const std::string& file){
