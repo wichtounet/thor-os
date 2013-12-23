@@ -248,20 +248,19 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
 
                 //If not found, try the next cluster, if any
                 if(!end_reached && !found){
-                    auto next = next_cluster(disk, cluster_number);
+                    cluster_number = next_cluster(disk, cluster_number);
 
                     //If there are no more cluster, return false
-                    if(!next){
+                    if(!cluster_number){
                         return std::make_pair(false, 0);
                     }
 
                     //The block is corrupted
-                    if(next == 0x0FFFFFF7){
+                    if(cluster_number == 0x0FFFFFF7){
                         return std::make_pair(false, 0);
                     }
 
                     //Read the next cluster in the chain
-                    cluster_number = next;
                     if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, current_cluster.get())){
                         return std::make_pair(false, 0);
                     }
@@ -354,20 +353,17 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
         }
 
         if(!end_reached){
-            auto next = next_cluster(disk, cluster_number);
+            cluster_number = next_cluster(disk, cluster_number);
 
             //If there are no more cluster, return false
-            if(!next){
+            if(!cluster_number){
                 return std::move(files);
             }
 
             //The block is corrupted
-            if(next == 0x0FFFFFF7){
+            if(cluster_number == 0x0FFFFFF7){
                 return std::move(files);
             }
-
-            //Read the next cluster in the chain
-            cluster_number = next;
         }
     }
 
@@ -444,19 +440,17 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
 
         //If the file is not read completely, get the next cluster
         if(read < file_size){
-            auto next = next_cluster(disk, cluster_number);
+            cluster_number = next_cluster(disk, cluster_number);
 
             //It may be possible that either the file size or the FAT entry is wrong
-            if(!next){
+            if(!cluster_number){
                 break;
             }
 
             //The block is corrupted
-            if(next == 0x0FFFFFF7){
+            if(cluster_number == 0x0FFFFFF7){
                 break;
             }
-
-            cluster_number = next;
         }
     }
 
