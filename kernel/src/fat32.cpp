@@ -199,7 +199,7 @@ bool cache_disk_partition(fat32::dd disk, const disks::partition_descriptor& par
 
 std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<std::string>& path){
     if(path.empty()){
-        return std::make_pair(true, (uint32_t) fat_bs->root_directory_cluster_start);
+        return std::make_pair(true, static_cast<uint32_t>(fat_bs->root_directory_cluster_start));
     }
 
     auto cluster_addr = cluster_lba(fat_bs->root_directory_cluster_start);
@@ -233,10 +233,7 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
 
                         //Otherwise, continue deeper in the search
 
-                        std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
-
-                        if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
-                            current_cluster = std::move(cluster);
+                        if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, current_cluster.get())){
                             found = true;
 
                             break;
@@ -248,7 +245,10 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
             }
 
             if(!found){
-                //TODO If not end_reached, read the next cluster
+                //There are more cluster to read
+                if(!end_reached){
+                    //TODO If not end_reached, read the next cluster
+                }
 
                 return std::make_pair(false, 0);
             }
@@ -258,7 +258,7 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
     return std::make_pair(false, 0);
 }
 
-std::pair<bool, std::unique_heap_array<cluster_entry>> find_cluster(fat32::dd disk, const std::vector<std::string>& path){
+std::pair<bool, std::unique_heap_array<cluster_entry>> find_directory_cluster(fat32::dd disk, const std::vector<std::string>& path){
     auto cluster_number = find_cluster_number(disk, path);
 
     if(cluster_number.first){
@@ -344,8 +344,7 @@ std::vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& p
         return {};
     }
 
-    auto cluster = find_cluster(disk, path);
-
+    auto cluster = find_directory_cluster(disk, path);
     if(cluster.first){
         return files(cluster.second);
     } else {
@@ -358,7 +357,7 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
         return {};
     }
 
-    auto result = find_cluster(disk, path);
+    auto result = find_directory_cluster(disk, path);
 
     if(result.first){
         auto& directory_cluster = result.second;
