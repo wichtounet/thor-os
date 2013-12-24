@@ -277,12 +277,12 @@ void get_deterministic_cache_parameters(){
             k_print("Unified Cache:     ");
         }
 
-        k_printf( "Level %d: ", (eax & 0xE0)/32 );
-        k_printf( "Max Threads %d: ", ((eax & 0x03FFC000)/(8192))+1 );
-        k_printf( "Max Procs. %d: " ,  ((eax & 0xFC000000)/(4*256*65536))+1 );
-        k_printf( "Line Size = %d: ", (ebx & 0xFFF ) + 1 );
-        k_printf( "Associativity = %d: ", ((ebx & 0xFFC00000)/4*16*65536) + 1 );
-        k_printf( "Sets = %d:\n", ecx + 1 );
+        k_printf( "Level %u: ", (eax & 0xE0)/32 );
+        k_printf( "Max Threads %u: ", ((eax & 0x03FFC000)/(8192))+1 );
+        k_printf( "Max Procs. %u: " ,  ((eax & 0xFC000000)/(4*256*65536))+1 );
+        k_printf( "Line Size = %u: ", (ebx & 0xFFF ) + 1 );
+        k_printf( "Associativity = %u: ", ((ebx & 0xFFC00000)/4*16*65536) + 1 );
+        k_printf( "Sets = %u:\n", ecx + 1 );
 
         ++caches;
     }
@@ -331,12 +331,12 @@ void get_base_info(){
 
     native_cpuid(1, &eax, &ebx, &ecx, &edx);
 
-    k_printf("Stepping: %d\n", eax & 0xF);
-    k_printf("Model: %d\n", (eax >> 4) & 0xF);
-    k_printf("Family: %d\n", (eax >> 8) & 0xF);
-    k_printf("Processor Type: %d\n", (eax >> 12) & 0x3);
-    k_printf("Extended Model: %d\n", (eax >> 16) & 0xF);
-    k_printf("Extended Family: %d\n", (eax >> 20) & 0xFF);
+    k_printf("Stepping: %u\n", eax & 0xF);
+    k_printf("Model: %u\n", (eax >> 4) & 0xF);
+    k_printf("Family: %u\n", (eax >> 8) & 0xF);
+    k_printf("Processor Type: %u\n", (eax >> 12) & 0x3);
+    k_printf("Extended Model: %u\n", (eax >> 16) & 0xF);
+    k_printf("Extended Family: %u\n", (eax >> 20) & 0xFF);
 }
 
 } //end of anonymous namespace

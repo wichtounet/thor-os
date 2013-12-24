@@ -454,8 +454,8 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
 
     if(read_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
-        auto end = -1;
-        auto free = -1;
+        int64_t end = -1;
+        int64_t free = -1;
         for(size_t i = 0; i < directory_cluster.size(); ++i){
             auto& entry = directory_cluster[i];
 
@@ -469,9 +469,6 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
                 break;
             }
         }
-
-        k_printf("end=%d\n", end);
-        k_printf("free=%d\n", free);
     }
 
     return false;

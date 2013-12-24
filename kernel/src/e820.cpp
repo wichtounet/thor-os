@@ -20,7 +20,7 @@ size_t _available_memory;
 
 void e820::finalize_memory_detection(){
     if(bios_e820_entry_count > 0){
-        for(uint64_t i = 0; i < bios_e820_entry_count; ++i){
+        for(int64_t i = 0; i < bios_e820_entry_count; ++i){
             auto& bios_entry = bios_e820_entries[i];
             auto& os_entry = e820_mmap[i];
 

@@ -84,6 +84,16 @@ void print_unsigned(D number){
     }
 }
 
+template<int B, typename U, typename D>
+void print_signed(D number){
+    if(number < 0){
+        k_print('-');
+        print_unsigned<B>(static_cast<U>(-1 * number));
+    } else {
+        print_unsigned<B>(static_cast<U>(number));
+    }
+}
+
 } //end of anonymous namespace
 
 void set_column(long column){
@@ -116,6 +126,22 @@ void k_print(uint32_t number){
 
 void k_print(uint64_t number){
     print_unsigned<20>(number);
+}
+
+void k_print(int8_t number){
+    print_signed<3,uint8_t>(number);
+}
+
+void k_print(int16_t number){
+    print_signed<5,uint16_t>(number);
+}
+
+void k_print(int32_t number){
+    print_signed<10,uint32_t>(number);
+}
+
+void k_print(int64_t number){
+    print_signed<20,uint64_t,int64_t>(number);
 }
 
 void next_line(){
@@ -223,8 +249,33 @@ void k_printf(const char* fmt, ...){
 
             auto prev = current_column;
 
-            //Unsigned Decimal
+            //Signed decimal
             if(ch == 'd'){
+                auto arg = va_arg(va, int64_t);
+
+                if(min_digits > 0){
+                    size_t d = digits(arg);
+                    if(min_digits > d){
+                        min_digits -= d;
+
+                        if(arg < 0){
+                            arg *= -1;
+                            k_print('-');
+                        }
+
+                        while(min_digits > 0){
+                            while(min_digits > 0){
+                                k_print('0');
+                                --min_digits;
+                            }
+                        }
+                    }
+                }
+
+                k_print(arg);
+            }
+            //Unsigned Decimal
+            else if(ch == 'u'){
                 auto arg = va_arg(va, uint64_t);
 
                 if(min_digits > 0){

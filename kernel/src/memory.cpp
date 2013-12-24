@@ -150,7 +150,7 @@ void debug_malloc(const char* point = nullptr){
 
         k_print(" next: ");
         do {
-            k_printf("%d%h -> ", static_cast<size_t>(it->is_free()), reinterpret_cast<uint64_t>(it));
+            k_printf("%u%h -> ", static_cast<size_t>(it->is_free()), reinterpret_cast<uint64_t>(it));
             it = it->next();
         } while(it != malloc_head);
 
@@ -296,7 +296,7 @@ void* k_malloc(uint64_t bytes){
         reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
 
     if(TRACE_MALLOC){
-        k_printf("m %d(%d) %h ", bytes, current->size(), reinterpret_cast<uint64_t>(b));
+        k_printf("m %u(%u) %h ", bytes, current->size(), reinterpret_cast<uint64_t>(b));
     }
 
     return b;
@@ -372,7 +372,7 @@ void k_free(void* block){
     }
 
     if(TRACE_MALLOC){
-        k_printf("f %d %h ", free_header->size(), reinterpret_cast<uint64_t>(block));
+        k_printf("f %u %h ", free_header->size(), reinterpret_cast<uint64_t>(block));
     }
 
     //Less memory is used
@@ -406,7 +406,7 @@ void memory_debug(){
 
     auto it = malloc_head;
 
-    k_printf("malloc overhead: %d\n", META_SIZE);
+    k_printf("malloc overhead: %u\n", META_SIZE);
     k_print("Free blocks:");
     do {
         if(!it->is_free()){
@@ -418,14 +418,14 @@ void memory_debug(){
             ++inconsistent;
         }
 
-        k_printf("b(%d) ", it->size());
+        k_printf("b(%u) ", it->size());
         memory_free += it->size();
 
         it = it->next();
     } while(it != malloc_head);
 
     k_print_line();
-    k_printf("memory free in malloc chain: %m (%d)\n", memory_free, memory_free);
-    k_printf("There are %d non free blocks in the free list\n", non_free_blocks);
-    k_printf("There are %d inconsistent sized blocks in the free list\n", inconsistent);
+    k_printf("memory free in malloc chain: %m (%u)\n", memory_free, memory_free);
+    k_printf("There are %u non free blocks in the free list\n", non_free_blocks);
+    k_printf("There are %u inconsistent sized blocks in the free list\n", inconsistent);
 }

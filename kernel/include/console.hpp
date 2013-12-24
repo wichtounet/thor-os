@@ -30,6 +30,11 @@ void k_print(uint16_t number);
 void k_print(uint32_t number);
 void k_print(uint64_t number);
 
+void k_print(int8_t number);
+void k_print(int16_t number);
+void k_print(int32_t number);
+void k_print(int64_t number);
+
 void k_printf(const char* fmt, ...);
 
 template<typename... Arguments>

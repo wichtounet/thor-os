@@ -74,8 +74,8 @@ struct regs {
 extern "C" {
 
 void _fault_handler(regs regs){
-    k_printf("Exception (%d) occured\n", regs.error_no);
-    k_printf("error_code=%d\n", regs.error_code);
+    k_printf("Exception (%u) occured\n", regs.error_no);
+    k_printf("error_code=%u\n", regs.error_code);
     k_printf("rip=%h\n", regs.rip);
     k_printf("rflags=%h\n", regs.rflags);
     k_printf("cs=%h\n", regs.cs);

@@ -228,7 +228,7 @@ void help_command(const std::vector<std::string>&){
 }
 
 void uptime_command(const std::vector<std::string>&){
-    k_printf("Uptime: %ds\n", timer_seconds());
+    k_printf("Uptime: %us\n", timer_seconds());
 }
 
 #define CURRENT_YEAR        2013
@@ -320,7 +320,7 @@ void date_command(const std::vector<std::string>&){
         year += 100;
     }
 
-    k_printf("%d.%d.%d %d:%.2d:%.2d\n", day, month, year, hour, minute, second);
+    k_printf("%u.%u.%u %u:%.2d:%.2d\n", day, month, year, hour, minute, second);
 }
 
 void sleep_command(const std::vector<std::string>& params){
@@ -339,7 +339,7 @@ void mmap_command(const std::vector<std::string>&){
     if(e820::mmap_failed()){
         k_print_line("The mmap was not correctly loaded from e820");
     } else {
-        k_printf("There are %d mmap entry\n", e820::mmap_entry_count());
+        k_printf("There are %u mmap entry\n", e820::mmap_entry_count());
 
         k_print_line("Base         End          Size                  Type");
         for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
@@ -386,13 +386,13 @@ void partitions_command(const std::vector<std::string>& params){
             k_print_line("UUID       Type         Start      Sectors");
 
             for(auto& partition : partitions){
-                k_printf("%10d %12s %10d %d\n", partition.uuid,
+                k_printf("%10d %12s %10d %u\n", partition.uuid,
                     disks::partition_type_to_string(partition.type),
                     partition.start, partition.sectors);
             }
         }
     } else {
-        k_printf("Disks %d does not exist\n", uuid);
+        k_printf("Disks %u does not exist\n", uuid);
     }
 }
 
@@ -402,7 +402,7 @@ void mount_command(const std::vector<std::string>& params){
         auto mp = disks::mounted_partition();
 
         if(md && mp){
-            k_printf("%d:%d is mounted\n", md->uuid, mp->uuid);
+            k_printf("%u:%u is mounted\n", md->uuid, mp->uuid);
         } else {
             k_print_line("Nothing is mounted");
         }
@@ -415,10 +415,10 @@ void mount_command(const std::vector<std::string>& params){
             if(disks::partition_exists(disk, partition_uuid)){
                 disks::mount(disk, partition_uuid);
             } else {
-                k_printf("Partition %d does not exist\n", partition_uuid);
+                k_printf("Partition %u does not exist\n", partition_uuid);
             }
         } else {
-            k_printf("Disk %d does not exist\n", disk_uuid);
+            k_printf("Disk %u does not exist\n", disk_uuid);
         }
     }
 }
