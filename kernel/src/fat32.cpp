@@ -277,22 +277,6 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
     return std::make_pair(false, 0);
 }
 
-std::pair<bool, std::unique_heap_array<cluster_entry>> find_directory_cluster(fat32::dd disk, const std::vector<std::string>& path){
-    auto cluster_number = find_cluster_number(disk, path);
-
-    if(cluster_number.first){
-        std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
-
-        if(read_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, cluster.get())){
-            return std::make_pair(true, std::move(cluster));
-        } else {
-            return std::make_pair(false, std::unique_heap_array<cluster_entry>());
-        }
-    }
-
-    return std::make_pair(false, std::unique_heap_array<cluster_entry>());
-}
-
 std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& path){
     auto cluster_number_search = find_cluster_number(disk, path);
     if(!cluster_number_search.first){
@@ -460,6 +444,34 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
 bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const std::vector<std::string>& path, const std::string& directory){
     if(!cache_disk_partition(disk, partition)){
         return false;
+    }
+
+    auto cluster_number = find_cluster_number(disk, path);
+    if(!cluster_number.first){
+        return false;
+    }
+
+    std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
+
+    if(read_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
+        auto end = -1;
+        auto free = -1;
+        for(size_t i = 0; i < directory_cluster.size(); ++i){
+            auto& entry = directory_cluster[i];
+
+            if(end_of_directory(entry)){
+                end = i;
+                continue;
+            }
+
+            if(!entry_used(entry)){
+                free = i;
+                break;
+            }
+        }
+
+        k_printf("end=%d\n", end);
+        k_printf("free=%d\n", free);
     }
 
     return false;

@@ -223,7 +223,7 @@ void k_printf(const char* fmt, ...){
 
             auto prev = current_column;
 
-            //Decimal
+            //Unsigned Decimal
             if(ch == 'd'){
                 auto arg = va_arg(va, uint64_t);
 
