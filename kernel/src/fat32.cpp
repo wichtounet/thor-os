@@ -515,7 +515,11 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
         new_directory_entry.cluster_high = 0;
         new_directory_entry.cluster_low = 0;
 
-        //TODO Write the sector to the disk
+        if(!write_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            return false;
+        }
+
+        return true;
     }
 
     return false;

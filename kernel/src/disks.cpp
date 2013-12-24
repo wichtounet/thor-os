@@ -122,6 +122,16 @@ bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t co
     }
 }
 
+bool disks::write_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination){
+    switch(disk.type){
+        case disk_type::ATA:
+            return ata::write_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), start, count, destination);
+
+        default:
+            return false;
+    }
+}
+
 std::unique_heap_array<disks::partition_descriptor> disks::partitions(const disk_descriptor& disk){
     std::unique_ptr<boot_record_t> boot_record(new boot_record_t());
 
