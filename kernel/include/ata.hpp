@@ -24,6 +24,7 @@ uint8_t number_of_disks();
 drive_descriptor& drive(uint8_t disk);
 
 bool read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination);
+bool write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* source);
 
 }
 

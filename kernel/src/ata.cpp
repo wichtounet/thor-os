@@ -118,6 +118,77 @@ bool select_device(ata::drive_descriptor& drive){
     return true;
 }
 
+bool read_write_sectors(ata::drive_descriptor& drive, uint64_t start, uint8_t count, void* data, bool read){
+    //Select the device
+    if(!select_device(drive)){
+        return false;
+    }
+
+    auto controller = drive.controller;
+
+    uint8_t sc = start & 0xFF;
+    uint8_t cl = (start >> 8) & 0xFF;
+    uint8_t ch = (start >> 16) & 0xFF;
+    uint8_t hd = (start >> 24) & 0x0F;
+
+    auto command = read ? ATA_READ_BLOCK : ATA_WRITE_BLOCK;
+
+    //Process the command
+    out_byte(controller + ATA_NSECTOR, count);
+    out_byte(controller + ATA_SECTOR, sc);
+    out_byte(controller + ATA_LCYL, cl);
+    out_byte(controller + ATA_HCYL, ch);
+    out_byte(controller + ATA_DRV_HEAD, (1 << 6) | (drive.slave << 4) | hd);
+    out_byte(controller + ATA_COMMAND, command);
+
+    //Wait at least 400ns before reading status register
+    sleep_ms(1);
+
+    //Wait at most 30 seconds for BSY flag to be cleared
+    if(!wait_for_controller(controller, ATA_STATUS_BSY, 0, 30000)){
+        return false;
+    }
+
+    //Verify if there are errors
+    if(in_byte(controller + ATA_STATUS) & ATA_STATUS_ERR){
+        return false;
+    }
+
+    uint16_t* buffer = reinterpret_cast<uint16_t*>(data);
+
+    if(!read){
+        //Send the data to the controller
+        for(uint8_t sector = 0; sector < count; ++sector){
+            for(int i = 0; i < 256; ++i){
+                out_word(controller + ATA_DATA, *buffer++);
+            }
+        }
+    }
+
+    //Wait the IRQ to happen
+    if(controller == ATA_PRIMARY){
+        ata_wait_irq_primary();
+    } else {
+        ata_wait_irq_secondary();
+    }
+
+    //The device can report an error after the IRQ
+    if(in_byte(controller + ATA_STATUS) & ATA_STATUS_ERR){
+        return false;
+    }
+
+    if(read){
+        //Read the disk sectors
+        for(uint8_t sector = 0; sector < count; ++sector){
+            for(int i = 0; i < 256; ++i){
+                *buffer++ = in_word(controller + ATA_DATA);
+            }
+        }
+    }
+
+    return true;
+}
+
 } //end of anonymous namespace
 
 void ata::detect_disks(){
@@ -150,59 +221,9 @@ ata::drive_descriptor& ata::drive(uint8_t disk){
 }
 
 bool ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination){
-    //Select the device
-    if(!select_device(drive)){
-        return false;
-    }
+    return read_write_sectors(drive, start, count, destination, true);
+}
 
-    auto controller = drive.controller;
-
-    uint8_t sc = start & 0xFF;
-    uint8_t cl = (start >> 8) & 0xFF;
-    uint8_t ch = (start >> 16) & 0xFF;
-    uint8_t hd = (start >> 24) & 0x0F;
-
-    //Process the command
-    out_byte(controller + ATA_NSECTOR, count);
-    out_byte(controller + ATA_SECTOR, sc);
-    out_byte(controller + ATA_LCYL, cl);
-    out_byte(controller + ATA_HCYL, ch);
-    out_byte(controller + ATA_DRV_HEAD, (1 << 6) | (drive.slave << 4) | hd);
-    out_byte(controller + ATA_COMMAND, ATA_READ_BLOCK);
-
-    //Wait at least 400ns before reading status register
-    sleep_ms(1);
-
-    //Wait at most 30 seconds for BSY flag to be cleared
-    if(!wait_for_controller(controller, ATA_STATUS_BSY, 0, 30000)){
-        return false;
-    }
-
-    //Verify if there are errors
-    if(in_byte(controller + ATA_STATUS) & ATA_STATUS_ERR){
-        return false;
-    }
-
-    //Wait the IRQ to happen
-    if(controller == ATA_PRIMARY){
-        ata_wait_irq_primary();
-    } else {
-        ata_wait_irq_secondary();
-    }
-
-    //The device can report an error after the IRQ
-    if(in_byte(controller + ATA_STATUS) & ATA_STATUS_ERR){
-        return false;
-    }
-
-    uint16_t* buffer = reinterpret_cast<uint16_t*>(destination);
-
-    //Read the disk sectors
-    for(uint8_t sector = 0; sector < count; ++sector){
-        for(int i = 0; i < 256; ++i){
-            *buffer++ = in_word(controller + ATA_DATA);
-        }
-    }
-
-    return true;
+bool ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* source){
+    return read_write_sectors(drive, start, count, source, false);
 }
