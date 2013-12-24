@@ -66,6 +66,7 @@ void unmount();
 std::vector<file> ls();
 uint64_t free_size();
 
+bool mkdir(const std::string& directory);
 std::string read_file(const std::string& file);
 
 const disk_descriptor* mounted_disk();

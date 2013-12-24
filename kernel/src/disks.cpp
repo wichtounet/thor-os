@@ -237,3 +237,11 @@ std::string disks::read_file(const std::string& file){
 
     return fat32::read_file(*_mounted_disk, *_mounted_partition, pwd, file);
 }
+
+bool disks::mkdir(const std::string& directory){
+    if(!_mounted_disk || !_mounted_partition){
+        return false;
+    }
+
+    return fat32::mkdir(*_mounted_disk, *_mounted_partition, pwd, directory);
+}

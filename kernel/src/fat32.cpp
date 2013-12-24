@@ -456,3 +456,11 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
 
     return std::move(content);
 }
+
+bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const std::vector<std::string>& path, const std::string& directory){
+    if(!cache_disk_partition(disk, partition)){
+        return false;
+    }
+
+    return false;
+}

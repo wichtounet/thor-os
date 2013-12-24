@@ -58,6 +58,7 @@ void cd_command(const std::vector<std::string>& params);
 void pwd_command(const std::vector<std::string>& params);
 void free_command(const std::vector<std::string>& params);
 void cat_command(const std::vector<std::string>& params);
+void mkdir_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
 
 struct command_definition {
@@ -65,7 +66,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[21] = {
+command_definition commands[22] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -86,6 +87,7 @@ command_definition commands[21] = {
     {"pwd", pwd_command},
     {"sysinfo", sysinfo_command},
     {"cat", cat_command},
+    {"mkdir", mkdir_command},
     {"shutdown", shutdown_command},
 };
 
@@ -574,6 +576,29 @@ void cat_command(const std::vector<std::string>& params){
         } else {
             k_print("cd: No such file or directory: ");
             k_print_line(params[1]);
+        }
+    }
+}
+
+void mkdir_command(const std::vector<std::string>& params){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    if(params.size() == 1){
+        k_print_line("No directory provided");
+    } else {
+        auto& directory_name = params[1];
+        auto directory = find_file(directory_name);
+
+        if(directory){
+            k_printf("mkdir: Cannot create directory '%s': File exists\n", directory_name.c_str());
+        } else {
+            if(!disks::mkdir(directory_name)){
+                k_print_line("Directory creation failed");
+            }
         }
     }
 }
