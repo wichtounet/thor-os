@@ -469,6 +469,53 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
                 break;
             }
         }
+
+        if(free < 0){
+            //TODO Read the next cluster to find an empty entry
+            k_print_line("Unsupported");
+            return false;
+        }
+
+        if(end > 0 && end < free){
+            //TODO Move end_of_directory into free and use end as free
+            k_print_line("Unsupported");
+            return false;
+        }
+
+        auto& new_directory_entry = directory_cluster[free];
+
+        //Copy the name into the entry
+        size_t i = 0;
+        for(; i < 11 && i < directory.size(); ++i){
+            new_directory_entry.name[i] = directory[i];
+        }
+
+        for(; i < 11; ++i){
+            new_directory_entry.name[i] = ' ';
+        }
+
+        //For now, date and time are not supported
+        new_directory_entry.creation_time = 0;
+        new_directory_entry.creation_time_seconds = 0;
+        new_directory_entry.creation_date = 0;
+        new_directory_entry.accessed_date = 0;
+        new_directory_entry.modification_date = 0;
+        new_directory_entry.modification_time = 0;
+
+        //Clear reserved bits
+        new_directory_entry.reserved = 0;
+
+        //Mark it as a directory
+        new_directory_entry.attrib = 1 << 4;
+
+        //Size is only set for files
+        new_directory_entry.file_size = 0;
+
+        //TODO Find a new cluster and set it
+        new_directory_entry.cluster_high = 0;
+        new_directory_entry.cluster_low = 0;
+
+        //TODO Write the sector to the disk
     }
 
     return false;
