@@ -43,6 +43,7 @@ struct file {
     bool hidden;
     bool system;
     uint64_t size;
+    uint64_t location; //fs-specific
 };
 
 void detect_disks();

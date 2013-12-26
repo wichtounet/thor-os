@@ -448,6 +448,8 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
                     file.size = entry.file_size;
                 }
 
+                file.location = entry.cluster_low + (entry.cluster_high << 16);
+
                 files.push_back(file);
             }
         }
