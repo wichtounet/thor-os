@@ -282,13 +282,11 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
             auto& p = path[i];
 
             bool found = false;
-            bool end_reached = false;
 
             while(!found){
                 for(auto& entry : current_cluster){
                     if(end_of_directory(entry)){
-                        end_reached = true;
-                        break;
+                        return std::make_pair(false, 0);
                     }
 
                     if(entry_used(entry) && !is_long_name(entry) && (i == path.size() - 1 || entry.attrib & 0x10)){
@@ -317,7 +315,7 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
                 }
 
                 //If not found, try the next cluster, if any
-                if(!end_reached && !found){
+                if(!found){
                     cluster_number = next_cluster(disk, cluster_number);
 
                     //If there are no more cluster, return false
