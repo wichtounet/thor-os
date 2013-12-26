@@ -13,8 +13,6 @@
 #include "stl/algorithms.hpp"
 #include "stl/pair.hpp"
 
-#define is_type_signed(my_type) ((static_cast<my_type>(-1)) < 0)
-
 namespace {
 
 //FAT 32 Boot Sector
@@ -130,16 +128,11 @@ uint64_t cluster_lba(uint64_t cluster){
 
 uint32_t read_fat_value(fat32::dd disk, uint32_t cluster){
     uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
-    uint32_t cluster_size = 512 * fat_bs->sectors_per_cluster;
+    uint64_t fat_sector = fat_begin + (cluster * sizeof(uint32_t)) / 512;
 
-    uint64_t fat_sector = fat_begin + (cluster * 4) / cluster_size;
-
-    //TODO It is not necessary to read the FAT one cluster at a time, one sector
-    //is enought
-
-    std::unique_heap_array<uint32_t> fat_table(cluster_size / sizeof(uint32_t));
-    if(read_sectors(disk, fat_sector, fat_bs->sectors_per_cluster, fat_table.get())){
-        uint64_t entry_offset = ((cluster * 4) % cluster_size) / 4;
+    std::unique_heap_array<uint32_t> fat_table(512 / sizeof(uint32_t));
+    if(read_sectors(disk, fat_sector, 1, fat_table.get())){
+        uint64_t entry_offset = cluster % 512;
         return fat_table[entry_offset] & 0x0FFFFFFF;
     } else {
         return 0;
@@ -148,25 +141,20 @@ uint32_t read_fat_value(fat32::dd disk, uint32_t cluster){
 
 bool write_fat_value(fat32::dd disk, uint32_t cluster, uint32_t value){
     uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
-    uint32_t cluster_size = 512 * fat_bs->sectors_per_cluster;
-
-    uint64_t fat_sector = fat_begin + (cluster * 4) / cluster_size;
-
-    //TODO It is not necessary to read the FAT one cluster at a time, one sector
-    //is enought
+    uint64_t fat_sector = fat_begin + (cluster * sizeof(uint32_t)) / 512;
 
     //Read the cluster we need to alter
-    std::unique_heap_array<uint32_t> fat_table(cluster_size / sizeof(uint32_t));
-    if(!read_sectors(disk, fat_sector, fat_bs->sectors_per_cluster, fat_table.get())){
+    std::unique_heap_array<uint32_t> fat_table(512 / sizeof(uint32_t));
+    if(!read_sectors(disk, fat_sector, 1, fat_table.get())){
         return false;
     }
 
     //Set the entry to the given value
-    uint64_t entry_offset = ((cluster * 4) % cluster_size) / 4;
+    uint64_t entry_offset = cluster % 512;
     fat_table[entry_offset] = value;
 
     //Write back the cluster
-    return write_sectors(disk, fat_sector, fat_bs->sectors_per_cluster, fat_table.get());
+    return write_sectors(disk, fat_sector, 1, fat_table.get());
 }
 
 uint32_t next_cluster(fat32::dd disk, uint32_t cluster){
