@@ -495,6 +495,8 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
         return {};
     }
 
+    uint32_t cluster_number;
+
     size_t file_size = 0;
     auto found = false;
     auto all_files = files(disk, path);
@@ -502,6 +504,7 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
         if(f.file_name == file){
             found = true;
             file_size = f.size;
+            cluster_number = f.location;
             break;
         }
     }
@@ -509,20 +512,6 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
     if(!found){
         return {};
     }
-
-    std::vector<std::string> complete_path;
-    for(auto& p : path){
-        complete_path.push_back(p);
-    }
-    complete_path.push_back(file);
-
-    auto cluster_number_search = find_cluster_number(disk, complete_path);
-
-    if(!cluster_number_search.first){
-        return {};
-    }
-
-    auto cluster_number = cluster_number_search.second;
 
     std::string content(file_size + 1);
 
