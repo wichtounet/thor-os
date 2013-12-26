@@ -13,6 +13,8 @@
 #include "stl/algorithms.hpp"
 #include "stl/pair.hpp"
 
+#define is_type_signed(my_type) ((static_cast<my_type>(-1)) < 0)
+
 namespace {
 
 //FAT 32 Boot Sector
@@ -113,6 +115,12 @@ void cache_is(fat32::dd disk, const disks::partition_descriptor& partition){
     }
 }
 
+bool write_is(fat32::dd disk, const disks::partition_descriptor& partition){
+    auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
+
+    return write_sectors(disk, fs_information_sector, 1, fat_is);
+}
+
 uint64_t cluster_lba(uint64_t cluster){
     uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
     uint64_t cluster_begin = fat_begin + (fat_bs->number_of_fat * fat_bs->sectors_per_fat_long);
@@ -126,6 +134,9 @@ uint32_t read_fat_value(fat32::dd disk, uint32_t cluster){
 
     uint64_t fat_sector = fat_begin + (cluster * 4) / cluster_size;
 
+    //TODO It is not necessary to read the FAT one cluster at a time, one sector
+    //is enought
+
     std::unique_heap_array<uint32_t> fat_table(cluster_size / sizeof(uint32_t));
     if(read_sectors(disk, fat_sector, fat_bs->sectors_per_cluster, fat_table.get())){
         uint64_t entry_offset = ((cluster * 4) % cluster_size) / 4;
@@ -135,6 +146,29 @@ uint32_t read_fat_value(fat32::dd disk, uint32_t cluster){
     }
 }
 
+bool write_fat_value(fat32::dd disk, uint32_t cluster, uint32_t value){
+    uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
+    uint32_t cluster_size = 512 * fat_bs->sectors_per_cluster;
+
+    uint64_t fat_sector = fat_begin + (cluster * 4) / cluster_size;
+
+    //TODO It is not necessary to read the FAT one cluster at a time, one sector
+    //is enought
+
+    //Read the cluster we need to alter
+    std::unique_heap_array<uint32_t> fat_table(cluster_size / sizeof(uint32_t));
+    if(!read_sectors(disk, fat_sector, fat_bs->sectors_per_cluster, fat_table.get())){
+        return false;
+    }
+
+    //Set the entry to the given value
+    uint64_t entry_offset = ((cluster * 4) % cluster_size) / 4;
+    fat_table[entry_offset] = value;
+
+    //Write back the cluster
+    return write_sectors(disk, fat_sector, fat_bs->sectors_per_cluster, fat_table.get());
+}
+
 uint32_t next_cluster(fat32::dd disk, uint32_t cluster){
     auto fat_value = read_fat_value(disk, cluster);
     if(fat_value >= 0x0FFFFFF8){
@@ -142,6 +176,41 @@ uint32_t next_cluster(fat32::dd disk, uint32_t cluster){
     }
 
     return fat_value;
+}
+
+uint32_t fat_size(){
+    return fat_bs->sectors_per_fat_long + fat_bs->sectors_per_fat;
+}
+
+uint32_t find_free_cluster(fat32::dd disk){
+    uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
+
+    auto entries_per_sector = 512 / sizeof(uint32_t);
+
+    std::unique_heap_array<uint32_t> fat_table(entries_per_sector);
+
+    for(size_t j = 0; j < fat_size(); ++j){
+        uint64_t fat_sector = fat_begin + j * fat_bs->sectors_per_cluster;
+
+        if(!read_sectors(disk, fat_sector, 1, fat_table.get())){
+            return 0; //0 is not a valid cluster number, indicates failure
+        }
+
+        for(size_t i = 0; i < fat_table.size(); ++i){
+            //Cluster 0 and 1 are not valid cluster
+            if(j == 0 && i < 2){
+                continue;
+            }
+
+            auto value = fat_table[i] & 0x0FFFFFFF;
+
+            if(value == 0x0){
+                return i + j * entries_per_sector;
+            }
+        }
+    }
+
+    return 0; //0 is not a valid cluster number, indicates failure
 }
 
 inline bool entry_used(const cluster_entry& entry){
@@ -198,11 +267,12 @@ bool cache_disk_partition(fat32::dd disk, const disks::partition_descriptor& par
 }
 
 std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<std::string>& path){
+    auto cluster_number = fat_bs->root_directory_cluster_start;
+
     if(path.empty()){
-        return std::make_pair(true, static_cast<uint32_t>(fat_bs->root_directory_cluster_start));
+        return std::make_pair(true, cluster_number);
     }
 
-    auto cluster_number = fat_bs->root_directory_cluster_start;
     auto cluster_addr = cluster_lba(cluster_number);
 
     std::unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
@@ -354,6 +424,38 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
     return std::move(files);
 }
 
+void init_directory_entry(cluster_entry& entry, const char* name, uint32_t cluster){
+    //Copy the name into the entry
+    size_t i = 0;
+    for(; i < 11 && *name; ++i){
+        entry.name[i] = *name++;
+    }
+
+    for(; i < 11; ++i){
+        entry.name[i] = ' ';
+    }
+
+    //For now, date and time are not supported
+    entry.creation_time = 0;
+    entry.creation_time_seconds = 0;
+    entry.creation_date = 0;
+    entry.accessed_date = 0;
+    entry.modification_date = 0;
+    entry.modification_time = 0;
+
+    //Clear reserved bits
+    entry.reserved = 0;
+
+    //Mark it as a directory
+    entry.attrib = 1 << 4;
+
+    //Size is only set for files
+    entry.file_size = 0;
+
+    entry.cluster_low = static_cast<uint16_t>(cluster);
+    entry.cluster_high = static_cast<uint16_t>(cluster >> 16);
+}
+
 } //end of anonymous namespace
 
 uint64_t fat32::free_size(dd disk, const disks::partition_descriptor& partition){
@@ -482,40 +584,47 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
             return false;
         }
 
+        auto cluster = find_free_cluster(disk);
+
         auto& new_directory_entry = directory_cluster[free];
 
-        //Copy the name into the entry
-        size_t i = 0;
-        for(; i < 11 && i < directory.size(); ++i){
-            new_directory_entry.name[i] = directory[i];
+        init_directory_entry(new_directory_entry, directory.c_str(), cluster);
+
+        //This cluster is the end of the chain
+        if(!write_fat_value(disk, cluster, 0x0FFFFFF8)){
+            return false;
         }
 
-        for(; i < 11; ++i){
-            new_directory_entry.name[i] = ' ';
-        }
-
-        //For now, date and time are not supported
-        new_directory_entry.creation_time = 0;
-        new_directory_entry.creation_time_seconds = 0;
-        new_directory_entry.creation_date = 0;
-        new_directory_entry.accessed_date = 0;
-        new_directory_entry.modification_date = 0;
-        new_directory_entry.modification_time = 0;
-
-        //Clear reserved bits
-        new_directory_entry.reserved = 0;
-
-        //Mark it as a directory
-        new_directory_entry.attrib = 1 << 4;
-
-        //Size is only set for files
-        new_directory_entry.file_size = 0;
-
-        //TODO Find a new cluster and set it
-        new_directory_entry.cluster_high = 0;
-        new_directory_entry.cluster_low = 0;
-
+        //Write back the parent directory cluster
         if(!write_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            return false;
+        }
+
+        //One cluster is now used for the directory entries
+        fat_is->free_clusters -= 1;
+        if(!write_is(disk, partition)){
+            return false;
+        }
+
+        //Update the directory entries
+        std::unique_heap_array<cluster_entry> new_directory_cluster(16 * fat_bs->sectors_per_cluster);
+
+        auto& dot_entry = new_directory_cluster[0];
+        init_directory_entry(dot_entry, ".", cluster);
+
+        auto& dot_dot_entry = new_directory_cluster[1];
+        init_directory_entry(dot_dot_entry, "..", cluster_number.second);
+
+        //Mark everything as unused
+        for(size_t j = 2; j < new_directory_cluster.size() - 1; ++j){
+            new_directory_cluster[j].name[0] = 0xE5;
+        }
+
+        //End of directory
+        new_directory_cluster[new_directory_cluster.size() - 1].name[0] = 0x0;
+
+        //Write the directory entries to the disk
+        if(!write_sectors(disk, cluster_lba(cluster), fat_bs->sectors_per_cluster, new_directory_cluster.get())){
             return false;
         }
 
