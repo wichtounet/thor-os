@@ -266,104 +266,18 @@ bool cache_disk_partition(fat32::dd disk, const disks::partition_descriptor& par
     return fat_bs && fat_is;
 }
 
-std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<std::string>& path){
-    auto cluster_number = fat_bs->root_directory_cluster_start;
-
-    if(path.empty()){
-        return std::make_pair(true, cluster_number);
-    }
-
-    auto cluster_addr = cluster_lba(cluster_number);
-
-    std::unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
-
-    if(read_sectors(disk, cluster_addr, fat_bs->sectors_per_cluster, current_cluster.get())){
-        for(size_t i = 0; i < path.size(); ++i){
-            auto& p = path[i];
-
-            bool found = false;
-
-            while(!found){
-                for(auto& entry : current_cluster){
-                    if(end_of_directory(entry)){
-                        return std::make_pair(false, 0);
-                    }
-
-                    if(entry_used(entry) && !is_long_name(entry) && (i == path.size() - 1 || entry.attrib & 0x10)){
-                        //entry.name is not a real c_string, cannot be compared
-                        //directly
-                        if(filename_equals(entry.name, p)){
-                            cluster_number = entry.cluster_low + (entry.cluster_high << 16);
-
-                            //If it is the last part of the path, just return the
-                            //number
-                            if(i == path.size() - 1){
-                                return std::make_pair(true, cluster_number);
-                            }
-
-                            //Otherwise, continue deeper in the search
-
-                            if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, current_cluster.get())){
-                                found = true;
-
-                                break;
-                            } else {
-                                return std::make_pair(false, 0);
-                            }
-                        }
-                    }
-                }
-
-                //If not found, try the next cluster, if any
-                if(!found){
-                    cluster_number = next_cluster(disk, cluster_number);
-
-                    //If there are no more cluster, return false
-                    if(!cluster_number){
-                        return std::make_pair(false, 0);
-                    }
-
-                    //The block is corrupted
-                    if(cluster_number == 0x0FFFFFF7){
-                        return std::make_pair(false, 0);
-                    }
-
-                    //Read the next cluster in the chain
-                    if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, current_cluster.get())){
-                        return std::make_pair(false, 0);
-                    }
-                }
-            }
-
-            //If still not found at this point, return false
-            if(!found){
-                return std::make_pair(false, 0);
-            }
-        }
-    }
-
-    return std::make_pair(false, 0);
-}
-
-std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& path){
-    auto cluster_number_search = find_cluster_number(disk, path);
-    if(!cluster_number_search.first){
-        return {};
-    }
-
+std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
     std::vector<disks::file> files;
 
     bool end_reached = false;
 
     bool long_name = false;
-    char long_name_buffer[257];
+    char long_name_buffer[256];
     size_t i = 0;
 
+    std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
+
     while(!end_reached){
-        auto cluster_number = cluster_number_search.second;
-
-        std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
-
         if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
             return std::move(files);
         }
@@ -470,6 +384,60 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
     }
 
     return std::move(files);
+}
+
+std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<std::string>& path){
+    auto cluster_number = fat_bs->root_directory_cluster_start;
+
+    if(path.empty()){
+        return std::make_pair(true, cluster_number);
+    }
+
+    std::unique_heap_array<cluster_entry> current_cluster(16 * fat_bs->sectors_per_cluster);
+
+    for(size_t i = 0; i < path.size(); ++i){
+        auto& p = path[i];
+
+        bool found = false;
+
+        auto entries = files(disk, cluster_number);
+
+        for(auto& file : entries){
+            if(i == path.size() - 1 || file.directory){
+                if(file.file_name == p){
+                    cluster_number = file.location;
+
+                    //If it is the last part of the path, just return the
+                    //number
+                    if(i == path.size() - 1){
+                        return std::make_pair(true, cluster_number);
+                    }
+
+                    //Otherwise, continue with the next level of the
+                    //path
+
+                    found = true;
+
+                    break;
+                }
+            }
+        }
+
+        if(!found){
+            return std::make_pair(false, 0);
+        }
+    }
+
+    return std::make_pair(false, 0);
+}
+
+std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& path){
+    auto cluster_number_search = find_cluster_number(disk, path);
+    if(!cluster_number_search.first){
+        return {};
+    }
+
+    return files(disk, cluster_number_search.second);
 }
 
 void init_directory_entry(cluster_entry& entry, const char* name, uint32_t cluster){
