@@ -407,6 +407,12 @@ void mount_command(const std::vector<std::string>& params){
             k_print_line("Nothing is mounted");
         }
     } else {
+        if(params.size() != 3){
+            k_print_line("mount: Not enough params: mount disk partition");
+
+            return;
+        }
+
         auto disk_uuid = parse(params[1]);
         auto partition_uuid = parse(params[2]);
 
