@@ -214,7 +214,7 @@ uint32_t find_free_cluster(fat32::dd disk){
 }
 
 inline bool entry_used(const cluster_entry& entry){
-    return static_cast<unsigned char>(entry.name[0]) != 0xE5;
+    return entry.name[0] != 0xE5;
 }
 
 inline bool end_of_directory(const cluster_entry& entry){
@@ -567,6 +567,14 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
             auto& entry = directory_cluster[i];
 
             if(end_of_directory(entry)){
+                //If there are several end markers, take the previous as
+                //the free entry
+                if(end >= 0){
+                    free = end;
+                    end = i;
+                    break;
+                }
+
                 end = i;
                 continue;
             }
@@ -579,14 +587,16 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
 
         if(free < 0){
             //TODO Read the next cluster to find an empty entry
-            k_print_line("Unsupported");
+            k_print_line("Unsupported free");
             return false;
         }
 
-        if(end > 0 && end < free){
-            //TODO Move end_of_directory into free and use end as free
-            k_print_line("Unsupported");
-            return false;
+        if(end >= 0 && end < free){
+            //Mark free as the end of the directory
+            directory_cluster[free].name[0] = 0x0;
+
+            //Take the old end marker as free entry
+            free = end;
         }
 
         auto cluster = find_free_cluster(disk);
