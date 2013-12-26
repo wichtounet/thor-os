@@ -75,7 +75,19 @@ struct cluster_entry {
     uint32_t file_size;
 } __attribute__ ((packed));
 
+struct long_entry {
+    uint8_t sequence_number;
+    uint16_t name_first[5];
+    uint8_t attrib;
+    uint8_t reserved;
+    uint8_t alias_checksum;
+    uint16_t name_second[6];
+    uint16_t starting_cluster;
+    uint16_t name_third[2];
+} __attribute__ ((packed));
+
 static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
+static_assert(sizeof(long_entry) == 32, "A cluster entry is 32 bytes");
 
 uint64_t cached_disk = -1;
 uint64_t cached_partition = -1;
@@ -345,6 +357,10 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
 
     bool end_reached = false;
 
+    bool long_name = false;
+    char long_name_buffer[257];
+    size_t i = 0;
+
     while(!end_reached){
         auto cluster_number = cluster_number_search.second;
 
@@ -361,12 +377,56 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
             }
 
             if(entry_used(entry)){
+                if(is_long_name(entry)){
+                    auto& l_entry = reinterpret_cast<long_entry&>(entry);
+                    long_name = true;
+
+                    size_t l = ((l_entry.sequence_number & ~0x40) - 1) * 13;
+
+                    bool end = false;
+                    for(size_t j = 0; !end && j < 5; ++j){
+                        if(l_entry.name_first[j] == 0x0 || l_entry.name_first[j] == 0xFF){
+                            end = true;
+                        } else {
+                            char c = static_cast<char>(l_entry.name_first[j]);
+                            long_name_buffer[l++] = c;
+                        }
+                    }
+
+                    for(size_t j = 0; !end && j < 6; ++j){
+                        if(l_entry.name_second[j] == 0x0 || l_entry.name_second[j] == 0xFF){
+                            end = true;
+                        } else {
+                            char c = static_cast<char>(l_entry.name_second[j]);
+                            long_name_buffer[l++] = c;
+                        }
+                    }
+
+                    for(size_t j = 0; !end && j < 2; ++j){
+                        if(l_entry.name_third[j] == 0x0 || l_entry.name_third[j] == 0xFF){
+                            end = true;
+                        } else {
+                            char c = static_cast<char>(l_entry.name_third[j]);
+                            long_name_buffer[l++] = c;
+                        }
+                    }
+
+                    if(l > i){
+                        i = l;
+                    }
+
+                    continue;
+                }
+
                 disks::file file;
 
-                if(is_long_name(entry)){
-                    //It is a long file name
-                    //TODO Add suppport for long file name
-                    file.file_name = "LONG";
+                if(long_name){
+                    for(size_t s = 0; s < i; ++s){
+                        file.file_name += long_name_buffer[s];
+                    }
+
+                    long_name = false;
+                    i = 0;
                 } else {
                     //It is a normal file name
                     //Copy the name until the first space
