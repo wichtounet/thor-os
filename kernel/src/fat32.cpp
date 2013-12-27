@@ -444,7 +444,7 @@ std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& p
 //Return the number of entries necessary to hold the name
 //Always computed to store a long file name entry before the information entry
 size_t number_of_entries(const std::string& name){
-    return (name.size() - 1) / 11 + 2;
+    return (name.size() - 1) / 13 + 2;
 }
 
 //Finds "entries" consecutive free entries in the given directory cluster
@@ -533,7 +533,7 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
     //If necessary create all the long filename entries
     if(Long){
         auto len = std::str_len(name);
-        size_t sequences = (len - 1) / 11 + 1;
+        size_t sequences = (len - 1) / 13 + 1;
 
         size_t sequence = 0;
         size_t i = 0;
@@ -559,11 +559,14 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
 
             l_entry.alias_checksum = sum;
 
+            bool null = false;
+
             for(size_t j = 0; j < 5; ++j){
                 if(i < len){
                     l_entry.name_first[j] = static_cast<uint16_t>(name[i++]);
                 } else {
-                    l_entry.name_first[j] = 0xFF;
+                    l_entry.name_first[j] = !null ? 0x0 : 0xFF;
+                    null = true;
                 }
             }
 
@@ -571,7 +574,8 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
                 if(i < len){
                     l_entry.name_second[j] = static_cast<uint16_t>(name[i++]);
                 } else {
-                    l_entry.name_second[j] = 0xFF;
+                    l_entry.name_second[j] = !null ? 0x0 : 0xFF;
+                    null = true;
                 }
             }
 
@@ -579,7 +583,8 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
                 if(i < len){
                     l_entry.name_third[j] = static_cast<uint16_t>(name[i++]);
                 } else {
-                    l_entry.name_third[j] = 0xFF;
+                    l_entry.name_third[j] = !null ? 0x0 : 0xFF;
+                    null = true;
                 }
             }
 
