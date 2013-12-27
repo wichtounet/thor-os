@@ -738,6 +738,8 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
         return false;
     }
 
+    auto parent_cluster_number = cluster_number.second;
+
     //Find a free cluster to hold the directory entries
     auto cluster = find_free_cluster(disk);
     if(cluster == 0){
@@ -745,7 +747,7 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
     }
 
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return false;
     }
 
@@ -755,7 +757,7 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
     init_directory_entry<true>(new_directory_entry, directory.c_str(), cluster);
 
     //Write back the parent directory cluster
-    if(!write_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return false;
     }
 
@@ -777,7 +779,7 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
     init_directory_entry<false>(dot_entry, ".", cluster);
 
     auto dot_dot_entry = &new_directory_cluster[1];
-    init_directory_entry<false>(dot_dot_entry, "..", cluster_number.second);
+    init_directory_entry<false>(dot_dot_entry, "..", path.empty() ? 0 : parent_cluster_number);
 
     //Mark everything as unused
     for(size_t j = 2; j < new_directory_cluster.size() - 1; ++j){
