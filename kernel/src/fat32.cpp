@@ -505,7 +505,13 @@ std::string fat32::read_file(dd disk, const disks::partition_descriptor& partiti
         }
     }
 
+    //If the file is not found in the given directory, return empty content
     if(!found){
+        return {};
+    }
+
+    //No need to read the cluster if there are no content
+    if(file_size == 0){
         return {};
     }
 
