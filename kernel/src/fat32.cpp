@@ -801,12 +801,6 @@ bool fat32::touch(dd disk, const disks::partition_descriptor& partition, const s
         return false;
     }
 
-    //Find a free cluster to hold the directory entries
-    auto cluster = find_free_cluster(disk);
-    if(cluster == 0){
-        return false;
-    }
-
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
     if(!read_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return false;
@@ -815,21 +809,10 @@ bool fat32::touch(dd disk, const disks::partition_descriptor& partition, const s
     auto entries = number_of_entries(file);
     auto new_directory_entry = find_free_entry(directory_cluster, entries);
 
-    init_file_entry<true>(new_directory_entry, file.c_str(), cluster);
+    init_file_entry<true>(new_directory_entry, file.c_str(), 0);
 
     //Write back the parent directory cluster
     if(!write_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
-        return false;
-    }
-
-    //This cluster is the end of the chain
-    if(!write_fat_value(disk, cluster, 0x0FFFFFF8)){
-        return false;
-    }
-
-    //One cluster is now used for the directory entries
-    fat_is->free_clusters -= 1;
-    if(!write_is(disk, partition)){
         return false;
     }
 
