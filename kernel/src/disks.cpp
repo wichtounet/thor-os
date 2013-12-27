@@ -255,3 +255,11 @@ bool disks::mkdir(const std::string& directory){
 
     return fat32::mkdir(*_mounted_disk, *_mounted_partition, pwd, directory);
 }
+
+bool disks::touch(const std::string& file){
+    if(!_mounted_disk || !_mounted_partition){
+        return false;
+    }
+
+    return fat32::touch(*_mounted_disk, *_mounted_partition, pwd, file);
+}
