@@ -533,11 +533,21 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
     //If necessary create all the long filename entries
     if(Long){
         auto len = std::str_len(name);
+
+        //Compute the checksum of 8.3 Entry
+        char sum = 0;
+        for(int c = 0; c < 11; ++c){
+            char v = c < len ? name[c] : ' ';
+            sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + v;
+        }
+
         size_t sequences = (len - 1) / 13 + 1;
 
-        size_t sequence = 0;
-        size_t i = 0;
-        while(sequence < sequences){
+        size_t sequence = sequences;
+
+        do {
+            --sequence;
+
             auto& l_entry = reinterpret_cast<long_entry&>(*entry_ptr);
 
             if(sequence == sequences - 1){
@@ -549,15 +559,9 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
             l_entry.attrib = 0x0F;
             l_entry.reserved = 0x0;
             l_entry.starting_cluster = 0x0;
-
-            char sum = 0;
-
-            for(int c = 0; c < 11; ++c){
-                char v = c < len ? name[c] : ' ';
-                sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + v;
-            }
-
             l_entry.alias_checksum = sum;
+
+            size_t i = sequence * 13;
 
             bool null = false;
 
@@ -589,8 +593,7 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
             }
 
             ++entry_ptr;
-            ++sequence;
-        }
+        } while (sequence != 0);
     }
 
     auto& entry = *entry_ptr;
