@@ -450,41 +450,53 @@ void ls_command(const std::vector<std::string>& params){
 
     //By default hidden files are not shown
     bool show_hidden_files = false;
+    bool list = false;
 
     //Read options if any
     if(params.size() > 1){
         for(size_t i = 1; i < params.size(); ++i){
             if(params[i] == "-a"){
                 show_hidden_files = true;
+            } else if(params[i] == "-l"){
+                list = true;
             }
         }
     }
 
     auto files = disks::ls();
+    size_t total = 0;
 
     for(auto& file : files){
         if(file.hidden && !show_hidden_files){
             continue;
         }
 
+        ++total;
+
         k_print(file.file_name);
 
-        if(file.directory){
-            k_print(" directory ");
+        if(list){
+            if(file.directory){
+                k_print(" directory ");
+            } else {
+                k_print(" file ");
+            }
+
+            if(file.hidden){
+                k_print(" hidden ");
+            }
+
+            if(file.system){
+                k_print(" os ");
+            }
+
+            k_print_line(file.size);
         } else {
-            k_print(" file ");
+            k_print(' ');
         }
-
-        if(file.hidden){
-            k_print(" hidden ");
-        }
-
-        if(file.system){
-            k_print(" os ");
-        }
-
-        k_print_line(file.size);
     }
+
+    k_printf("\nTotal: %u\n", total);
 }
 
 void free_command(const std::vector<std::string>&){
