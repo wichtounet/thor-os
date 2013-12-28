@@ -145,8 +145,8 @@ bool cache_disk_partition(fat32::dd disk, const disks::partition_descriptor& par
 }
 
 //Write information sector to the disk
-bool write_is(fat32::dd disk, const disks::partition_descriptor& partition){
-    auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
+bool write_is(fat32::dd disk){
+    auto fs_information_sector = partition_start + static_cast<uint64_t>(fat_bs->fs_information_sector);
 
     return write_sectors(disk, fs_information_sector, 1, fat_is);
 }
@@ -247,11 +247,6 @@ inline bool entry_unused(const cluster_entry& entry){
     return entry.name[0] == 0xE5;
 }
 
-//Indicates if the entry is used, or namely, not unused
-inline bool entry_used(const cluster_entry& entry){
-    return entry.name[0] != 0xE5;
-}
-
 //Indicates if the entry marks the end of the directory
 inline bool end_of_directory(const cluster_entry& entry){
     return entry.name[0] == 0x0;
@@ -275,6 +270,8 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
     std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
 
     while(!end_reached){
+        k_printf("Read cluster %u\n", cluster_number);
+
         if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
             return std::move(files);
         }
@@ -285,85 +282,88 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
                 break;
             }
 
-            if(entry_used(entry)){
-                if(is_long_name(entry)){
-                    auto& l_entry = reinterpret_cast<long_entry&>(entry);
-                    long_name = true;
-
-                    size_t l = ((l_entry.sequence_number & ~0x40) - 1) * 13;
-
-                    bool end = false;
-                    for(size_t j = 0; !end && j < 5; ++j){
-                        if(l_entry.name_first[j] == 0x0 || l_entry.name_first[j] == 0xFF){
-                            end = true;
-                        } else {
-                            char c = static_cast<char>(l_entry.name_first[j]);
-                            long_name_buffer[l++] = c;
-                        }
-                    }
-
-                    for(size_t j = 0; !end && j < 6; ++j){
-                        if(l_entry.name_second[j] == 0x0 || l_entry.name_second[j] == 0xFF){
-                            end = true;
-                        } else {
-                            char c = static_cast<char>(l_entry.name_second[j]);
-                            long_name_buffer[l++] = c;
-                        }
-                    }
-
-                    for(size_t j = 0; !end && j < 2; ++j){
-                        if(l_entry.name_third[j] == 0x0 || l_entry.name_third[j] == 0xFF){
-                            end = true;
-                        } else {
-                            char c = static_cast<char>(l_entry.name_third[j]);
-                            long_name_buffer[l++] = c;
-                        }
-                    }
-
-                    if(l > i){
-                        i = l;
-                    }
-
-                    continue;
-                }
-
-
-                disks::file file;
-
-                if(long_name){
-                    for(size_t s = 0; s < i; ++s){
-                        file.file_name += long_name_buffer[s];
-                    }
-
-                    long_name = false;
-                    i = 0;
-                } else {
-                    //It is a normal file name
-                    //Copy the name until the first space
-
-                    for(size_t s = 0; s < 11; ++s){
-                        if(entry.name[s] == ' '){
-                            break;
-                        }
-
-                        file.file_name += entry.name[s];
-                    }
-                }
-
-                file.hidden = entry.attrib & 0x1;
-                file.system = entry.attrib & 0x2;
-                file.directory = entry.attrib & 0x10;
-
-                if(file.directory){
-                    file.size = fat_bs->sectors_per_cluster * 512;
-                } else {
-                    file.size = entry.file_size;
-                }
-
-                file.location = entry.cluster_low + (entry.cluster_high << 16);
-
-                files.push_back(file);
+            if(entry_unused(entry)){
+                continue;
             }
+
+            if(is_long_name(entry)){
+                auto& l_entry = reinterpret_cast<long_entry&>(entry);
+                long_name = true;
+
+                size_t l = ((l_entry.sequence_number & ~0x40) - 1) * 13;
+
+                bool end = false;
+                for(size_t j = 0; !end && j < 5; ++j){
+                    if(l_entry.name_first[j] == 0x0 || l_entry.name_first[j] == 0xFF){
+                        end = true;
+                    } else {
+                        char c = static_cast<char>(l_entry.name_first[j]);
+                        long_name_buffer[l++] = c;
+                    }
+                }
+
+                for(size_t j = 0; !end && j < 6; ++j){
+                    if(l_entry.name_second[j] == 0x0 || l_entry.name_second[j] == 0xFF){
+                        end = true;
+                    } else {
+                        char c = static_cast<char>(l_entry.name_second[j]);
+                        long_name_buffer[l++] = c;
+                    }
+                }
+
+                for(size_t j = 0; !end && j < 2; ++j){
+                    if(l_entry.name_third[j] == 0x0 || l_entry.name_third[j] == 0xFF){
+                        end = true;
+                    } else {
+                        char c = static_cast<char>(l_entry.name_third[j]);
+                        long_name_buffer[l++] = c;
+                    }
+                }
+
+                if(l > i){
+                    i = l;
+                }
+
+                continue;
+            }
+
+            disks::file file;
+
+            if(long_name){
+                for(size_t s = 0; s < i; ++s){
+                    file.file_name += long_name_buffer[s];
+                }
+
+                long_name = false;
+                i = 0;
+            } else {
+                //It is a normal file name
+                //Copy the name until the first space
+
+                for(size_t s = 0; s < 11; ++s){
+                    if(entry.name[s] == ' '){
+                        break;
+                    }
+
+                    file.file_name += entry.name[s];
+                }
+            }
+
+            file.hidden = entry.attrib & 0x1;
+            file.system = entry.attrib & 0x2;
+            file.directory = entry.attrib & 0x10;
+
+            if(file.directory){
+                //TODO Should read the cluster chain to get the number of
+                //clusters
+                file.size = fat_bs->sectors_per_cluster * 512;
+            } else {
+                file.size = entry.file_size;
+            }
+
+            file.location = entry.cluster_low + (entry.cluster_high << 16);
+
+            files.push_back(file);
         }
 
         if(!end_reached){
@@ -447,84 +447,178 @@ size_t number_of_entries(const std::string& name){
     return (name.size() - 1) / 13 + 2;
 }
 
-//Finds "entries" consecutive free entries in the given directory cluster
-cluster_entry* find_free_entry(std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries){
-    size_t end;
-    bool end_found = false;
+cluster_entry* extend_directory(fat32::dd disk, std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number){
+    auto cluster = find_free_cluster(disk);
+    if(!cluster){
+        return nullptr;
+    }
 
-    //1. Search the first end of directory marker
+    fat_is->free_clusters -= 1;
+    if(!write_is(disk)){
+        return nullptr;
+    }
+
+    //Update the cluster chain
+    if(!write_fat_value(disk, cluster_number, cluster)){
+        return nullptr;
+    }
+
+    if(!write_fat_value(disk, cluster, 0x0FFFFFF8)){
+        return nullptr;
+    }
+
+    //Remove all the end of directory marker in the previous cluster
     for(size_t i = 0; i < directory_cluster.size(); ++i){
         auto& entry = directory_cluster[i];
 
         if(end_of_directory(entry)){
-            end = i;
-            end_found = true;
-            break;
+            entry.name[0] = 0xE5;
         }
     }
 
-    if(!end_found){
-        k_print_line("Unsupported free");
+    //Write back the previous cluster
+    if(!write_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return nullptr;
     }
 
-    size_t sequence_size = 0;
-    size_t sequence_start = 0;
-    size_t sequence_end = 0;
+    cluster_number = cluster;
 
-    for(size_t i = 0; i < directory_cluster.size(); ++i){
+    //In the new directory, mark all entries, but the first entries one as
+    //end of directory
+    for(size_t i = entries; i < directory_cluster.size(); ++i){
         auto& entry = directory_cluster[i];
 
-        if(end_of_directory(entry) || entry_unused(entry)){
-            ++sequence_size;
+        entry.name[0] = 0x0;
+        entry.attrib = 0x0;
+    }
+
+    return &directory_cluster[0];
+}
+
+//Finds "entries" consecutive free entries in the given directory cluster
+cluster_entry* find_free_entry(fat32::dd disk, std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number){
+    while(true){
+        size_t end;
+        bool end_found = false;
+
+        //1. Search the first end of directory marker
+        for(size_t i = 0; i < directory_cluster.size(); ++i){
+            auto& entry = directory_cluster[i];
+
+            if(end_of_directory(entry)){
+                end = i;
+                end_found = true;
+                break;
+            }
+        }
+
+        if(end_found){
+            //2. Find a big-enough sequence of free entries
+            size_t sequence_size = 0;
+            size_t sequence_start = 0;
+            size_t sequence_end = 0;
+
+            for(size_t i = 0; i < directory_cluster.size(); ++i){
+                auto& entry = directory_cluster[i];
+
+                if(end_of_directory(entry) || entry_unused(entry)){
+                    ++sequence_size;
+
+                    if(sequence_size == entries){
+                        sequence_start = i - (sequence_size - 1);
+                        sequence_end = i;
+                        break;
+                    }
+                } else {
+                    sequence_size = 0;
+                }
+            }
 
             if(sequence_size == entries){
-                sequence_start = i - (sequence_size - 1);
-                sequence_end = i;
-                break;
+                bool ok = true;
+
+                //If the free sequence position is after end or if end  is inside the free
+                //sequence
+                if(end <= sequence_end){
+                    int64_t new_end = -1;
+                    for(size_t i = directory_cluster.size() - 1; i > 0; --i){
+                        if(i <= sequence_end){
+                            break;
+                        }
+
+                        auto& entry = directory_cluster[i];
+                        if(end_of_directory(entry) || entry_unused(entry)){
+                            new_end = i;
+                        } else {
+                            break;
+                        }
+                    }
+
+                    //If there is not enough room to hold the entries and
+                    //the end of directory marker, try with the next cluster
+                    if(new_end < 0){
+                        ok = false;
+                    } else {
+                        //Mark the old end as unused
+                        directory_cluster[end].name[0] = 0xE5;
+
+                        //Mark the new end as the end of the directory
+                        directory_cluster[new_end].name[0] = 0x0;
+                    }
+                }
+
+                if(ok){
+                    return &directory_cluster[sequence_start];
+                }
             }
-        } else {
-            sequence_size = 0;
         }
-    }
 
-    if(sequence_size != entries){
-        //TODO Read the next cluster to find an empty entry
-        k_print_line("Unsupported free");
-        return nullptr;
-    }
+        //If there is an end and we have to go to the next cluster,
+        //remove the end of directory markers
+        if(end_found){
+            //Remove all the end of directory marker in the cluster
+            for(size_t i = 0; i < directory_cluster.size(); ++i){
+                auto& entry = directory_cluster[i];
 
-    //If the free sequence position is after end or if end  is inside the free
-    //sequence
-    if(end <= sequence_end){
-        int64_t new_end = -1;
-        for(size_t i = directory_cluster.size() - 1; i > 0; --i){
-            if(i <= sequence_end){
-                break;
+                if(end_of_directory(entry)){
+                    entry.name[0] = 0xE5;
+                }
             }
 
-            auto& entry = directory_cluster[i];
-            if(end_of_directory(entry) || entry_unused(entry)){
-                new_end = i;
-            } else {
-                break;
+            //Write back the cluster
+            if(!write_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+                return nullptr;
             }
         }
 
-        if(new_end < 0){
-            //TODO Read the next cluster to find an empty entry
-            k_print_line("Unsupported free");
+        //3. Go to the next cluster
+        auto next = next_cluster(disk, cluster_number);
+
+        //If there are no next blocks, exit the loop and extend the
+        //directory cluster chain
+        if(!next){
+            break;
+        }
+
+        //If the block is corrupted, we do not try to do anything else
+        if(next == 0x0FFFFFF7){
             return nullptr;
         }
 
-        //Mark the old end as unused
-        directory_cluster[end].name[0] = 0xE5;
+        //Try again with the cluster in the chain
+        cluster_number = next;
 
-        //Mark the new end as the end of the directory
-        directory_cluster[new_end].name[0] = 0x0;
+        //Read the next sector
+        if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            return nullptr;
+        }
     }
 
-    return &directory_cluster[sequence_start];
+    k_print_line("extension");
+
+    //At this point, we tried all the possible clusters of the directory,
+    //So it is necessary to add a new cluster to the chain
+    return extend_directory(disk, directory_cluster, entries, cluster_number);
 }
 
 //Init an entry
@@ -755,7 +849,7 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
     }
 
     auto entries = number_of_entries(directory);
-    auto new_directory_entry = find_free_entry(directory_cluster, entries);
+    auto new_directory_entry = find_free_entry(disk, directory_cluster, entries, parent_cluster_number);
 
     init_directory_entry<true>(new_directory_entry, directory.c_str(), cluster);
 
@@ -771,7 +865,7 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
 
     //One cluster is now used for the directory entries
     fat_is->free_clusters -= 1;
-    if(!write_is(disk, partition)){
+    if(!write_is(disk)){
         return false;
     }
 
@@ -811,18 +905,20 @@ bool fat32::touch(dd disk, const disks::partition_descriptor& partition, const s
         return false;
     }
 
+    auto parent_cluster_number = cluster_number.second;
+
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return false;
     }
 
     auto entries = number_of_entries(file);
-    auto new_directory_entry = find_free_entry(directory_cluster, entries);
+    auto new_directory_entry = find_free_entry(disk, directory_cluster, entries, parent_cluster_number);
 
     init_file_entry<true>(new_directory_entry, file.c_str(), 0);
 
     //Write back the parent directory cluster
-    if(!write_sectors(disk, cluster_lba(cluster_number.second), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return false;
     }
 
