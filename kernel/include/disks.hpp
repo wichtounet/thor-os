@@ -8,6 +8,8 @@
 #ifndef DISKS_H
 #define DISKS_H
 
+#include "datetime.hpp"
+
 #include "stl/types.hpp"
 #include "stl/array.hpp"
 #include "stl/vector.hpp"
@@ -43,6 +45,10 @@ struct file {
     bool hidden;
     bool system;
     uint64_t size;
+    datetime created;
+    datetime modified;
+    datetime accessed;
+
     uint64_t location; //fs-specific
 };
 

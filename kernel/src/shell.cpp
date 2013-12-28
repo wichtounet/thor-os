@@ -473,30 +473,40 @@ void ls_command(const std::vector<std::string>& params){
 
         ++total;
 
-        k_print(file.file_name);
-
         if(list){
             if(file.directory){
-                k_print(" directory ");
+                k_print(" d ");
             } else {
-                k_print(" file ");
+                k_print(" f ");
             }
 
-            if(file.hidden){
-                k_print(" hidden ");
-            }
+            k_print(file.size);
+            k_print(' ');
 
-            if(file.system){
-                k_print(" os ");
-            }
+            k_print(file.created.day);
+            k_print('.');
+            k_print(file.created.month);
+            k_print('.');
+            k_print(1980+file.created.year);
+            k_print(' ');
 
-            k_print_line(file.size);
+            k_print(file.created.hour);
+            k_print(':');
+            k_print(file.created.minutes);
+            k_print(' ');
+
+            k_print_line(file.file_name);
         } else {
+            k_print(file.file_name);
             k_print(' ');
         }
     }
 
-    k_printf("\nTotal: %u\n", total);
+    if(!list){
+        k_print('\n');
+    }
+
+    k_printf("Total: %u\n", total);
 }
 
 void free_command(const std::vector<std::string>&){

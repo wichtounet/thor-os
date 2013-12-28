@@ -270,8 +270,6 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
     std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
 
     while(!end_reached){
-        k_printf("Read cluster %u\n", cluster_number);
-
         if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
             return std::move(files);
         }
@@ -352,6 +350,26 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
             file.hidden = entry.attrib & 0x1;
             file.system = entry.attrib & 0x2;
             file.directory = entry.attrib & 0x10;
+
+            file.created.day = entry.creation_date & 0x1F;
+            file.created.month = (entry.creation_date >> 5) & 0xF;
+            file.created.year = entry.creation_date >> 9;
+
+            file.created.seconds = entry.creation_time & 0x1F;
+            file.created.minutes = (entry.creation_time >> 5) & 0x3F;
+            file.created.hour = entry.creation_time >> 11;
+
+            file.modified.day = entry.modification_date & 0x1F;
+            file.modified.month = (entry.modification_date >> 5) & 0xF;
+            file.modified.year = (entry.modification_date >> 9) + 1980;
+
+            file.modified.seconds = entry.modification_time & 0x1F;
+            file.modified.minutes = (entry.modification_time >> 5) & 0x3F;
+            file.modified.hour = entry.modification_time >> 11;
+
+            file.accessed.day = entry.accessed_date & 0x1F;
+            file.accessed.month = (entry.accessed_date >> 5) & 0xF;
+            file.accessed.year = (entry.accessed_date >> 9) + 1980;
 
             if(file.directory){
                 //TODO Should read the cluster chain to get the number of
@@ -613,8 +631,6 @@ cluster_entry* find_free_entry(fat32::dd disk, std::unique_heap_array<cluster_en
             return nullptr;
         }
     }
-
-    k_print_line("extension");
 
     //At this point, we tried all the possible clusters of the directory,
     //So it is necessary to add a new cluster to the chain
