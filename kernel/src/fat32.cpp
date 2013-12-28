@@ -7,6 +7,7 @@
 
 #include "fat32.hpp"
 #include "console.hpp"
+#include "rtc.hpp"
 
 #include "stl/types.hpp"
 #include "stl/unique_ptr.hpp"
@@ -718,13 +719,17 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
         entry.name[i] = ' ';
     }
 
-    //For now, date and time are not supported
-    entry.creation_time = 0;
+    auto datetime = rtc::all_data();
+
+    //Set the date and time of the entries
     entry.creation_time_seconds = 0;
-    entry.creation_date = 0;
-    entry.accessed_date = 0;
-    entry.modification_date = 0;
-    entry.modification_time = 0;
+
+    entry.creation_time = datetime.second | datetime.minute << 5 | datetime.hour << 11;
+    entry.modification_time = datetime.second | datetime.minute << 5 | datetime.hour << 11;
+
+    entry.creation_date = datetime.day | datetime.month << 5 | (datetime.year - 1980) << 9;
+    entry.modification_date = datetime.day | datetime.month << 5 | (datetime.year - 1980) << 9;
+    entry.accessed_date = datetime.day | datetime.month << 5 | (datetime.year - 1980) << 9;
 
     //Clear reserved bits
     entry.reserved = 0;
