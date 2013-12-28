@@ -14,6 +14,7 @@
 #include "disks.hpp"
 #include "acpi.hpp"
 #include "e820.hpp"
+#include "rtc.hpp"
 
 //Commands
 #include "sysinfo.hpp"
@@ -233,96 +234,10 @@ void uptime_command(const std::vector<std::string>&){
     k_printf("Uptime: %us\n", timer_seconds());
 }
 
-#define CURRENT_YEAR        2013
-#define cmos_address        0x70
-#define cmos_data           0x71
-
-int get_update_in_progress_flag() {
-    out_byte(cmos_address, 0x0A);
-    return (in_byte(cmos_data) & 0x80);
-}
-
-uint8_t get_RTC_register(int reg) {
-    out_byte(cmos_address, reg);
-    return in_byte(cmos_data);
-}
-
 void date_command(const std::vector<std::string>&){
-    uint64_t second;
-    uint64_t minute;
-    uint64_t hour;
-    uint64_t day;
-    uint64_t month;
-    uint64_t year;
+    auto data = rtc::all_data();
 
-    uint64_t last_second;
-    uint64_t last_minute;
-    uint64_t last_hour;
-    uint64_t last_day;
-    uint64_t last_month;
-    uint64_t last_year;
-    uint64_t registerB;
-
-    //TODO When ACPI gets supported, get the address
-    //of the century register and use it to make
-    //better year calculation
-
-    while (get_update_in_progress_flag()){};                // Make sure an update isn't in progress
-
-    second = get_RTC_register(0x00);
-    minute = get_RTC_register(0x02);
-    hour = get_RTC_register(0x04);
-    day = get_RTC_register(0x07);
-    month = get_RTC_register(0x08);
-    year = get_RTC_register(0x09);
-
-    do {
-        last_second = second;
-        last_minute = minute;
-        last_hour = hour;
-        last_day = day;
-        last_month = month;
-        last_year = year;
-
-        while (get_update_in_progress_flag()){};           // Make sure an update isn't in progress
-
-        second = get_RTC_register(0x00);
-        minute = get_RTC_register(0x02);
-        hour = get_RTC_register(0x04);
-        day = get_RTC_register(0x07);
-        month = get_RTC_register(0x08);
-        year = get_RTC_register(0x09);
-    } while( (last_second != second) || (last_minute != minute) || (last_hour != hour) ||
-        (last_day != day) || (last_month != month) || (last_year != year) );
-
-    registerB = get_RTC_register(0x0B);
-
-    // Convert BCD to binary values if necessary
-
-    if (!(registerB & 0x04)) {
-        second = (second & 0x0F) + ((second / 16) * 10);
-        minute = (minute & 0x0F) + ((minute / 16) * 10);
-        hour = ( (hour & 0x0F) + (((hour & 0x70) / 16) * 10) ) | (hour & 0x80);
-        day = (day & 0x0F) + ((day / 16) * 10);
-        month = (month & 0x0F) + ((month / 16) * 10);
-        year = (year & 0x0F) + ((year / 16) * 10);
-
-    }
-
-    // Convert 12 hour clock to 24 hour clock if necessary
-
-    if (!(registerB & 0x02) && (hour & 0x80)) {
-        hour = ((hour & 0x7F) + 12) % 24;
-    }
-
-    // Calculate the full (4-digit) year
-
-    year += (CURRENT_YEAR / 100) * 100;
-    if(year < CURRENT_YEAR){
-        year += 100;
-    }
-
-    k_printf("%u.%u.%u %u:%.2d:%.2d\n", day, month, year, hour, minute, second);
+    k_printf("%u.%u.%u %u:%.2d:%.2d\n", data.day, data.month, data.year, data.hour, data.minute, data.second);
 }
 
 void sleep_command(const std::vector<std::string>& params){
