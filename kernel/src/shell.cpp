@@ -60,6 +60,7 @@ void pwd_command(const std::vector<std::string>& params);
 void free_command(const std::vector<std::string>& params);
 void cat_command(const std::vector<std::string>& params);
 void mkdir_command(const std::vector<std::string>& params);
+void rm_command(const std::vector<std::string>& params);
 void touch_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
 
@@ -68,7 +69,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[23] = {
+command_definition commands[24] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -91,6 +92,7 @@ command_definition commands[23] = {
     {"cat", cat_command},
     {"mkdir", mkdir_command},
     {"touch", touch_command},
+    {"rm", rm_command},
     {"shutdown", shutdown_command},
 };
 
@@ -570,6 +572,30 @@ void touch_command(const std::vector<std::string>& params){
         }
     }
 }
+
+void rm_command(const std::vector<std::string>& params){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    if(params.size() == 1){
+        k_print_line("No file name provided");
+    } else {
+        auto& file_name = params[1];
+        auto file = find_file(file_name);
+
+        if(!file){
+            k_printf("rm: Cannot delete file '%s': No such file or directory\n", file_name.c_str());
+        } else {
+            if(!disks::rm(file_name)){
+                k_print_line("File removal failed");
+            }
+        }
+    }
+}
+
 
 void shutdown_command(const std::vector<std::string>&){
     if(!acpi::init()){

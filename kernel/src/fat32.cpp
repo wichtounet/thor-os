@@ -267,6 +267,7 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
     bool long_name = false;
     char long_name_buffer[256];
     size_t i = 0;
+    size_t cluster_position = 0;
 
     std::unique_heap_array<cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
 
@@ -275,7 +276,10 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
             return std::move(files);
         }
 
+        size_t position = 0;
         for(auto& entry : cluster){
+            ++position;
+
             if(end_of_directory(entry)){
                 end_reached = true;
                 break;
@@ -381,6 +385,7 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
             }
 
             file.location = entry.cluster_low + (entry.cluster_high << 16);
+            file.position = cluster_position * cluster.size() + (position - 1);
 
             files.push_back(file);
         }
@@ -398,6 +403,8 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
                 return std::move(files);
             }
         }
+
+        ++cluster_position;
     }
 
     return std::move(files);
@@ -763,6 +770,89 @@ void init_file_entry(cluster_entry* entry_ptr, const char* name, uint32_t cluste
     entry_ptr->attrib = 0;
 }
 
+bool rm_file(fat32::dd disk, uint32_t parent_cluster_number, size_t position, uint32_t cluster_number){
+    std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
+    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+        return false;
+    }
+
+    //1. Mark the entries in directory as unused
+
+    bool found = false;
+    size_t cluster_position = 0;
+    while(!found){
+        bool end_reached = false;
+
+        //Verify if is the correct cluster
+        if(position >= cluster_position * directory_cluster.size() && position < (cluster_position + 1) * directory_cluster.size()){
+            found = true;
+
+            auto j = position % directory_cluster.size();
+            directory_cluster[j].name[0] = 0xE5;
+
+            while(is_long_name(directory_cluster[--j])){
+                directory_cluster[j].name[0] = 0xE5;
+
+                if(j == 0){
+                    break;
+                }
+            }
+
+            if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+                return false;
+            }
+        }
+
+        //Jump to next cluser
+        if(!found && !end_reached){
+            parent_cluster_number = next_cluster(disk, parent_cluster_number);
+
+            if(!parent_cluster_number){
+                break;
+            }
+
+            //The block is corrupted
+            if(parent_cluster_number == 0x0FFFFFF7){
+                break;
+            }
+
+            if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+                break;
+            }
+        }
+    }
+
+    if(!found){
+        return false;
+    }
+
+    //2. Release all the clusters of the chain
+    if(cluster_number >= 2){
+        while(true){
+            auto next = next_cluster(disk, cluster_number);
+
+            //Mark this cluster as unused
+            if(!write_fat_value(disk, cluster_number, 0x0FFFFFF8)){
+                return false;
+            }
+
+            --fat_is->free_clusters;
+
+            if(!next || next == 0x0FFFFFF7){
+                break;
+            }
+
+            cluster_number = next;
+        }
+    }
+
+    if(!write_is(disk)){
+        return false;
+    }
+
+    return true;
+}
+
 } //end of anonymous namespace
 
 uint64_t fat32::free_size(dd disk, const disks::partition_descriptor& partition){
@@ -944,4 +1034,44 @@ bool fat32::touch(dd disk, const disks::partition_descriptor& partition, const s
     }
 
     return true;
+}
+
+bool fat32::rm(dd disk, const disks::partition_descriptor& partition, const std::vector<std::string>& path, const std::string& file){
+    if(!cache_disk_partition(disk, partition)){
+        return false;
+    }
+
+    uint32_t cluster_number;
+    size_t position;
+    bool is_file = false;
+
+    auto found = false;
+    for(auto& f : files(disk, path)){
+        if(f.file_name == file){
+            found = true;
+            cluster_number = f.location;
+            position = f.position;
+            is_file = !f.directory;
+            break;
+        }
+    }
+
+    if(!found){
+        return false;
+    }
+
+    //Find the cluster number of the parent directory
+    auto cluster_number_search = find_cluster_number(disk, path);
+    if(!cluster_number_search.first){
+        return false;
+    }
+
+    auto parent_cluster_number = cluster_number_search.second;
+
+    if(is_file){
+        return rm_file(disk, parent_cluster_number, position, cluster_number);
+    } else {
+        //TODO
+        return false;
+    }
 }

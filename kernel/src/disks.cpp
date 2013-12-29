@@ -263,3 +263,11 @@ bool disks::touch(const std::string& file){
 
     return fat32::touch(*_mounted_disk, *_mounted_partition, pwd, file);
 }
+
+bool disks::rm(const std::string& file){
+    if(!_mounted_disk || !_mounted_partition){
+        return false;
+    }
+
+    return fat32::rm(*_mounted_disk, *_mounted_partition, pwd, file);
+}
