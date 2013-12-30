@@ -9,6 +9,7 @@
 #define ATA_H
 
 #include "stl/types.hpp"
+#include "stl/string.hpp"
 
 namespace ata {
 
@@ -17,6 +18,9 @@ struct drive_descriptor {
     uint8_t drive;
     bool present;
     uint8_t slave;
+    std::string model;
+    std::string serial;
+    std::string firmware;
 };
 
 void detect_disks();

@@ -11,6 +11,7 @@
 #include "memory.hpp"
 #include "thor.hpp"
 #include "interrupts.hpp"
+#include "console.hpp"
 
 namespace {
 
@@ -41,6 +42,9 @@ namespace {
 #define ATAPI_IDENTIFY  0xA1
 #define ATA_READ_BLOCK  0x20
 #define ATA_WRITE_BLOCK 0x30
+
+#define ATA_CTL_SRST    0x04
+#define ATA_CTL_nIEN    0x02
 
 //Master/Slave on devices
 #define MASTER_BIT 0
@@ -189,23 +193,107 @@ bool read_write_sectors(ata::drive_descriptor& drive, uint64_t start, uint8_t co
     return true;
 }
 
+bool reset_controller(uint16_t controller){
+    out_byte(controller + ATA_DEV_CTL, ATA_CTL_SRST);
+
+    sleep_ms(5);
+
+    //The controller should set the BSY flag after, SRST has been set
+    if(!wait_for_controller(controller, ATA_STATUS_BSY, ATA_STATUS_BSY, 1000)){
+        return false;
+    }
+
+    out_byte(controller + ATA_DEV_CTL, 0);
+
+    //Wait at most 30 seconds for BSY flag to be cleared
+    if(!wait_for_controller(controller, ATA_STATUS_BSY, 0, 30000)){
+        return false;
+    }
+
+    return true;
+}
+
+void ide_string_into(std::string& destination, uint16_t* info, size_t start, size_t size){
+    //Copy the characters
+    auto t = reinterpret_cast<char*>(&info[start]);
+    for(size_t i =0; i < size; ++i){
+        destination += t[i];
+    }
+
+    //Swap characters
+    for(size_t i = 0; i < size; i += 2){
+        auto c = destination[i];
+        destination[i] = destination[i + 1];
+        destination[i+1] = c;
+    }
+
+    //Cleanup
+    //TODO It is perhaps necessary to cleanup the data
+}
+
+void identify(ata::drive_descriptor& drive){
+    drive.present = false;
+
+    //First, test that the ATA controller of this drive is enabled
+    out_byte(drive.controller + ATA_NSECTOR, 0xAB);
+    if(in_byte(drive.controller + ATA_NSECTOR) != 0xAB){
+        return;
+    }
+
+    //Reset the ATA controller
+    reset_controller(drive.controller);
+
+    //Try to select the drive
+    if(!select_device(drive)){
+        return;
+    }
+
+    //Once device has been selected sucessully, the drive is present
+    drive.present = true;
+
+    //Then try to obtain more data on the device
+    out_byte(drive.controller + ATA_NSECTOR, 0);
+    out_byte(drive.controller + ATA_SECTOR, 0);
+    out_byte(drive.controller + ATA_LCYL, 0);
+    out_byte(drive.controller + ATA_HCYL, 0);
+    out_byte(drive.controller + ATA_COMMAND, ATA_IDENTIFY);
+    sleep_ms(5);
+
+    //Wait at most 30 seconds for BSY flag to be cleared
+    if(!wait_for_controller(drive.controller, ATA_STATUS_BSY | ATA_STATUS_DRQ | ATA_STATUS_ERR, ATA_STATUS_DRQ, 30000)){
+        //If the IDENTIFY fails, the disk is considered as present, but
+        //we don't have any information about it
+        return;
+    }
+
+    //Read the information
+
+    uint16_t info[256];
+    for(size_t i = 0; i < 256; ++i){
+        info[i] = in_word(drive.controller + ATA_DATA);
+    }
+
+    //INFO: LBA and DMA feature can be tested here
+
+    ide_string_into(drive.model, info, 27, 40);
+    ide_string_into(drive.serial, info, 10, 20);
+    ide_string_into(drive.firmware, info, 23, 8);
+}
+
 } //end of anonymous namespace
 
 void ata::detect_disks(){
     drives = new drive_descriptor[4];
 
-    drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT};
-    drives[1] = {ATA_PRIMARY, 0xF0, false, SLAVE_BIT};
-    drives[2] = {ATA_SECONDARY, 0xE0, false, MASTER_BIT};
-    drives[3] = {ATA_SECONDARY, 0xF0, false, SLAVE_BIT};
+    drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, "", "", ""};
+    drives[1] = {ATA_PRIMARY, 0xF0, false, SLAVE_BIT, "", "", ""};
+    drives[2] = {ATA_SECONDARY, 0xE0, false, MASTER_BIT, "", "", ""};
+    drives[3] = {ATA_SECONDARY, 0xF0, false, SLAVE_BIT, "", "", ""};
 
     for(uint8_t i = 0; i < 4; ++i){
         auto& drive = drives[i];
 
-        out_byte(drive.controller + 0x6, drive.drive);
-
-        sleep_ms(4);
-        drive.present = in_byte(drive.controller + 0x7) & 0x40;
+        identify(drive);
     }
 
     interrupt::register_irq_handler(14, primary_controller_handler);

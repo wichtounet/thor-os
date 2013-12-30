@@ -32,6 +32,7 @@ void  kernel_main(){
     e820::finalize_memory_detection();
 
     init_memory_manager();
+
     install_timer();
     //acpi::init();
     keyboard::install_driver();
