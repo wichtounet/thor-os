@@ -93,6 +93,11 @@ struct long_entry {
 static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
 static_assert(sizeof(long_entry) == 32, "A cluster entry is 32 bytes");
 
+constexpr const bool CLUSTER_FREE = 0x0;
+constexpr const bool CLUSTER_RESERVED= 0x1;
+constexpr const bool CLUSTER_CORRUPTED = 0x0FFFFFF7;
+constexpr const bool CLUSTER_END = 0x0FFFFFF8;
+
 uint64_t cached_disk = -1;
 uint64_t cached_partition = -1;
 uint64_t partition_start;
@@ -198,7 +203,7 @@ bool write_fat_value(fat32::dd disk, uint32_t cluster, uint32_t value){
 //0 indicates that there is no next cluster
 uint32_t next_cluster(fat32::dd disk, uint32_t cluster){
     auto fat_value = read_fat_value(disk, cluster);
-    if(fat_value >= 0x0FFFFFF8){
+    if(fat_value >= CLUSTER_END){
         return 0;
     }
 
@@ -233,8 +238,7 @@ uint32_t find_free_cluster(fat32::dd disk){
             }
 
             auto value = fat_table[i] & 0x0FFFFFFF;
-
-            if(value == 0x0){
+            if(value == CLUSTER_FREE){
                 return i + j * entries_per_sector;
             }
         }
@@ -399,7 +403,7 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
             }
 
             //The block is corrupted
-            if(cluster_number == 0x0FFFFFF7){
+            if(cluster_number == CLUSTER_CORRUPTED){
                 return std::move(files);
             }
         }
@@ -479,7 +483,7 @@ cluster_entry* extend_directory(fat32::dd disk, std::unique_heap_array<cluster_e
         return nullptr;
     }
 
-    fat_is->free_clusters -= 1;
+    --fat_is->free_clusters;
     if(!write_is(disk)){
         return nullptr;
     }
@@ -489,7 +493,7 @@ cluster_entry* extend_directory(fat32::dd disk, std::unique_heap_array<cluster_e
         return nullptr;
     }
 
-    if(!write_fat_value(disk, cluster, 0x0FFFFFF8)){
+    if(!write_fat_value(disk, cluster, CLUSTER_END)){
         return nullptr;
     }
 
@@ -627,7 +631,7 @@ cluster_entry* find_free_entry(fat32::dd disk, std::unique_heap_array<cluster_en
         }
 
         //If the block is corrupted, we do not try to do anything else
-        if(next == 0x0FFFFFF7){
+        if(next == CLUSTER_CORRUPTED){
             return nullptr;
         }
 
@@ -812,7 +816,7 @@ bool rm_file(fat32::dd disk, uint32_t parent_cluster_number, size_t position, ui
             }
 
             //The block is corrupted
-            if(parent_cluster_number == 0x0FFFFFF7){
+            if(parent_cluster_number == CLUSTER_CORRUPTED){
                 break;
             }
 
@@ -832,13 +836,13 @@ bool rm_file(fat32::dd disk, uint32_t parent_cluster_number, size_t position, ui
             auto next = next_cluster(disk, cluster_number);
 
             //Mark this cluster as unused
-            if(!write_fat_value(disk, cluster_number, 0x0FFFFFF8)){
+            if(!write_fat_value(disk, cluster_number, CLUSTER_FREE)){
                 return false;
             }
 
-            --fat_is->free_clusters;
+            ++fat_is->free_clusters;
 
-            if(!next || next == 0x0FFFFFF7){
+            if(!next || next == CLUSTER_CORRUPTED){
                 break;
             }
 
@@ -851,6 +855,30 @@ bool rm_file(fat32::dd disk, uint32_t parent_cluster_number, size_t position, ui
     }
 
     return true;
+}
+
+bool rm_dir(fat32::dd disk, uint32_t parent_cluster_number, size_t position, uint32_t cluster_number){
+    //1. Every sub entry of the directory must be removed
+
+    for(auto& file : files(disk, cluster_number)){
+        if(file.file_name == "." || file.file_name == ".."){
+            continue;
+        }
+
+        if(file.directory){
+            if(!rm_dir(disk, cluster_number, file.position, file.location)){
+                return false;
+            }
+        } else {
+            if(!rm_file(disk, cluster_number, file.position, file.location)){
+                return false;
+            }
+        }
+    }
+
+    //Once the sub entries have been removed, a directory can be removed
+    //as a file
+    return rm_file(disk, parent_cluster_number, position, cluster_number);
 }
 
 } //end of anonymous namespace
@@ -975,7 +1003,7 @@ bool fat32::mkdir(dd disk, const disks::partition_descriptor& partition, const s
     }
 
     //One cluster is now used for the directory entries
-    fat_is->free_clusters -= 1;
+    --fat_is->free_clusters;
     if(!write_is(disk)){
         return false;
     }
@@ -1071,7 +1099,6 @@ bool fat32::rm(dd disk, const disks::partition_descriptor& partition, const std:
     if(is_file){
         return rm_file(disk, parent_cluster_number, position, cluster_number);
     } else {
-        //TODO
-        return false;
+        return rm_dir(disk, parent_cluster_number, position, cluster_number);
     }
 }
