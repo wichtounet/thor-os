@@ -15,6 +15,8 @@ bootloader/bootloader.bin: force_look sectors
 	cd bootloader; $(MAKE)
 
 thor.flp: bootloader/bootloader.bin
+	dd if=bootloader/stage1.bin of=hdd.img bs=446 count=1 conv=notrunc
+	dd if=bootloader/stage2.bin of=hdd.img bs=512 count=1 seek=1 conv=notrunc
 	cat bootloader/bootloader.bin > thor.bin
 	cat kernel/kernel.bin >> thor.bin
 	cat filler.bin >> thor.bin

@@ -24,6 +24,8 @@ second_step:
     mov si, load_kernel
     call print_line_16
 
+    jmp $
+
     ; Reset disk drive
     xor ax, ax
     mov dl, bootdev

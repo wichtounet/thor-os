@@ -11,13 +11,13 @@ stage1.bin: stage1.asm
 stage2.bin: stage2.asm sectors.asm
 	nasm -w+all -f bin -o stage2.bin stage2.asm
 
-padding.bin:
-	dd if=/dev/zero of=padding.bin bs=512 count=34
+#padding.bin:
+#	dd if=/dev/zero of=padding.bin bs=512 count=34
 
-bootloader.bin: stage1.bin stage2.bin padding.bin
+bootloader.bin: stage1.bin stage2.bin
 	cat stage1.bin > bootloader.bin
 	cat stage2.bin >> bootloader.bin
-	cat padding.bin >> bootloader.bin
+#	cat padding.bin >> bootloader.bin
 
 clean:
 	rm -f stage1.bin

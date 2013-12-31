@@ -19,6 +19,10 @@ rm_start:
     mov ss, ax
     mov sp, 4096
 
+    ; Used for disk access
+    xor ax, ax
+    mov gs, ax
+
     ; Set data segment
     mov ax, 0x7C0
     mov ds, ax
@@ -62,6 +66,12 @@ rm_start:
 
     jc extensions_not_supported
 
+    ; Tests
+
+    ; This is the partition start
+;    mov di, [gs:(0x1000 + 446 + 8)]
+;    call print_int_16
+
     ; 3. Wait for a key press
 
     call new_line_16
@@ -78,35 +88,14 @@ rm_start:
     mov si, load_msg
     call print_line_16
 
-    ; Reset disk drive
-    xor ax, ax
-    xor ah, ah
-    mov dl, 0
-    int 0x13
+    ; Loading the stage 2 from disk
 
-    jc reset_failed
-
-    ; Loading the stage 2 from floppy
-
-    bootdev equ 0x0
-    sectors equ 1
-
-    mov ax, 0x90
-    mov es, ax
-    xor bx, bx
-
-    mov ah, 0x2         ; Read sectors from memory
-    mov al, sectors     ; Number of sectors to read
-    xor ch, ch          ; Cylinder 0
-    mov cl, 2           ; Sector 2
-    xor dh, dh          ; Head 0
-    mov dl, bootdev     ; Drive
+    mov ah, 0x42
+    mov si, DAP
+    mov dl, 0x80
     int 0x13
 
     jc read_failed
-
-    cmp al, sectors
-    jne read_failed
 
     ; Run the stage 2
 
@@ -134,7 +123,18 @@ error_end:
 
     jmp $
 
-; Datas
+; Variable Datas
+
+DAP:
+.size       db 0x10
+.null       db 0x0
+.count      dw 1
+.offset     dw 0
+.segment    dw 0x90
+.lba        dd 1
+.lba48      dd 0
+
+; Constants Datas
 
     header_1 db 'Welcome to Thor OS Bootloader!', 0
 
@@ -148,5 +148,4 @@ error_end:
 
 ; Make a real bootsector
 
-    times 510-($-$$) db 0
-    dw 0xAA55
+    times 446-($-$$) db 0
