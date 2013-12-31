@@ -49,6 +49,11 @@ rm_start:
     or al, 2
     out 0x92, al
 
+    ; 2. Welcome the user to the bootloader
+
+    mov si, header_1
+    call print_line_16
+
     ; Check if Extended Read is available
     mov ah, 0x41
     mov bx, 0x55AA
@@ -57,10 +62,7 @@ rm_start:
 
     jc extensions_not_supported
 
-    ; 2. Welcome the user to the bootloader
-
-    mov si, header_1
-    call print_line_16
+    ; 3. Wait for a key press
 
     call new_line_16
 
@@ -69,10 +71,11 @@ rm_start:
 
     call new_line_16
 
-    ; Wait for any key
     call key_wait
 
-    mov si, load_kernel
+    ; 4. Once the user pressed a key, load the second stage
+
+    mov si, load_msg
     call print_line_16
 
     ; Reset disk drive
@@ -136,7 +139,7 @@ error_end:
     header_1 db 'Welcome to Thor OS Bootloader!', 0
 
     press_key_msg db 'Press any key to load the kernel...', 0
-    load_kernel db 'Attempt to load the stage 2...', 0
+    load_msg db 'Attempt to load the stage 2...', 0
 
     reset_failed_msg db 'Reset disk failed', 0
     read_failed_msg db 'Read disk failed', 0
