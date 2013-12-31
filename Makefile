@@ -15,15 +15,16 @@ bootloader/bootloader.bin: force_look sectors
 	cd bootloader; $(MAKE)
 
 thor.flp: bootloader/bootloader.bin
-	dd if=bootloader/stage1.bin of=hdd.img bs=446 count=1 conv=notrunc
-	dd if=bootloader/stage2.bin of=hdd.img bs=512 count=1 seek=1 conv=notrunc
-	cat bootloader/bootloader.bin > thor.bin
-	cat kernel/kernel.bin >> thor.bin
-	cat filler.bin >> thor.bin
-	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
+	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
+	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
+	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
+	sudo /bin/mount -t vfat /dev/loop0 /mnt/fake_cdrom/
+	sudo /bin/cp kernel/kernel.bin /mnt/fake_cdrom/
+	sudo /bin/umount /mnt/fake_cdrom/
+	sudo /sbin/losetup -d /dev/loop0
 
 qemu: default
-	qemu-kvm -cpu host -fda thor.flp -hda hdd.img -boot order=a
+	qemu-kvm -cpu host -hda hdd.img
 
 bochs: default
 	echo "c" > commands
