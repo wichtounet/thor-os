@@ -13,7 +13,15 @@ jmp second_step
 %include "sectors.asm"
 
 KERNEL_BASE equ 0x100      ; 0x100:0x0 = 0x1000
-bootdev equ 0x0
+
+DAP:
+.size       db 0x10
+.null       db 0x0
+.count      dw 0
+.offset     dw 0
+.segment    dw 0x0
+.lba        dd 0
+.lba48      dd 0
 
 ; Loaded at 0x90:0x0
 second_step:
@@ -21,97 +29,124 @@ second_step:
     mov ax, 0x90
     mov ds, ax
 
+    ; Used for disk access
+    xor ax, ax
+    mov gs, ax
+
     mov si, load_kernel
     call print_line_16
 
-    jmp $
+    ; 1. Read the MBR to get partition table
 
-    ; Reset disk drive
-    xor ax, ax
-    mov dl, bootdev
-    int 0x13
+    mov byte [DAP.count], 1
+    mov word [DAP.offset], 0x1000
+    mov word [DAP.segment], 0
+    mov dword [DAP.lba], 0
 
-    jc reset_failed
-
-    ; Loading the kernel from floppy
-
-    mov ax, KERNEL_BASE
-    mov es, ax
-
-    xor di, di
-
-.next:
-    ; Make sure the second part of the address is 0x0
-    xor bx, bx
-
-    ; Read one sector
-    mov ah, 0x2         ; Read sectors from memory
-    mov al, 1           ; Number of sectors to read
-    mov ch, [cylinder]  ; Cylinder
-    mov cl, [sector]    ; Sector
-    mov dh, [head]      ; Head
-    mov dl, bootdev     ; Drive
+    mov ah, 0x42
+    mov si, DAP
+    mov dl, 0x80
     int 0x13
 
     jc read_failed
 
-    test ah, ah
-    jne read_failed
+    mov di, [gs:(0x1000 + 446 + 8)]
+    mov [partition_start], di
+    call print_int_16
+    call new_line_16
 
-    cmp al, 1
-    jne read_failed
+    ; 2. Read the VBR of the partition to get FAT informations
 
-    mov si, star
-    call print_16
+    mov byte [DAP.count], 1
+    mov word [DAP.offset], 0x1000
+    mov word [DAP.segment], 0
 
-    inc di
-    cmp di, sectors
-    jne .continue
+    mov di, [partition_start]
+    mov word [DAP.lba], di
 
-    mov si, kernel_loaded
-    call print_line_16
+    mov ah, 0x42
+    mov si, DAP
+    mov dl, 0x80
+    int 0x13
 
-    ;Run the kernel
+    jc read_failed
 
-    jmp dword KERNEL_BASE:0x0
+    mov ah, [gs:(0x1000 + 13)]
+    mov [sectors_per_cluster], ah
+    movzx di, ah
+    call print_int_16
+    call new_line_16
 
-.continue:
-    mov cl, [sector]
-    inc cl
-    mov [sector], cl
+    mov di, [gs:(0x1000 + 14)]
+    mov [reserved_sectors], di
+    call print_int_16
+    call new_line_16
 
-    cmp cl, 19
-    jne .next_sector
+    mov ah, [gs:(0x1000 + 16)]
+    mov [number_of_fat], ah
+    movzx di, ah
+    call print_int_16
+    call new_line_16
 
-    mov cl, 1
-    mov [sector], cl
+    mov di, [gs:(0x1000 + 36)]
+    mov [sectors_per_fat], di
+    call print_int_16
+    call new_line_16
 
-    mov dh, [head]
-    inc dh
-    mov [head], dh
+    mov di, [gs:(0x1000 + 44)]
+    mov [root_dir_start], di
+    call print_int_16
+    call new_line_16
 
-    cmp dh, 2
-    jne .next_sector
+    ; fat_begin = partition_start + reserved_sectors
+    mov di, [partition_start]
+    mov si, [reserved_sectors]
+    add di, si
+    mov [fat_begin], di
+    call print_int_16
+    call new_line_16
 
-    xor dh, dh
-    mov [head], dh
+    ; cluster_begin = (number_of_fat * sectors_per_fat) + fat_begin
+    mov ax, [sectors_per_fat]
+    movzx bx, [number_of_fat]
+    mul bx
+    mov bx, [fat_begin]
+    add ax, bx
+    mov [cluster_begin], ax
+    mov di, ax
+    call print_int_16
+    call new_line_16
 
-    mov ch, [cylinder]
-    inc ch
-    mov [cylinder], ch
+    ; 3. Read the root directory to find the kernel executable
 
-.next_sector:
-    mov ax, es
-    add ax, 0x20    ; 0x20:0x0 = 512 (sector size)
-    mov es, ax
+    mov ah, [sectors_per_cluster]
+    mov byte [DAP.count], ah
+    mov word [DAP.offset], 0x1000
+    mov word [DAP.segment], 0
 
-    jmp .next
+    ; Compute LBA from root_dir_start
+    mov ax, [root_dir_start]
+    sub ax, 2
+    movzx bx, byte [sectors_per_cluster]
+    mul bx
+    mov bx, [cluster_begin]
+    add ax, bx
 
-reset_failed:
-    mov si, reset_failed_msg
-    call print_line_16
+    mov word [DAP.lba], ax
+    mov di, ax
+    call print_int_16
+    call new_line_16
 
-    jmp error_end
+    mov ah, 0x42
+    mov si, DAP
+    mov dl, 0x80
+    int 0x13
+
+    jc read_failed
+
+    ; TODO Find kernel.bin in the directory
+
+    jmp $
 
 read_failed:
     mov si, read_failed_msg
@@ -125,9 +160,15 @@ error_end:
 
 ; Variables
 
-    sector db 1
-    head db 0
-    cylinder db 1
+    partition_start dw 0
+    reserved_sectors dw 0
+    number_of_fat db 0
+    sectors_per_fat dw 0
+    sectors_per_cluster db 0
+    root_dir_start dw 0
+
+    fat_begin dw 0
+    cluster_begin dw 0
 
 ; Constant Datas
 
@@ -135,10 +176,9 @@ error_end:
     kernel_loaded db 'Kernel fully loaded', 0
     star db '*', 0
 
-    reset_failed_msg db 'Reset disk failed', 0
     read_failed_msg db 'Read disk failed', 0
     load_failed db 'Kernel loading failed', 0
 
-; Make it one sector exactly
+; Make it two sectors exactly
 
-    times 512-($-$$) db 0
+    times 1024-($-$$) db 0
