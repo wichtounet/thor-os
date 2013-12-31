@@ -23,22 +23,43 @@ rm_start:
     mov ax, 0x7C0
     mov ds, ax
 
-    ; Set video mode
+    ; Hide cursor
     mov ah, 0x01
     mov cx, 0x2607
     int 0x10
 
+    ; Move cursor at top left position
+    mov ah, 0x02
+    xor bx, bx
+    xor dx, dx
+    int 0x10
+
+    ; Clear screen
+    mov ah, 0x06
+    xor al, al
+    xor bx, bx
+    mov bh, 0x07
+    xor cx, cx
+    mov dh, 24
+    mov dl, 79
+    int 0x10
+
+    ; Enable A20 gate
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
+    ; Check if Extended Read is available
+    mov ah, 0x41
+    mov bx, 0x55AA
+    mov dl, 0x80
+    int 0x13
+
+    jc extensions_not_supported
+
     ; 2. Welcome the user to the bootloader
 
-    call new_line_16
-
-    mov si, header_0
-    call print_line_16
-
     mov si, header_1
-    call print_line_16
-
-    mov si, header_2
     call print_line_16
 
     call new_line_16
@@ -47,11 +68,6 @@ rm_start:
     call print_line_16
 
     call new_line_16
-
-    ; Enable A20 gate
-    in al, 0x92
-    or al, 2
-    out 0x92, al
 
     ; Wait for any key
     call key_wait
@@ -89,9 +105,15 @@ rm_start:
     cmp al, sectors
     jne read_failed
 
-    ; Run the assembly kernel
+    ; Run the stage 2
 
     jmp dword 0x90:0x0
+
+extensions_not_supported:
+    mov si, extensions_not_supported_msg
+    call print_line_16
+
+    jmp error_end
 
 reset_failed:
     mov si, reset_failed_msg
@@ -111,9 +133,7 @@ error_end:
 
 ; Datas
 
-    header_0 db '******************************', 0
     header_1 db 'Welcome to Thor OS Bootloader!', 0
-    header_2 db '******************************', 0
 
     press_key_msg db 'Press any key to load the kernel...', 0
     load_kernel db 'Attempt to load the stage 2...', 0
@@ -121,6 +141,7 @@ error_end:
     reset_failed_msg db 'Reset disk failed', 0
     read_failed_msg db 'Read disk failed', 0
     load_failed db 'Stage 2 loading failed', 0
+    extensions_not_supported_msg db 'BIOS Extensions not supported', 0
 
 ; Make a real bootsector
 
