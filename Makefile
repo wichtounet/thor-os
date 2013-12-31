@@ -1,20 +1,17 @@
-.PHONY: default clean force_look qemu bochs debug sectors
+.PHONY: default clean force_look qemu bochs debug
 
 default: thor.flp
 
 kernel/kernel.bin: force_look
 	cd kernel; $(MAKE)
 
-filler.bin: kernel/kernel.bin
-	bash fill.bash
+bootloader/stage1.bin: force_look
+	cd bootloader; $(MAKE) stage1.bin
 
-sectors: force_look filler.bin
-	cd bootloader; $(MAKE) sectors
+bootloader/stage2.bin: force_look
+	cd bootloader; $(MAKE) stage2.bin
 
-bootloader/bootloader.bin: force_look sectors
-	cd bootloader; $(MAKE)
-
-thor.flp: bootloader/bootloader.bin
+thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin
 	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
 	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
 	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
