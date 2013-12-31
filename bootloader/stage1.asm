@@ -19,10 +19,6 @@ rm_start:
     mov ss, ax
     mov sp, 4096
 
-    ; Used for disk access
-    xor ax, ax
-    mov gs, ax
-
     ; Set data segment
     mov ax, 0x7C0
     mov ds, ax
@@ -68,10 +64,6 @@ rm_start:
 
     ; Tests
 
-    ; This is the partition start
-;    mov di, [gs:(0x1000 + 446 + 8)]
-;    call print_int_16
-
     ; 3. Wait for a key press
 
     call new_line_16
@@ -107,12 +99,6 @@ extensions_not_supported:
 
     jmp error_end
 
-reset_failed:
-    mov si, reset_failed_msg
-    call print_line_16
-
-    jmp error_end
-
 read_failed:
     mov si, read_failed_msg
     call print_line_16
@@ -128,7 +114,7 @@ error_end:
 DAP:
 .size       db 0x10
 .null       db 0x0
-.count      dw 1
+.count      dw 2
 .offset     dw 0
 .segment    dw 0x90
 .lba        dd 1
@@ -141,7 +127,6 @@ DAP:
     press_key_msg db 'Press any key to load the kernel...', 0
     load_msg db 'Attempt to load the stage 2...', 0
 
-    reset_failed_msg db 'Reset disk failed', 0
     read_failed_msg db 'Read disk failed', 0
     load_failed db 'Stage 2 loading failed', 0
     extensions_not_supported_msg db 'BIOS Extensions not supported', 0
