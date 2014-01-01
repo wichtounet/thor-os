@@ -12,7 +12,7 @@ jmp second_step
 %include "intel_16.asm"
 %include "sectors.asm"
 
-KERNEL_BASE equ 0x100      ; 0x100:0x0 = 0x1000
+KERNEL_BASE equ 0x200      ; 0x200:0x0 = 0x2000
 
 DAP:
 .size       db 0x10
@@ -215,14 +215,108 @@ second_step:
 
         jmp error_end
 
-    ; TODO Find kernel.bin in the directory
-
     .found:
 
     mov si, kernel_found
     call print_line_16
 
+    ; 4. Load the kernel into memory
+
+    mov ax, [cluster_low]
+    mov [current_cluster], ax
+    mov word [current_segment], KERNEL_BASE
+
+.next_cluster:
+    mov si, star
+    call print_16
+
+    mov ah, [sectors_per_cluster]
+    mov byte [DAP.count], ah
+    mov word [DAP.offset], 0x0
+
+    mov ax, [current_segment]
+    mov word [DAP.segment], ax
+
+    ; Compute LBA from current_cluster
+    mov ax, [current_cluster]
+    sub ax, 2
+    movzx bx, byte [sectors_per_cluster]
+    mul bx
+    mov bx, [cluster_begin]
+    add ax, bx
+
+    mov word [DAP.lba], ax
+
+    mov ah, 0x42
+    mov si, DAP
+    mov dl, 0x80
+    int 0x13
+
+    jc read_failed
+
+    ; Compute next cluster
+
+    ; Compute the sector of the FAT to read
+    mov ax, [current_cluster]
+    shl ax, 2 ; current_cluster * 4
+    shr ax, 9 ; (current_cluster * 4) / 512
+    mov bx, [fat_begin]
+    add ax, bx ; fat_sector
+
+    ; Read the FAT sector
+    mov byte [DAP.count], 1
+    mov word [DAP.offset], 0x100
+    mov word [DAP.segment], 0x0
+    mov word [DAP.lba], ax
+
+    mov ah, 0x42
+    mov si, DAP
+    mov dl, 0x80
+    int 0x13
+
+    jc read_failed
+
+    mov si, [current_cluster]
+    and si, 512 - 1 ; current_cluster % 512
+    shl si, 2
+
+    ; cluster low
+    mov ax, [gs:(0x100 + si)]
+    ; cluster high
+    mov bx, [gs:(0x100 + si + 2)]
+
+    cmp bx, 0x0FFF
+    jl .ok
+
+    cmp ax, 0xFFF7
+    je corrupted
+
+    cmp ax, 0xFFF8
+    jge .fully_loaded
+
+.ok:
+    mov [current_cluster], ax
+
+    mov ax, sectors_per_cluster
+    mov bx, 0x20
+    mul bx
+    mov bx, [current_segment]
+    add ax, bx
+    mov [current_segment], ax
+
+    jmp .next_cluster
+
+.fully_loaded:
+    mov si, kernel_loaded
+    call print_line_16
+
     jmp $
+
+corrupted:
+    mov si, corrupted_disk
+    call print_line_16
+
+    jmp error_end
 
 read_failed:
     mov si, read_failed_msg
@@ -251,12 +345,16 @@ error_end:
     size_high dw 0
     size_low dw 0
 
+    current_cluster dw 0
+    current_segment dw 0
+
 ; Constant Datas
 
     load_kernel db 'Attempt to load the kernel...', 0
     kernel_found db 'Kernel found. Starting kernel loading...', 0
     kernel_not_found db 'Kernel not found...', 0
     kernel_loaded db 'Kernel fully loaded', 0
+    corrupted_disk db 'The disk seeems to be corrupted', 0
     star db '*', 0
 
     read_failed_msg db 'Read disk failed', 0

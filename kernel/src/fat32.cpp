@@ -93,10 +93,10 @@ struct long_entry {
 static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
 static_assert(sizeof(long_entry) == 32, "A cluster entry is 32 bytes");
 
-constexpr const bool CLUSTER_FREE = 0x0;
-constexpr const bool CLUSTER_RESERVED= 0x1;
-constexpr const bool CLUSTER_CORRUPTED = 0x0FFFFFF7;
-constexpr const bool CLUSTER_END = 0x0FFFFFF8;
+constexpr const uint32_t CLUSTER_FREE = 0x0;
+constexpr const uint32_t CLUSTER_RESERVED= 0x1;
+constexpr const uint32_t CLUSTER_CORRUPTED = 0x0FFFFFF7;
+constexpr const uint32_t CLUSTER_END = 0x0FFFFFF8;
 
 uint64_t cached_disk = -1;
 uint64_t cached_partition = -1;
