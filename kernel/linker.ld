@@ -3,7 +3,7 @@ ENTRY(kernel_main)
 SECTIONS
 {
     /* This is where the micro kernel will load the code */
-	. = 0x1000;
+	. = 0x2000;
 
     .text_16 BLOCK(512) : ALIGN(512)
 	{

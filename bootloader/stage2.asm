@@ -235,7 +235,7 @@ second_step:
     mov word [DAP.offset], 0x0
 
     mov ax, [current_segment]
-    mov word [DAP.segment], ax
+    mov [DAP.segment], ax
 
     ; Compute LBA from current_cluster
     mov ax, [current_cluster]
@@ -297,9 +297,8 @@ second_step:
 .ok:
     mov [current_cluster], ax
 
-    mov ax, sectors_per_cluster
-    mov bx, 0x20
-    mul bx
+    movzx ax, byte [sectors_per_cluster]
+    shl ax, 5
     mov bx, [current_segment]
     add ax, bx
     mov [current_segment], ax
@@ -309,6 +308,8 @@ second_step:
 .fully_loaded:
     mov si, kernel_loaded
     call print_line_16
+
+    call KERNEL_BASE:0x0
 
     jmp $
 
@@ -356,6 +357,7 @@ error_end:
     kernel_loaded db 'Kernel fully loaded', 0
     corrupted_disk db 'The disk seeems to be corrupted', 0
     star db '*', 0
+    dix db '|', 0
 
     read_failed_msg db 'Read disk failed', 0
     load_failed db 'Kernel loading failed', 0
