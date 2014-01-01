@@ -17,6 +17,7 @@ thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin
 	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
 	sudo /bin/mount -t vfat /dev/loop0 /mnt/fake_cdrom/
 	sudo /bin/cp kernel/kernel.bin /mnt/fake_cdrom/
+	sleep 0.1
 	sudo /bin/umount /mnt/fake_cdrom/
 	sudo /sbin/losetup -d /dev/loop0
 

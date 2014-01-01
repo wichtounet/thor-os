@@ -50,10 +50,8 @@ second_step:
 
     jc read_failed
 
-    mov di, [gs:(0x1000 + 446 + 8)]
-    mov [partition_start], di
-    call print_int_16
-    call new_line_16
+    mov ax, [gs:(0x1000 + 446 + 8)]
+    mov [partition_start], ax
 
     ; 2. Read the VBR of the partition to get FAT informations
 
@@ -73,38 +71,24 @@ second_step:
 
     mov ah, [gs:(0x1000 + 13)]
     mov [sectors_per_cluster], ah
-    movzx di, ah
-    call print_int_16
-    call new_line_16
 
-    mov di, [gs:(0x1000 + 14)]
-    mov [reserved_sectors], di
-    call print_int_16
-    call new_line_16
+    mov ax, [gs:(0x1000 + 14)]
+    mov [reserved_sectors], ax
 
     mov ah, [gs:(0x1000 + 16)]
     mov [number_of_fat], ah
-    movzx di, ah
-    call print_int_16
-    call new_line_16
 
-    mov di, [gs:(0x1000 + 36)]
-    mov [sectors_per_fat], di
-    call print_int_16
-    call new_line_16
+    mov ax, [gs:(0x1000 + 36)]
+    mov [sectors_per_fat], ax
 
-    mov di, [gs:(0x1000 + 44)]
-    mov [root_dir_start], di
-    call print_int_16
-    call new_line_16
+    mov ax, [gs:(0x1000 + 44)]
+    mov [root_dir_start], ax
 
     ; fat_begin = partition_start + reserved_sectors
-    mov di, [partition_start]
-    mov si, [reserved_sectors]
-    add di, si
-    mov [fat_begin], di
-    call print_int_16
-    call new_line_16
+    mov ax, [partition_start]
+    mov bx, [reserved_sectors]
+    add ax, bx
+    mov [fat_begin], ax
 
     ; cluster_begin = (number_of_fat * sectors_per_fat) + fat_begin
     mov ax, [sectors_per_fat]
@@ -113,9 +97,12 @@ second_step:
     mov bx, [fat_begin]
     add ax, bx
     mov [cluster_begin], ax
-    mov di, ax
-    call print_int_16
-    call new_line_16
+
+    ; entries per cluster = (512/32) * sectors_per_cluster
+    mov ax, 32
+    movzx bx, byte [sectors_per_cluster]
+    mul bx
+    mov [entries_per_cluster], ax
 
     ; 3. Read the root directory to find the kernel executable
 
@@ -133,9 +120,6 @@ second_step:
     add ax, bx
 
     mov word [DAP.lba], ax
-    mov di, ax
-    call print_int_16
-    call new_line_16
 
     mov ah, 0x42
     mov si, DAP
@@ -144,7 +128,99 @@ second_step:
 
     jc read_failed
 
+    mov si, 0x1000
+    xor cx, cx
+
+    .next:
+        mov ah, [gs:si]
+
+        ; Test if it is the end of the directory
+        test ah, ah
+        je .end_of_directory
+
+        ; Verify char by char if it is KERNEL.BIN
+        cmp ah, 75
+        jne .continue
+
+        mov ah, [gs:(si+1)]
+        cmp ah, 69
+        jne .continue
+
+        mov ah, [gs:(si+2)]
+        cmp ah, 82
+        jne .continue
+
+        mov ah, [gs:(si+3)]
+        cmp ah, 78
+        jne .continue
+
+        mov ah, [gs:(si+4)]
+        cmp ah, 69
+        jne .continue
+
+        mov ah, [gs:(si+5)]
+        cmp ah, 76
+        jne .continue
+
+        mov ah, [gs:(si+6)]
+        cmp ah, 32
+        jne .continue
+
+        mov ah, [gs:(si+7)]
+        cmp ah, 32
+        jne .continue
+
+        mov ah, [gs:(si+8)]
+        cmp ah, 66
+        jne .continue
+
+        mov ah, [gs:(si+9)]
+        cmp ah, 73
+        jne .continue
+
+        mov ah, [gs:(si+10)]
+        cmp ah, 78
+        jne .continue
+
+        ; cluster high
+        mov ax, [gs:(si+20)]
+        mov [cluster_high], ax
+
+        ; cluster low
+        mov ax, [gs:(si+26)]
+        mov [cluster_low], ax
+
+        ; file_size low
+        mov ax, [gs:(si+28)]
+        mov [size_low], ax
+
+        ; file_size high
+        mov ax, [gs:(si+30)]
+        mov [size_high], ax
+
+        jmp .found
+
+    .continue:
+        add si, 32
+        inc cx
+
+        mov bx, [entries_per_cluster]
+        cmp cx, bx
+        jne .next
+
+    .end_of_cluster:
+    .end_of_directory:
+        mov si, kernel_not_found
+        call print_line_16
+
+        jmp error_end
+
     ; TODO Find kernel.bin in the directory
+
+    .found:
+
+    mov si, kernel_found
+    call print_line_16
 
     jmp $
 
@@ -166,13 +242,20 @@ error_end:
     sectors_per_fat dw 0
     sectors_per_cluster db 0
     root_dir_start dw 0
-
+    entries_per_cluster dw 0
     fat_begin dw 0
     cluster_begin dw 0
+
+    cluster_high dw 0
+    cluster_low dw 0
+    size_high dw 0
+    size_low dw 0
 
 ; Constant Datas
 
     load_kernel db 'Attempt to load the kernel...', 0
+    kernel_found db 'Kernel found. Starting kernel loading...', 0
+    kernel_not_found db 'Kernel not found...', 0
     kernel_loaded db 'Kernel fully loaded', 0
     star db '*', 0
 
