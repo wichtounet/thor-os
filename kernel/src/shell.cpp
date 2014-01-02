@@ -299,7 +299,7 @@ void disks_command(const std::vector<std::string>& params){
     }
 
     if(verbose){
-        k_print_line("UUID       Type  Model             Serial          Firmware");
+        k_print_line("UUID       Type  Model                Serial          Firmware");
     } else {
         k_print_line("UUID       Type");
     }
