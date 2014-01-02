@@ -55,7 +55,7 @@ void disks::detect_disks(){
         auto& descriptor = ata::drive(i);
 
         if(descriptor.present){
-            _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATA, &descriptor};
+            _disks[number_of_disks] = {number_of_disks, descriptor.atapi ? disks::disk_type::ATAPI : disks::disk_type::ATA, &descriptor};
             ++number_of_disks;
         }
     }
@@ -96,6 +96,8 @@ const char* disks::disk_type_to_string(disk_type type){
     switch(type){
         case disk_type::ATA:
             return "ATA";
+        case disk_type::ATAPI:
+            return "ATAPI";
         default:
             return "Invalid Type";
     }

@@ -18,6 +18,7 @@ struct drive_descriptor {
     uint8_t drive;
     bool present;
     uint8_t slave;
+    bool atapi;
     std::string model;
     std::string serial;
     std::string firmware;

@@ -308,7 +308,7 @@ void disks_command(const std::vector<std::string>& params){
         auto& descriptor = disks::disk_by_index(i);
 
         if(verbose){
-            if(descriptor.type == disks::disk_type::ATA){
+            if(descriptor.type == disks::disk_type::ATA || descriptor.type == disks::disk_type::ATAPI){
                 auto sub = static_cast<ata::drive_descriptor*>(descriptor.descriptor);
 
                 k_printf("%10d %5s %20s %15s %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type),
@@ -326,15 +326,21 @@ void partitions_command(const std::vector<std::string>& params){
     auto uuid = parse(params[1]);
 
     if(disks::disk_exists(uuid)){
-        auto partitions = disks::partitions(disks::disk_by_uuid(uuid));
+        auto& disk = disks::disk_by_uuid(uuid);
 
-        if(partitions.size() > 0){
-            k_print_line("UUID       Type         Start      Sectors");
+        if(disk.type != disks::disk_type::ATA){
+            k_print_line("Only ATA disks are supported");
+        } else {
+            auto partitions = disks::partitions(disk);
 
-            for(auto& partition : partitions){
-                k_printf("%10d %12s %10d %u\n", partition.uuid,
-                    disks::partition_type_to_string(partition.type),
-                    partition.start, partition.sectors);
+            if(partitions.size() > 0){
+                k_print_line("UUID       Type         Start      Sectors");
+
+                for(auto& partition : partitions){
+                    k_printf("%10d %12s %10d %u\n", partition.uuid,
+                        disks::partition_type_to_string(partition.type),
+                        partition.start, partition.sectors);
+                }
             }
         }
     } else {
@@ -364,10 +370,15 @@ void mount_command(const std::vector<std::string>& params){
 
         if(disks::disk_exists(disk_uuid)){
             auto& disk = disks::disk_by_uuid(disk_uuid);
-            if(disks::partition_exists(disk, partition_uuid)){
-                disks::mount(disk, partition_uuid);
+
+            if(disk.type != disks::disk_type::ATA){
+                k_print_line("Only ATA disks are supported");
             } else {
-                k_printf("Partition %u does not exist\n", partition_uuid);
+                if(disks::partition_exists(disk, partition_uuid)){
+                    disks::mount(disk, partition_uuid);
+                } else {
+                    k_printf("Partition %u does not exist\n", partition_uuid);
+                }
             }
         } else {
             k_printf("Disk %u does not exist\n", disk_uuid);

@@ -281,9 +281,25 @@ void identify(ata::drive_descriptor& drive){
         }
     }
 
+    drive.atapi = false;
+
     //It is probably an ATAPI device
     if(not_ata){
-        return;
+        auto cl = in_byte(drive.controller + ATA_LCYL);
+        auto ch = in_byte(drive.controller + ATA_HCYL);
+
+        if(cl == 0x14 && ch == 0xEB){
+            drive.atapi = true;
+        } else if(cl == 0x69 && ch == 0x96){
+            drive.atapi = true;
+        } else {
+            //Unknonw: ignoring
+            return;
+        }
+
+        //Generate the ATAPI IDENTIFY command
+        out_byte(drive.controller + ATA_COMMAND, 0xA1);
+        sleep_ms(1);
     }
 
     drive.present = true;
@@ -306,10 +322,10 @@ void identify(ata::drive_descriptor& drive){
 void ata::detect_disks(){
     drives = new drive_descriptor[4];
 
-    drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, "", "", ""};
-    drives[1] = {ATA_PRIMARY, 0xF0, false, SLAVE_BIT, "", "", ""};
-    drives[2] = {ATA_SECONDARY, 0xE0, false, MASTER_BIT, "", "", ""};
-    drives[3] = {ATA_SECONDARY, 0xF0, false, SLAVE_BIT, "", "", ""};
+    drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, false, "", "", ""};
+    drives[1] = {ATA_PRIMARY, 0xF0, false, SLAVE_BIT, false, "", "", ""};
+    drives[2] = {ATA_SECONDARY, 0xE0, false, MASTER_BIT, false, "", "", ""};
+    drives[3] = {ATA_SECONDARY, 0xF0, false, SLAVE_BIT, false, "", "", ""};
 
     out_byte(ATA_PRIMARY + ATA_DEV_CTL, ATA_CTL_nIEN);
     out_byte(ATA_SECONDARY + ATA_DEV_CTL, ATA_CTL_nIEN);
