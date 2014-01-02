@@ -1,27 +1,29 @@
-.PHONY: default clean force_look qemu bochs debug sectors
+.PHONY: default clean force_look qemu bochs debug
 
 default: thor.flp
 
 kernel/kernel.bin: force_look
 	cd kernel; $(MAKE)
 
-filler.bin: kernel/kernel.bin
-	bash fill.bash
+bootloader/stage1.bin: force_look
+	cd bootloader; $(MAKE) stage1.bin
 
-sectors: force_look filler.bin
-	cd bootloader; $(MAKE) sectors
+bootloader/stage2.bin: force_look
+	cd bootloader; $(MAKE) stage2.bin
 
-bootloader/bootloader.bin: force_look sectors
-	cd bootloader; $(MAKE)
-
-thor.flp: bootloader/bootloader.bin
-	cat bootloader/bootloader.bin > thor.bin
-	cat kernel/kernel.bin >> thor.bin
-	cat filler.bin >> thor.bin
-	dd status=noxfer conv=notrunc if=thor.bin of=thor.flp
+thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin
+	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
+	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
+	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
+	sudo /usr/sbin/mkdosfs -F32 /dev/loop0
+	sudo /bin/mount -t vfat /dev/loop0 /mnt/fake_cdrom/
+	sudo /bin/cp kernel/kernel.bin /mnt/fake_cdrom/
+	sleep 0.1
+	sudo /bin/umount /mnt/fake_cdrom/
+	sudo /sbin/losetup -d /dev/loop0
 
 qemu: default
-	qemu-kvm -cpu host -fda thor.flp -hda hdd.img -boot order=a
+	qemu-kvm -cpu host -hda hdd.img
 
 bochs: default
 	echo "c" > commands

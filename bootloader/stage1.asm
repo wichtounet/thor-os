@@ -14,32 +14,56 @@ jmp rm_start
 ; Start in real mode
 rm_start:
     ; Set stack space (4K) and stack segment
-    mov ax, 0x9C0
-    add ax, 288
+    mov ax, 0x70
     mov ss, ax
-    mov sp, 4096
+    mov sp, 2048
 
     ; Set data segment
     mov ax, 0x7C0
     mov ds, ax
 
-    ; Set video mode
+    ; Hide cursor
     mov ah, 0x01
     mov cx, 0x2607
     int 0x10
 
+    ; Move cursor at top left position
+    mov ah, 0x02
+    xor bx, bx
+    xor dx, dx
+    int 0x10
+
+    ; Clear screen
+    mov ah, 0x06
+    xor al, al
+    xor bx, bx
+    mov bh, 0x07
+    xor cx, cx
+    mov dh, 24
+    mov dl, 79
+    int 0x10
+
+    ; Enable A20 gate
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
     ; 2. Welcome the user to the bootloader
-
-    call new_line_16
-
-    mov si, header_0
-    call print_line_16
 
     mov si, header_1
     call print_line_16
 
-    mov si, header_2
-    call print_line_16
+    ; Check if Extended Read is available
+    mov ah, 0x41
+    mov bx, 0x55AA
+    mov dl, 0x80
+    int 0x13
+
+    jc extensions_not_supported
+
+    ; Tests
+
+    ; 3. Wait for a key press
 
     call new_line_16
 
@@ -48,53 +72,28 @@ rm_start:
 
     call new_line_16
 
-    ; Enable A20 gate
-    in al, 0x92
-    or al, 2
-    out 0x92, al
-
-    ; Wait for any key
     call key_wait
 
-    mov si, load_kernel
+    ; 4. Once the user pressed a key, load the second stage
+
+    mov si, load_msg
     call print_line_16
 
-    ; Reset disk drive
-    xor ax, ax
-    xor ah, ah
-    mov dl, 0
-    int 0x13
+    ; Loading the stage 2 from disk
 
-    jc reset_failed
-
-    ; Loading the stage 2 from floppy
-
-    bootdev equ 0x0
-    sectors equ 1
-
-    mov ax, 0x90
-    mov es, ax
-    xor bx, bx
-
-    mov ah, 0x2         ; Read sectors from memory
-    mov al, sectors     ; Number of sectors to read
-    xor ch, ch          ; Cylinder 0
-    mov cl, 2           ; Sector 2
-    xor dh, dh          ; Head 0
-    mov dl, bootdev     ; Drive
+    mov ah, 0x42
+    mov si, DAP
+    mov dl, 0x80
     int 0x13
 
     jc read_failed
 
-    cmp al, sectors
-    jne read_failed
-
-    ; Run the assembly kernel
+    ; Run the stage 2
 
     jmp dword 0x90:0x0
 
-reset_failed:
-    mov si, reset_failed_msg
+extensions_not_supported:
+    mov si, extensions_not_supported_msg
     call print_line_16
 
     jmp error_end
@@ -109,20 +108,28 @@ error_end:
 
     jmp $
 
-; Datas
+; Variable Datas
 
-    header_0 db '******************************', 0
+DAP:
+.size       db 0x10
+.null       db 0x0
+.count      dw 2
+.offset     dw 0
+.segment    dw 0x90
+.lba        dd 1
+.lba48      dd 0
+
+; Constants Datas
+
     header_1 db 'Welcome to Thor OS Bootloader!', 0
-    header_2 db '******************************', 0
 
     press_key_msg db 'Press any key to load the kernel...', 0
-    load_kernel db 'Attempt to load the stage 2...', 0
+    load_msg db 'Attempt to load the stage 2...', 0
 
-    reset_failed_msg db 'Reset disk failed', 0
     read_failed_msg db 'Read disk failed', 0
     load_failed db 'Stage 2 loading failed', 0
+    extensions_not_supported_msg db 'BIOS Extensions not supported', 0
 
 ; Make a real bootsector
 
-    times 510-($-$$) db 0
-    dw 0xAA55
+    times 446-($-$$) db 0
