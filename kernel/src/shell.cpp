@@ -12,6 +12,7 @@
 #include "timer.hpp"
 #include "memory.hpp"
 #include "disks.hpp"
+#include "ata.hpp"
 #include "acpi.hpp"
 #include "e820.hpp"
 #include "rtc.hpp"
@@ -285,13 +286,39 @@ void memorydebug_command(const std::vector<std::string>&){
     memory_debug();
 }
 
-void disks_command(const std::vector<std::string>&){
-    k_print_line("UUID       Type");
+void disks_command(const std::vector<std::string>& params){
+    bool verbose = false;
+
+    //Read options if any
+    if(params.size() > 1){
+        for(size_t i = 1; i < params.size(); ++i){
+            if(params[i] == "-v"){
+                verbose = true;
+            }
+        }
+    }
+
+    if(verbose){
+        k_print_line("UUID       Type  Model             Serial          Firmware");
+    } else {
+        k_print_line("UUID       Type");
+    }
 
     for(uint64_t i = 0; i < disks::detected_disks(); ++i){
         auto& descriptor = disks::disk_by_index(i);
 
-        k_printf("%10d %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type));
+        if(verbose){
+            if(descriptor.type == disks::disk_type::ATA){
+                auto sub = static_cast<ata::drive_descriptor*>(descriptor.descriptor);
+
+                k_printf("%10d %5s %20s %15s %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type),
+                    sub->model.c_str(), sub->serial.c_str(), sub->firmware.c_str());
+            } else {
+                k_printf("%10d %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type));
+            }
+        } else {
+            k_printf("%10d %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type));
+        }
     }
 }
 
