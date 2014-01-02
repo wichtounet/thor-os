@@ -14,10 +14,9 @@ jmp rm_start
 ; Start in real mode
 rm_start:
     ; Set stack space (4K) and stack segment
-    mov ax, 0x9C0
-    add ax, 288
+    mov ax, 0x70
     mov ss, ax
-    mov sp, 4096
+    mov sp, 2048
 
     ; Set data segment
     mov ax, 0x7C0
