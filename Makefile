@@ -15,7 +15,7 @@ thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin
 	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
 	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
 	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
-	sudo mkdosfs -F32 /dev/loop0
+	sudo /usr/sbin/mkdosfs -F32 /dev/loop0
 	sudo /bin/mount -t vfat /dev/loop0 /mnt/fake_cdrom/
 	sudo /bin/cp kernel/kernel.bin /mnt/fake_cdrom/
 	sleep 0.1
