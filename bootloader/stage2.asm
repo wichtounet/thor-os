@@ -12,7 +12,8 @@ jmp second_step
 %include "intel_16.asm"
 %include "sectors.asm"
 
-KERNEL_BASE equ 0x200      ; 0x200:0x0 = 0x2000
+FREE_BASE equ 0x4500
+KERNEL_BASE equ 0x600      ; 0x600:0x0 (0x6000)
 
 DAP:
 .size       db 0x10
@@ -23,10 +24,10 @@ DAP:
 .lba        dd 0
 .lba48      dd 0
 
-; Loaded at 0x90:0x0
+; Loaded at 0x410:0x0 (0x4100)
 second_step:
     ; Set data segment
-    mov ax, 0x90
+    mov ax, 0x410
     mov ds, ax
 
     ; Used for disk access
@@ -39,7 +40,7 @@ second_step:
     ; 1. Read the MBR to get partition table
 
     mov byte [DAP.count], 1
-    mov word [DAP.offset], 0x1000
+    mov word [DAP.offset], FREE_BASE
     mov word [DAP.segment], 0
     mov dword [DAP.lba], 0
 
@@ -50,13 +51,13 @@ second_step:
 
     jc read_failed
 
-    mov ax, [gs:(0x1000 + 446 + 8)]
+    mov ax, [gs:(FREE_BASE + 446 + 8)]
     mov [partition_start], ax
 
     ; 2. Read the VBR of the partition to get FAT informations
 
     mov byte [DAP.count], 1
-    mov word [DAP.offset], 0x1000
+    mov word [DAP.offset], FREE_BASE
     mov word [DAP.segment], 0
 
     mov di, [partition_start]
@@ -69,19 +70,19 @@ second_step:
 
     jc read_failed
 
-    mov ah, [gs:(0x1000 + 13)]
+    mov ah, [gs:(FREE_BASE + 13)]
     mov [sectors_per_cluster], ah
 
-    mov ax, [gs:(0x1000 + 14)]
+    mov ax, [gs:(FREE_BASE + 14)]
     mov [reserved_sectors], ax
 
-    mov ah, [gs:(0x1000 + 16)]
+    mov ah, [gs:(FREE_BASE + 16)]
     mov [number_of_fat], ah
 
-    mov ax, [gs:(0x1000 + 36)]
+    mov ax, [gs:(FREE_BASE + 36)]
     mov [sectors_per_fat], ax
 
-    mov ax, [gs:(0x1000 + 44)]
+    mov ax, [gs:(FREE_BASE + 44)]
     mov [root_dir_start], ax
 
     ; fat_begin = partition_start + reserved_sectors
@@ -108,7 +109,7 @@ second_step:
 
     mov ah, [sectors_per_cluster]
     mov byte [DAP.count], ah
-    mov word [DAP.offset], 0x1000
+    mov word [DAP.offset], FREE_BASE
     mov word [DAP.segment], 0
 
     ; Compute LBA from root_dir_start
@@ -128,7 +129,7 @@ second_step:
 
     jc read_failed
 
-    mov si, 0x1000
+    mov si, FREE_BASE
     xor cx, cx
 
     .next:
@@ -265,7 +266,7 @@ second_step:
 
     ; Read the FAT sector
     mov word [DAP.count], 1
-    mov word [DAP.offset], 0x100
+    mov word [DAP.offset], FREE_BASE
     mov word [DAP.segment], 0x0
     mov word [DAP.lba], ax
 
@@ -281,9 +282,9 @@ second_step:
     shl si, 2
 
     ; cluster low
-    mov ax, [gs:(0x100 + si)]
+    mov ax, [gs:(FREE_BASE + si)]
     ; cluster high
-    mov bx, [gs:(0x100 + si + 2)]
+    mov bx, [gs:(FREE_BASE + si + 2)]
 
     cmp bx, 0x0FFF
     jl .ok

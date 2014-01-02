@@ -14,9 +14,9 @@ jmp rm_start
 ; Start in real mode
 rm_start:
     ; Set stack space (4K) and stack segment
-    mov ax, 0x70
+    xor ax, ax
     mov ss, ax
-    mov sp, 2048
+    mov sp, 0x4000
 
     ; Set data segment
     mov ax, 0x7C0
@@ -90,7 +90,7 @@ rm_start:
 
     ; Run the stage 2
 
-    jmp dword 0x90:0x0
+    jmp dword 0x410:0x0
 
 extensions_not_supported:
     mov si, extensions_not_supported_msg
@@ -115,7 +115,7 @@ DAP:
 .null       db 0x0
 .count      dw 2
 .offset     dw 0
-.segment    dw 0x90
+.segment    dw 0x410
 .lba        dd 1
 .lba48      dd 0
 

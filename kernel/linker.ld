@@ -2,13 +2,28 @@ ENTRY(kernel_main)
 
 SECTIONS
 {
-    /* This is where the micro kernel will load the code */
-	. = 0x2000;
+    /* This is where the bootloader will load the code */
+	. = 0x6000;
 
     .text_16 BLOCK(512) : ALIGN(512)
 	{
 		boot_16_64.o(.text)
 	}
+
+    .rodata_16 BLOCK(512) : ALIGN(512)
+    {
+		boot_16_64.o(.rodata)
+    }
+
+    .bss_16 BLOCK(512) : ALIGN(512)
+    {
+		boot_16_64.o(.bss)
+    }
+
+    .data_16 BLOCK(512) : ALIGN(512)
+    {
+		boot_16_64.o(.data)
+    }
 
     .text_32 BLOCK(512) : ALIGN(512)
 	{

@@ -31,6 +31,10 @@ typedef uint64_t size_t;
 #define CODE_16
 #include "e820.hpp" //Just for the address of the e820 map
 
+
+e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
+int16_t e820::bios_e820_entry_count = 0;
+
 namespace {
 
 struct gdt_ptr {

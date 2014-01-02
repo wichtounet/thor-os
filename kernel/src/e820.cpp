@@ -7,10 +7,6 @@
 
 #include "e820.hpp"
 
-
-e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
-int16_t e820::bios_e820_entry_count = 0;
-
 namespace {
 
 e820::mmapentry e820_mmap[e820::MAX_E820_ENTRIES];
