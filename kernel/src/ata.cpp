@@ -122,7 +122,7 @@ bool select_device(ata::drive_descriptor& drive){
     return true;
 }
 
-bool read_write_sectors(ata::drive_descriptor& drive, uint64_t start, uint8_t count, void* data, bool read){
+bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data, bool read){
     //Select the device
     if(!select_device(drive)){
         return false;
@@ -138,7 +138,7 @@ bool read_write_sectors(ata::drive_descriptor& drive, uint64_t start, uint8_t co
     auto command = read ? ATA_READ_BLOCK : ATA_WRITE_BLOCK;
 
     //Process the command
-    out_byte(controller + ATA_NSECTOR, count);
+    out_byte(controller + ATA_NSECTOR, 1);
     out_byte(controller + ATA_SECTOR, sc);
     out_byte(controller + ATA_LCYL, cl);
     out_byte(controller + ATA_HCYL, ch);
@@ -162,10 +162,8 @@ bool read_write_sectors(ata::drive_descriptor& drive, uint64_t start, uint8_t co
 
     if(!read){
         //Send the data to the controller
-        for(uint8_t sector = 0; sector < count; ++sector){
-            for(int i = 0; i < 256; ++i){
-                out_word(controller + ATA_DATA, *buffer++);
-            }
+        for(int i = 0; i < 256; ++i){
+            out_word(controller + ATA_DATA, *buffer++);
         }
     }
 
@@ -183,10 +181,8 @@ bool read_write_sectors(ata::drive_descriptor& drive, uint64_t start, uint8_t co
 
     if(read){
         //Read the disk sectors
-        for(uint8_t sector = 0; sector < count; ++sector){
-            for(int i = 0; i < 256; ++i){
-                *buffer++ = in_word(controller + ATA_DATA);
-            }
+        for(int i = 0; i < 256; ++i){
+            *buffer++ = in_word(controller + ATA_DATA);
         }
     }
 
@@ -309,9 +305,29 @@ ata::drive_descriptor& ata::drive(uint8_t disk){
 }
 
 bool ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination){
-    return read_write_sectors(drive, start, count, destination, true);
+    auto buffer = reinterpret_cast<uint8_t*>(destination);
+
+    for(size_t i = 0; i < count; ++i){
+        if(!read_write_sector(drive, start + i, buffer, true)){
+            return false;
+        }
+
+        buffer += 512;
+    }
+
+    return true;
 }
 
 bool ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* source){
-    return read_write_sectors(drive, start, count, source, false);
+    auto buffer = reinterpret_cast<uint8_t*>(source);
+
+    for(size_t i = 0; i < count; ++i){
+        if(!read_write_sector(drive, start + i, buffer, false)){
+            return false;
+        }
+
+        buffer += 512;
+    }
+
+    return true;
 }
