@@ -210,18 +210,38 @@ bool reset_controller(uint16_t controller){
 }
 
 void ide_string_into(std::string& destination, uint16_t* info, size_t start, size_t size){
+    char buffer[50];
+
     //Copy the characters
     auto t = reinterpret_cast<char*>(&info[start]);
-    for(size_t i =0; i < size; ++i){
-        destination += t[i];
+    for(size_t i = 0; i < size; ++i){
+        buffer[i] = t[i];
     }
 
     //Swap characters
     for(size_t i = 0; i < size; i += 2){
-        auto c = destination[i];
-        destination[i] = destination[i + 1];
-        destination[i+1] = c;
+        auto c = buffer[i];
+        buffer[i] = buffer[i + 1];
+        buffer[i+1] = c;
     }
+
+    size_t end = size - 1;
+    while(true){
+        auto c = buffer[end];
+
+        if(c > 32 && c < 127){
+            break;
+        }
+
+        if(end == 0){
+            break;
+        }
+
+        --end;
+    }
+
+    buffer[end+1] = '\0';
+    destination = buffer;
 
     //Cleanup
     //TODO It is perhaps necessary to cleanup the data
