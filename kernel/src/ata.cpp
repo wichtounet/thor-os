@@ -225,6 +225,7 @@ void ide_string_into(std::string& destination, uint16_t* info, size_t start, siz
         buffer[i+1] = c;
     }
 
+    //Cleanup the output
     size_t end = size - 1;
     while(true){
         auto c = buffer[end];
@@ -242,9 +243,6 @@ void ide_string_into(std::string& destination, uint16_t* info, size_t start, siz
 
     buffer[end+1] = '\0';
     destination = buffer;
-
-    //Cleanup
-    //TODO It is perhaps necessary to cleanup the data
 }
 
 void identify(ata::drive_descriptor& drive){
