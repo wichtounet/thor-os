@@ -228,45 +228,52 @@ void ide_string_into(std::string& destination, uint16_t* info, size_t start, siz
 }
 
 void identify(ata::drive_descriptor& drive){
-    drive.present = false;
-
     //First, test that the ATA controller of this drive is enabled
+    //For that, test if data is resilient on the port
     out_byte(drive.controller + ATA_NSECTOR, 0xAB);
     if(in_byte(drive.controller + ATA_NSECTOR) != 0xAB){
         return;
     }
 
-    //Reset the ATA controller
-    reset_controller(drive.controller);
+    //Select the device
+    out_byte(drive.controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
+    sleep_ms(1);
 
-    //Try to select the drive
-    if(!select_device(drive)){
+    //Generate the IDENTIFY command
+    out_byte(drive.controller + ATA_COMMAND, ATA_IDENTIFY);
+    sleep_ms(1);
+
+    //If status == 0, there are no device
+    if(in_byte(drive.controller + ATA_STATUS) == 0){
         return;
     }
 
-    //Once device has been selected sucessully, the drive is present
+    //Verify if the device is ATA or not
+    bool not_ata = false;
+    while(1){
+        auto status = in_byte(drive.controller + ATA_STATUS);
+
+        if(status & ATA_STATUS_ERR){
+            not_ata = true;
+            break;
+        }
+
+        if(!(status & ATA_STATUS_BSY) && (status & ATA_STATUS_DRQ)){
+            break;
+        }
+    }
+
+    //It is probably an ATAPI device
+    if(not_ata){
+        return;
+    }
+
     drive.present = true;
 
-    //Then try to obtain more data on the device
-    out_byte(drive.controller + ATA_NSECTOR, 0);
-    out_byte(drive.controller + ATA_SECTOR, 0);
-    out_byte(drive.controller + ATA_LCYL, 0);
-    out_byte(drive.controller + ATA_HCYL, 0);
-    out_byte(drive.controller + ATA_COMMAND, ATA_IDENTIFY);
-    sleep_ms(5);
-
-    //Wait at most 30 seconds for BSY flag to be cleared
-    if(!wait_for_controller(drive.controller, ATA_STATUS_BSY | ATA_STATUS_DRQ | ATA_STATUS_ERR, ATA_STATUS_DRQ, 30000)){
-        //If the IDENTIFY fails, the disk is considered as present, but
-        //we don't have any information about it
-        return;
-    }
-
-    //Read the information
-
+    // Read the informations
     uint16_t info[256];
-    for(size_t i = 0; i < 256; ++i){
-        info[i] = in_word(drive.controller + ATA_DATA);
+    for(size_t b = 0; b < 256; ++b){
+        info[b] = in_word(drive.controller + ATA_DATA);
     }
 
     //INFO: LBA and DMA feature can be tested here
@@ -286,11 +293,17 @@ void ata::detect_disks(){
     drives[2] = {ATA_SECONDARY, 0xE0, false, MASTER_BIT, "", "", ""};
     drives[3] = {ATA_SECONDARY, 0xF0, false, SLAVE_BIT, "", "", ""};
 
+    out_byte(ATA_PRIMARY + ATA_DEV_CTL, ATA_CTL_nIEN);
+    out_byte(ATA_SECONDARY + ATA_DEV_CTL, ATA_CTL_nIEN);
+
     for(uint8_t i = 0; i < 4; ++i){
         auto& drive = drives[i];
 
         identify(drive);
     }
+
+    out_byte(ATA_PRIMARY + ATA_DEV_CTL, 0);
+    out_byte(ATA_SECONDARY + ATA_DEV_CTL, 0);
 
     interrupt::register_irq_handler(14, primary_controller_handler);
     interrupt::register_irq_handler(15, secondary_controller_handler);
