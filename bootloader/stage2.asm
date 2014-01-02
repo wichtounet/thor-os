@@ -230,8 +230,8 @@ second_step:
     mov si, star
     call print_16
 
-    mov ah, [sectors_per_cluster]
-    mov byte [DAP.count], ah
+    movzx ax, [sectors_per_cluster]
+    mov word [DAP.count], ax
     mov word [DAP.offset], 0x0
 
     mov ax, [current_segment]
@@ -264,7 +264,7 @@ second_step:
     add ax, bx ; fat_sector
 
     ; Read the FAT sector
-    mov byte [DAP.count], 1
+    mov word [DAP.count], 1
     mov word [DAP.offset], 0x100
     mov word [DAP.segment], 0x0
     mov word [DAP.lba], ax
