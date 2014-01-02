@@ -10,7 +10,6 @@
 jmp second_step
 
 %include "intel_16.asm"
-%include "sectors.asm"
 
 FREE_BASE equ 0x4500
 KERNEL_BASE equ 0x600      ; 0x600:0x0 (0x6000)
@@ -23,6 +22,18 @@ DAP:
 .segment    dw 0x0
 .lba        dd 0
 .lba48      dd 0
+
+; Perform an extended read using BIOS
+; On error, jump to read_failed and never returns
+extended_read:
+    mov ah, 0x42
+    mov si, DAP
+    mov dl, 0x80
+    int 0x13
+
+    jc read_failed
+
+    ret
 
 ; Loaded at 0x410:0x0 (0x4100)
 second_step:
@@ -44,12 +55,7 @@ second_step:
     mov word [DAP.segment], 0
     mov dword [DAP.lba], 0
 
-    mov ah, 0x42
-    mov si, DAP
-    mov dl, 0x80
-    int 0x13
-
-    jc read_failed
+    call extended_read
 
     mov ax, [gs:(FREE_BASE + 446 + 8)]
     mov [partition_start], ax
@@ -63,12 +69,7 @@ second_step:
     mov di, [partition_start]
     mov word [DAP.lba], di
 
-    mov ah, 0x42
-    mov si, DAP
-    mov dl, 0x80
-    int 0x13
-
-    jc read_failed
+    call extended_read
 
     mov ah, [gs:(FREE_BASE + 13)]
     mov [sectors_per_cluster], ah
@@ -79,6 +80,11 @@ second_step:
     mov ah, [gs:(FREE_BASE + 16)]
     mov [number_of_fat], ah
 
+    mov ax, [gs:(FREE_BASE + 38)]
+    test ax, ax
+    jne sectors_per_fat_too_high
+
+    ; sectors_per_fat (only low part)
     mov ax, [gs:(FREE_BASE + 36)]
     mov [sectors_per_fat], ax
 
@@ -100,9 +106,8 @@ second_step:
     mov [cluster_begin], ax
 
     ; entries per cluster = (512/32) * sectors_per_cluster
-    mov ax, 32
-    movzx bx, byte [sectors_per_cluster]
-    mul bx
+    movzx ax, byte [sectors_per_cluster]
+    shl ax, 4
     mov [entries_per_cluster], ax
 
     ; 3. Read the root directory to find the kernel executable
@@ -122,12 +127,7 @@ second_step:
 
     mov word [DAP.lba], ax
 
-    mov ah, 0x42
-    mov si, DAP
-    mov dl, 0x80
-    int 0x13
-
-    jc read_failed
+    call extended_read
 
     mov si, FREE_BASE
     xor cx, cx
@@ -139,48 +139,28 @@ second_step:
         test ah, ah
         je .end_of_directory
 
-        ; Verify char by char if it is KERNEL.BIN
-        cmp ah, 75
+        mov ax, [gs:si]
+        cmp ax, 0x454B ; EK
         jne .continue
 
-        mov ah, [gs:(si+1)]
-        cmp ah, 69
+        mov ax, [gs:(si+2)]
+        cmp ax, 0x4E52 ; NR
         jne .continue
 
-        mov ah, [gs:(si+2)]
-        cmp ah, 82
+        mov ax, [gs:(si+4)]
+        cmp ax, 0x4C45 ; LE
         jne .continue
 
-        mov ah, [gs:(si+3)]
-        cmp ah, 78
+        mov ax, [gs:(si+6)]
+        cmp ax, 0x2020 ; space space
         jne .continue
 
-        mov ah, [gs:(si+4)]
-        cmp ah, 69
-        jne .continue
-
-        mov ah, [gs:(si+5)]
-        cmp ah, 76
-        jne .continue
-
-        mov ah, [gs:(si+6)]
-        cmp ah, 32
-        jne .continue
-
-        mov ah, [gs:(si+7)]
-        cmp ah, 32
-        jne .continue
-
-        mov ah, [gs:(si+8)]
-        cmp ah, 66
-        jne .continue
-
-        mov ah, [gs:(si+9)]
-        cmp ah, 73
+        mov ax, [gs:(si+8)]
+        cmp ax, 0x4942; IB
         jne .continue
 
         mov ah, [gs:(si+10)]
-        cmp ah, 78
+        cmp ah, 0x4E ; N
         jne .continue
 
         ; cluster high
@@ -190,14 +170,6 @@ second_step:
         ; cluster low
         mov ax, [gs:(si+26)]
         mov [cluster_low], ax
-
-        ; file_size low
-        mov ax, [gs:(si+28)]
-        mov [size_low], ax
-
-        ; file_size high
-        mov ax, [gs:(si+30)]
-        mov [size_high], ax
 
         jmp .found
 
@@ -210,6 +182,11 @@ second_step:
         jne .next
 
     .end_of_cluster:
+        mov si, multicluster_directory
+        call print_line_16
+
+        jmp error_end
+
     .end_of_directory:
         mov si, kernel_not_found
         call print_line_16
@@ -222,6 +199,10 @@ second_step:
     call print_line_16
 
     ; 4. Load the kernel into memory
+
+    mov ax, [cluster_high]
+    test ax, ax
+    jne cluster_too_high
 
     mov ax, [cluster_low]
     mov [current_cluster], ax
@@ -248,12 +229,7 @@ second_step:
 
     mov word [DAP.lba], ax
 
-    mov ah, 0x42
-    mov si, DAP
-    mov dl, 0x80
-    int 0x13
-
-    jc read_failed
+    call extended_read
 
     ; Compute next cluster
 
@@ -270,12 +246,7 @@ second_step:
     mov word [DAP.segment], 0x0
     mov word [DAP.lba], ax
 
-    mov ah, 0x42
-    mov si, DAP
-    mov dl, 0x80
-    int 0x13
-
-    jc read_failed
+    call extended_read
 
     mov si, [current_cluster]
     and si, 512 - 1 ; current_cluster % 512
@@ -296,6 +267,9 @@ second_step:
     jge .fully_loaded
 
 .ok:
+    test bx, bx
+    jne cluster_too_high
+
     mov [current_cluster], ax
 
     movzx ax, byte [sectors_per_cluster]
@@ -313,6 +287,18 @@ second_step:
     call KERNEL_BASE:0x0
 
     jmp $
+
+cluster_too_high:
+    mov si, cluster_too_high_msg
+    call print_line_16
+
+    jmp error_end
+
+sectors_per_fat_too_high:
+    mov si, sectors_per_fat_too_high_msg
+    call print_line_16
+
+    jmp error_end
 
 corrupted:
     mov si, corrupted_disk
@@ -344,8 +330,6 @@ error_end:
 
     cluster_high dw 0
     cluster_low dw 0
-    size_high dw 0
-    size_low dw 0
 
     current_cluster dw 0
     current_segment dw 0
@@ -354,15 +338,17 @@ error_end:
 
     load_kernel db 'Attempt to load the kernel...', 0
     kernel_found db 'Kernel found. Starting kernel loading...', 0
-    kernel_not_found db 'Kernel not found...', 0
     kernel_loaded db 'Kernel fully loaded', 0
-    corrupted_disk db 'The disk seeems to be corrupted', 0
     star db '*', 0
-    dix db '|', 0
 
+    kernel_not_found db 'Kernel not found...', 0
+    corrupted_disk db 'The disk seeems to be corrupted', 0
+    sectors_per_fat_too_high_msg db 'Error 1. The disk is probably too big', 0
+    multicluster_directory db 'Error 2. Multicluster directory not supported', 0
+    cluster_too_high_msg db 'Error 3. Only 16bit cluster are supported', 0
     read_failed_msg db 'Read disk failed', 0
     load_failed db 'Kernel loading failed', 0
 
-; Make it two sectors exactly
+; Make it sector-aligned
 
     times 1024-($-$$) db 0
