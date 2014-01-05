@@ -676,9 +676,25 @@ struct section_header {
     uint64_t sh_entsize;
 }__attribute__((packed));
 
+bool is_valid_elf_file(const std::string& content){
+    auto buffer = content.c_str();
+
+    //Test if ELF file
+    if(header->e_ident[0] == 0x7F && header->e_ident[1] == 'E' &&
+        header->e_ident[2] == 'L' && header->e_ident[3] == 'F'){
+
+        //Test if ELF64
+        if(header->e_ident[4] == 2){
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void readelf_command(const std::vector<std::string>& params){
     if(params.size() < 2){
-        k_print_line("Need the name of the executable to read");
+        k_print_line("readelf: Need the name of the executable to read");
 
         return;
     }
@@ -692,7 +708,13 @@ void readelf_command(const std::vector<std::string>& params){
     auto content = disks::read_file(params[1]);
 
     if(content.empty()){
-        k_print_line("The file does not exist or is empty");
+        k_print_line("readelf: The file does not exist or is empty");
+
+        return;
+    }
+
+    if(!is_valid_elf_file(content)){
+        k_print_line("readelf: This file is not an ELF file or not in ELF64 format");
 
         return;
     }
@@ -700,57 +722,51 @@ void readelf_command(const std::vector<std::string>& params){
     auto buffer = content.c_str();
     auto header = reinterpret_cast<elf_header*>(buffer);
 
-    if(header->e_ident[0] == 0x7F && header->e_ident[1] == 'E' &&
-        header->e_ident[2] == 'L' && header->e_ident[3] == 'F'){
+    k_printf("Number of Program Headers: %u\n", static_cast<uint64_t>(header->e_phnum));
+    k_printf("Number of Section Headers: %u\n", static_cast<uint64_t>(header->e_shnum));
 
-        if(header->e_ident[4] == 2){
-            k_printf("Number of Program Headers: %u\n", static_cast<uint64_t>(header->e_phnum));
-            k_printf("Number of Section Headers: %u\n", static_cast<uint64_t>(header->e_shnum));
+    auto program_header_table = reinterpret_cast<program_header*>(buffer + header->e_phoff);
+    auto section_header_table = reinterpret_cast<section_header*>(buffer + header->e_shoff);
 
-            auto program_header_table = reinterpret_cast<program_header*>(buffer + header->e_phoff);
-            auto section_header_table = reinterpret_cast<section_header*>(buffer + header->e_shoff);
+    auto& string_table_header = section_header_table[header->e_shstrndx];
+    auto string_table = buffer + string_table_header.sh_offset;
 
-            for(size_t p = 0; p < header->e_phnum; ++p){
-                auto& p_header = program_header_table[p];
+    for(size_t p = 0; p < header->e_phnum; ++p){
+        auto& p_header = program_header_table[p];
 
-                k_printf("Program header %u\n", p);
-                k_printf("\tVirtual Address: %h\n", p_header.p_paddr);
-                k_printf("\tMemory Size: %u\n", p_header.p_memsz);
-                k_printf("\tFile Size: %u\n", p_header.p_filesize);
-            }
+        k_printf("Program header %u\n", p);
+        k_printf("\tVirtual Address: %h\n", p_header.p_paddr);
+        k_printf("\tMemory Size: %u\n", p_header.p_memsz);
+        k_printf("\tFile Size: %u\n", p_header.p_filesize);
+    }
 
-            auto& string_table_header = section_header_table[header->e_shstrndx];
-            auto string_table = buffer + string_table_header.sh_offset;
+    for(size_t s = 0; s < header->e_shnum; ++s){
+        auto& s_header = section_header_table[s];
 
-            for(size_t s = 0; s < header->e_shnum; ++s){
-                auto& s_header = section_header_table[s];
+        k_printf("Section \"%s\"\n", &string_table[s_header.sh_name]);
+        k_printf("\tVirtual Address: %h\n", s_header.sh_addr);
+        k_print("\tFlags:");
 
-                k_printf("Section \"%s\"\n", &string_table[s_header.sh_name]);
-                k_printf("\tVirtual Address: %h\n", s_header.sh_addr);
-                k_print("\tFlags:");
-
-                if(s_header.sh_flags & 0x1){
-                    k_print(" W");
-                }
-                if(s_header.sh_flags & 0x2){
-                    k_print(" A");
-                }
-                if(s_header.sh_flags & 0x4){
-                    k_print(" X");
-                }
-                if(s_header.sh_flags & 0x0F000000){
-                    k_print(" OS");
-                }
-                if(s_header.sh_flags & 0xF0000000){
-                    k_print(" CPU");
-                }
-                k_print_line();
-            }
-        } else {
-            k_print_line("Only ELF_64 executables are supported");
+        if(s_header.sh_flags & 0x1){
+            k_print(" W");
         }
-    } else {
-        k_print_line("Not and ELF file");
+
+        if(s_header.sh_flags & 0x2){
+            k_print(" A");
+        }
+
+        if(s_header.sh_flags & 0x4){
+            k_print(" X");
+        }
+
+        if(s_header.sh_flags & 0x0F000000){
+            k_print(" OS");
+        }
+
+        if(s_header.sh_flags & 0xF0000000){
+            k_print(" CPU");
+        }
+        k_print_line();
     }
 }
 
