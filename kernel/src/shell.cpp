@@ -63,6 +63,7 @@ void cat_command(const std::vector<std::string>& params);
 void mkdir_command(const std::vector<std::string>& params);
 void rm_command(const std::vector<std::string>& params);
 void touch_command(const std::vector<std::string>& params);
+void exec_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
 
 struct command_definition {
@@ -70,7 +71,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[24] = {
+command_definition commands[25] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -94,6 +95,7 @@ command_definition commands[24] = {
     {"mkdir", mkdir_command},
     {"touch", touch_command},
     {"rm", rm_command},
+    {"exec", exec_command},
     {"shutdown", shutdown_command},
 };
 
@@ -634,6 +636,9 @@ void rm_command(const std::vector<std::string>& params){
     }
 }
 
+void exec_command(const std::vector<std::string>& params){
+    //TODO
+}
 
 void shutdown_command(const std::vector<std::string>&){
     if(!acpi::init()){

@@ -1,21 +1,10 @@
 default: kernel.bin
 
-CC=x86_64-elf-g++
-AS=x86_64-elf-as
-OC=x86_64-elf-objcopy
+include ../cpp.mk
 
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
-WARNING_FLAGS=-Wall -Wextra -pedantic -Wold-style-cast -Wshadow
-COMMON_CPP_FLAGS=-masm=intel -Iinclude/ -nostdlib -Os -std=c++11 -fno-stack-protector -fno-exceptions -funsigned-char -fno-rtti -ffreestanding -fomit-frame-pointer -mno-red-zone -mno-3dnow -mno-mmx
-
-CPP_FLAGS_LOW=-march=i386 -m32 -fno-strict-aliasing -fno-pic -fno-toplevel-reorder -mno-sse -mno-sse2 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2
-
-CPP_FLAGS_16=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mregparm=3 -mpreferred-stack-boundary=2
-CPP_FLAGS_32=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mpreferred-stack-boundary=4
-CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2
-
-LINK_FLAGS=-lgcc -T linker.ld
+KERNEL_LINK_FLAGS=$(COMMON_LINK_FLAGS) -T linker.ld
 
 KERNEL_CPP_FILES=$(wildcard src/*.cpp)
 KERNEL_CPP_STL_FILES=$(wildcard src/stl/*.cpp)
@@ -62,7 +51,7 @@ src/stl/%.cpp.o:
 -include $(KERNEL_D_STL_FILES)
 
 kernel.bin: $(LINK_O_FILES)
-	$(CC) $(LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
+	$(CC) $(KERNEL_LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
 	$(OC) -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
 
 debug:
