@@ -150,6 +150,10 @@ public:
         return !_size;
     }
 
+    CharT* c_str(){
+        return _data;
+    }
+
     const CharT* c_str() const {
         return _data;
     }

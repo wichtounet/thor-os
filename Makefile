@@ -45,5 +45,6 @@ force_look:
 clean:
 	cd bootloader; $(MAKE) clean
 	cd kernel; $(MAKE) clean
+	cd programs/one; $(MAKE) clean
 	rm -f *.bin
 	rm -f *.flp
