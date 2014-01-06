@@ -113,7 +113,7 @@ error_end:
 DAP:
 .size       db 0x10
 .null       db 0x0
-.count      dw 2
+.count      dw 3
 .offset     dw 0
 .segment    dw 0x410
 .lba        dd 1

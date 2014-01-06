@@ -278,9 +278,21 @@ second_step:
     add ax, bx
     mov [current_segment], ax
 
+    mov ax, [loaded_clusters]
+    inc ax
+    mov [loaded_clusters], ax
+
     jmp .next_cluster
 
 .fully_loaded:
+    call new_line_16
+
+    mov di, [loaded_clusters]
+    call print_int_16
+
+    mov si, clusters_loaded
+    call print_line_16
+
     mov si, kernel_loaded
     call print_line_16
 
@@ -334,21 +346,24 @@ error_end:
     current_cluster dw 0
     current_segment dw 0
 
+    loaded_clusters dw 0
+
 ; Constant Datas
 
     load_kernel db 'Attempt to load the kernel...', 0
     kernel_found db 'Kernel found. Starting kernel loading...', 0
     kernel_loaded db 'Kernel fully loaded', 0
+    clusters_loaded db ' clusters loaded', 0
     star db '*', 0
 
-    kernel_not_found db 'Kernel not found...', 0
+    kernel_not_found db 'Kernel not found', 0
     corrupted_disk db 'The disk seeems to be corrupted', 0
     sectors_per_fat_too_high_msg db 'Error 1. The disk is probably too big', 0
-    multicluster_directory db 'Error 2. Multicluster directory not supported', 0
+    multicluster_directory db 'Error 2. Multicluster directory are not supported', 0
     cluster_too_high_msg db 'Error 3. Only 16bit cluster are supported', 0
     read_failed_msg db 'Read disk failed', 0
     load_failed db 'Kernel loading failed', 0
 
 ; Make it sector-aligned
 
-    times 1024-($-$$) db 0
+    times 1536-($-$$) db 0
