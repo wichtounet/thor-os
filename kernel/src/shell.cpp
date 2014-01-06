@@ -64,6 +64,7 @@ void mkdir_command(const std::vector<std::string>& params);
 void rm_command(const std::vector<std::string>& params);
 void touch_command(const std::vector<std::string>& params);
 void readelf_command(const std::vector<std::string>& params);
+void exec_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
 
 struct command_definition {
@@ -71,7 +72,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[25] = {
+command_definition commands[26] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -96,6 +97,7 @@ command_definition commands[25] = {
     {"touch", touch_command},
     {"rm", rm_command},
     {"readelf", readelf_command},
+    {"exec", exec_command},
     {"shutdown", shutdown_command},
 };
 
@@ -681,15 +683,13 @@ void readelf_command(const std::vector<std::string>& params){
         k_printf("Program header %u\n", p);
         k_printf("\tVirtual Address: %h\n", p_header.p_paddr);
         k_printf("\tMemory Size: %u\n", p_header.p_memsz);
-        k_printf("\tFile Size: %u\n", p_header.p_filesize);
+        k_printf("\tFile Size: %u\t Offset: %u \n", p_header.p_filesize, p_header.p_offset);
     }
 
     for(size_t s = 0; s < header->e_shnum; ++s){
         auto& s_header = section_header_table[s];
 
-        k_printf("Section \"%s\"\n", &string_table[s_header.sh_name]);
-        k_printf("\tVirtual Address: %h\n", s_header.sh_addr);
-        k_print("\tFlags:");
+        k_printf("Section \"%s\" (", &string_table[s_header.sh_name]);
 
         if(s_header.sh_flags & 0x1){
             k_print(" W");
@@ -710,7 +710,51 @@ void readelf_command(const std::vector<std::string>& params){
         if(s_header.sh_flags & 0xF0000000){
             k_print(" CPU");
         }
-        k_print_line();
+        k_print_line(")");
+        k_printf("\tVirtual Address: %h Offset: %d \n", s_header.sh_addr, s_header.sh_offset);
+    }
+}
+
+void exec_command(const std::vector<std::string>& params){
+    if(params.size() < 2){
+        k_print_line("exec: Need the name of the executable to read");
+
+        return;
+    }
+
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    auto content = disks::read_file(params[1]);
+
+    if(content.empty()){
+        k_print_line("exec: The file does not exist or is empty");
+
+        return;
+    }
+
+    if(!elf::is_valid(content)){
+        k_print_line("exec: This file is not an ELF file or not in ELF64 format");
+
+        return;
+    }
+
+    auto buffer = content.c_str();
+    auto header = reinterpret_cast<elf::elf_header*>(buffer);
+
+    auto section_header_table = reinterpret_cast<elf::section_header*>(buffer + header->e_shoff);
+
+    for(size_t s = 0; s < header->e_shnum; ++s){
+        auto& s_header = section_header_table[s];
+
+        if(s_header.sh_flags & 0x2){
+            k_print("A\n");
+            k_printf("\tVirtual Address: %h\n", s_header.sh_addr);
+            k_printf("\tSize: %h\n", s_header.sh_size);
+        }
     }
 }
 
