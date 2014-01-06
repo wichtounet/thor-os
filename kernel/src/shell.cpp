@@ -747,15 +747,33 @@ void exec_command(const std::vector<std::string>& params){
 
     auto section_header_table = reinterpret_cast<elf::section_header*>(buffer + header->e_shoff);
 
+    auto allocated_segments = new void*[header->e_shnum];
+
+    bool failed = false;
     for(size_t s = 0; s < header->e_shnum; ++s){
         auto& s_header = section_header_table[s];
 
+        allocated_segments[s] = nullptr;
+
         if(s_header.sh_flags & 0x2){
-            k_print("A\n");
-            k_printf("\tVirtual Address: %h\n", s_header.sh_addr);
-            k_printf("\tSize: %h\n", s_header.sh_size);
+            auto memory = k_malloc(s_header.sh_addr, s_header.sh_size);
+
+            k_printf("%h (virt) was allocated in %h (phys)\n", reinterpret_cast<size_t>(s_header.sh_addr), reinterpret_cast<size_t>(memory));
+
+            if(!memory){
+                failed = true;
+                break;
+            }
+
+            allocated_segments[s] = memory;
         }
     }
+
+    if(!failed){
+        //TODO
+    }
+
+    //TODO Release all the allocated segments
 }
 
 void shutdown_command(const std::vector<std::string>&){
