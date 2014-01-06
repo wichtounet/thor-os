@@ -14,7 +14,10 @@ bootloader/stage2.bin: force_look
 programs/one/a.out: force_look
 	cd programs/one; ${MAKE} a.out
 
-thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs/one/a.out
+programs/hello/a.out: force_look
+	cd programs/hello; ${MAKE} a.out
+
+thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs/one/a.out programs/hello/a.out
 	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
 	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
 	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
@@ -22,6 +25,7 @@ thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs
 	sudo /bin/mount -t vfat /dev/loop0 /mnt/fake_cdrom/
 	sudo /bin/cp kernel/kernel.bin /mnt/fake_cdrom/
 	sudo /bin/cp programs/one/a.out /mnt/fake_cdrom/one
+	sudo /bin/cp programs/hello/a.out /mnt/fake_cdrom/hello
 	sleep 0.1
 	sudo /bin/umount /mnt/fake_cdrom/
 	sudo /sbin/losetup -d /dev/loop0
