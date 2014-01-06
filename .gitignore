@@ -3,5 +3,6 @@
 *.o
 *.img
 *.d
+*.out
 bootloader/sectors.asm
 commands
