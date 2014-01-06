@@ -231,6 +231,10 @@ second_step:
 
     call extended_read
 
+    mov ax, [loaded_clusters]
+    inc ax
+    mov [loaded_clusters], ax
+
     ; Compute next cluster
 
     ; Compute the sector of the FAT to read
@@ -277,10 +281,6 @@ second_step:
     mov bx, [current_segment]
     add ax, bx
     mov [current_segment], ax
-
-    mov ax, [loaded_clusters]
-    inc ax
-    mov [loaded_clusters], ax
 
     jmp .next_cluster
 
