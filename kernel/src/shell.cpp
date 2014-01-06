@@ -682,8 +682,8 @@ void readelf_command(const std::vector<std::string>& params){
 
         k_printf("Program header %u\n", p);
         k_printf("\tVirtual Address: %h\n", p_header.p_paddr);
-        k_printf("\tMemory Size: %u\n", p_header.p_memsz);
-        k_printf("\tFile Size: %u\t Offset: %u \n", p_header.p_filesize, p_header.p_offset);
+        k_printf("\tMSize: %u\t", p_header.p_memsz);
+        k_printf("\tFSize: %u\t Offset: %u \n", p_header.p_filesize, p_header.p_offset);
     }
 
     for(size_t s = 0; s < header->e_shnum; ++s){
@@ -711,7 +711,7 @@ void readelf_command(const std::vector<std::string>& params){
             k_print(" CPU");
         }
         k_print_line(")");
-        k_printf("\tVirtual Address: %h Offset: %d \n", s_header.sh_addr, s_header.sh_offset);
+        k_printf("\tAddress: %h Size: %u Offset: %u\n", s_header.sh_addr, s_header.sh_size, s_header.sh_offset);
     }
 }
 
