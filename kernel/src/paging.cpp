@@ -98,13 +98,13 @@ bool paging::page_free_or_set(void* virt, void* physical){
     return false;
 }
 
-bool paging::identity_map(void* virt){
+bool paging::map(void* virt, void* physical){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
     }
 
-    //Find the correct indexes inside the paging table for the physical address
+    //Find the correct indexes inside the paging table for the virtual address
     auto table = (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
     auto directory = (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
     auto directory_ptr = (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
@@ -137,16 +137,16 @@ bool paging::identity_map(void* virt){
     if(reinterpret_cast<uintptr_t>(pt[table]) & PRESENT){
         //If the page is already set to the correct value, return true
         //If the page is set to another value, return false
-        return reinterpret_cast<uintptr_t>(pt[table]) == (reinterpret_cast<uintptr_t>(virt) | (PRESENT | WRITEABLE));
+        return reinterpret_cast<uintptr_t>(pt[table]) == (reinterpret_cast<uintptr_t>(physical) | (PRESENT | WRITEABLE));
     }
 
-    //Identity map  the physical address
-    pt[table] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(virt) | (PRESENT | WRITEABLE));
+    //Map to the physical address
+    pt[table] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(physical) | (PRESENT | WRITEABLE));
 
     return true;
 }
 
-bool paging::identity_map(void* virt, size_t pages){
+bool paging::map(void* virt, void* physical, size_t pages){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -155,18 +155,31 @@ bool paging::identity_map(void* virt, size_t pages){
     //To avoid mapping only a subset of the pages
     //check if one of the page is already mapped to another value
     for(size_t page = 0; page < pages; ++page){
-        auto addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
-        if(!page_free_or_set(addr, addr)){
+        auto virt_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
+        auto phys_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(physical) + page * PAGE_SIZE);
+
+        if(!page_free_or_set(virt_addr, phys_addr)){
             return false;
         }
     }
 
     //Identity map each page
     for(size_t page = 0; page < pages; ++page){
-        if(!identity_map(reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE))){
+        auto virt_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
+        auto phys_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(physical) + page * PAGE_SIZE);
+
+        if(!map(virt_addr, phys_addr)){
             return false;
         }
     }
 
     return true;
+}
+
+bool paging::identity_map(void* virt){
+    return map(virt, virt);
+}
+
+bool paging::identity_map(void* virt, size_t pages){
+    return map(virt, virt, pages);
 }
