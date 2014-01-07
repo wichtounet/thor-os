@@ -11,7 +11,9 @@ jmp second_step
 
 %include "intel_16.asm"
 
+FREE_SEGMENT equ 0x5000
 FREE_BASE equ 0x4500
+
 KERNEL_BASE equ 0x600      ; 0x600:0x0 (0x6000)
 
 DAP:
@@ -42,7 +44,7 @@ second_step:
     mov ds, ax
 
     ; Used for disk access
-    xor ax, ax
+    mov ax, FREE_SEGMENT
     mov gs, ax
 
     mov si, load_kernel
@@ -52,7 +54,7 @@ second_step:
 
     mov byte [DAP.count], 1
     mov word [DAP.offset], FREE_BASE
-    mov word [DAP.segment], 0
+    mov word [DAP.segment], FREE_SEGMENT
     mov dword [DAP.lba], 0
 
     call extended_read
@@ -64,7 +66,7 @@ second_step:
 
     mov byte [DAP.count], 1
     mov word [DAP.offset], FREE_BASE
-    mov word [DAP.segment], 0
+    mov word [DAP.segment], FREE_SEGMENT
 
     mov di, [partition_start]
     mov word [DAP.lba], di
@@ -115,7 +117,7 @@ second_step:
     mov ah, [sectors_per_cluster]
     mov byte [DAP.count], ah
     mov word [DAP.offset], FREE_BASE
-    mov word [DAP.segment], 0
+    mov word [DAP.segment], FREE_SEGMENT
 
     ; Compute LBA from root_dir_start
     mov ax, [root_dir_start]
@@ -212,6 +214,12 @@ second_step:
     mov si, star
     call print_16
 
+    mov di, [current_segment]
+    call print_int_16
+
+    mov si, star
+    call print_16
+
     movzx ax, [sectors_per_cluster]
     mov word [DAP.count], ax
     mov word [DAP.offset], 0x0
@@ -228,6 +236,15 @@ second_step:
     add ax, bx
 
     mov word [DAP.lba], ax
+
+    mov di, ax
+    call print_int_16
+
+    mov si, star
+    call print_16
+
+    mov di, [current_cluster]
+    call print_int_16
 
     call extended_read
 
@@ -247,7 +264,7 @@ second_step:
     ; Read the FAT sector
     mov word [DAP.count], 1
     mov word [DAP.offset], FREE_BASE
-    mov word [DAP.segment], 0x0
+    mov word [DAP.segment], FREE_SEGMENT
     mov word [DAP.lba], ax
 
     call extended_read

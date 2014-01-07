@@ -103,7 +103,7 @@ command_definition commands[26] = {
 
 std::string current_input(16);
 
-void exec_command();
+void exec_shell_command();
 
 template<bool Enable = History>
 void history_key(char key){
@@ -166,7 +166,7 @@ void start_shell(){
                 k_print_line();
 
                 if(current_input.size() > 0){
-                    exec_command();
+                    exec_shell_command();
 
                     if(get_column() != 0){
                         k_print_line();
@@ -202,7 +202,7 @@ void start_shell(){
     }
 }
 
-void exec_command(){
+void exec_shell_command(){
     history_save();
 
     auto params = std::split(current_input);;

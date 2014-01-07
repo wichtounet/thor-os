@@ -31,9 +31,8 @@ typedef uint64_t size_t;
 #define CODE_16
 #include "e820.hpp" //Just for the address of the e820 map
 
-
-e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
-int16_t e820::bios_e820_entry_count = 0;
+//e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
+//int16_t e820::bios_e820_entry_count = 0;
 
 namespace {
 
@@ -66,7 +65,8 @@ void reset_segments(){
 }
 
 int detect_memory_e820(){
-    auto smap = &e820::bios_e820_entries[0];
+    auto smap = reinterpret_cast<e820::bios_e820_entry*>(0x5008);
+    //auto smap = &e820::bios_e820_entries[0];
 
     uint16_t entries = 0;
 
@@ -99,7 +99,10 @@ int detect_memory_e820(){
 void detect_memory(){
     //TODO If e820 fails, try other solutions to get memory map
 
-    e820::bios_e820_entry_count = detect_memory_e820();
+    auto t = detect_memory_e820();
+    //asm volatile("xchg bx, bx");
+    *reinterpret_cast<int16_t*>(0x5000) = t;
+    //asm volatile("xchg bx, bx");
 }
 
 void disable_interrupts(){

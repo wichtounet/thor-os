@@ -120,9 +120,15 @@ uint64_t* allocate_block(uint64_t blocks){
         }
     }
 
+    asm volatile("xchg bx, bx");
+
+
     if(!current_mmap_entry){
         return nullptr;
     }
+
+
+
 
     auto block = reinterpret_cast<uint64_t*>(current_mmap_entry_position);
 
@@ -206,15 +212,21 @@ void init_head(){
 }
 
 void expand_heap(malloc_header_chunk* current){
+    asm volatile("xchg bx, bx");
+
     //Allocate a new block of memory
     uint64_t* block = allocate_block(MIN_BLOCKS);
 
     //Transform it into a malloc chunk
     auto header = reinterpret_cast<malloc_header_chunk*>(block);
 
+    asm volatile("xchg bx, bx");
+
     //Update the sizes
     header->size() = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
     header->footer()->size() = header->size();
+
+    asm volatile("xchg bx, bx");
 
     //Insert the new block into the free list
     insert_after(current, header);
