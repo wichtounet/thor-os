@@ -10,7 +10,7 @@
 #include "paging.hpp"
 #include "e820.hpp"
 
-namespace {
+namespace debugging {
 
 //Used to compile with malloc operations in the console
 //can produce a lot of output
@@ -98,8 +98,8 @@ static_assert(MIN_SPLIT == aligned_size(MIN_SPLIT), "The size of minimum split m
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
 
-const e820::mmapentry* current_mmap_entry = nullptr;
-uintptr_t current_mmap_entry_position;
+const e820::mmapentry* current_mmap_entry = 0;
+uintptr_t current_mmap_entry_position = 0;
 
 //All allocated memory is in [min_address, max_address[
 uintptr_t min_address; //Address of the first block being allocated
@@ -120,15 +120,9 @@ uint64_t* allocate_block(uint64_t blocks){
         }
     }
 
-    asm volatile("xchg bx, bx");
-
-
     if(!current_mmap_entry){
         return nullptr;
     }
-
-
-
 
     auto block = reinterpret_cast<uint64_t*>(current_mmap_entry_position);
 
@@ -212,27 +206,23 @@ void init_head(){
 }
 
 void expand_heap(malloc_header_chunk* current){
-    asm volatile("xchg bx, bx");
-
     //Allocate a new block of memory
     uint64_t* block = allocate_block(MIN_BLOCKS);
 
     //Transform it into a malloc chunk
     auto header = reinterpret_cast<malloc_header_chunk*>(block);
 
-    asm volatile("xchg bx, bx");
-
     //Update the sizes
     header->size() = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
     header->footer()->size() = header->size();
-
-    asm volatile("xchg bx, bx");
 
     //Insert the new block into the free list
     insert_after(current, header);
 }
 
 } //end of anonymous namespace
+
+using namespace debugging;
 
 void init_memory_manager(){
     //Init the fake head

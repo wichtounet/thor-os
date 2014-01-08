@@ -34,14 +34,15 @@ qemu: default
 	qemu-kvm -cpu host -hda hdd.img
 
 bochs: default
-	echo "c" > commands
-	bochs -qf bochsrc.txt -rc commands
-	rm commands
+	bochs -qf bochsrc.txt
 
 debug: default
 	echo "c" > commands
 	bochs -qf debug_bochsrc.txt -rc commands
 	rm commands
+
+gdb: default
+	bochs -qf gdb_bochsrc.txt
 
 force_look:
 	true

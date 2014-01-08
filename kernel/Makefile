@@ -52,7 +52,7 @@ src/stl/%.cpp.o:
 
 kernel.bin: $(LINK_O_FILES)
 	$(CC) $(KERNEL_LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
-	$(OC) -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
+	$(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents kernel.bin.o kernel.bin
 
 debug:
 	echo $(KERNEL_CPP_STL_FILES)
