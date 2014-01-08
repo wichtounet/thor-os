@@ -765,6 +765,12 @@ void exec_command(const std::vector<std::string>& params){
                 break;
             }
 
+            auto test_a = reinterpret_cast<size_t*>(reinterpret_cast<size_t>(memory) + 64);
+            k_print_line(*test_a);
+
+            auto test_b = reinterpret_cast<size_t*>(s_header.sh_addr + 64);
+            k_print_line(*test_b);
+
             allocated_segments[s] = memory;
         }
     }
@@ -772,6 +778,17 @@ void exec_command(const std::vector<std::string>& params){
     if(!failed){
         //TODO
     }
+
+    k_print_line("Free");
+
+    //Release physical memory
+    for(size_t i = 0; i < header->e_shnum; ++i){
+        auto a = allocated_segments[i];
+        if(a){
+            k_free(a);
+        }
+    }
+
 
     //TODO Release all the allocated segments
 }
