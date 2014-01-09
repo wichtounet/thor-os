@@ -757,55 +757,67 @@ void exec_command(const std::vector<std::string>& params){
         allocated_segments[p] = nullptr;
 
         if(p_header.p_type == 1){
-            //1. Verify that there is nothing at the necessary virtual address
+            //0. Calculate some stuff
             auto address = p_header.p_vaddr;
-            auto page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+            auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+            auto left_padding = address - first_page;
+            auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
+            auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
             //1. Verify that all the necessary pages are free
-            while(page < address + p_header.p_memsz){
-                //If the virtual address is already mapped, indicates failure
-                if(paging::page_present(reinterpret_cast<void*>(page))){
+            for(size_t i = 0; i < pages; ++i){
+                if(paging::page_present(reinterpret_cast<void*>(first_page + i * paging::PAGE_SIZE))){
                     failed = true;
                     break;
                 }
-
-                page += paging::PAGE_SIZE;
             }
 
             if(failed){
+                k_print_line("Some pages are already mapped");
                 break;
             }
 
-            //2. Get some physical memory
-            auto memory = k_malloc(paging::PAGE_SIZE + p_header.p_memsz);
+            //2. Get enough physical memory
+            auto memory = k_malloc(bytes);
 
             if(!memory){
+                k_print_line("Cannot allocate memory, probably out of memory");
                 failed = true;
                 break;
             }
 
             //3. Find a start of a page inside the physical memory
 
-            auto aligned_memory = paging::page_aligned(memory) ? memory : reinterpret_cast<void*>((reinterpret_cast<uintptr_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE);
+            auto aligned_memory = paging::page_aligned(memory) ? memory :
+                reinterpret_cast<void*>((reinterpret_cast<uintptr_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE);
 
             //4. Map physical allocated memory to the necessary virtual memory
 
-            auto left_padding = address % paging::PAGE_SIZE;
-            auto pages = ((p_header.p_memsz+ left_padding) / paging::PAGE_SIZE) + 1;
-
-            if(!paging::map(aligned_memory, paging::page_align(reinterpret_cast<void*>(address)), pages)){
+            if(!paging::map(reinterpret_cast<void*>(first_page), aligned_memory, pages)){
+                k_print_line("Mapping the pages failed");
                 failed = true;
                 break;
             }
 
+            //Save it to be able to free it later
             allocated_segments[p] = memory;
+
+            //5. Copy memory
+
+            auto memory_start = reinterpret_cast<uintptr_t>(aligned_memory) + left_padding;
+
+            std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_memsz);
         }
     }
 
-    if(failed){
-        //TODO
+    if(!failed){
+        auto main_function = reinterpret_cast<int(*)()>(header->e_entry);
+
+        auto return_code = main_function();
+
+        k_printf("Returned %d\n", return_code);
     } else {
-        k_print_line("Unable to allocate memory for the application");
+        k_print_line("Unable to execute the program");
     }
 
     //Release physical memory
@@ -816,11 +828,13 @@ void exec_command(const std::vector<std::string>& params){
         if(a){
             k_free(a);
 
-            auto aligned_memory = paging::page_aligned(a) ? a : reinterpret_cast<void*>((reinterpret_cast<uintptr_t>(a) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE);
-            auto left_padding = p_header.p_vaddr % paging::PAGE_SIZE;
-            auto pages = ((p_header.p_memsz+ left_padding) / paging::PAGE_SIZE) + 1;
+            auto address = p_header.p_vaddr;
+            auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+            auto left_padding = address - first_page;
+            auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
+            auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
-            paging::unmap(aligned_memory, pages);
+            paging::unmap(reinterpret_cast<void*>(first_page), pages);
         }
     }
 }
