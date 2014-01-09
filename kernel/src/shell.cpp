@@ -16,6 +16,7 @@
 #include "e820.hpp"
 #include "rtc.hpp"
 #include "elf.hpp"
+#include "paging.hpp"
 
 //Commands
 #include "sysinfo.hpp"
@@ -745,52 +746,83 @@ void exec_command(const std::vector<std::string>& params){
     auto buffer = content.c_str();
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
 
-    auto section_header_table = reinterpret_cast<elf::section_header*>(buffer + header->e_shoff);
+    auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
 
-    auto allocated_segments = new void*[header->e_shnum];
+    auto allocated_segments = new void*[header->e_phnum];
 
     bool failed = false;
-    for(size_t s = 0; s < header->e_shnum; ++s){
-        auto& s_header = section_header_table[s];
+    for(size_t p = 0; p < header->e_phnum; ++p){
+        auto& p_header = program_header_table[p];
 
-        allocated_segments[s] = nullptr;
+        allocated_segments[p] = nullptr;
 
-        if(s_header.sh_flags & 0x2){
-            auto memory = k_malloc(s_header.sh_addr, s_header.sh_size);
+        if(p_header.p_type == 1){
+            //1. Verify that there is nothing at the necessary virtual address
+            auto address = p_header.p_vaddr;
+            auto page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
 
-            k_printf("%h (virt) was allocated in %h (phys)\n", reinterpret_cast<size_t>(s_header.sh_addr), reinterpret_cast<size_t>(memory));
+            //1. Verify that all the necessary pages are free
+            while(page < address + p_header.p_memsz){
+                //If the virtual address is already mapped, indicates failure
+                if(paging::page_present(reinterpret_cast<void*>(page))){
+                    failed = true;
+                    break;
+                }
+
+                page += paging::PAGE_SIZE;
+            }
+
+            if(failed){
+                break;
+            }
+
+            //2. Get some physical memory
+            auto memory = k_malloc(paging::PAGE_SIZE + p_header.p_memsz);
 
             if(!memory){
                 failed = true;
                 break;
             }
 
-            auto test_a = reinterpret_cast<size_t*>(reinterpret_cast<size_t>(memory) + 64);
-            k_print_line(*test_a);
+            //3. Find a start of a page inside the physical memory
 
-            auto test_b = reinterpret_cast<size_t*>(s_header.sh_addr + 64);
-            k_print_line(*test_b);
+            auto aligned_memory = paging::page_aligned(memory) ? memory : reinterpret_cast<void*>((reinterpret_cast<uintptr_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE);
 
-            allocated_segments[s] = memory;
+            //4. Map physical allocated memory to the necessary virtual memory
+
+            auto left_padding = address % paging::PAGE_SIZE;
+            auto pages = ((p_header.p_memsz+ left_padding) / paging::PAGE_SIZE) + 1;
+
+            if(!paging::map(aligned_memory, paging::page_align(reinterpret_cast<void*>(address)), pages)){
+                failed = true;
+                break;
+            }
+
+            allocated_segments[p] = memory;
         }
     }
 
-    if(!failed){
+    if(failed){
         //TODO
+    } else {
+        k_print_line("Unable to allocate memory for the application");
     }
-
-    k_print_line("Free");
 
     //Release physical memory
-    for(size_t i = 0; i < header->e_shnum; ++i){
-        auto a = allocated_segments[i];
+    for(size_t p = 0; p < header->e_phnum; ++p){
+        auto& p_header = program_header_table[p];
+
+        auto a = allocated_segments[p];
         if(a){
             k_free(a);
+
+            auto aligned_memory = paging::page_aligned(a) ? a : reinterpret_cast<void*>((reinterpret_cast<uintptr_t>(a) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE);
+            auto left_padding = p_header.p_vaddr % paging::PAGE_SIZE;
+            auto pages = ((p_header.p_memsz+ left_padding) / paging::PAGE_SIZE) + 1;
+
+            paging::unmap(aligned_memory, pages);
         }
     }
-
-
-    //TODO Release all the allocated segments
 }
 
 void shutdown_command(const std::vector<std::string>&){

@@ -6,7 +6,6 @@
 //=======================================================================
 
 #include "paging.hpp"
-#include "console.hpp"
 
 #include "stl/types.hpp"
 #include "stl/algorithms.hpp"
@@ -169,6 +168,65 @@ bool paging::map(void* virt, void* physical, size_t pages){
         auto phys_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(physical) + page * PAGE_SIZE);
 
         if(!map(virt_addr, phys_addr)){
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool paging::unmap(void* virt){
+    //The address must be page-aligned
+    if(!page_aligned(virt)){
+        return false;
+    }
+
+    //Find the correct indexes inside the paging table for the virtual address
+    auto table = (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
+    auto directory = (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
+    auto directory_ptr = (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
+    auto pml4 = (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
+
+    pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
+
+    //If not present, returns directly
+    if(!(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT)){
+        return true;
+    }
+
+    auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
+
+    //If not present, returns directly
+    if(!(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT)){
+        return true;
+    }
+
+    auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
+
+    //If not present, returns directly
+    if(!(reinterpret_cast<uintptr_t>(pdt[directory]) & PRESENT)){
+        return true;
+    }
+
+    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[directory]) & ~0xFFF);
+
+    //Unmap the virtual address
+    pt[table] = 0x0;
+
+    return true;
+}
+
+bool paging::unmap(void* virt, size_t pages){
+    //The address must be page-aligned
+    if(!page_aligned(virt)){
+        return false;
+    }
+
+    //Unmap each page
+    for(size_t page = 0; page < pages; ++page){
+        auto virt_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
+
+        if(!unmap(virt_addr)){
             return false;
         }
     }

@@ -304,34 +304,6 @@ void* k_malloc(uint64_t bytes){
     return b;
 }
 
-void* k_malloc(uint64_t address, uint64_t bytes){
-    auto page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
-
-    //1. Verify that all the necessary pages are free
-    while(page < address + bytes){
-        //If the virtual address is already mapped, indicates failure
-        if(paging::page_present(reinterpret_cast<void*>(page))){
-            return nullptr;
-        }
-
-        page += paging::PAGE_SIZE;
-    }
-
-    //2. Allocate enough physical memory
-    auto physical = k_malloc(bytes);
-
-    //3. Map physical allocated memory to the necessary virtual emory
-
-    auto left_padding = page % paging::PAGE_SIZE;
-    auto pages = ((bytes + left_padding) / paging::PAGE_SIZE) + 1;
-
-    if(!paging::map(paging::page_align(reinterpret_cast<void*>(address)), physical, pages)){
-        return nullptr;
-    }
-
-    return physical;
-}
-
 malloc_header_chunk* left_block(malloc_header_chunk* b){
     auto left_footer = reinterpret_cast<malloc_footer_chunk*>(
         reinterpret_cast<uintptr_t>(b) - sizeof(malloc_footer_chunk));

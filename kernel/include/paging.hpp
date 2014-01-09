@@ -34,6 +34,9 @@ bool identity_map(void* virt, size_t pages);
 bool map(void* virt, void* physical);
 bool map(void* virt, void* physical, size_t pages);
 
+bool unmap(void* virt);
+bool unmap(void* virt, size_t pages);
+
 } //end of namespace paging
 
 #endif
