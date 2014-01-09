@@ -10,7 +10,7 @@
 #include "paging.hpp"
 #include "e820.hpp"
 
-namespace debugging {
+namespace {
 
 //Used to compile with malloc operations in the console
 //can produce a lot of output
@@ -221,8 +221,6 @@ void expand_heap(malloc_header_chunk* current){
 }
 
 } //end of anonymous namespace
-
-using namespace debugging;
 
 void init_memory_manager(){
     //Init the fake head
