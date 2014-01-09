@@ -51,5 +51,6 @@ clean:
 	cd bootloader; $(MAKE) clean
 	cd kernel; $(MAKE) clean
 	cd programs/one; $(MAKE) clean
+	cd programs/hello; $(MAKE) clean
 	rm -f *.bin
 	rm -f *.flp
