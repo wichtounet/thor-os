@@ -15,10 +15,11 @@ size_t _available_memory;
 } //end of namespace anonymous
 
 void e820::finalize_memory_detection(){
-    auto t = *reinterpret_cast<int16_t*>(0x5000);
-    auto smap = reinterpret_cast<e820::bios_e820_entry*>(0x5008);
+    auto t = mmap_entry_count();;
+    auto smap = bios_e820_entries;
+
     if(t > 0){
-        for(int64_t i = 0; i < t; ++i){
+        for(size_t i = 0; i < t; ++i){
             auto& bios_entry = smap[i];
             auto& os_entry = e820_mmap[i];
 
@@ -41,14 +42,11 @@ void e820::finalize_memory_detection(){
 }
 
 uint64_t e820::mmap_entry_count(){
-    auto t = *reinterpret_cast<int16_t*>(0x5000);
-    return t;
-    //return bios_e820_entry_count;
+    return bios_e820_entry_count;
 }
 
 bool e820::mmap_failed(){
-    auto t = *reinterpret_cast<int16_t*>(0x5000);
-    return t <= 0;
+    return mmap_entry_count() <= 0;
 }
 
 const e820::mmapentry& e820::mmap_entry(uint64_t i){
