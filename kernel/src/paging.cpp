@@ -36,6 +36,10 @@ uintptr_t init_new_page(){
     return new_page;
 }
 
+inline void flush_tlb(void* page){
+    asm volatile("invlpg [%0]" :: "r" (reinterpret_cast<uintptr_t>(page)) : "memory");
+}
+
 } //end of anonymous namespace
 
 //TODO Update to support offsets at the end of virt
@@ -142,6 +146,9 @@ bool paging::map(void* virt, void* physical){
     //Map to the physical address
     pt[table] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(physical) | (PRESENT | WRITEABLE));
 
+    //Flush TLB
+    flush_tlb(virt);
+
     return true;
 }
 
@@ -212,6 +219,9 @@ bool paging::unmap(void* virt){
 
     //Unmap the virtual address
     pt[table] = 0x0;
+
+    //Flush TLB
+    flush_tlb(virt);
 
     return true;
 }

@@ -786,6 +786,9 @@ void exec_command(const std::vector<std::string>& params){
                 break;
             }
 
+            //Save it to be able to free it later
+            allocated_segments[p] = memory;
+
             //3. Find a start of a page inside the physical memory
 
             auto aligned_memory = paging::page_aligned(memory) ? memory :
@@ -798,9 +801,6 @@ void exec_command(const std::vector<std::string>& params){
                 failed = true;
                 break;
             }
-
-            //Save it to be able to free it later
-            allocated_segments[p] = memory;
 
             //5. Copy memory
 
@@ -834,7 +834,9 @@ void exec_command(const std::vector<std::string>& params){
             auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
             auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
-            paging::unmap(reinterpret_cast<void*>(first_page), pages);
+            if(!paging::unmap(reinterpret_cast<void*>(first_page), pages)){
+                k_print_line("Unmap failed, memory could be in invalid state");
+            }
         }
     }
 }
