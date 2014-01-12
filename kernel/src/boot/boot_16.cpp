@@ -177,6 +177,10 @@ void setup_vesa(){
                 continue;
             }
 
+            if(vesa::mode_info_block.bpp != 24){
+                continue;
+            }
+
             one = true;
 
             auto x_res = vesa::mode_info_block.width;

@@ -845,13 +845,12 @@ void exec_command(const std::vector<std::string>& params){
 }
 
 void vesainfo_command(const std::vector<std::string>&){
-        k_print_line(vesa::modes);
-        k_printf("x=%u : y=%u \n", (size_t) vesa::mode_info_block.width, (size_t) vesa::mode_info_block.height);
-        k_print_line(vesa::mode_info_block.mode_attributes);
     if(vesa::vesa_enabled){
         k_print_line("VESA Enabled");
-
-        k_printf("x=%u : y=%u \n", (size_t) vesa::mode_info_block.width, (size_t) vesa::mode_info_block.height);
+        k_printf("Resolution: %ux%u\n", static_cast<size_t>(vesa::mode_info_block.width), static_cast<size_t>(vesa::mode_info_block.height));
+        k_printf("Depth: %u\n", static_cast<size_t>(vesa::mode_info_block.bpp));
+        k_printf("Pitch: %u\n", static_cast<size_t>(vesa::mode_info_block.pitch));
+        k_printf("LFB Address: %h:%h\n", static_cast<size_t>(vesa::mode_info_block.linear_video_buffer[1]), static_cast<size_t>(vesa::mode_info_block.linear_video_buffer[0]));
     } else {
         k_print_line("VESA Disabled");
     }
