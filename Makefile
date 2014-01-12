@@ -31,7 +31,7 @@ thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs
 	sudo /sbin/losetup -d /dev/loop0
 
 qemu: default
-	qemu-kvm -cpu host -hda hdd.img
+	qemu-kvm -cpu host -vga std -hda hdd.img
 
 bochs: default
 	bochs -qf bochsrc.txt

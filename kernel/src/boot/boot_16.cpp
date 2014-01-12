@@ -37,7 +37,9 @@ int16_t e820::bios_e820_entry_count = 0;
 #include "vesa.hpp"
 
 vesa::vbe_info_block_t vesa::vbe_info_block;
+vesa::mode_info_block_t vesa::mode_info_block;
 bool vesa::vesa_enabled = false;
+uint16_t vesa::modes = 0;
 
 namespace {
 
@@ -62,6 +64,10 @@ void set_ds(uint16_t seg){
 
 void set_es(uint16_t seg){
     asm volatile("mov es, %0" : : "rm" (seg));
+}
+
+void set_gs(uint16_t seg){
+    asm volatile("mov gs, %0" : : "rm" (seg));
 }
 
 void reset_segments(){
@@ -106,16 +112,104 @@ void detect_memory(){
     e820::bios_e820_entry_count = detect_memory_e820();
 }
 
+uint16_t read_mode(uint16_t i){
+    uint16_t mode;
+    asm volatile("mov gs, %0; mov si, %1; add si, %3; mov %0, gs:[si]"
+        : "=a" (mode)
+        : "rm" (vesa::vbe_info_block.video_modes_ptr[0]),
+          "rm" (vesa::vbe_info_block.video_modes_ptr[1]),
+          "rm" (i));
+    return mode;
+}
+
+uint16_t abs_diff(uint16_t a, uint16_t b){
+    if(a > b){
+        return a - b;
+    } else {
+        return b - a;
+    }
+}
+
+template<typename T>
+constexpr bool bit_set(const T& value, uint8_t bit){
+    return value & (1 << bit);
+}
+
 void setup_vesa(){
+    vesa::vbe_info_block.signature[0] = 'V';
+    vesa::vbe_info_block.signature[1] = 'B';
+    vesa::vbe_info_block.signature[2] = 'E';
+    vesa::vbe_info_block.signature[3] = '2';
+
     uint16_t return_code;
     asm volatile ("int 0x10"
         : "=a"(return_code)
-        : "a"(0x4F00), "D"(&vesa::vbe_info_block));
+        : "a"(0x4F00), "D"(&vesa::vbe_info_block)
+        : "memory");
 
     if(return_code == 0x4F){
-        vesa::vesa_enabled = true;
+        uint16_t wanted_x = 1024;
+        uint16_t wanted_y = 768;
 
+        uint16_t best_mode = 0;
+        uint16_t best_size_diff = 65535;
+
+        bool one = false;
+
+        for(uint16_t mode = 0; mode != 0xFFFF; ++mode){
+            asm volatile ("int 0x10"
+                : "=a"(return_code)
+                : "a"(0x4F01), "c"(mode), "D"(&vesa::mode_info_block)
+                : "memory");
+
+            //Make sure the mode is supported by get mode info function
+            if(return_code != 0x4F){
+                continue;
+            }
+
+            //Check that the mode support Linear Frame Buffer
+            if(!bit_set(vesa::mode_info_block.mode_attributes, 7)){
+                continue;
+            }
+
+            //Make sure it is a packed pixel or direct color model
+            if(vesa::mode_info_block.memory_model != 4 && vesa::mode_info_block.memory_model != 6){
+                continue;
+            }
+
+            one = true;
+
+            auto x_res = vesa::mode_info_block.width;
+            auto y_res = vesa::mode_info_block.height;
+
+            auto size_diff = abs_diff(x_res, wanted_x) + abs_diff(y_res, wanted_y);
+
+            if(size_diff < best_size_diff){
+                best_mode = mode;
+                best_size_diff = size_diff;
+            }
+        }
+
+        if(!one || best_mode == 0xFFFF){
+            vesa::vesa_enabled = false;
+        } else {
+            asm volatile ("int 0x10"
+                : "=a"(return_code)
+                : "a"(0x4F01), "c"(best_mode), "D"(&vesa::mode_info_block)
+                : "memory");
+
+            if(return_code == 0x4F){
+                vesa::vesa_enabled = true;
+                //asm volatile ("int 0x10"
+                //    : "=a"(return_code)
+                //    : "a"(0x4F02), "b"(best_mode));
+            } else {
+                vesa::vesa_enabled = false;
+            }
+        }
     }
+
+    set_gs(0);
 }
 
 void disable_interrupts(){
@@ -259,14 +353,14 @@ void  __attribute__ ((noreturn)) rm_main(){
     //Analyze memory
     detect_memory();
 
+    //Make sure a20 gate is enabled
+    enable_a20_gate();
+
     //Enable VESA
     setup_vesa();
 
     //Disable interrupts
     disable_interrupts();
-
-    //Make sure a20 gate is enabled
-    enable_a20_gate();
 
     //Setup an IDT with null limits to prevents interrupts from being used in
     //protected mode
