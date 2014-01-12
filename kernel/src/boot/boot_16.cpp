@@ -34,6 +34,11 @@ typedef uint64_t size_t;
 e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
 int16_t e820::bios_e820_entry_count = 0;
 
+#include "vesa.hpp"
+
+vesa::vbe_info_block_t vesa::vbe_info_block;
+bool vesa::vesa_enabled = false;
+
 namespace {
 
 struct gdt_ptr {
@@ -99,6 +104,18 @@ void detect_memory(){
     //TODO If e820 fails, try other solutions to get memory map
 
     e820::bios_e820_entry_count = detect_memory_e820();
+}
+
+void setup_vesa(){
+    uint16_t return_code;
+    asm volatile ("int 0x10"
+        : "=a"(return_code)
+        : "a"(0x4F00), "D"(&vesa::vbe_info_block));
+
+    if(return_code == 0x4F){
+        vesa::vesa_enabled = true;
+
+    }
 }
 
 void disable_interrupts(){
@@ -241,6 +258,9 @@ void  __attribute__ ((noreturn)) rm_main(){
 
     //Analyze memory
     detect_memory();
+
+    //Enable VESA
+    setup_vesa();
 
     //Disable interrupts
     disable_interrupts();

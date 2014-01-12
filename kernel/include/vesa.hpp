@@ -8,31 +8,35 @@
 #ifndef VESA_H
 #define VESA_H
 
+#ifndef CODE_16
+#include "stl/types.hpp"
+#endif
+
 namespace vesa {
 
-struct vbe_info_block {
-    char[4] signature;             //"VESA"
+struct vbe_info_block_t {
+    char signature[4];             //"VESA"
     uint16_t version;              // == 0x0300 for VBE 3.0
-    uint16_t[2] oem_name_ptr;
-    uint8_t[4] capabilities;
-    uint16_t[2] video_modes_ptr;
+    uint16_t oem_name_ptr[2];
+    uint8_t capabilities[4];
+    uint16_t video_modes_ptr[2];
     uint16_t total_memory;         // as # of 64KB blocks
 
     //VBE 2.0
     uint16_t oem_software_version;
-    uint16_t[2] vendor_name_ptr;
-    uint16_t[2] product_name_ptr;
-    uint16_t[2] product_revision_ptr;
+    uint16_t vendor_name_ptr[2];
+    uint16_t product_name_ptr[2];
+    uint16_t product_revision_ptr[2];
     uint16_t vbe_af_version;
-    uint16_t[2] accelerator_video_modes_ptr;
+    uint16_t accelerator_video_modes_ptr[2];
 
-    uint8_t[216] reserved;
-    uint8_t[256] oem_scratchpad;
+    uint8_t reserved[216];
+    uint8_t oem_scratchpad[256];
 } __attribute__((packed));
 
-static_assert(sizeof(vbe_info_block) == 512, "The size of a VBE info block is 512 bytes");
+static_assert(sizeof(vbe_info_block_t) == 512, "The size of a VBE info block is 512 bytes");
 
-struct mode_info_block {
+struct mode_info_block_t {
     uint16_t mode_attributes;
     uint8_t window_a_attributes;
     uint8_t window_b_attributes;
@@ -40,7 +44,7 @@ struct mode_info_block {
     uint16_t window_size;
     uint16_t segment_window_a;
     uint16_t segment_window_b;
-    uint16_t[2] window_position_function;
+    uint16_t window_position_function[2];
     uint16_t pitch; //Bytes per scan line
 
     //OEM modes
@@ -71,8 +75,8 @@ struct mode_info_block {
 
     //VBE 2.0+
 
-    uint16_t[2] linear_video_buffer;         //LFB (Linear Framebuffer) address
-    uint16_t[2] offscreen_memory;
+    uint16_t linear_video_buffer[2];         //LFB (Linear Framebuffer) address
+    uint16_t offscreen_memory[2];
     uint16_t offscreen_memory_size;
 
     uint16_t bytes_per_scan_line;
@@ -86,11 +90,14 @@ struct mode_info_block {
     uint8_t linear_blue_mask_position;
     uint8_t linear_reserved_mask_size;
     uint8_t linear_reserved_mask_position;
-    uint16_t[2] maximum_pixel_clock;
-    uint8_t[190] reserved;
+    uint16_t maximum_pixel_clock[2];
+    uint8_t reserved_2[190];
 } __attribute__((packed));
 
-static_assert(sizeof(mode_info_block) == 256, "The size of a mode info block is 256 bytes");
+static_assert(sizeof(mode_info_block_t) == 256, "The size of a mode info block is 256 bytes");
+
+extern vbe_info_block_t vbe_info_block;
+extern bool vesa_enabled;
 
 } //end of vesa namespace
 
