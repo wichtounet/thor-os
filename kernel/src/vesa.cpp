@@ -30,6 +30,23 @@ size_t red_shift;
 size_t blue_shift;
 size_t green_shift;
 
+uint8_t font[256 * 8];
+
+void init_font(){
+    auto start = font + 8 * 'a';
+
+    start[0] = 0x18;
+    start[1] = 0x3C;
+    start[2] = 0x66;
+    start[3] = 0x7E;
+    start[4] = 0x66;
+    start[5] = 0x66;
+    start[6] = 0x00;
+    start[7] = 0x00;
+}
+
+#include "font.c"
+
 } //end of anonymous namespace
 
 void vesa::init(){
@@ -53,6 +70,8 @@ void vesa::init(){
     auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
     paging::identity_map(reinterpret_cast<void*>(first_page), pages);
+
+    init_font();
 }
 
 void vesa::draw_pixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b){
@@ -76,5 +95,20 @@ void vesa::draw_vline(size_t x, size_t y, size_t h, uint8_t r, uint8_t g, uint8_
     uint32_t color = (r << red_shift) + (g << green_shift) + (b << blue_shift);
     for(size_t i = 0; i < h; ++i){
         screen[where + i * y_shift] = color;
+    }
+}
+
+void vesa::draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b){
+    //auto where = x + y * y_shift;
+    //uint32_t color = (r << red_shift) + (g << green_shift) + (b << blue_shift);
+
+    auto font_char = Font_array[c - 0x20].font_data->data;
+
+    for(size_t i = 0; i < 16; ++i){
+        for(size_t j = 0; j < 8; ++j){
+            if(!(font_char[i] & (1 << j))){
+                draw_pixel(x + (8 - j), y + i, r, g, b);
+            }
+        }
     }
 }
