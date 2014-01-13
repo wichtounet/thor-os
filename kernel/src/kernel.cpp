@@ -15,6 +15,7 @@
 #include "interrupts.hpp"
 #include "arch.hpp"
 #include "e820.hpp"
+#include "vesa.hpp"
 
 extern "C" {
 
@@ -37,9 +38,17 @@ void  kernel_main(){
     //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();
+    vesa::init();
 
     //Call global cosntructors
     _init();
+
+    vesa::draw_hline(10, 10, 1004, 0, 255, 0);
+    vesa::draw_hline(10, 40, 1004, 0, 255, 0);
+    vesa::draw_hline(10, 758, 1004, 0, 255, 0);
+
+    vesa::draw_vline(10, 10, 748, 0, 255, 0);
+    vesa::draw_vline(1014, 10, 748, 0, 255, 0);
 
     //Launch the shell
     init_shell();

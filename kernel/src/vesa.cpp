@@ -5,4 +5,76 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include "stl/types.hpp"
+
 #include "vesa.hpp"
+#include "paging.hpp"
+
+#include "console.hpp"
+
+/**
+ * VESA Drawing implementation.
+ *
+ * This implemenation only supports 32bpp. Moreover, it also erases the
+ * reserved bits of each pixel.
+ */
+
+namespace {
+
+uint32_t* screen;
+
+size_t x_shift;
+size_t y_shift;
+
+size_t red_shift;
+size_t blue_shift;
+size_t green_shift;
+
+} //end of anonymous namespace
+
+void vesa::init(){
+    auto& block = vesa::mode_info_block;
+
+    //Compute the address of the LFB
+    screen = reinterpret_cast<uint32_t*>(block.linear_video_buffer);
+
+    x_shift = 1;
+    y_shift = block.bytes_per_scan_line / 4;
+
+    red_shift = block.linear_red_mask_position;
+    blue_shift = block.linear_blue_mask_position;
+    green_shift = block.linear_green_mask_position;
+
+    size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
+
+    auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(screen));
+    auto left_padding = reinterpret_cast<uintptr_t>(screen) - first_page;
+    auto bytes = left_padding + paging::PAGE_SIZE + total_size;
+    auto pages = (bytes / paging::PAGE_SIZE) + 1;
+
+    paging::identity_map(reinterpret_cast<void*>(first_page), pages);
+}
+
+void vesa::draw_pixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b){
+    auto where = x + y * y_shift;
+
+    screen[where] = (r << red_shift) + (g << green_shift) + (b << blue_shift);
+}
+
+void vesa::draw_hline(size_t x, size_t y, size_t w, uint8_t r, uint8_t g, uint8_t b){
+    auto where = x + y * y_shift;
+
+    uint32_t color = (r << red_shift) + (g << green_shift) + (b << blue_shift);
+    for(size_t i = 0; i < w; ++i){
+        screen[where + i] = color;
+    }
+}
+
+void vesa::draw_vline(size_t x, size_t y, size_t h, uint8_t r, uint8_t g, uint8_t b){
+    auto where = x + y * y_shift;
+
+    uint32_t color = (r << red_shift) + (g << green_shift) + (b << blue_shift);
+    for(size_t i = 0; i < h; ++i){
+        screen[where + i * y_shift] = color;
+    }
+}

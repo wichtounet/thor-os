@@ -846,11 +846,20 @@ void exec_command(const std::vector<std::string>& params){
 
 void vesainfo_command(const std::vector<std::string>&){
     if(vesa::vesa_enabled){
+        auto& block = vesa::mode_info_block;
+
         k_print_line("VESA Enabled");
-        k_printf("Resolution: %ux%u\n", static_cast<size_t>(vesa::mode_info_block.width), static_cast<size_t>(vesa::mode_info_block.height));
-        k_printf("Depth: %u\n", static_cast<size_t>(vesa::mode_info_block.bpp));
-        k_printf("Pitch: %u\n", static_cast<size_t>(vesa::mode_info_block.pitch));
-        k_printf("LFB Address: %h:%h\n", static_cast<size_t>(vesa::mode_info_block.linear_video_buffer[1]), static_cast<size_t>(vesa::mode_info_block.linear_video_buffer[0]));
+        k_printf("Resolution: %ux%u\n", static_cast<size_t>(block.width), static_cast<size_t>(block.height));
+        k_printf("Depth: %u\n", static_cast<size_t>(block.bpp));
+        k_printf("Pitch: %u\n", static_cast<size_t>(block.pitch));
+        k_printf("LFB Address: %h\n", static_cast<size_t>(block.linear_video_buffer));
+
+        k_printf("Red Mask Size: %u\n", static_cast<size_t>(block.linear_red_mask_size));
+        k_printf("Red Mask Position: %u\n", static_cast<size_t>(block.linear_red_mask_position));
+        k_printf("Green Mask Size: %u\n", static_cast<size_t>(block.linear_green_mask_size));
+        k_printf("Green Mask Position: %u\n", static_cast<size_t>(block.linear_green_mask_position));
+        k_printf("Blue Mask Size: %u\n", static_cast<size_t>(block.linear_blue_mask_size));
+        k_printf("Blue Mask Position: %u\n", static_cast<size_t>(block.linear_blue_mask_position));
     } else {
         k_print_line("VESA Disabled");
     }
@@ -867,7 +876,7 @@ void shutdown_command(const std::vector<std::string>&){
 } //end of anonymous namespace
 
 void init_shell(){
-    wipeout();
+//    wipeout();
 
     k_print("thor> ");
 

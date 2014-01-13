@@ -75,7 +75,7 @@ struct mode_info_block_t {
 
     //VBE 2.0+
 
-    uint16_t linear_video_buffer[2];         //LFB (Linear Framebuffer) address
+    uint32_t linear_video_buffer;         //LFB (Linear Framebuffer) address
     uint16_t offscreen_memory[2];
     uint16_t offscreen_memory_size;
 
@@ -100,6 +100,11 @@ extern vbe_info_block_t vbe_info_block;
 extern bool vesa_enabled;
 extern mode_info_block_t mode_info_block;
 extern uint16_t modes;
+
+void init();
+void draw_pixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b);
+void draw_hline(size_t x, size_t y, size_t w, uint8_t r, uint8_t g, uint8_t b);
+void draw_vline(size_t x, size_t y, size_t h, uint8_t r, uint8_t g, uint8_t b);
 
 } //end of vesa namespace
 

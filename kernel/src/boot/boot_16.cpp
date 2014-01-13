@@ -177,7 +177,7 @@ void setup_vesa(){
                 continue;
             }
 
-            if(vesa::mode_info_block.bpp != 24){
+            if(vesa::mode_info_block.bpp != 32){
                 continue;
             }
 
@@ -197,16 +197,19 @@ void setup_vesa(){
         if(!one || best_mode == 0xFFFF){
             vesa::vesa_enabled = false;
         } else {
+            best_mode = best_mode | 0x4000;
+
             asm volatile ("int 0x10"
                 : "=a"(return_code)
                 : "a"(0x4F01), "c"(best_mode), "D"(&vesa::mode_info_block)
                 : "memory");
 
             if(return_code == 0x4F){
-                vesa::vesa_enabled = true;
-                //asm volatile ("int 0x10"
-                //    : "=a"(return_code)
-                //    : "a"(0x4F02), "b"(best_mode));
+                asm volatile ("int 0x10"
+                    : "=a"(return_code)
+                    : "a"(0x4F02), "b"(best_mode));
+
+                vesa::vesa_enabled = return_code == 0x4F;
             } else {
                 vesa::vesa_enabled = false;
             }
