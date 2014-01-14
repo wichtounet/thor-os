@@ -16,6 +16,7 @@
 #include "arch.hpp"
 #include "e820.hpp"
 #include "vesa.hpp"
+#include "console.hpp"
 
 extern "C" {
 
@@ -40,21 +41,10 @@ void  kernel_main(){
     disks::detect_disks();
     vesa::init();
 
-    //Call global cosntructors
+    //Call global constructors
     _init();
 
-    vesa::draw_hline(10, 10, 1004, 0, 255, 0);
-    vesa::draw_hline(10, 40, 1004, 0, 255, 0);
-    vesa::draw_hline(10, 758, 1004, 0, 255, 0);
-
-    vesa::draw_vline(10, 10, 748, 0, 255, 0);
-    vesa::draw_vline(1014, 10, 748, 0, 255, 0);
-
-    vesa::draw_char(500, 500, 'h', 0, 255, 0);
-    vesa::draw_char(508, 500, 'e', 0, 255, 0);
-    vesa::draw_char(516, 500, 'l', 0, 255, 0);
-    vesa::draw_char(524, 500, 'l', 0, 255, 0);
-    vesa::draw_char(532, 500, 'o', 0, 255, 0);
+    init_console();
 
     //Launch the shell
     init_shell();

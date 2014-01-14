@@ -876,7 +876,7 @@ void shutdown_command(const std::vector<std::string>&){
 } //end of anonymous namespace
 
 void init_shell(){
-//    wipeout();
+    wipeout();
 
     k_print("thor> ");
 

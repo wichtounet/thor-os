@@ -120,6 +120,8 @@ void vesa::draw_char(size_t x, size_t y, char c, uint32_t color){
         for(size_t j = 0; j < 8; ++j){
             if(font_char[i] & (1 << (8 - j))){
                 screen[where+j] = color;
+            } else {
+                screen[where+j] = 0;
             }
         }
 

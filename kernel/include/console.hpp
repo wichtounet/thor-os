@@ -12,6 +12,8 @@
 #include "stl/enable_if.hpp"
 #include "stl/string.hpp"
 
+void init_console();
+
 void set_column(long column);
 long get_column();
 
