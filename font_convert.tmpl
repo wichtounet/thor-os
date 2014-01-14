@@ -1,0 +1,32 @@
+$(start_block_header)
+/*******************************************************************************
+* $(doc_data_type)
+* filename: $(doc_filename)
+* name: $(doc_name)
+* family: $(fnt_family)
+* size: $(fnt_size)
+* style: $(fnt_style)
+* antialiasing: $(fnt_antialiasing)
+* type: $(fnt_width_type)
+* encoding: $(fnt_encoding)
+* unicode bom: $(fnt_use_bom)
+*
+* preset name: $(out_preset_name)
+* data block size: $(img_data_block_size) bit(s), uint$(img_data_block_size)_t
+* RLE compression enabled: $(img_rle)
+* conversion type: $(pre_conv_type), $(pre_mono_type) $(pre_mono_edge)
+* bits per pixel: $(out_bpp)
+*
+* preprocess:
+*  main scan direction: $(pre_scan_main)
+*  line scan direction: $(pre_scan_sub)
+*  inverse: $(pre_inverse)
+*******************************************************************************/
+
+$(end_block_header)
+
+static const uint$(img_data_block_size)_t $(doc_name_ws)_data[256 * $(out_images_max_height)] = {
+$(start_block_images_table)
+    $(out_image_data), //'$(out_char_text)'
+$(end_block_images_table)
+};

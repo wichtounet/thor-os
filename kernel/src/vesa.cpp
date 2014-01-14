@@ -45,7 +45,7 @@ void init_font(){
     start[7] = 0x00;
 }
 
-#include "font.c"
+#include "Liberation.c"
 
 } //end of anonymous namespace
 
@@ -102,11 +102,11 @@ void vesa::draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b
     //auto where = x + y * y_shift;
     //uint32_t color = (r << red_shift) + (g << green_shift) + (b << blue_shift);
 
-    auto font_char = Font_array[c - 0x20].font_data->data;
+    auto font_char = &Liberation_VESA_data[c * 16];
 
     for(size_t i = 0; i < 16; ++i){
         for(size_t j = 0; j < 8; ++j){
-            if(!(font_char[i] & (1 << j))){
+            if(font_char[i] & (1 << j)){
                 draw_pixel(x + (8 - j), y + i, r, g, b);
             }
         }
