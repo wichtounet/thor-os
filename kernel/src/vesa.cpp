@@ -106,8 +106,8 @@ void vesa::draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b
 
     for(size_t i = 0; i < 16; ++i){
         for(size_t j = 0; j < 8; ++j){
-            if(font_char[i] & (1 << j)){
-                draw_pixel(x + (8 - j), y + i, r, g, b);
+            if(font_char[i] & (1 << (8 - j))){
+                draw_pixel(x + j, y + i, r, g, b);
             }
         }
     }
