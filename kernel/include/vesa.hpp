@@ -102,9 +102,19 @@ extern mode_info_block_t mode_info_block;
 extern uint16_t modes;
 
 void init();
+
+uint32_t make_color(uint8_t r, uint8_t g, uint8_t b);
+
+void draw_pixel(size_t x, size_t y, uint32_t color);
 void draw_pixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b);
+
 void draw_hline(size_t x, size_t y, size_t w, uint8_t r, uint8_t g, uint8_t b);
+void draw_hline(size_t x, size_t y, size_t w, uint32_t color);
+
+void draw_vline(size_t x, size_t y, size_t h, uint32_t color);
 void draw_vline(size_t x, size_t y, size_t h, uint8_t r, uint8_t g, uint8_t b);
+
+void draw_char(size_t x, size_t y, char c, uint32_t color);
 void draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b);
 
 } //end of vesa namespace
