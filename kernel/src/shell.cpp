@@ -17,6 +17,7 @@
 #include "rtc.hpp"
 #include "elf.hpp"
 #include "paging.hpp"
+#include "vesa.hpp"
 
 //Commands
 #include "sysinfo.hpp"
@@ -67,13 +68,14 @@ void touch_command(const std::vector<std::string>& params);
 void readelf_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
+void vesainfo_command(const std::vector<std::string>& params);
 
 struct command_definition {
     const char* name;
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[26] = {
+command_definition commands[27] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -100,6 +102,7 @@ command_definition commands[26] = {
     {"readelf", readelf_command},
     {"exec", exec_command},
     {"shutdown", shutdown_command},
+    {"vesainfo", vesainfo_command},
 };
 
 std::string current_input(16);
@@ -838,6 +841,27 @@ void exec_command(const std::vector<std::string>& params){
                 k_print_line("Unmap failed, memory could be in invalid state");
             }
         }
+    }
+}
+
+void vesainfo_command(const std::vector<std::string>&){
+    if(vesa::vesa_enabled){
+        auto& block = vesa::mode_info_block;
+
+        k_print_line("VESA Enabled");
+        k_printf("Resolution: %ux%u\n", static_cast<size_t>(block.width), static_cast<size_t>(block.height));
+        k_printf("Depth: %u\n", static_cast<size_t>(block.bpp));
+        k_printf("Pitch: %u\n", static_cast<size_t>(block.pitch));
+        k_printf("LFB Address: %h\n", static_cast<size_t>(block.linear_video_buffer));
+
+        k_printf("Red Mask Size: %u\n", static_cast<size_t>(block.linear_red_mask_size));
+        k_printf("Red Mask Position: %u\n", static_cast<size_t>(block.linear_red_mask_position));
+        k_printf("Green Mask Size: %u\n", static_cast<size_t>(block.linear_green_mask_size));
+        k_printf("Green Mask Position: %u\n", static_cast<size_t>(block.linear_green_mask_position));
+        k_printf("Blue Mask Size: %u\n", static_cast<size_t>(block.linear_blue_mask_size));
+        k_printf("Blue Mask Position: %u\n", static_cast<size_t>(block.linear_blue_mask_position));
+    } else {
+        k_print_line("VESA Disabled");
     }
 }
 

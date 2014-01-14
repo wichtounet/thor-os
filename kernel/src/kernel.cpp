@@ -15,6 +15,8 @@
 #include "interrupts.hpp"
 #include "arch.hpp"
 #include "e820.hpp"
+#include "vesa.hpp"
+#include "console.hpp"
 
 extern "C" {
 
@@ -37,9 +39,12 @@ void  kernel_main(){
     //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();
+    vesa::init();
 
-    //Call global cosntructors
+    //Call global constructors
     _init();
+
+    init_console();
 
     //Launch the shell
     init_shell();

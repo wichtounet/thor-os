@@ -7,44 +7,63 @@
 
 #include <stdarg.h>
 
-#include "console.hpp"
-
 #include "stl/types.hpp"
 #include "stl/string.hpp"
 
+#include "console.hpp"
+#include "vesa.hpp"
+
+#include "text_console.hpp"
+#include "vesa_console.hpp"
+
 namespace {
 
-long current_line = 0;
-long current_column = 0;
+text_console t_console;
+vesa_console v_console;
+bool text = true;
 
-enum vga_color {
-    BLACK = 0,
-    BLUE = 1,
-    GREEN = 2,
-    CYAN = 3,
-    RED = 4,
-    MAGENTA = 5,
-    BROWN = 6,
-    LIGHT_GREY = 7,
-    DARK_GREY = 8,
-    LIGHT_BLUE = 9,
-    LIGHT_GREEN = 10,
-    LIGHT_CYAN = 11,
-    LIGHT_RED = 12,
-    LIGHT_MAGENTA = 13,
-    LIGHT_BROWN = 14,
-    WHITE = 15,
-};
-
-uint8_t make_color(vga_color fg, vga_color bg){
-    return fg | bg << 4;
+size_t lines(){
+    if(text){
+        return t_console.lines();
+    } else {
+        return v_console.lines();
+    }
 }
 
-uint16_t make_vga_entry(char c, uint8_t color){
-    uint16_t c16 = c;
-    uint16_t color16 = color;
-    return c16 | color16 << 8;
+size_t columns(){
+    if(text){
+        return t_console.columns();
+    } else {
+        return v_console.columns();
+    }
 }
+
+void clear(){
+    if(text){
+        t_console.clear();
+    } else {
+        v_console.clear();
+    }
+}
+
+void scroll_up(){
+    if(text){
+        t_console.scroll_up();
+    } else {
+        v_console.scroll_up();
+    }
+}
+
+void print_char(size_t line, size_t column, char c){
+    if(text){
+        t_console.print_char(line, column, c);
+    } else {
+        v_console.print_char(line, column, c);
+    }
+}
+
+size_t current_line = 0;
+size_t current_column = 0;
 
 template<typename N>
 uint64_t digits(N number){
@@ -96,19 +115,29 @@ void print_signed(D number){
 
 } //end of anonymous namespace
 
-void set_column(long column){
+void init_console(){
+    text = !vesa::vesa_enabled;
+
+    if(text){
+        t_console.init();
+    } else {
+        v_console.init();
+    }
+}
+
+void set_column(size_t column){
     current_column = column;
 }
 
-long get_column(){
+size_t get_column(){
     return current_column;
 }
 
-void set_line(long line){
+void set_line(size_t line){
     current_line= line;
 }
 
-long get_line(){
+size_t get_line(){
     return current_line;
 }
 
@@ -147,19 +176,10 @@ void k_print(int64_t number){
 void next_line(){
     ++current_line;
 
-    if(current_line == 25){
-        auto vga_buffer_fast = reinterpret_cast<uint64_t*>(0x0B8000);
-        auto destination = vga_buffer_fast;
-        auto source = &vga_buffer_fast[20];
+    if(current_line == lines()){
+        scroll_up();
 
-        std::copy_n(destination, source, 24 * 20);
-
-        auto vga_buffer = reinterpret_cast<uint16_t*>(0x0B8000);
-        for(uint64_t i = 0; i < 80; ++i){
-            vga_buffer[24 * 80 + i] = make_vga_entry(' ', make_color(WHITE, BLACK));
-        }
-
-        current_line = 24;
+        --current_line;
     }
 
     current_column = 0;
@@ -175,13 +195,11 @@ void k_print(char key){
     } else if(key == '\t'){
         k_print("  ");
     } else {
-        uint16_t* vga_buffer = reinterpret_cast<uint16_t*>(0x0B8000);
-
-        vga_buffer[current_line * 80 + current_column] = make_vga_entry(key, make_color(WHITE, BLACK));
+        print_char(current_line, current_column, key);
 
         ++current_column;
 
-        if(current_column == 80){
+        if(current_column == columns()){
             next_line();
         }
     }
@@ -206,14 +224,7 @@ void k_print(const char* str, uint64_t end){
 }
 
 void wipeout(){
-    current_line = 0;
-    current_column = 0;
-
-    for(int line = 0; line < 25; ++line){
-        for(uint64_t column = 0; column < 80; ++column){
-            k_print(' ');
-        }
-    }
+    clear();
 
     current_line = 0;
     current_column = 0;

@@ -12,11 +12,13 @@
 #include "stl/enable_if.hpp"
 #include "stl/string.hpp"
 
-void set_column(long column);
-long get_column();
+void init_console();
 
-void set_line(long line);
-long get_line();
+void set_column(size_t column);
+size_t get_column();
+
+void set_line(size_t line);
+size_t get_line();
 
 void wipeout();
 void k_print(char key);
