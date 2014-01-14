@@ -62,8 +62,8 @@ void print_char(size_t line, size_t column, char c){
     }
 }
 
-long current_line = 0;
-long current_column = 0;
+size_t current_line = 0;
+size_t current_column = 0;
 
 template<typename N>
 uint64_t digits(N number){
@@ -125,19 +125,19 @@ void init_console(){
     }
 }
 
-void set_column(long column){
+void set_column(size_t column){
     current_column = column;
 }
 
-long get_column(){
+size_t get_column(){
     return current_column;
 }
 
-void set_line(long line){
+void set_line(size_t line){
     current_line= line;
 }
 
-long get_line(){
+size_t get_line(){
     return current_line;
 }
 

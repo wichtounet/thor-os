@@ -148,3 +148,14 @@ void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
 void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint8_t r, uint8_t g, uint8_t b){
     draw_rect(x, y, w, h, make_color(r, g, b));
 }
+
+void vesa::move_lines_up(size_t y, size_t x, size_t w, size_t lines, size_t n){
+    for(size_t i = 0; i < lines; ++i){
+        auto destination = reinterpret_cast<size_t*>(screen + (y - n + i) * y_shift + x);
+        auto source = reinterpret_cast<size_t*>(screen + (y + i) * y_shift + x);
+
+        for(size_t j = 0; j < w / 2; ++j){
+            destination[j] = source[j];
+        }
+    }
+}
