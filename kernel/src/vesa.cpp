@@ -99,16 +99,18 @@ void vesa::draw_vline(size_t x, size_t y, size_t h, uint8_t r, uint8_t g, uint8_
 }
 
 void vesa::draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b){
-    //auto where = x + y * y_shift;
-    //uint32_t color = (r << red_shift) + (g << green_shift) + (b << blue_shift);
+    auto where = x + y * y_shift;
+    uint32_t color = (r << red_shift) + (g << green_shift) + (b << blue_shift);
 
     auto font_char = &Liberation_VESA_data[c * 16];
 
     for(size_t i = 0; i < 16; ++i){
         for(size_t j = 0; j < 8; ++j){
             if(font_char[i] & (1 << (8 - j))){
-                draw_pixel(x + j, y + i, r, g, b);
+                screen[where+j] = color;
             }
         }
+
+        where += y_shift;
     }
 }
