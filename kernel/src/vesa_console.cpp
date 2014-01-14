@@ -45,7 +45,7 @@ size_t vesa_console::columns(){
 }
 
 void vesa_console::clear(){
-
+    vesa::draw_rect(LEFT, TOP, _columns * 8, _lines* 16, 0, 0, 0);
 }
 
 void vesa_console::scroll_up(){

@@ -108,7 +108,7 @@ void vesa::draw_vline(size_t x, size_t y, size_t h, uint32_t color){
 }
 
 void vesa::draw_vline(size_t x, size_t y, size_t h, uint8_t r, uint8_t g, uint8_t b){
-    return draw_vline(x, y, h, make_color(r, g, b));
+    draw_vline(x, y, h, make_color(r, g, b));
 }
 
 void vesa::draw_char(size_t x, size_t y, char c, uint32_t color){
@@ -130,5 +130,21 @@ void vesa::draw_char(size_t x, size_t y, char c, uint32_t color){
 }
 
 void vesa::draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b){
-    return draw_char(x, y, c, make_color(r, g, b));
+    draw_char(x, y, c, make_color(r, g, b));
+}
+
+void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
+    auto where = x + y * y_shift;
+
+    for(size_t j = 0; j < h; ++j){
+        for(size_t i = 0; i < w; ++i){
+            screen[where + i] = color;
+        }
+
+        where += y_shift;
+    }
+}
+
+void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint8_t r, uint8_t g, uint8_t b){
+    draw_rect(x, y, w, h, make_color(r, g, b));
 }

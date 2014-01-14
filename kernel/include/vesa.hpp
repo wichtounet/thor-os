@@ -114,6 +114,9 @@ void draw_hline(size_t x, size_t y, size_t w, uint32_t color);
 void draw_vline(size_t x, size_t y, size_t h, uint32_t color);
 void draw_vline(size_t x, size_t y, size_t h, uint8_t r, uint8_t g, uint8_t b);
 
+void draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color);
+void draw_rect(size_t x, size_t y, size_t w, size_t h, uint8_t r, uint8_t g, uint8_t b);
+
 void draw_char(size_t x, size_t y, char c, uint32_t color);
 void draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b);
 
