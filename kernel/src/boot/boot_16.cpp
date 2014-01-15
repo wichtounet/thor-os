@@ -26,6 +26,10 @@ static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes long");
 //used in boot_16.cpp
 typedef uint64_t size_t;
 
+constexpr const uint16_t DEFAULT_WIDTH = 1280;
+constexpr const uint16_t DEFAULT_HEIGHT = 1024;
+constexpr const uint16_t DEFAULT_BPP = 32;
+
 } //end of anonymous namespace
 
 #define CODE_16
@@ -148,9 +152,6 @@ void setup_vesa(){
         : "memory");
 
     if(return_code == 0x4F){
-        uint16_t wanted_x = 1024;
-        uint16_t wanted_y = 768;
-
         uint16_t best_mode = 0;
         uint16_t best_size_diff = 65535;
 
@@ -177,7 +178,7 @@ void setup_vesa(){
                 continue;
             }
 
-            if(vesa::mode_info_block.bpp != 32){
+            if(vesa::mode_info_block.bpp != DEFAULT_BPP){
                 continue;
             }
 
@@ -186,7 +187,7 @@ void setup_vesa(){
             auto x_res = vesa::mode_info_block.width;
             auto y_res = vesa::mode_info_block.height;
 
-            auto size_diff = abs_diff(x_res, wanted_x) + abs_diff(y_res, wanted_y);
+            auto size_diff = abs_diff(x_res, DEFAULT_WIDTH) + abs_diff(y_res, DEFAULT_HEIGHT);
 
             if(size_diff < best_size_diff){
                 best_mode = mode;
