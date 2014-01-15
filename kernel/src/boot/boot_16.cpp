@@ -43,7 +43,6 @@ int16_t e820::bios_e820_entry_count = 0;
 vesa::vbe_info_block_t vesa::vbe_info_block;
 vesa::mode_info_block_t vesa::mode_info_block;
 bool vesa::vesa_enabled = false;
-uint16_t vesa::modes = 0;
 
 namespace {
 

@@ -99,7 +99,6 @@ static_assert(sizeof(mode_info_block_t) == 256, "The size of a mode info block i
 extern vbe_info_block_t vbe_info_block;
 extern bool vesa_enabled;
 extern mode_info_block_t mode_info_block;
-extern uint16_t modes;
 
 void init();
 

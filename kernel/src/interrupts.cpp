@@ -27,7 +27,7 @@ struct idt_entry {
     uint32_t reserved;
 } __attribute__((packed));
 
-static_assert(sizeof(idt_entry) == 16, "The size of an IDT entry should be 16 bits");
+static_assert(sizeof(idt_entry) == 16, "The size of an IDT entry should be 16 bytes");
 
 struct idtr {
     uint16_t limit;
@@ -95,7 +95,7 @@ void _irq_handler(size_t code){
         irq_handlers[code]();
     }
 
-    //If the IRQ is on the slaved controller, send EOI to it
+    //If the IRQ is on the slave controller, send EOI to it
     if(code >= 8){
         out_byte(0xA0, 0x20);
     }
