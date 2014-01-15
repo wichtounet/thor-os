@@ -90,7 +90,7 @@ struct mode_info_block_t {
     uint8_t linear_blue_mask_position;
     uint8_t linear_reserved_mask_size;
     uint8_t linear_reserved_mask_position;
-    uint16_t maximum_pixel_clock[2];
+    uint32_t maximum_pixel_clock;
     uint8_t reserved_2[190];
 } __attribute__((packed));
 

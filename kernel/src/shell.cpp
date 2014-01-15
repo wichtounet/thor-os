@@ -853,6 +853,8 @@ void vesainfo_command(const std::vector<std::string>&){
         k_printf("Depth: %u\n", static_cast<size_t>(block.bpp));
         k_printf("Pitch: %u\n", static_cast<size_t>(block.pitch));
         k_printf("LFB Address: %h\n", static_cast<size_t>(block.linear_video_buffer));
+        k_printf("Offscreen Memory Size: %h\n", static_cast<size_t>(block.offscreen_memory_size));
+        k_printf("Maximum Pixel Clock: %h\n", static_cast<size_t>(block.maximum_pixel_clock));
 
         k_printf("Red Mask Size: %u\n", static_cast<size_t>(block.linear_red_mask_size));
         k_printf("Red Mask Position: %u\n", static_cast<size_t>(block.linear_red_mask_position));
