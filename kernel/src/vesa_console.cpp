@@ -13,7 +13,7 @@ namespace {
 constexpr const size_t MARGIN = 10;
 constexpr const size_t PADDING = 5;
 constexpr const size_t LEFT = MARGIN + PADDING;
-constexpr const size_t TOP = 50;
+constexpr const size_t TOP = 40;
 
 size_t _lines;
 size_t _columns;
@@ -28,12 +28,18 @@ void vesa_console::init(){
     _lines = (block.height - TOP - MARGIN - PADDING) / 16;
     _color = vesa::make_color(0, 255, 0);
 
-    vesa::draw_hline(10, 10, 1004, _color);
-    vesa::draw_hline(10, 40, 1004, _color);
-    vesa::draw_hline(10, 758, 1004, _color);
+    vesa::draw_hline(MARGIN, MARGIN, block.width - 2 * MARGIN, _color);
+    vesa::draw_hline(MARGIN, 35, block.width - 2 * MARGIN, _color);
+    vesa::draw_hline(MARGIN, block.height - MARGIN, block.width - 2 * MARGIN, _color);
 
-    vesa::draw_vline(10, 10, 748, _color);
-    vesa::draw_vline(1014, 10, 748, _color);
+    vesa::draw_vline(MARGIN, MARGIN, block.height - 2 * MARGIN, _color);
+    vesa::draw_vline(block.width - MARGIN, MARGIN, block.height - 2 * MARGIN, _color);
+
+    auto title_left = (block.width - 4 * 8) / 2;
+    vesa::draw_char(title_left, PADDING + MARGIN, 'T', _color);
+    vesa::draw_char(title_left + 8, PADDING + MARGIN, 'H', _color);
+    vesa::draw_char(title_left + 16, PADDING + MARGIN, 'O', _color);
+    vesa::draw_char(title_left + 24, PADDING + MARGIN, 'R', _color);
 }
 
 size_t vesa_console::lines(){
