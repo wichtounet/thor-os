@@ -12,6 +12,7 @@
 
 #include "isrs.hpp"
 #include "irqs.hpp"
+#include "syscalls.hpp"
 
 #include "stl/types.hpp"
 
@@ -151,6 +152,20 @@ void install_irqs(){
     idt_set_gate(47, _irq15, gdt::LONG_SELECTOR, 0x8E);
 }
 
+void install_syscalls(){
+    idt_set_gate(interrupt::SYSCALL_FIRST, _syscall0, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+1, _syscall1, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+2, _syscall2, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+3, _syscall3, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+4, _syscall4, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+5, _syscall5, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+6, _syscall6, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+7, _syscall7, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+8, _syscall8, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(interrupt::SYSCALL_FIRST+9, _syscall9, gdt::LONG_SELECTOR, 0x8E);
+
+}
+
 void enable_interrupts(){
     __asm__ __volatile__("sti" : : );
 }
@@ -205,7 +220,6 @@ void _fault_handler(interrupt::fault_regs regs){
     k_printf("cr2=%h\n", get_cr2());
 
     //TODO Improve that with kind of blue screen
-    //TODO Display the title of the exception
 
     __asm__ __volatile__("hlt" : : );
 }
@@ -225,6 +239,11 @@ void _irq_handler(size_t code){
     out_byte(0x20, 0x20);
 }
 
+void _syscall_handler(interrupt::syscall_regs regs){
+    //TODO Call handler if any
+    //TODO Otherwise, display error
+}
+
 } //end of extern "C"
 
 void interrupt::register_irq_handler(size_t irq, void (*handler)()){
@@ -236,5 +255,6 @@ void interrupt::setup_interrupts(){
     install_isrs();
     remap_irqs();
     install_irqs();
+    install_syscalls();
     enable_interrupts();
 }

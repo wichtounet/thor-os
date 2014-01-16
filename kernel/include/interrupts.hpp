@@ -12,6 +12,9 @@
 
 namespace interrupt {
 
+constexpr const size_t SYSCALL_FIRST = 50;
+constexpr const size_t SYSCALL_MAX = 10;
+
 struct fault_regs {
     uint64_t error_no;
     uint64_t error_code;
@@ -22,9 +25,20 @@ struct fault_regs {
     uint64_t ss;
 } __attribute__((packed));
 
+struct syscall_regs {
+    uint64_t rax;
+    uint64_t rbx;
+    uint64_t rcx;
+    uint64_t rdx;
+    uint64_t rsi;
+    uint64_t rdi;
+} __attribute__((packed));
+
 void setup_interrupts();
 
 void register_irq_handler(size_t irq, void (*handler)());
+void register_syscall_handler(size_t irq, void (*handler)(const syscall_regs&));
+
 
 } //end of interrupt namespace
 
