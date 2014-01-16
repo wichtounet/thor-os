@@ -157,19 +157,9 @@ void enable_interrupts(){
 
 } //end of anonymous namespace
 
-struct regs {
-    uint64_t error_no;
-    uint64_t error_code;
-    uint64_t rip;
-    uint64_t rflags;
-    uint64_t cs;
-    uint64_t rsp;
-    uint64_t ss;
-} __attribute__((packed));
-
 extern "C" {
 
-void _fault_handler(regs regs){
+void _fault_handler(interrupt::fault_regs regs){
     k_printf("Exception (%u) occured\n", regs.error_no);
     k_printf("error_code=%u\n", regs.error_code);
     k_printf("rip=%h\n", regs.rip);
