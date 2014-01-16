@@ -155,12 +155,47 @@ void enable_interrupts(){
     __asm__ __volatile__("sti" : : );
 }
 
+const char* exceptions_title[32] {
+    "Division by zero",
+    "Debugger",
+    "NMI",
+    "Breakpoint",
+    "Overflow",
+    "Bounds",
+    "Invalid Opcode",
+    "Coprocessor not available",
+    "Double fault",
+    "Coprocessor segment overrun",
+    "Invalid Task State Segment",
+    "Segment not present",
+    "Stack Fault",
+    "General protection fault",
+    "Page Fault",
+    "Reserved",
+    "Math Fault",
+    "Alignment Check",
+    "Machine Check",
+    "SIMD Floating Point Exception",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved"
+};
+
 } //end of anonymous namespace
 
 extern "C" {
 
 void _fault_handler(interrupt::fault_regs regs){
-    k_printf("Exception (%u) occured\n", regs.error_no);
+    k_printf("Exception %u (%s) occured\n", regs.error_no, exceptions_title[regs.error_no]);
     k_printf("error_code=%u\n", regs.error_code);
     k_printf("rip=%h\n", regs.rip);
     k_printf("rflags=%h\n", regs.rflags);
