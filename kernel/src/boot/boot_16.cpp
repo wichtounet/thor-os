@@ -32,6 +32,8 @@ constexpr const uint16_t DEFAULT_BPP = 32;
 
 } //end of anonymous namespace
 
+#include "gdt.hpp"
+
 #define CODE_16
 #include "e820.hpp" //Just for the address of the e820 map
 
@@ -45,11 +47,6 @@ vesa::mode_info_block_t vesa::mode_info_block;
 bool vesa::vesa_enabled = false;
 
 namespace {
-
-struct gdt_ptr {
-    uint16_t length;
-    uint32_t pointer;
-} __attribute__ ((packed));
 
 void out_byte(uint8_t value, uint16_t port){
     __asm__ __volatile__("out %1, %0" : : "a" (value), "dN" (port));
@@ -238,7 +235,7 @@ void enable_a20_gate(){
 }
 
 void setup_idt(){
-    static const gdt_ptr null_idt = {0, 0};
+    static const gdt::gdt_ptr null_idt = {0, 0};
     asm volatile("lidt %0" : : "m" (null_idt));
 }
 
@@ -338,17 +335,42 @@ constexpr uint16_t user_code_64_selector(){
 }
 
 void setup_gdt(){
+    //The Task State Segment
+    static gdt::task_state_segment_t tss;
+
     //TODO On some machines, this should be aligned to 16 bits
-    static const uint64_t gdt[] = {
+    static uint64_t gdt[] = {
         0,                                      //Null Selector
         gdt_entry(0, 0xFFFFF, code_32_selector()),
         gdt_entry(0, 0xFFFFF, data_selector()),
         gdt_entry(0, 0xFFFFF, code_64_selector()),
         gdt_entry(0, 0xFFFFF, user_data_selector()),
-        gdt_entry(0, 0xFFFFF, user_code_64_selector())
+        gdt_entry(0, 0xFFFFF, user_code_64_selector()),
+        0, //Make space for TSS selector
+        0  //Make space for TSS selector
     };
 
-    static gdt_ptr gdtr;
+    uint32_t base = reinterpret_cast<uint32_t>(&tss);
+    uint32_t limit = base + sizeof(gdt::task_state_segment_t);
+
+    auto tss_selector = reinterpret_cast<gdt::tss_descriptor_t*>(&gdt[6]);
+    tss_selector->type = 9; //64bit TSS (Available)
+    tss_selector->always_0_1 = 0;
+    tss_selector->always_0_2 = 0;
+    tss_selector->always_0_3 = 0;
+    tss_selector->dpl = 3;
+    tss_selector->present = 1;
+    tss_selector->avl = 0;
+    tss_selector->granularity = 0;
+
+    tss_selector->base_low = base & 0xFFFFFF;              //Bottom 24 bits
+    tss_selector->base_middle = (base & 0xFF000000) >> 24; //Top 8 bits
+    tss_selector->base_high = 0;                           //Top 32 bits are clear
+
+    tss_selector->limit_low = limit & 0xFFFF;              //Low 16 bits
+    tss_selector->limit_high = (limit&0xF0000) >> 16;      //Top 4 bits
+
+    static gdt::gdt_ptr gdtr;
     gdtr.length  = sizeof(gdt) - 1;
     gdtr.pointer = reinterpret_cast<uint32_t>(&gdt);
 
