@@ -21,7 +21,7 @@ union optional_storage {
 
     constexpr optional_storage() : dummy() {}
     constexpr optional_storage(const T& v) : value(v) {}
-    constexpr optional_storage(T&& v) : value(v) {}
+    constexpr optional_storage(T&& v) : value(std::forward<T>(v)) {}
 
     optional_storage& operator=(const T& v){
         value = v;
@@ -42,6 +42,7 @@ class optional {
 public:
     constexpr optional() : initialized(false), storage() {}
     constexpr optional(const T& value) : initialized(true), storage(value) {}
+    constexpr optional(T&& value) : initialized(true), storage(std::forward<T>(value)) {}
 
     optional(const optional& rhs) : initialized(rhs.initialized) {
         if(rhs.initialized){
