@@ -16,6 +16,7 @@ uint64_t fibonacci_slow(uint64_t s){
 
     return fibonacci_slow(s - 1) + fibonacci_slow(s - 2);
 }
+
 int main(){
     uint64_t i = 0;
 
