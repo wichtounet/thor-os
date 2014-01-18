@@ -323,13 +323,29 @@ constexpr uint16_t data_selector(){
         SEG_PRIV(0)     | SEG_DATA_RDWR;
 }
 
+constexpr uint16_t user_data_selector(){
+    return
+        SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
+        SEG_LONG(1)     | SEG_SIZE(1) | SEG_GRAN(1) |
+        SEG_PRIV(3)     | SEG_DATA_RDWR;
+}
+
+constexpr uint16_t user_code_64_selector(){
+    return
+        SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
+        SEG_LONG(1)     | SEG_SIZE(0) | SEG_GRAN(1) |
+        SEG_PRIV(3)     | SEG_CODE_EXRD;
+}
+
 void setup_gdt(){
     //TODO On some machines, this should be aligned to 16 bits
     static const uint64_t gdt[] = {
         0,                                      //Null Selector
         gdt_entry(0, 0xFFFFF, code_32_selector()),
         gdt_entry(0, 0xFFFFF, data_selector()),
-        gdt_entry(0, 0xFFFFF, code_64_selector())
+        gdt_entry(0, 0xFFFFF, code_64_selector()),
+        gdt_entry(0, 0xFFFFF, user_data_selector()),
+        gdt_entry(0, 0xFFFFF, user_code_64_selector())
     };
 
     static gdt_ptr gdtr;
