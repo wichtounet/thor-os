@@ -22,6 +22,23 @@ struct gdt_ptr {
     uint32_t pointer;
 } __attribute__ ((packed));
 
+struct gdt_descriptor_t {
+	unsigned int limit_low      : 16;
+	unsigned int base_low       : 24;
+    uint8_t type                : 4;
+	unsigned int always_1       : 1;
+	unsigned int dpl            : 2;
+	unsigned int present        : 1;
+	unsigned int limit_high     : 4;
+	unsigned int avl            : 1;
+	unsigned int long_mode      : 1;
+	unsigned int big            : 1;
+	unsigned int granularity    : 1;
+	unsigned int base_high      : 8;
+} __attribute__((packed));
+
+static_assert(sizeof(gdt_descriptor_t) == 8, "GDT selector in long mode is 8 bytes long");
+
 struct tss_descriptor_t {
     uint16_t limit_low      : 16;
     uint32_t base_low       : 24;
@@ -40,7 +57,7 @@ struct tss_descriptor_t {
     uint32_t reserved_2     : 19;
 } __attribute__((packed));
 
-static_assert(sizeof(tss_descriptor_t) == 16, "TSS descriptor in long mode is 128 bits long");
+static_assert(sizeof(tss_descriptor_t) == 16, "TSS descriptor in long mode is 16 bytes long");
 
 struct task_state_segment_t {
     uint32_t reserved_0;
