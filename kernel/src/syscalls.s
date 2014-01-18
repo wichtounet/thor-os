@@ -24,80 +24,70 @@
 _syscall0:
     cli
 
-    push rdi
-    mov rdi, 0
+    push 0
 
     jmp syscall_common_handler
 
 _syscall1:
     cli
 
-    push rdi
-    mov rdi, 1
+    push 1
 
     jmp syscall_common_handler
 
 _syscall2:
     cli
 
-    push rdi
-    mov rdi, 2
+    push 2
 
     jmp syscall_common_handler
 
 _syscall3:
     cli
 
-    push rdi
-    mov rdi, 3
+    push 3
 
     jmp syscall_common_handler
 
 _syscall4:
     cli
 
-    push rdi
-    mov rdi, 4
+    push 4
 
     jmp syscall_common_handler
 
 _syscall5:
     cli
 
-    push rdi
-    mov rdi, 5
+    push 5
 
     jmp syscall_common_handler
 
 _syscall6:
     cli
 
-    push rdi
-    mov rdi, 6
+    push 6
 
     jmp syscall_common_handler
 
 _syscall7:
     cli
 
-    push rdi
-    mov rdi, 7
+    push 7
 
     jmp syscall_common_handler
 
 _syscall8:
     cli
 
-    push rdi
-    mov rdi, 8
+    push 8
 
     jmp syscall_common_handler
 
 _syscall9:
     cli
 
-    push rdi
-    mov rdi, 9
+    push 9
 
     jmp syscall_common_handler
 
@@ -105,33 +95,33 @@ _syscall9:
 
 //TODO Check if really safe to trash r12
 syscall_common_handler:
-    push r8
-    push r9
-    push r10
-    push r11
     push r12
-    push rax
-    push rbx
-    push rcx
-    push rdx
-    push rsi
+    push r11
+    push r10
+    push r9
+    push r8
     push rdi
+    push rsi
+    push rdx
+    push rcx
+    push rbx
+    push rax
 
     call _syscall_handler
 
-    pop rdi
-    pop rsi
-    pop rdx
-    pop rcx
-    pop rbx
     pop rax
-    pop r12
-    pop r11
-    pop r10
-    pop r9
+    pop rbx
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
     pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
 
     //Was pushed by the base handler code
-    pop rdi
+    add rsp, 8
 
     iretq // iret will clean the other automatically pushed stuff

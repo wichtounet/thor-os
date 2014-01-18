@@ -13,5 +13,5 @@ void system_call_entry(const interrupt::syscall_regs& regs){
 }
 
 void install_system_calls(){
-    interrupt::register_syscall_handler(interrupt::SYSCALL_FIRST, &system_call_entry);
+    interrupt::register_syscall_handler(0, &system_call_entry);
 }

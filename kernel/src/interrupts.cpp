@@ -241,11 +241,9 @@ void _irq_handler(size_t code){
 }
 
 void _syscall_handler(interrupt::syscall_regs regs){
-    auto code = regs.rdi;
-
     //If there is a handler call, it
-    if(syscall_handlers[code]){
-        syscall_handlers[code](regs);
+    if(syscall_handlers[regs.code]){
+        syscall_handlers[regs.code](regs);
     }
 
     //TODO Emit an error somehow if there is no handler
