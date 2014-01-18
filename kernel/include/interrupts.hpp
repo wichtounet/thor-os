@@ -39,7 +39,6 @@ void setup_interrupts();
 void register_irq_handler(size_t irq, void (*handler)());
 void register_syscall_handler(size_t irq, void (*handler)(const syscall_regs&));
 
-
 } //end of interrupt namespace
 
 #endif

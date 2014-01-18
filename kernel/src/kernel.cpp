@@ -13,6 +13,7 @@
 #include "disks.hpp"
 #include "acpi.hpp"
 #include "interrupts.hpp"
+#include "system_calls.hpp"
 #include "arch.hpp"
 #include "e820.hpp"
 #include "vesa.hpp"
@@ -36,6 +37,8 @@ void  kernel_main(){
     keyboard::install_driver();
     disks::detect_disks();
     vesa::init();
+
+    install_system_calls();
 
     //Call global constructors
     _init();

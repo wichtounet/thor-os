@@ -8,6 +8,10 @@
 #ifndef ATA_H
 #define ATA_H
 
-void system_call_entry();
+#include "interrupts.hpp"
+
+void system_call_entry(const interrupt::syscall_regs& regs);
+
+void install_system_calls();
 
 #endif

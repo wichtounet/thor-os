@@ -39,6 +39,7 @@ idt_entry idt_64[64];
 idtr idtr_64;
 
 void (*irq_handlers[16])();
+void (*syscall_handlers[interrupt::SYSCALL_MAX])(const interrupt::syscall_regs&);
 
 void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, uint8_t flags){
     auto& entry = idt_64[gate];
@@ -240,14 +241,24 @@ void _irq_handler(size_t code){
 }
 
 void _syscall_handler(interrupt::syscall_regs regs){
-    //TODO Call handler if any
-    //TODO Otherwise, display error
+    auto code = regs.rdi;
+
+    //If there is a handler call, it
+    if(syscall_handlers[code]){
+        syscall_handlers[code](regs);
+    }
+
+    //TODO Emit an error somehow if there is no handler
 }
 
 } //end of extern "C"
 
 void interrupt::register_irq_handler(size_t irq, void (*handler)()){
     irq_handlers[irq] = handler;
+}
+
+void interrupt::register_syscall_handler(size_t syscall, void (*handler)(const interrupt::syscall_regs&)){
+    syscall_handlers[syscall] = handler;
 }
 
 void interrupt::setup_interrupts(){
