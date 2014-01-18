@@ -67,6 +67,7 @@ void rm_command(const std::vector<std::string>& params);
 void touch_command(const std::vector<std::string>& params);
 void readelf_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
+void execin_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
 void divzero_command(const std::vector<std::string>& params);
@@ -76,7 +77,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[28] = {
+command_definition commands[29] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -102,6 +103,7 @@ command_definition commands[28] = {
     {"rm", rm_command},
     {"readelf", readelf_command},
     {"exec", exec_command},
+    {"execin", execin_command},
     {"shutdown", shutdown_command},
     {"vesainfo", vesainfo_command},
     {"divzero", divzero_command},
@@ -721,6 +723,26 @@ void readelf_command(const std::vector<std::string>& params){
     }
 }
 
+std::optional<std::string> read_elf_file(const std::string& file, const std::string& name){
+    auto content = disks::read_file(file);
+
+    if(content.empty()){
+        k_print(name);
+        k_print_line(": The file does not exist or is empty");
+
+        return {};
+    }
+
+    if(!elf::is_valid(content)){
+        k_print(name);
+        k_print_line(": This file is not an ELF file or not in ELF64 format");
+
+        return {};
+    }
+
+    return {std::move(content)};
+}
+
 void exec_command(const std::vector<std::string>& params){
     if(params.size() < 2){
         k_print_line("exec: Need the name of the executable to read");
@@ -734,21 +756,35 @@ void exec_command(const std::vector<std::string>& params){
         return;
     }
 
-    auto content = disks::read_file(params[1]);
+    auto content = read_elf_file(params[1], "exec");
 
-    if(content.empty()){
-        k_print_line("exec: The file does not exist or is empty");
+    if(!content){
+        return;
+    }
+
+    //TODO
+}
+
+void execin_command(const std::vector<std::string>& params){
+    if(params.size() < 2){
+        k_print_line("execin: Need the name of the executable to read");
 
         return;
     }
 
-    if(!elf::is_valid(content)){
-        k_print_line("exec: This file is not an ELF file or not in ELF64 format");
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
 
         return;
     }
 
-    auto buffer = content.c_str();
+    auto content = read_elf_file(params[1], "execin");
+
+    if(!content){
+        return;
+    }
+
+    auto buffer = content->c_str();
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
 
     auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
@@ -822,7 +858,7 @@ void exec_command(const std::vector<std::string>& params){
 
         k_printf("Returned %d\n", return_code);
     } else {
-        k_print_line("Unable to execute the program");
+        k_print_line("execin: Unable to execute the program");
     }
 
     //Release physical memory
