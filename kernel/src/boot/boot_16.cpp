@@ -156,7 +156,9 @@ void setup_vesa(){
 
         bool one = false;
 
-        for(uint16_t mode = 0; mode != 0xFFFF; ++mode){
+        for(uint16_t it_mode = 0x0; it_mode < 0x100; ++it_mode){
+            auto mode = it_mode + 0x100 + 0x4000;
+
             asm volatile ("int 0x10"
                 : "=a"(return_code)
                 : "a"(0x4F01), "c"(mode), "D"(&vesa::mode_info_block)
