@@ -14,6 +14,14 @@ void sc_print_char(const interrupt::syscall_regs& regs){
     k_print(static_cast<char>(regs.rbx));
 }
 
+void sc_print_string(const interrupt::syscall_regs& regs){
+    k_print(reinterpret_cast<const char*>(regs.rbx));
+}
+
+void sc_print_digit(const interrupt::syscall_regs& regs){
+    k_print(regs.rbx);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(const interrupt::syscall_regs& regs){
@@ -22,6 +30,14 @@ void system_call_entry(const interrupt::syscall_regs& regs){
     switch(code){
         case 0:
             sc_print_char(regs);
+            break;
+
+        case 1:
+            sc_print_string(regs);
+            break;
+
+        case 2:
+            sc_print_digit(regs);
             break;
 
         default:

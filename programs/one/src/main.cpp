@@ -9,6 +9,7 @@
 
 int main(){
     print('Z');
+    print_line();
 
     return 1;
 }
