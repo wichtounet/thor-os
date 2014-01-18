@@ -6,7 +6,7 @@
 //=======================================================================
 
 int main(){
-    asm volatile("int 50");
+    asm volatile("mov rax, 0; mov rbx, 0x41; int 50" : : : "rax", "rbx");
 
     return 1;
 }

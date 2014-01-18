@@ -8,8 +8,26 @@
 #include "system_calls.hpp"
 #include "console.hpp"
 
+namespace {
+
+void sc_print_char(const interrupt::syscall_regs& regs){
+    k_print(static_cast<char>(regs.rbx));
+}
+
+} //End of anonymous namespace
+
 void system_call_entry(const interrupt::syscall_regs& regs){
-    k_print_line("system_call");
+    auto code = regs.rax;
+
+    switch(code){
+        case 0:
+            sc_print_char(regs);
+            break;
+
+        default:
+            k_print_line("Invalid system call");
+            break;
+    }
 }
 
 void install_system_calls(){
