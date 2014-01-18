@@ -282,56 +282,39 @@ constexpr uint16_t SEG_PRIV(uint16_t x){
     return (x & 0x03) << 0x05;
 }
 
-constexpr const uint16_t SEG_DATA_RD         = 0x00; // Read-Only
-constexpr const uint16_t SEG_DATA_RDA        = 0x01; // Read-Only, accessed
-constexpr const uint16_t SEG_DATA_RDWR       = 0x02; // Read/Write
-constexpr const uint16_t SEG_DATA_RDWRA      = 0x03; // Read/Write, accessed
-constexpr const uint16_t SEG_DATA_RDEXPD     = 0x04; // Read-Only, expand-down
-constexpr const uint16_t SEG_DATA_RDEXPDA    = 0x05; // Read-Only, expand-down, accessed
-constexpr const uint16_t SEG_DATA_RDWREXPD   = 0x06; // Read/Write, expand-down
-constexpr const uint16_t SEG_DATA_RDWREXPDA  = 0x07; // Read/Write, expand-down, accessed
-constexpr const uint16_t SEG_CODE_EX         = 0x08; // Execute-Only
-constexpr const uint16_t SEG_CODE_EXA        = 0x09; // Execute-Only, accessed
-constexpr const uint16_t SEG_CODE_EXRD       = 0x0A; // Execute/Read
-constexpr const uint16_t SEG_CODE_EXRDA      = 0x0B; // Execute/Read, accessed
-constexpr const uint16_t SEG_CODE_EXC        = 0x0C; // Execute-Only, conforming
-constexpr const uint16_t SEG_CODE_EXCA       = 0x0D; // Execute-Only, conforming, accessed
-constexpr const uint16_t SEG_CODE_EXRDC      = 0x0E; // Execute/Read, conforming
-constexpr const uint16_t SEG_CODE_EXRDCA     = 0x0F; // Execute/Read, conforming, accessed
-
 constexpr uint16_t code_32_selector(){
     return
         SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
         SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) |
-        SEG_PRIV(0)     | SEG_CODE_EXRD;
+        SEG_PRIV(0)     | gdt::SEG_CODE_EXRD;
 }
 
 constexpr uint16_t code_64_selector(){
     return
         SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
         SEG_LONG(1)     | SEG_SIZE(0) | SEG_GRAN(1) |
-        SEG_PRIV(0)     | SEG_CODE_EXRD;
+        SEG_PRIV(0)     | gdt::SEG_CODE_EXRD;
 }
 
 constexpr uint16_t data_selector(){
     return
         SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
         SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) |
-        SEG_PRIV(0)     | SEG_DATA_RDWR;
+        SEG_PRIV(0)     | gdt::SEG_DATA_RDWR;
 }
 
 constexpr uint16_t user_data_selector(){
     return
         SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
         SEG_LONG(1)     | SEG_SIZE(1) | SEG_GRAN(1) |
-        SEG_PRIV(3)     | SEG_DATA_RDWR;
+        SEG_PRIV(3)     | gdt::SEG_DATA_RDWR;
 }
 
 constexpr uint16_t user_code_64_selector(){
     return
         SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
         SEG_LONG(1)     | SEG_SIZE(0) | SEG_GRAN(1) |
-        SEG_PRIV(3)     | SEG_CODE_EXRD;
+        SEG_PRIV(3)     | gdt::SEG_CODE_EXRD;
 }
 
 void setup_gdt(){
@@ -354,7 +337,7 @@ void setup_gdt(){
     uint32_t limit = base + sizeof(gdt::task_state_segment_t);
 
     auto tss_selector = reinterpret_cast<gdt::tss_descriptor_t*>(&gdt[6]);
-    tss_selector->type = 9; //64bit TSS (Available)
+    tss_selector->type = gdt::SEG_TSS_AVAILABLE;
     tss_selector->always_0_1 = 0;
     tss_selector->always_0_2 = 0;
     tss_selector->always_0_3 = 0;
