@@ -12,3 +12,5 @@ CPP_FLAGS_32=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mpreferred-stack-boundary=4
 CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2
 
 COMMON_LINK_FLAGS=-lgcc
+
+PROGRAM_FLAGS=-isystem../../userlib/include/
