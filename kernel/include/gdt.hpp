@@ -17,8 +17,8 @@ namespace gdt {
 constexpr const uint16_t CODE_SELECTOR = 0x08;
 constexpr const uint16_t DATA_SELECTOR = 0x10;
 constexpr const uint16_t LONG_SELECTOR = 0x18;
-constexpr const uint16_t USER_DATA_SELECTOR = 0x20;
-constexpr const uint16_t USER_CODE_SELECTOR = 0x28;
+constexpr const uint16_t USER_CODE_SELECTOR = 0x20;
+constexpr const uint16_t USER_DATA_SELECTOR = 0x28;
 constexpr const uint16_t TSS_SELECTOR = 0x30;
 
 //Selector types

@@ -18,10 +18,6 @@ typedef pt_t* pdt_t;
 typedef pdt_t* pdpt_t;
 typedef pdpt_t* pml4t_t;
 
-constexpr const uint8_t PRESENT = 0x1;
-constexpr const uint8_t WRITEABLE = 0x2;
-constexpr const uint8_t USER = 0x4;
-
 //Memory from 0x70000 can be used for pages
 uintptr_t last_page = 0x73000;
 
@@ -101,7 +97,7 @@ bool paging::page_free_or_set(void* virt, void* physical){
     return false;
 }
 
-bool paging::map(void* virt, void* physical){
+bool paging::map(void* virt, void* physical, uint8_t flags){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -117,21 +113,21 @@ bool paging::map(void* virt, void* physical){
 
     //Init new page if necessary
     if(!(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT)){
-        pml4t[pml4] = reinterpret_cast<pdpt_t>(init_new_page() | (PRESENT | WRITEABLE));
+        pml4t[pml4] = reinterpret_cast<pdpt_t>(init_new_page() | flags);
     }
 
     auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
 
     //Init new page if necessary
     if(!(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT)){
-        pdpt[directory_ptr] = reinterpret_cast<pdt_t>(init_new_page() | (PRESENT | WRITEABLE));
+        pdpt[directory_ptr] = reinterpret_cast<pdt_t>(init_new_page() | flags);
     }
 
     auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
 
     //Init new page if necessary
     if(!(reinterpret_cast<uintptr_t>(pdt[directory]) & PRESENT)){
-        pdt[directory] = reinterpret_cast<pt_t>(init_new_page() | (PRESENT | WRITEABLE));
+        pdt[directory] = reinterpret_cast<pt_t>(init_new_page() | flags);
     }
 
     auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[directory]) & ~0xFFF);
@@ -140,11 +136,11 @@ bool paging::map(void* virt, void* physical){
     if(reinterpret_cast<uintptr_t>(pt[table]) & PRESENT){
         //If the page is already set to the correct value, return true
         //If the page is set to another value, return false
-        return reinterpret_cast<uintptr_t>(pt[table]) == (reinterpret_cast<uintptr_t>(physical) | (PRESENT | WRITEABLE));
+        return reinterpret_cast<uintptr_t>(pt[table]) == (reinterpret_cast<uintptr_t>(physical) | flags);
     }
 
     //Map to the physical address
-    pt[table] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(physical) | (PRESENT | WRITEABLE));
+    pt[table] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(physical) | flags);
 
     //Flush TLB
     flush_tlb(virt);
@@ -152,7 +148,7 @@ bool paging::map(void* virt, void* physical){
     return true;
 }
 
-bool paging::map(void* virt, void* physical, size_t pages){
+bool paging::map_pages(void* virt, void* physical, size_t pages, uint8_t flags){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -174,7 +170,7 @@ bool paging::map(void* virt, void* physical, size_t pages){
         auto virt_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
         auto phys_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(physical) + page * PAGE_SIZE);
 
-        if(!map(virt_addr, phys_addr)){
+        if(!map(virt_addr, phys_addr, flags)){
             return false;
         }
     }
@@ -226,7 +222,7 @@ bool paging::unmap(void* virt){
     return true;
 }
 
-bool paging::unmap(void* virt, size_t pages){
+bool paging::unmap_pages(void* virt, size_t pages){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -244,10 +240,10 @@ bool paging::unmap(void* virt, size_t pages){
     return true;
 }
 
-bool paging::identity_map(void* virt){
-    return map(virt, virt);
+bool paging::identity_map(void* virt, uint8_t flags){
+    return map(virt, virt, flags);
 }
 
-bool paging::identity_map(void* virt, size_t pages){
-    return map(virt, virt, pages);
+bool paging::identity_map_pages(void* virt, size_t pages, uint8_t flags){
+    return map_pages(virt, virt, pages, flags);
 }

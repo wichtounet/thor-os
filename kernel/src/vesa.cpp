@@ -69,7 +69,7 @@ void vesa::init(){
     auto bytes = left_padding + paging::PAGE_SIZE + total_size;
     auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
-    paging::identity_map(reinterpret_cast<void*>(first_page), pages);
+    paging::identity_map_pages(reinterpret_cast<void*>(first_page), pages);
 
     init_font();
 }

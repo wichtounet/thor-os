@@ -126,7 +126,7 @@ uint64_t* allocate_block(uint64_t blocks){
 
     auto block = reinterpret_cast<uint64_t*>(current_mmap_entry_position);
 
-    paging::identity_map(block, blocks);
+    paging::identity_map_pages(block, blocks);
 
     current_mmap_entry_position += blocks * BLOCK_SIZE;
 

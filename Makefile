@@ -38,7 +38,9 @@ qemu: default
 	qemu-kvm -cpu host -vga std -hda hdd.img
 
 bochs: default
-	bochs -qf bochsrc.txt
+	echo "c" > commands
+	bochs -qf bochsrc.txt -rc commands
+	rm commands
 
 debug: default
 	echo "c" > commands

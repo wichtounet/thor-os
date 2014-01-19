@@ -17,6 +17,7 @@
 #include "rtc.hpp"
 #include "elf.hpp"
 #include "paging.hpp"
+#include "gdt.hpp"
 #include "vesa.hpp"
 
 //Commands
@@ -743,7 +744,7 @@ std::optional<std::string> read_elf_file(const std::string& file, const std::str
     return {std::move(content)};
 }
 
-bool allocate_segments(char* buffer, void** allocated_segments){
+bool allocate_segments(char* buffer, void** allocated_segments, uint8_t flags){
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
     auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
 
@@ -793,7 +794,7 @@ bool allocate_segments(char* buffer, void** allocated_segments){
 
             //4. Map physical allocated memory to the necessary virtual memory
 
-            if(!paging::map(reinterpret_cast<void*>(first_page), aligned_memory, pages)){
+            if(!paging::map_pages(reinterpret_cast<void*>(first_page), aligned_memory, pages, flags)){
                 k_print_line("Mapping the pages failed");
                 failed = true;
                 break;
@@ -808,6 +809,51 @@ bool allocate_segments(char* buffer, void** allocated_segments){
     }
 
     return failed;
+}
+
+void* allocate_user_stack(size_t stack_address, size_t stack_size, uint8_t flags){
+    //0. Calculate some stuff
+    auto address = stack_address;
+    auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+    auto left_padding = address - first_page;
+    auto bytes = left_padding + paging::PAGE_SIZE + stack_size;
+    auto pages = (bytes / paging::PAGE_SIZE) + 1;
+
+    //1. Verify that all the necessary pages are free
+    for(size_t i = 0; i < pages; ++i){
+        if(paging::page_present(reinterpret_cast<void*>(first_page + i * paging::PAGE_SIZE))){
+            k_print_line("Some pages are already mapped");
+            return nullptr;
+        }
+    }
+
+    //2. Get enough physical memory
+    auto memory = k_malloc(bytes);
+
+    if(!memory){
+        k_print_line("Cannot allocate memory, probably out of memory");
+        return nullptr;
+    }
+
+    //3. Find a start of a page inside the physical memory
+
+    auto aligned_memory = paging::page_aligned(memory) ? memory :
+        reinterpret_cast<void*>((reinterpret_cast<uintptr_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE);
+
+    //4. Map physical allocated memory to the necessary virtual memory
+
+    if(!paging::map_pages(reinterpret_cast<void*>(first_page), aligned_memory, pages, flags)){
+        k_print_line("Mapping the pages failed");
+        return nullptr;
+    }
+
+    //5. Zero-out memory
+
+    auto memory_start = reinterpret_cast<uintptr_t>(aligned_memory) + left_padding;
+
+    std::fill_n(reinterpret_cast<char*>(memory_start), stack_size, 0);
+
+    return memory;
 }
 
 void release_segments(char* buffer, void** allocated_segments){
@@ -828,7 +874,7 @@ void release_segments(char* buffer, void** allocated_segments){
             auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
             auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
-            if(!paging::unmap(reinterpret_cast<void*>(first_page), pages)){
+            if(!paging::unmap_pages(reinterpret_cast<void*>(first_page), pages)){
                 k_print_line("Unmap failed, memory could be in invalid state");
             }
         }
@@ -859,10 +905,26 @@ void exec_command(const std::vector<std::string>& params){
 
     std::unique_heap_array<void*> allocated_segments(header->e_phnum);
 
-    auto failed = allocate_segments(buffer, allocated_segments.get());
+    auto failed = allocate_segments(buffer, allocated_segments.get(), paging::PRESENT | paging::WRITE | paging::USER);
 
     if(!failed){
-        //TODO
+        auto stack_physical = allocate_user_stack(0x500000, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
+
+        if(stack_physical){
+            asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
+                :  //No outputs
+                : "i" (gdt::USER_DATA_SELECTOR + 3)
+                : "rax");
+
+            asm volatile("push %0; push %1; pushfq; push %2; push %3; iretq"
+                :  //No outputs
+                : "i" (gdt::USER_DATA_SELECTOR + 3), "i" (0x500000 + paging::PAGE_SIZE * 2 - 64), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
+                : "rax");
+
+            //TODO Release stack
+        } else {
+            k_print_line("Unable to allocate a stack for the program");
+        }
     } else {
         k_print_line("execin: Unable to execute the program");
     }
@@ -894,7 +956,7 @@ void execin_command(const std::vector<std::string>& params){
 
     std::unique_heap_array<void*> allocated_segments(header->e_phnum);
 
-    auto failed = allocate_segments(buffer, allocated_segments.get());
+    auto failed = allocate_segments(buffer, allocated_segments.get(), paging::PRESENT | paging::WRITE);
 
     if(!failed){
         auto main_function = reinterpret_cast<int(*)()>(header->e_entry);

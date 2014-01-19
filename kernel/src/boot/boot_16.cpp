@@ -141,6 +141,10 @@ void setup_vesa(){
     vesa::vbe_info_block.signature[2] = 'E';
     vesa::vbe_info_block.signature[3] = '2';
 
+    vesa::vesa_enabled = false;
+
+    return;
+
     uint16_t return_code;
     asm volatile ("int 0x10"
         : "=a"(return_code)
@@ -336,7 +340,7 @@ gdt::gdt_descriptor_t user_data_descriptor(){
     descriptor.limit_low = 0xFFFF;
     descriptor.limit_high = 0xF;
     descriptor.always_1 = 1;
-    descriptor.dpl = 0;
+    descriptor.dpl = 3;
     descriptor.present = 1;
     descriptor.avl = 0;
     descriptor.big = 0;
@@ -360,8 +364,8 @@ void setup_gdt(){
     gdt[1] = code_32_descriptor();
     gdt[2] = data_descriptor();
     gdt[3] = code_64_descriptor();
-    gdt[4] = user_data_descriptor();
-    gdt[5] = user_code_64_descriptor();
+    gdt[4] = user_code_64_descriptor();
+    gdt[5] = user_data_descriptor();
 
     //2. Init TSS Descriptor
 
