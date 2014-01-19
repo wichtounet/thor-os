@@ -52,13 +52,13 @@ void setup_paging(){
     //Link tables (0x3 means Writeable and Supervisor)
 
     //PML4T[0] -> PDPT
-    *reinterpret_cast<uint32_t*>(PML4T) = PML4T + PAGE_SIZE + 0x3;
+    *reinterpret_cast<uint32_t*>(PML4T) = PML4T + PAGE_SIZE + 0x7;
 
     //PDPT[0] -> PDT
-    *reinterpret_cast<uint32_t*>(PML4T + 1 * PAGE_SIZE) = PML4T + 2 * PAGE_SIZE + 0x3;
+    *reinterpret_cast<uint32_t*>(PML4T + 1 * PAGE_SIZE) = PML4T + 2 * PAGE_SIZE + 0x7;
 
     //PDT[0] -> PD
-    *reinterpret_cast<uint32_t*>(PML4T + 2 * PAGE_SIZE) = PML4T + 3 * PAGE_SIZE + 0x3;
+    *reinterpret_cast<uint32_t*>(PML4T + 2 * PAGE_SIZE) = PML4T + 3 * PAGE_SIZE + 0x7;
 
     //Map the first MiB
 

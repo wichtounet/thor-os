@@ -113,21 +113,21 @@ bool paging::map(void* virt, void* physical, uint8_t flags){
 
     //Init new page if necessary
     if(!(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT)){
-        pml4t[pml4] = reinterpret_cast<pdpt_t>(init_new_page() | flags);
+        pml4t[pml4] = reinterpret_cast<pdpt_t>(init_new_page() | USER | WRITE | PRESENT);
     }
 
     auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
 
     //Init new page if necessary
     if(!(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT)){
-        pdpt[directory_ptr] = reinterpret_cast<pdt_t>(init_new_page() | flags);
+        pdpt[directory_ptr] = reinterpret_cast<pdt_t>(init_new_page() | USER | WRITE | PRESENT);
     }
 
     auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
 
     //Init new page if necessary
     if(!(reinterpret_cast<uintptr_t>(pdt[directory]) & PRESENT)){
-        pdt[directory] = reinterpret_cast<pt_t>(init_new_page() | flags);
+        pdt[directory] = reinterpret_cast<pt_t>(init_new_page() | USER | WRITE | PRESENT);
     }
 
     auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[directory]) & ~0xFFF);

@@ -911,12 +911,12 @@ void exec_command(const std::vector<std::string>& params){
         auto stack_physical = allocate_user_stack(0x500000, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
 
         if(stack_physical){
-            asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
+            asm volatile("cli; mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
                 :  //No outputs
                 : "i" (gdt::USER_DATA_SELECTOR + 3)
                 : "rax");
 
-            asm volatile("push %0; push %1; pushfq; push %2; push %3; iretq"
+            asm volatile("push %0; push %1; pushfq; push %2; push %3; xchg bx, bx; iretq"
                 :  //No outputs
                 : "i" (gdt::USER_DATA_SELECTOR + 3), "i" (0x500000 + paging::PAGE_SIZE * 2 - 64), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
                 : "rax");
