@@ -114,7 +114,7 @@ void detect_memory(){
 
 uint16_t read_mode(uint16_t i){
     uint16_t mode;
-    asm volatile("mov gs, %0; mov si, %1; add si, %3; mov %0, gs:[si]"
+    asm volatile("mov gs, %2; mov si, %1; add si, %3; mov %0, gs:[si]"
         : "=a" (mode)
         : "rm" (vesa::vbe_info_block.video_modes_ptr[0]),
           "rm" (vesa::vbe_info_block.video_modes_ptr[1]),
@@ -153,9 +153,7 @@ void setup_vesa(){
 
         bool one = false;
 
-        for(uint16_t it_mode = 0x0; it_mode < 0x100; ++it_mode){
-            auto mode = it_mode + 0x100 + 0x4000;
-
+        for(uint16_t i = 0, mode = read_mode(i); mode != 0xFFFF; mode = read_mode(2 * ++i)){
             asm volatile ("int 0x10"
                 : "=a"(return_code)
                 : "a"(0x4F01), "c"(mode), "D"(&vesa::mode_info_block)
