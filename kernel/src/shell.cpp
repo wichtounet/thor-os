@@ -743,53 +743,9 @@ std::optional<std::string> read_elf_file(const std::string& file, const std::str
     return {std::move(content)};
 }
 
-void exec_command(const std::vector<std::string>& params){
-    if(params.size() < 2){
-        k_print_line("exec: Need the name of the executable to read");
-
-        return;
-    }
-
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    auto content = read_elf_file(params[1], "exec");
-
-    if(!content){
-        return;
-    }
-
-    //TODO
-}
-
-void execin_command(const std::vector<std::string>& params){
-    if(params.size() < 2){
-        k_print_line("execin: Need the name of the executable to read");
-
-        return;
-    }
-
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    auto content = read_elf_file(params[1], "execin");
-
-    if(!content){
-        return;
-    }
-
-    auto buffer = content->c_str();
+bool allocate_segments(char* buffer, void** allocated_segments){
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
-
     auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
-
-    auto allocated_segments = new void*[header->e_phnum];
 
     bool failed = false;
     for(size_t p = 0; p < header->e_phnum; ++p){
@@ -851,15 +807,12 @@ void execin_command(const std::vector<std::string>& params){
         }
     }
 
-    if(!failed){
-        auto main_function = reinterpret_cast<int(*)()>(header->e_entry);
+    return failed;
+}
 
-        auto return_code = main_function();
-
-        k_printf("Returned %d\n", return_code);
-    } else {
-        k_print_line("execin: Unable to execute the program");
-    }
+void release_segments(char* buffer, void** allocated_segments){
+    auto header = reinterpret_cast<elf::elf_header*>(buffer);
+    auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
 
     //Release physical memory
     for(size_t p = 0; p < header->e_phnum; ++p){
@@ -880,6 +833,80 @@ void execin_command(const std::vector<std::string>& params){
             }
         }
     }
+}
+
+void exec_command(const std::vector<std::string>& params){
+    if(params.size() < 2){
+        k_print_line("exec: Need the name of the executable to read");
+
+        return;
+    }
+
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    auto content = read_elf_file(params[1], "exec");
+
+    if(!content){
+        return;
+    }
+
+    auto buffer = content->c_str();
+    auto header = reinterpret_cast<elf::elf_header*>(buffer);
+
+    std::unique_heap_array<void*> allocated_segments(header->e_phnum);
+
+    auto failed = allocate_segments(buffer, allocated_segments.get());
+
+    if(!failed){
+        //TODO
+    } else {
+        k_print_line("execin: Unable to execute the program");
+    }
+
+    release_segments(buffer, allocated_segments.get());
+}
+
+void execin_command(const std::vector<std::string>& params){
+    if(params.size() < 2){
+        k_print_line("execin: Need the name of the executable to read");
+
+        return;
+    }
+
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    auto content = read_elf_file(params[1], "execin");
+
+    if(!content){
+        return;
+    }
+
+    auto buffer = content->c_str();
+    auto header = reinterpret_cast<elf::elf_header*>(buffer);
+
+    std::unique_heap_array<void*> allocated_segments(header->e_phnum);
+
+    auto failed = allocate_segments(buffer, allocated_segments.get());
+
+    if(!failed){
+        auto main_function = reinterpret_cast<int(*)()>(header->e_entry);
+
+        auto return_code = main_function();
+
+        k_printf("Returned %d\n", return_code);
+    } else {
+        k_print_line("execin: Unable to execute the program");
+    }
+
+    release_segments(buffer, allocated_segments.get());
 }
 
 void vesainfo_command(const std::vector<std::string>&){

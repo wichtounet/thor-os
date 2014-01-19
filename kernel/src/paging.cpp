@@ -18,9 +18,9 @@ typedef pt_t* pdt_t;
 typedef pdt_t* pdpt_t;
 typedef pdpt_t* pml4t_t;
 
-constexpr const int PRESENT = 0x1;
-constexpr const int WRITEABLE = 0x2;
-constexpr const int USER = 0x4;
+constexpr const uint8_t PRESENT = 0x1;
+constexpr const uint8_t WRITEABLE = 0x2;
+constexpr const uint8_t USER = 0x4;
 
 //Memory from 0x70000 can be used for pages
 uintptr_t last_page = 0x73000;
