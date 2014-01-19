@@ -35,6 +35,9 @@ constexpr const uint16_t DEFAULT_BPP = 32;
 #define CODE_16
 #include "gdt.hpp"
 
+//The Task State Segment
+gdt::task_state_segment_t gdt::tss;
+
 #include "e820.hpp" //Just for the address of the e820 map
 
 e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
@@ -350,9 +353,6 @@ gdt::gdt_descriptor_t user_data_descriptor(){
     return descriptor;
 }
 
-//The Task State Segment
-static gdt::task_state_segment_t tss;
-
 //TODO On some machines, this should be aligned to 16 bits
 static gdt::gdt_descriptor_t gdt[8];
 
@@ -369,7 +369,7 @@ void setup_gdt(){
 
     //2. Init TSS Descriptor
 
-    uint32_t base = reinterpret_cast<uint32_t>(&tss);
+    uint32_t base = reinterpret_cast<uint32_t>(&gdt::tss);
     uint32_t limit = base + sizeof(gdt::task_state_segment_t);
 
     auto tss_selector = reinterpret_cast<gdt::tss_descriptor_t*>(&gdt[6]);
@@ -387,7 +387,7 @@ void setup_gdt(){
     tss_selector->base_high = 0;                           //Top 32 bits are clear
 
     tss_selector->limit_low = limit & 0xFFFF;              //Low 16 bits
-    tss_selector->limit_high = (limit&0xF0000) >> 16;      //Top 4 bits
+    tss_selector->limit_high = (limit & 0xF0000) >> 16;      //Top 4 bits
 
     //3. Init the GDT Pointer
 
@@ -397,6 +397,12 @@ void setup_gdt(){
     //4. Load the GDT
 
     asm volatile("lgdt [%0]" : : "m" (gdtr));
+
+    //5. Zero-out the TSS
+    auto tss_ptr = reinterpret_cast<char*>(&gdt::tss);
+    for(unsigned int i = 0; i < sizeof(gdt::task_state_segment_t); ++i){
+        *tss_ptr++ = 0;
+    }
 }
 
 void protected_mode_enable(){

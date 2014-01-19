@@ -106,6 +106,8 @@ struct task_state_segment_t {
     uint16_t io_map_base_address;
 };
 
+extern task_state_segment_t tss;
+
 void flush_tss();
 
 } //end of namespace gdt

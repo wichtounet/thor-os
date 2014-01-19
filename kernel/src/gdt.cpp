@@ -8,5 +8,5 @@
 #include "gdt.hpp"
 
 void gdt::flush_tss(){
-    asm volatile("mov ax, 0x33; ltr ax;" : : : "rax");
+    asm volatile("mov ax, %0; ltr ax;" : : "i" (gdt::TSS_SELECTOR + 0x3) : "rax");
 }

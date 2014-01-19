@@ -154,17 +154,16 @@ void install_irqs(){
 }
 
 void install_syscalls(){
-    idt_set_gate(interrupt::SYSCALL_FIRST, _syscall0, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+1, _syscall1, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+2, _syscall2, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+3, _syscall3, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+4, _syscall4, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+5, _syscall5, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+6, _syscall6, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+7, _syscall7, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+8, _syscall8, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(interrupt::SYSCALL_FIRST+9, _syscall9, gdt::LONG_SELECTOR, 0x8E);
-
+    idt_set_gate(interrupt::SYSCALL_FIRST, _syscall0, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+1, _syscall1, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+2, _syscall2, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+3, _syscall3, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+4, _syscall4, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+5, _syscall5, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+6, _syscall6, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+7, _syscall7, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+8, _syscall8, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+9, _syscall9, gdt::LONG_SELECTOR, 0xEE);
 }
 
 void enable_interrupts(){
