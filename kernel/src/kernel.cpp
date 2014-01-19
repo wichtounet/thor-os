@@ -18,6 +18,7 @@
 #include "e820.hpp"
 #include "vesa.hpp"
 #include "console.hpp"
+#include "gdt.hpp"
 
 extern "C" {
 
@@ -25,6 +26,8 @@ void _init();
 
 void  kernel_main(){
     arch::enable_sse();
+
+    gdt::flush_tss();
 
     interrupt::setup_interrupts();
 

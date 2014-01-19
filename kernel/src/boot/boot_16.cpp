@@ -32,9 +32,9 @@ constexpr const uint16_t DEFAULT_BPP = 32;
 
 } //end of anonymous namespace
 
+#define CODE_16
 #include "gdt.hpp"
 
-#define CODE_16
 #include "e820.hpp" //Just for the address of the e820 map
 
 e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];

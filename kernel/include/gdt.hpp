@@ -8,6 +8,10 @@
 #ifndef GDT_H
 #define GDT_H
 
+#ifndef CODE_16
+#include "stl/types.hpp"
+#endif
+
 namespace gdt {
 
 constexpr const uint16_t CODE_SELECTOR = 0x08;
@@ -101,6 +105,8 @@ struct task_state_segment_t {
     uint16_t reserved_3;
     uint16_t io_map_base_address;
 };
+
+void flush_tss();
 
 } //end of namespace gdt
 
