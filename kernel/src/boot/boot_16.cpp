@@ -239,99 +239,133 @@ void setup_idt(){
     asm volatile("lidt %0" : : "m" (null_idt));
 }
 
-constexpr uint64_t gdt_entry(uint32_t base, uint32_t limit, uint16_t flags){
-    return  ((((base)  & 0xff000000ULL) << (56-24)) |
-            (((flags) & 0x0000f0ffULL) << 40) |
-            (((limit) & 0x000f0000ULL) << (48-16)) |
-            (((base)  & 0x00ffffffULL) << 16) |
-            (((limit) & 0x0000ffffULL)));
+gdt::gdt_descriptor_t null_descriptor(){
+    gdt::gdt_descriptor_t descriptor;
+
+    //zero-out the descriptor;
+    *(reinterpret_cast<uint64_t*>(&descriptor)) = 0;
+
+    return descriptor;
 }
 
-// Descriptor type (0 for system, 1 for code/data)
-constexpr uint16_t SEG_DESCTYPE(uint16_t x){
-    return x << 0x04;
+gdt::gdt_descriptor_t code_32_descriptor(){
+    gdt::gdt_descriptor_t descriptor;
+
+    descriptor.type = gdt::SEG_CODE_EXRD;
+
+    descriptor.base_low = 0;
+    descriptor.base_high = 0;
+    descriptor.limit_low = 0xFFFF;
+    descriptor.limit_high = 0xF;
+    descriptor.always_1 = 1;
+    descriptor.dpl = 0;
+    descriptor.present = 1;
+    descriptor.avl = 0;
+    descriptor.big = 1;
+    descriptor.long_mode = 0;
+    descriptor.granularity = 1;
+
+    return descriptor;
 }
 
-// Present
-constexpr uint16_t SEG_PRES(uint16_t x){
-    return x << 0x07;
+gdt::gdt_descriptor_t code_64_descriptor(){
+    gdt::gdt_descriptor_t descriptor;
+
+    descriptor.type = gdt::SEG_CODE_EXRD;
+
+    descriptor.base_low = 0;
+    descriptor.base_high = 0;
+    descriptor.limit_low = 0xFFFF;
+    descriptor.limit_high = 0xF;
+    descriptor.always_1 = 1;
+    descriptor.dpl = 0;
+    descriptor.present = 1;
+    descriptor.avl = 0;
+    descriptor.big = 0;
+    descriptor.long_mode = 1;
+    descriptor.granularity = 1;
+
+    return descriptor;
 }
 
-// Available for system use
-constexpr uint16_t SEG_SAVL(uint16_t x){
-    return x << 0x0C;
+gdt::gdt_descriptor_t user_code_64_descriptor(){
+    gdt::gdt_descriptor_t descriptor;
+
+    descriptor.type = gdt::SEG_CODE_EXRD;
+
+    descriptor.base_low = 0;
+    descriptor.base_high = 0;
+    descriptor.limit_low = 0xFFFF;
+    descriptor.limit_high = 0xF;
+    descriptor.always_1 = 1;
+    descriptor.dpl = 3;
+    descriptor.present = 1;
+    descriptor.avl = 0;
+    descriptor.big = 0;
+    descriptor.long_mode = 1;
+    descriptor.granularity = 1;
+
+    return descriptor;
 }
 
-// Long mode
-constexpr uint16_t SEG_LONG(uint16_t x){
-    return x << 0x0D;
+gdt::gdt_descriptor_t data_descriptor(){
+    gdt::gdt_descriptor_t descriptor;
+
+    descriptor.type = gdt::SEG_DATA_RDWR;
+
+    descriptor.base_low = 0;
+    descriptor.base_high = 0;
+    descriptor.limit_low = 0xFFFF;
+    descriptor.limit_high = 0xF;
+    descriptor.always_1 = 1;
+    descriptor.dpl = 0;
+    descriptor.present = 1;
+    descriptor.avl = 0;
+    descriptor.big = 1;
+    descriptor.long_mode = 0;
+    descriptor.granularity = 1;
+
+    return descriptor;
 }
 
-// Size (0 for 16-bit, 1 for 32) (must be 0 for 64)
-constexpr uint16_t SEG_SIZE(uint16_t x){
-    return x << 0x0E;
+gdt::gdt_descriptor_t user_data_descriptor(){
+    gdt::gdt_descriptor_t descriptor;
+
+    descriptor.type = gdt::SEG_DATA_RDWR;
+
+    descriptor.base_low = 0;
+    descriptor.base_high = 0;
+    descriptor.limit_low = 0xFFFF;
+    descriptor.limit_high = 0xF;
+    descriptor.always_1 = 1;
+    descriptor.dpl = 0;
+    descriptor.present = 1;
+    descriptor.avl = 0;
+    descriptor.big = 0;
+    descriptor.long_mode = 1;
+    descriptor.granularity = 1;
+
+    return descriptor;
 }
 
-// Granularity (0 for 1B->1MB, 1 for 4KB->4GB)
-constexpr uint16_t SEG_GRAN(uint16_t x){
-    return x << 0x0F;
-}
+//The Task State Segment
+static gdt::task_state_segment_t tss;
 
-// Privilege level (0 - 3)
-constexpr uint16_t SEG_PRIV(uint16_t x){
-    return (x & 0x03) << 0x05;
-}
+//TODO On some machines, this should be aligned to 16 bits
+static gdt::gdt_descriptor_t gdt[8];
 
-constexpr uint16_t code_32_selector(){
-    return
-        SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
-        SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) |
-        SEG_PRIV(0)     | gdt::SEG_CODE_EXRD;
-}
-
-constexpr uint16_t code_64_selector(){
-    return
-        SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
-        SEG_LONG(1)     | SEG_SIZE(0) | SEG_GRAN(1) |
-        SEG_PRIV(0)     | gdt::SEG_CODE_EXRD;
-}
-
-constexpr uint16_t data_selector(){
-    return
-        SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
-        SEG_LONG(0)     | SEG_SIZE(1) | SEG_GRAN(1) |
-        SEG_PRIV(0)     | gdt::SEG_DATA_RDWR;
-}
-
-constexpr uint16_t user_data_selector(){
-    return
-        SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
-        SEG_LONG(1)     | SEG_SIZE(1) | SEG_GRAN(1) |
-        SEG_PRIV(3)     | gdt::SEG_DATA_RDWR;
-}
-
-constexpr uint16_t user_code_64_selector(){
-    return
-        SEG_DESCTYPE(1) | SEG_PRES(1) | SEG_SAVL(0) |
-        SEG_LONG(1)     | SEG_SIZE(0) | SEG_GRAN(1) |
-        SEG_PRIV(3)     | gdt::SEG_CODE_EXRD;
-}
+static gdt::gdt_ptr gdtr;
 
 void setup_gdt(){
-    //The Task State Segment
-    static gdt::task_state_segment_t tss;
+    //1. Init GDT descriptor
+    gdt[0] = null_descriptor();
+    gdt[1] = code_32_descriptor();
+    gdt[2] = data_descriptor();
+    gdt[3] = code_64_descriptor();
+    gdt[4] = user_data_descriptor();
+    gdt[5] = user_code_64_descriptor();
 
-    //TODO On some machines, this should be aligned to 16 bits
-    static uint64_t gdt[] = {
-        0,                                      //Null Selector
-        gdt_entry(0, 0xFFFFF, code_32_selector()),
-        gdt_entry(0, 0xFFFFF, data_selector()),
-        gdt_entry(0, 0xFFFFF, code_64_selector()),
-        gdt_entry(0, 0xFFFFF, user_data_selector()),
-        gdt_entry(0, 0xFFFFF, user_code_64_selector()),
-        0, //Make space for TSS selector
-        0  //Make space for TSS selector
-    };
+    //2. Init TSS Descriptor
 
     uint32_t base = reinterpret_cast<uint32_t>(&tss);
     uint32_t limit = base + sizeof(gdt::task_state_segment_t);
@@ -353,9 +387,12 @@ void setup_gdt(){
     tss_selector->limit_low = limit & 0xFFFF;              //Low 16 bits
     tss_selector->limit_high = (limit&0xF0000) >> 16;      //Top 4 bits
 
-    static gdt::gdt_ptr gdtr;
+    //3. Init the GDT Pointer
+
     gdtr.length  = sizeof(gdt) - 1;
     gdtr.pointer = reinterpret_cast<uint32_t>(&gdt);
+
+    //4. Load the GDT
 
     asm volatile("lgdt [%0]" : : "m" (gdtr));
 }
