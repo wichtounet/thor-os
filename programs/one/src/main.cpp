@@ -12,7 +12,6 @@ int main(){
     print('Z');
     print_line();
 
-
     exit(0);
     return 1;
 }
