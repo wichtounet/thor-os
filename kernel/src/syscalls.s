@@ -93,7 +93,6 @@ _syscall9:
 
 // Common handler
 
-//TODO Check if really safe to trash r12
 syscall_common_handler:
     push r12
     push r11
@@ -107,7 +106,23 @@ syscall_common_handler:
     push rbx
     push rax
 
+    xor rax, rax
+    mov eax, ds
+    push rax
+
+    mov eax, 0x10
+    mov ds, eax
+    mov es, eax
+    mov es, eax
+    mov gs, eax
+
     call _syscall_handler
+
+    pop rax
+    mov ds, eax
+    mov es, eax
+    mov fs, eax
+    mov gs, eax
 
     pop rax
     pop rbx
