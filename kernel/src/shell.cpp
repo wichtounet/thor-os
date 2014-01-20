@@ -913,7 +913,8 @@ void exec_command(const std::vector<std::string>& params){
         if(stack_physical){
             uint64_t rsp;
             asm volatile("mov %0, rsp;" : "=m" (rsp));
-            gdt::tss.rsp0 = rsp;
+            gdt::tss.rsp0_low = rsp;
+            gdt::tss.rsp0_high = rsp >> 32;
 
             asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
                 :  //No outputs

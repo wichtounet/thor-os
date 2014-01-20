@@ -90,7 +90,8 @@ static_assert(sizeof(tss_descriptor_t) == 16, "TSS descriptor in long mode is 16
 
 struct task_state_segment_t {
     uint32_t reserved_0;
-    uint64_t rsp0;
+    uint32_t rsp0_low;
+    uint32_t rsp0_high;
     uint64_t rsp1;
     uint64_t rsp2;
     uint64_t reserved_1;

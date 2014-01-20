@@ -154,7 +154,7 @@ void install_irqs(){
 }
 
 void install_syscalls(){
-    idt_set_gate(interrupt::SYSCALL_FIRST, _syscall0, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+0, _syscall0, gdt::LONG_SELECTOR, 0xEE);
     idt_set_gate(interrupt::SYSCALL_FIRST+1, _syscall1, gdt::LONG_SELECTOR, 0xEE);
     idt_set_gate(interrupt::SYSCALL_FIRST+2, _syscall2, gdt::LONG_SELECTOR, 0xEE);
     idt_set_gate(interrupt::SYSCALL_FIRST+3, _syscall3, gdt::LONG_SELECTOR, 0xEE);
