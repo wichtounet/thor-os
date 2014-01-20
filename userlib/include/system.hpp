@@ -5,14 +5,16 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include <print.hpp>
-#include <system.hpp>
+#ifndef USER_SYSTEM_HPP
+#define USER_SYSTEM_HPP
 
-int main(){
-    print('Z');
-    print_line();
+#include <types.hpp>
 
-
-    exit(0);
-    return 1;
+void exit(size_t return_code){
+    asm volatile("mov rax, 0x666; mov rbx, %0; int 50"
+        : //No outputs
+        : "r" (return_code)
+        : "rax", "rbx");
 }
+
+#endif

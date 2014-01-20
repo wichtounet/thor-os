@@ -40,6 +40,10 @@ void system_call_entry(const interrupt::syscall_regs& regs){
             sc_print_digit(regs);
             break;
 
+        case 0x666:
+            //TODO Indicate to the scheduler that the process is over
+            break;
+
         default:
             k_print_line("Invalid system call");
             break;
