@@ -908,13 +908,18 @@ void exec_command(const std::vector<std::string>& params){
     auto failed = allocate_segments(buffer, allocated_segments.get(), paging::PRESENT | paging::WRITE | paging::USER);
 
     if(!failed){
-        auto stack_physical = allocate_user_stack(0x500000, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
+        constexpr const uint64_t user_rsp_start = 0x700000;
+        constexpr const uint64_t kernel_rsp_start = 0x800000;
 
-        if(stack_physical){
-            uint64_t rsp;
-            asm volatile("mov %0, rsp;" : "=m" (rsp));
-            gdt::tss.rsp0_low = rsp;
-            gdt::tss.rsp0_high = rsp >> 32;
+        constexpr const uint64_t user_rsp = user_rsp_start + (paging::PAGE_SIZE * 2 - 8);
+        constexpr const uint64_t kernel_rsp = kernel_rsp_start + (paging::PAGE_SIZE * 2 - 8);
+
+        auto user_stack_physical = allocate_user_stack(user_rsp_start, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
+        auto kernel_stack_physical = allocate_user_stack(kernel_rsp_start, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
+
+        if(user_stack_physical && kernel_stack_physical){
+            gdt::tss.rsp0_low = kernel_rsp;
+            gdt::tss.rsp0_high = kernel_rsp >> 32;
 
             asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
                 :  //No outputs
@@ -923,7 +928,7 @@ void exec_command(const std::vector<std::string>& params){
 
             asm volatile("push %0; push %1; pushfq; push %2; push %3; iretq"
                 :  //No outputs
-                : "i" (gdt::USER_DATA_SELECTOR + 3), "i" (0x500000 + paging::PAGE_SIZE * 2 - 64), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
+                : "i" (gdt::USER_DATA_SELECTOR + 3), "i" (user_rsp), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
                 : "rax");
 
             //TODO Release stack
