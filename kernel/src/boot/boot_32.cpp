@@ -5,8 +5,11 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#define CODE_32
+
 #include "boot/boot_32.hpp"
 #include "kernel.hpp"
+#include "paging.hpp"
 
 namespace {
 
@@ -20,7 +23,6 @@ static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
 static_assert(sizeof(uint32_t) == 4, "uint32_t must be 4 bytes long");
 static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes long");
 
-const uint32_t PAGE_SIZE = 0x1000;
 const uint32_t PML4T = 0x70000;
 
 void set_segments(){
@@ -52,22 +54,22 @@ void setup_paging(){
     //Link tables (0x3 means Writeable and Supervisor)
 
     //PML4T[0] -> PDPT
-    *reinterpret_cast<uint32_t*>(PML4T) = PML4T + PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T) = PML4T + paging::PAGE_SIZE + 0x7;
 
     //PDPT[0] -> PDT
-    *reinterpret_cast<uint32_t*>(PML4T + 1 * PAGE_SIZE) = PML4T + 2 * PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T + 1 * paging::PAGE_SIZE) = PML4T + 2 * paging::PAGE_SIZE + 0x7;
 
     //PDT[0] -> PD
-    *reinterpret_cast<uint32_t*>(PML4T + 2 * PAGE_SIZE) = PML4T + 3 * PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T + 2 * paging::PAGE_SIZE) = PML4T + 3 * paging::PAGE_SIZE + 0x7;
 
     //Map the first MiB
 
-    auto page_table_ptr = reinterpret_cast<uint32_t*>(PML4T + 3 * PAGE_SIZE);
+    auto page_table_ptr = reinterpret_cast<uint32_t*>(PML4T + 3 * paging::PAGE_SIZE);
     auto phys = 0x3;
     for(uint32_t i = 0; i < 256; ++i){
         *page_table_ptr = phys;
 
-        phys += 0x1000;
+        phys += paging::PAGE_SIZE;
 
         //A page entry is 64 bit in size
         page_table_ptr += 2;

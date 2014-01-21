@@ -32,6 +32,9 @@ static_assert(sizeof(int32_t) == 4, "int32_t must be 4 bytes long");
 static_assert(sizeof(int64_t) == 8, "int64_t must be 8 bytes long");
 
 static_assert(sizeof(size_t) == 8, "size_t must be 8 bytes long");
+
+#ifndef CODE_32
 static_assert(sizeof(uintptr_t) == sizeof(uint64_t*), "uintptr_t must have the same size as a pointer");
+#endif
 
 #endif
