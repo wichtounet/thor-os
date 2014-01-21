@@ -11,89 +11,26 @@
 
 // Define the base ISRs
 
-.global _syscall0
-.global _syscall0
-.global _syscall1
-.global _syscall2
-.global _syscall3
-.global _syscall4
-.global _syscall5
-.global _syscall6
-.global _syscall7
-.global _syscall8
-.global _syscall9
-
-_syscall0:
+.macro create_syscall number
+.global _syscall\number
+_syscall\number:
     cli
 
-    push 0
+    push \number
 
     jmp syscall_common_handler
+.endm
 
-_syscall1:
-    cli
-
-    push 1
-
-    jmp syscall_common_handler
-
-_syscall2:
-    cli
-
-    push 2
-
-    jmp syscall_common_handler
-
-_syscall3:
-    cli
-
-    push 3
-
-    jmp syscall_common_handler
-
-_syscall4:
-    cli
-
-    push 4
-
-    jmp syscall_common_handler
-
-_syscall5:
-    cli
-
-    push 5
-
-    jmp syscall_common_handler
-
-_syscall6:
-    cli
-
-    push 6
-
-    jmp syscall_common_handler
-
-_syscall7:
-    cli
-
-    push 7
-
-    jmp syscall_common_handler
-
-_syscall8:
-    cli
-
-    push 8
-
-    jmp syscall_common_handler
-
-_syscall9:
-    cli
-
-    push 9
-
-    jmp syscall_common_handler
-
-// Common handler
+create_syscall 0
+create_syscall 1
+create_syscall 2
+create_syscall 3
+create_syscall 4
+create_syscall 5
+create_syscall 6
+create_syscall 7
+create_syscall 8
+create_syscall 9
 
 syscall_common_handler:
     push r12
