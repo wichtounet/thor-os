@@ -7,6 +7,7 @@
 
 #include "memory.hpp"
 #include "console.hpp"
+#include "physical_allocator.hpp"
 #include "paging.hpp"
 #include "e820.hpp"
 
@@ -98,43 +99,28 @@ static_assert(MIN_SPLIT == aligned_size(MIN_SPLIT), "The size of minimum split m
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
 
-const e820::mmapentry* current_mmap_entry = 0;
-uintptr_t current_mmap_entry_position = 0;
-
 //All allocated memory is in [min_address, max_address[
 uintptr_t min_address; //Address of the first block being allocated
 uintptr_t max_address; //Address of the next block being allocated
 
 uint64_t* allocate_block(uint64_t blocks){
-    if(!current_mmap_entry){
-        for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
-            auto& entry = e820::mmap_entry(i);
+    auto memory = allocate_physical_memory(blocks);
 
-            if(entry.type == 1 && entry.base >= 0x100000 && entry.size >= 16384){
-                current_mmap_entry = &entry;
-                current_mmap_entry_position = entry.base;
-                min_address = current_mmap_entry_position;
-
-                break;
-            }
-        }
-    }
-
-    if(!current_mmap_entry){
+    if(!memory){
         return nullptr;
     }
 
-    auto block = reinterpret_cast<uint64_t*>(current_mmap_entry_position);
+    if(min_address == 0){
+        min_address = memory;
+    }
+
+    max_address = memory;
+
+    auto block = reinterpret_cast<uint64_t*>(memory);
 
     paging::identity_map_pages(block, blocks);
 
-    current_mmap_entry_position += blocks * BLOCK_SIZE;
-
     _allocated_memory += blocks * BLOCK_SIZE;
-
-    max_address = current_mmap_entry_position;
-
-    //TODO If we are at the end of the block, we gonna have a problem
 
     return block;
 }

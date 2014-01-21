@@ -15,10 +15,10 @@
 #include "interrupts.hpp"
 #include "system_calls.hpp"
 #include "arch.hpp"
-#include "e820.hpp"
 #include "vesa.hpp"
 #include "console.hpp"
 #include "gdt.hpp"
+#include "physical_allocator.hpp"
 
 extern "C" {
 
@@ -31,8 +31,7 @@ void  kernel_main(){
 
     interrupt::setup_interrupts();
 
-    e820::finalize_memory_detection();
-
+    init_physical_allocator();
     init_memory_manager();
 
     install_timer();
