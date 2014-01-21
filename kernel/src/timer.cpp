@@ -29,7 +29,7 @@ void timer_handler(){
     }
 }
 
-}
+} //End of anonymous namespace
 
 void install_timer(){
     uint64_t divisor = 1193180 / 1000;
