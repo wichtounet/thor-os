@@ -7,6 +7,8 @@
 
 .intel_syntax noprefix
 
+.include "src/common.s"
+
 // Define the base ISRs
 
 .global _irq0
@@ -186,7 +188,11 @@ irq_common_handler:
     push r11
     push r12
 
+    restore_kernel_segments
+
     call _irq_handler
+
+    restore_user_segments
 
     pop r12
     pop r11

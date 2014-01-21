@@ -7,6 +7,8 @@
 
 .intel_syntax noprefix
 
+.include "src/common.s"
+
 // Define the base ISRs
 
 .global _syscall0
@@ -106,23 +108,11 @@ syscall_common_handler:
     push rbx
     push rax
 
-    xor rax, rax
-    mov eax, ds
-    push rax
-
-    mov eax, 0x10
-    mov ds, eax
-    mov es, eax
-    mov es, eax
-    mov gs, eax
+    restore_kernel_segments
 
     call _syscall_handler
 
-    pop rax
-    mov ds, eax
-    mov es, eax
-    mov fs, eax
-    mov gs, eax
+    restore_user_segments
 
     pop rax
     pop rbx

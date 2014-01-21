@@ -7,6 +7,8 @@
 
 .intel_syntax noprefix
 
+.include "src/common.s"
+
 // Define the base ISRs
 
 .global _isr0
@@ -264,9 +266,12 @@ _isr31:
 // Common handler
 
 isr_common_handler:
+    restore_kernel_segments
 
     //mov rax, _fault_handler
     call _fault_handler
+
+    restore_user_segments
 
     // TODO At this point, it is absolutely not safe to return since most
     // registers will get trashed the fault handler must hang
