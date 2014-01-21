@@ -5,51 +5,30 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#define CODE_16
+
 #include "boot/code16gcc.h"
 #include "boot/boot_32.hpp"
 
-namespace {
-
-typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
-typedef unsigned int uint16_t __attribute__ ((__mode__ (__HI__)));
-typedef int int16_t __attribute__ ((__mode__ (__HI__)));
-typedef unsigned int uint32_t __attribute__ ((__mode__ (__SI__)));
-typedef unsigned int uint64_t __attribute__ ((__mode__ (__DI__)));
-
-static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
-static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
-static_assert(sizeof(int16_t) == 2, "int16_t must be 2 bytes long");
-static_assert(sizeof(uint32_t) == 4, "uint32_t must be 4 bytes long");
-static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes long");
-
-//Just here to be able to compile e820.hpp, should not be
-//used in boot_16.cpp
-typedef uint64_t size_t;
-
-constexpr const uint16_t DEFAULT_WIDTH = 1280;
-constexpr const uint16_t DEFAULT_HEIGHT = 1024;
-constexpr const uint16_t DEFAULT_BPP = 32;
-
-} //end of anonymous namespace
-
-#define CODE_16
 #include "gdt.hpp"
+#include "e820.hpp" //Just for the address of the e820 map
+#include "vesa.hpp"
 
 //The Task State Segment
 gdt::task_state_segment_t gdt::tss;
 
-#include "e820.hpp" //Just for the address of the e820 map
-
 e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
 int16_t e820::bios_e820_entry_count = 0;
-
-#include "vesa.hpp"
 
 vesa::vbe_info_block_t vesa::vbe_info_block;
 vesa::mode_info_block_t vesa::mode_info_block;
 bool vesa::vesa_enabled = false;
 
 namespace {
+
+constexpr const uint16_t DEFAULT_WIDTH = 1280;
+constexpr const uint16_t DEFAULT_HEIGHT = 1024;
+constexpr const uint16_t DEFAULT_BPP = 32;
 
 void out_byte(uint8_t value, uint16_t port){
     __asm__ __volatile__("out %1, %0" : : "a" (value), "dN" (port));

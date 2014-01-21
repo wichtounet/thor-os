@@ -8,9 +8,7 @@
 #ifndef VESA_H
 #define VESA_H
 
-#ifndef CODE_16
 #include "stl/types.hpp"
-#endif
 
 namespace vesa {
 
