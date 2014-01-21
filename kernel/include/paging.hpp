@@ -32,6 +32,8 @@ constexpr T* page_align(T* addr){
     return reinterpret_cast<T*>((reinterpret_cast<uintptr_t>(addr) / paging::PAGE_SIZE) * paging::PAGE_SIZE);
 }
 
+void init();
+
 void* physical_address(void* virt);
 bool page_present(void* virt);
 bool page_free_or_set(void* virt, void* physical);

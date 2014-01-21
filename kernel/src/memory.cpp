@@ -103,6 +103,8 @@ malloc_header_chunk* malloc_head = 0;
 uintptr_t min_address; //Address of the first block being allocated
 uintptr_t max_address; //Address of the next block being allocated
 
+uintptr_t current_virtual = 0x400000;
+
 uint64_t* allocate_block(uint64_t blocks){
     auto memory = allocate_physical_memory(blocks);
 
@@ -116,9 +118,10 @@ uint64_t* allocate_block(uint64_t blocks){
 
     max_address = memory;
 
-    auto block = reinterpret_cast<uint64_t*>(memory);
+    paging::map_pages(reinterpret_cast<void*>(current_virtual), reinterpret_cast<void*>(memory), blocks);
 
-    paging::identity_map_pages(block, blocks);
+    auto block = reinterpret_cast<uint64_t*>(current_virtual);
+    current_virtual += blocks * BLOCK_SIZE;
 
     _allocated_memory += blocks * BLOCK_SIZE;
 

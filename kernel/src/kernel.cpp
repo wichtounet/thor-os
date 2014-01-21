@@ -6,6 +6,8 @@
 //=======================================================================
 
 #include "kernel.hpp"
+#include "physical_allocator.hpp"
+#include "paging.hpp"
 #include "memory.hpp"
 #include "timer.hpp"
 #include "shell.hpp"
@@ -18,7 +20,6 @@
 #include "vesa.hpp"
 #include "console.hpp"
 #include "gdt.hpp"
-#include "physical_allocator.hpp"
 
 extern "C" {
 
@@ -31,15 +32,19 @@ void  kernel_main(){
 
     interrupt::setup_interrupts();
 
+    //Prepare memory
     init_physical_allocator();
+    paging::init();
     init_memory_manager();
 
+    //Install drivers
     install_timer();
     //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();
     vesa::init();
 
+    //Only install system calls when everything else is ready
     install_system_calls();
 
     //Call global constructors

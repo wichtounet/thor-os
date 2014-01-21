@@ -59,7 +59,7 @@ void setup_paging(){
     //PDPT[0] -> PDT
     *reinterpret_cast<uint32_t*>(PML4T + 1 * paging::PAGE_SIZE) = PML4T + 2 * paging::PAGE_SIZE + 0x7;
 
-    //PDT[0] -> PD
+    //PD[0] -> PT
     *reinterpret_cast<uint32_t*>(PML4T + 2 * paging::PAGE_SIZE) = PML4T + 3 * paging::PAGE_SIZE + 0x7;
 
     //Map the first MiB

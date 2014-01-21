@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include "paging.hpp"
+#include "physical_allocator.hpp"
 
 #include "stl/types.hpp"
 #include "stl/algorithms.hpp"
@@ -14,8 +15,8 @@ namespace {
 
 typedef uint64_t* page_entry;
 typedef page_entry* pt_t;
-typedef pt_t* pdt_t;
-typedef pdt_t* pdpt_t;
+typedef pt_t* pd_t;
+typedef pd_t* pdpt_t;
 typedef pdpt_t* pml4t_t;
 
 //Memory from 0x70000 can be used for pages
@@ -38,6 +39,45 @@ inline void flush_tlb(void* page){
 
 } //end of anonymous namespace
 
+void paging::init(){
+    //PD[0] already points to a valid PT (0x73000)
+    auto pt = reinterpret_cast<pt_t>(0x73000);
+
+    auto pd = reinterpret_cast<pd_t>(0x72000);
+
+    auto physical = allocate_physical_memory(1);
+
+    pt[256] = reinterpret_cast<page_entry>(physical | PRESENT | WRITE | USER);
+    flush_tlb(reinterpret_cast<void*>(0x100000));
+
+    auto it = reinterpret_cast<size_t*>(0x100000);
+    std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
+
+    pd[1] = reinterpret_cast<pt_t>(physical | PRESENT | WRITE | USER);
+
+    //Use PD[1] as pt
+    pt = reinterpret_cast<pt_t>(0x100000);
+
+    for(size_t pd_index = 2; pd_index < 512; ++pd_index){
+        //1. Allocate space for the new Page Table
+        physical = allocate_physical_memory(1);
+
+        //2. Compute logical address
+        uint64_t logical = 0x200000 + (pd_index - 2) * paging::PAGE_SIZE;
+
+        //2. Map it using the valid entries in the first PT
+        pt[pd_index - 2] = reinterpret_cast<page_entry>(physical | PRESENT | WRITE | USER);
+        flush_tlb(reinterpret_cast<void*>(logical));
+
+        //3. Clear the new PT
+        it = reinterpret_cast<size_t*>(logical);
+        std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
+
+        //4. Set it in PD
+        pd[pd_index] = reinterpret_cast<pt_t>(physical | PRESENT | WRITE | USER);
+    }
+}
+
 //TODO Update to support offsets at the end of virt
 //TODO Improve to support a status
 void* paging::physical_address(void* virt){
@@ -54,8 +94,8 @@ void* paging::physical_address(void* virt){
     pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
 
     auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
-    auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[directory]) & ~0xFFF);
+    auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
+    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
     return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(pt[table]) & ~0xFFF);
 }
 
@@ -76,12 +116,12 @@ bool paging::page_present(void* virt){
         return false;
     }
 
-    auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
-    if(!(reinterpret_cast<uintptr_t>(pdt[directory]) & PRESENT)){
+    auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
+    if(!(reinterpret_cast<uintptr_t>(pd[directory]) & PRESENT)){
         return false;
     }
 
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[directory]) & ~0xFFF);
+    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
     return reinterpret_cast<uintptr_t>(pt[table]) & PRESENT;
 }
 
@@ -120,17 +160,17 @@ bool paging::map(void* virt, void* physical, uint8_t flags){
 
     //Init new page if necessary
     if(!(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT)){
-        pdpt[directory_ptr] = reinterpret_cast<pdt_t>(init_new_page() | USER | WRITE | PRESENT);
+        pdpt[directory_ptr] = reinterpret_cast<pd_t>(init_new_page() | USER | WRITE | PRESENT);
     }
 
-    auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
+    auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
 
     //Init new page if necessary
-    if(!(reinterpret_cast<uintptr_t>(pdt[directory]) & PRESENT)){
-        pdt[directory] = reinterpret_cast<pt_t>(init_new_page() | USER | WRITE | PRESENT);
+    if(!(reinterpret_cast<uintptr_t>(pd[directory]) & PRESENT)){
+        pd[directory] = reinterpret_cast<pt_t>(init_new_page() | USER | WRITE | PRESENT);
     }
 
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[directory]) & ~0xFFF);
+    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
 
     //Check if the page is already present
     if(reinterpret_cast<uintptr_t>(pt[table]) & PRESENT){
@@ -204,14 +244,14 @@ bool paging::unmap(void* virt){
         return true;
     }
 
-    auto pdt = reinterpret_cast<pdt_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
+    auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
 
     //If not present, returns directly
-    if(!(reinterpret_cast<uintptr_t>(pdt[directory]) & PRESENT)){
+    if(!(reinterpret_cast<uintptr_t>(pd[directory]) & PRESENT)){
         return true;
     }
 
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pdt[directory]) & ~0xFFF);
+    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
 
     //Unmap the virtual address
     pt[table] = 0x0;

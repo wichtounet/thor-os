@@ -64,11 +64,9 @@ create_irq_dummy 30
 create_irq_dummy 31
 
 isr_common_handler:
-    restore_kernel_segments
+    //TODO Kernel segments should be restored
 
     call _fault_handler
-
-    restore_user_segments
 
     // TODO At this point, it is absolutely not safe to return since most
     // registers will get trashed the fault handler must hang
