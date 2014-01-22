@@ -157,6 +157,22 @@ void paging::init(){
     asm volatile("mov rax, %0; mov cr3, rax" : : "m"(physical_pml4t_start) : "memory", "rax");
 }
 
+constexpr uintptr_t pml4_entry(void* virt){
+    return (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
+}
+
+constexpr uintptr_t pdpt_entry(void* virt){
+    return (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
+}
+
+constexpr uintptr_t pd_entry(void* virt){
+    return (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
+}
+
+constexpr uintptr_t pt_entry(void* virt){
+    return (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
+}
+
 //TODO Update to support offsets at the end of virt
 //TODO Improve to support a status
 void* paging::physical_address(void* virt){
@@ -165,10 +181,10 @@ void* paging::physical_address(void* virt){
     }
 
     //Find the correct indexes inside the paging table for the physical address
-    auto table = (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
-    auto directory = (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
-    auto directory_ptr = (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
-    auto pml4 = (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
+    auto pml4 = pml4_entry(virt);
+    auto directory_ptr = pdpt_entry(virt);
+    auto directory = pd_entry(virt);
+    auto table = pt_entry(virt);
 
     pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
 
@@ -180,10 +196,10 @@ void* paging::physical_address(void* virt){
 
 bool paging::page_present(void* virt){
     //Find the correct indexes inside the paging table for the physical address
-    auto table = (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
-    auto directory = (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
-    auto directory_ptr = (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
-    auto pml4 = (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
+    auto pml4 = pml4_entry(virt);
+    auto directory_ptr = pdpt_entry(virt);
+    auto directory = pd_entry(virt);
+    auto table = pt_entry(virt);
 
     pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
     if(!(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT)){
@@ -223,10 +239,10 @@ bool paging::map(void* virt, void* physical, uint8_t flags){
     }
 
     //Find the correct indexes inside the paging table for the virtual address
-    auto table = (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
-    auto directory = (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
-    auto directory_ptr = (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
-    auto pml4 = (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
+    auto pml4 = pml4_entry(virt);
+    auto directory_ptr = pdpt_entry(virt);
+    auto directory = pd_entry(virt);
+    auto table = pt_entry(virt);
 
     pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
 
@@ -295,10 +311,10 @@ bool paging::unmap(void* virt){
     }
 
     //Find the correct indexes inside the paging table for the virtual address
-    auto table = (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
-    auto directory = (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
-    auto directory_ptr = (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
-    auto pml4 = (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
+    auto pml4 = pml4_entry(virt);
+    auto directory_ptr = pdpt_entry(virt);
+    auto directory = pd_entry(virt);
+    auto table = pt_entry(virt);
 
     pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
 
