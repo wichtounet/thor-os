@@ -67,3 +67,8 @@ void suspend_boot(){
     asm volatile("hlt");
     __builtin_unreachable();
 }
+
+void suspend_kernel(){
+    asm volatile("hlt");
+    __builtin_unreachable();
+}

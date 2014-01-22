@@ -5,16 +5,17 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef KERNEL_HPP
-#define KERNEL_HPP
+#include "assert.hpp"
+#include "console.hpp"
+#include "kernel.hpp"
 
-extern "C" {
-
-void kernel_main();
-
+void __thor_assert(bool condition){
+    __thor_assert(condition, "assertion failed");
 }
 
-void suspend_boot() __attribute__((noreturn));
-void suspend_kernel() __attribute__((noreturn));
-
-#endif
+void __thor_assert(bool condition, const char* message){
+    if(!condition){
+        k_print_line(message);
+        suspend_kernel();
+    }
+}
