@@ -39,11 +39,7 @@ constexpr const size_t pde_allocations = 2_MiB;
 constexpr const size_t pte_allocations = 4_KiB;
 
 //Virtual address where the paging structures are stored
-constexpr const size_t virtual_paging_start = 0x100000;
-
-inline void flush_tlb(void* page){
-    asm volatile("invlpg [%0]" :: "r" (reinterpret_cast<uintptr_t>(page)) : "memory");
-}
+constexpr const size_t virtual_paging_start = 0x101000;
 
 constexpr size_t entries(size_t entry_size){
     return entry_size >= kernel_virtual_size ?
@@ -69,6 +65,42 @@ size_t physical_pdpt_start;
 size_t physical_pd_start;
 size_t physical_pt_start;
 
+constexpr size_t pml4_entry(void* virt){
+    return (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
+}
+
+constexpr size_t pdpt_entry(void* virt){
+    return (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
+}
+
+constexpr size_t pd_entry(void* virt){
+    return (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
+}
+
+constexpr size_t pt_entry(void* virt){
+    return (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
+}
+
+constexpr pml4t_t find_pml4t(){
+    return reinterpret_cast<pml4t_t>(virtual_pml4t_start);
+}
+
+constexpr pdpt_t find_pdpt(pml4t_t pml4t, size_t pml4e){
+    return reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & ~0xFFF);
+}
+
+constexpr pd_t find_pd(pdpt_t pdpt, size_t pdpte){
+    return reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF);
+}
+
+constexpr pt_t find_pt(pd_t pd, size_t pde){
+    return reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF);
+}
+
+inline void flush_tlb(void* page){
+    asm volatile("invlpg [%0]" :: "r" (reinterpret_cast<uintptr_t>(page)) : "memory");
+}
+
 size_t early_map_page(size_t physical){
     //PD[0] already points to a valid PT (0x73000)
     auto pt = reinterpret_cast<pt_t>(0x73000);
@@ -76,11 +108,17 @@ size_t early_map_page(size_t physical){
     pt[256] = reinterpret_cast<page_entry>(physical | paging::PRESENT | paging::WRITE);
     flush_tlb(reinterpret_cast<void*>(0x100000));
 
+    return 0x100000;
+}
+
+size_t early_map_page_clear(size_t physical){
+    auto virt = early_map_page(physical);
+
     //Clear the new allocated block of memory
-    auto it = reinterpret_cast<size_t*>(0x100000);
+    auto it = reinterpret_cast<size_t*>(virt);
     std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
 
-    return 0x100000;
+    return virt;
 }
 
 } //end of anonymous namespace
@@ -107,41 +145,41 @@ void paging::init(){
     auto high_flags = PRESENT | WRITE | USER;
 
     //1. Prepare PML4T
-    auto virt = early_map_page(physical_pml4t_start);
+    auto virt = early_map_page_clear(physical_pml4t_start);
     for(size_t i = 0; i < pml4_entries; ++i){
         (reinterpret_cast<pml4t_t>(virt))[i] = reinterpret_cast<pdpt_t>((physical_pdpt_start + i * PAGE_SIZE) | high_flags);
     }
 
     //2. Prepare each PDPT
     for(size_t i = 0; i < pml4_entries; ++i){
-        virt = early_map_page(physical_pdpt_start + i * PAGE_SIZE);
+        virt = early_map_page_clear(physical_pdpt_start + i * PAGE_SIZE);
 
         for(size_t j = 0; j + i * 512 < pdpt_entries; ++j){
             auto r = j + i * 512;
 
-            (reinterpret_cast<pdpt_t>(virt))[r] = reinterpret_cast<pd_t>((physical_pd_start + i * PAGE_SIZE) | high_flags);
+            (reinterpret_cast<pdpt_t>(virt))[j] = reinterpret_cast<pd_t>((physical_pd_start + r * PAGE_SIZE) | high_flags);
         }
     }
 
     //3. Prepare each PD
     for(size_t i = 0; i < pdpt_entries; ++i){
-        virt = early_map_page(physical_pd_start + i * PAGE_SIZE);
+        virt = early_map_page_clear(physical_pd_start + i * PAGE_SIZE);
 
         for(size_t j = 0; j + i * 512 < pd_entries; ++j){
             auto r = j + i * 512;
 
-            (reinterpret_cast<pd_t>(virt))[r] = reinterpret_cast<pt_t>((physical_pt_start + i * PAGE_SIZE) | high_flags);
+            (reinterpret_cast<pd_t>(virt))[j] = reinterpret_cast<pt_t>((physical_pt_start + r * PAGE_SIZE) | high_flags);
         }
     }
 
     //4. Prepare each PT
     for(size_t i = 0; i < pd_entries; ++i){
-        early_map_page(physical_pt_start + i * PAGE_SIZE);
+        early_map_page_clear(physical_pt_start + i * PAGE_SIZE);
     }
 
     //5. Identity map the first MiB
 
-    virt = early_map_page(physical_pt_start);
+    virt = early_map_page_clear(physical_pt_start);
     auto page_table_ptr = reinterpret_cast<uint64_t*>(virt);
     auto phys = PRESENT | WRITE;
     for(size_t i = 0; i < 256; ++i){
@@ -152,42 +190,37 @@ void paging::init(){
         ++page_table_ptr;
     }
 
-    //6. Use the new structure as the new paging structure (in CR3)
+    //6. Map all the paging structures
+
+    auto phys_page = physical_memory;
+    auto virt_page = virtual_paging_start;
+
+    size_t current_pt_index = 0;
+    uintptr_t current_virt = 0;
+    for(size_t i = 0; i < physical_memory_pages; ++i){
+        auto pml4e = pml4_entry(reinterpret_cast<void*>(virt_page));
+        auto pdpte = pdpt_entry(reinterpret_cast<void*>(virt_page));
+        auto pde = pd_entry(reinterpret_cast<void*>(virt_page));
+        auto pte = pt_entry(reinterpret_cast<void*>(virt_page));
+
+        auto pt_index = pde * 512 + pdpte * 512 * 512 + pml4e * 512 * 512 * 512;
+        auto physical = physical_pt_start + pt_index * paging::PAGE_SIZE;
+
+        if(pt_index != current_pt_index || current_virt == 0){
+            current_virt = early_map_page(physical);
+        }
+
+        (reinterpret_cast<pt_t>(current_virt))[pte] = reinterpret_cast<page_entry>(phys_page | PRESENT | WRITE);
+
+        current_pt_index = pt_index;
+
+        virt_page += paging::PAGE_SIZE;
+        phys_page += paging::PAGE_SIZE;
+    }
+
+    //7. Use the new structure as the new paging structure (in CR3)
 
     asm volatile("mov rax, %0; mov cr3, rax" : : "m"(physical_pml4t_start) : "memory", "rax");
-}
-
-constexpr size_t pml4_entry(void* virt){
-    return (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
-}
-
-constexpr size_t pdpt_entry(void* virt){
-    return (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
-}
-
-constexpr size_t pd_entry(void* virt){
-    return (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
-}
-
-constexpr size_t pt_entry(void* virt){
-    return (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
-}
-
-constexpr pml4t_t find_pml4t(){
-    //TODO Change address
-    return reinterpret_cast<pml4t_t>(0x70000);
-}
-
-constexpr pdpt_t find_pdpt(pml4t_t pml4t, size_t pml4e){
-    return reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & ~0xFFF);
-}
-
-constexpr pd_t find_pd(pdpt_t pdpt, size_t pdpte){
-    return reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF);
-}
-
-constexpr pt_t find_pt(pd_t pd, size_t pde){
-    return reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF);
 }
 
 //TODO Update to support offsets at the end of virt
