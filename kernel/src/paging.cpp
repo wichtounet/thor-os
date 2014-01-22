@@ -9,6 +9,7 @@
 #include "kernel.hpp"
 #include "physical_allocator.hpp"
 #include "console.hpp"
+#include "assert.hpp"
 
 #include "stl/types.hpp"
 #include "stl/algorithms.hpp"
@@ -39,20 +40,6 @@ constexpr const size_t pte_allocations = 4_KiB;
 
 //Virtual address where the paging structures are stored
 constexpr const size_t virtual_paging_start = 0x100000;
-
-//Memory from 0x70000 can be used for pages
-uintptr_t last_page = 0x73000;
-
-uintptr_t init_new_page(){
-    auto new_page = last_page + paging::PAGE_SIZE;
-    auto it = reinterpret_cast<size_t*>(new_page);
-
-    std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
-
-    last_page = new_page;
-
-    return new_page;
-}
 
 inline void flush_tlb(void* page){
     asm volatile("invlpg [%0]" :: "r" (reinterpret_cast<uintptr_t>(page)) : "memory");
@@ -243,24 +230,15 @@ bool paging::map(void* virt, void* physical, uint8_t flags){
 
     pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
 
-    //Init new page if necessary
-    if(!(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT)){
-        pml4t[pml4] = reinterpret_cast<pdpt_t>(init_new_page() | USER | WRITE | PRESENT);
-    }
+    thor_assert(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT, "A PML4T entry is not PRESENT");
 
     auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
 
-    //Init new page if necessary
-    if(!(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT)){
-        pdpt[directory_ptr] = reinterpret_cast<pd_t>(init_new_page() | USER | WRITE | PRESENT);
-    }
+    thor_assert(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT, "A PDPT entry is not PRESENT");
 
     auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
 
-    //Init new page if necessary
-    if(!(reinterpret_cast<uintptr_t>(pd[directory]) & PRESENT)){
-        pd[directory] = reinterpret_cast<pt_t>(init_new_page() | USER | WRITE | PRESENT);
-    }
+    thor_assert(reinterpret_cast<uintptr_t>(pd[directory_ptr]) & PRESENT, "A PD entry is not PRESENT");
 
     auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
 
