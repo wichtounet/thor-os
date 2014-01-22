@@ -14,4 +14,6 @@ void kernel_main();
 
 }
 
+void suspend_boot() __attribute__((noreturn));
+
 #endif

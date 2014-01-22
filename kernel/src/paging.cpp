@@ -6,10 +6,13 @@
 //=======================================================================
 
 #include "paging.hpp"
+#include "kernel.hpp"
 #include "physical_allocator.hpp"
+#include "console.hpp"
 
 #include "stl/types.hpp"
 #include "stl/algorithms.hpp"
+#include "stl/literals.hpp"
 
 namespace {
 
@@ -18,6 +21,24 @@ typedef page_entry* pt_t;
 typedef pt_t* pd_t;
 typedef pd_t* pdpt_t;
 typedef pdpt_t* pml4t_t;
+
+//The virtual size allocated to the kernel
+constexpr const size_t kernel_virtual_size = 1_GiB;
+
+//The physical memory that a PML4T Entry can map
+constexpr const size_t pml4e_allocations = 512_GiB;
+
+//The physical memory that a PDPT Entry can map
+constexpr const size_t pdpte_allocations = 1_GiB;
+
+//The physical memory that a PD Entry can map
+constexpr const size_t pde_allocations = 2_MiB;
+
+//The physical memory that a PD Entry can map
+constexpr const size_t pte_allocations = 4_KiB;
+
+//Virtual address where the paging structures are stored
+constexpr const size_t virtual_paging_start = 0x100000;
 
 //Memory from 0x70000 can be used for pages
 uintptr_t last_page = 0x73000;
@@ -37,45 +58,116 @@ inline void flush_tlb(void* page){
     asm volatile("invlpg [%0]" :: "r" (reinterpret_cast<uintptr_t>(page)) : "memory");
 }
 
-} //end of anonymous namespace
+constexpr size_t entries(size_t entry_size){
+    return entry_size >= kernel_virtual_size ?
+        1 :
+        kernel_virtual_size / entry_size + (kernel_virtual_size % entry_size == 0 ? 0 : 1);
+}
 
-void paging::init(){
+//Compute the number of entries necessary to map the entire kernel virtual size
+constexpr const auto pml4_entries = entries(pml4e_allocations);
+constexpr const auto pdpt_entries = entries(pdpte_allocations);
+constexpr const auto pd_entries = entries(pde_allocations);
+constexpr const auto pt_entries = entries(pte_allocations);
+
+//Compute the start address of each structures
+constexpr const size_t virtual_pml4t_start = virtual_paging_start;
+constexpr const size_t virtual_pdpt_start = virtual_pml4t_start + paging::PAGE_SIZE;
+constexpr const size_t virtual_pd_start = virtual_pdpt_start + pml4_entries * paging::PAGE_SIZE;
+constexpr const size_t virtual_pt_start = virtual_pd_start + pdpt_entries * paging::PAGE_SIZE;
+
+//The physical offsets of the structures
+size_t physical_pml4t_start;
+size_t physical_pdpt_start;
+size_t physical_pd_start;
+size_t physical_pt_start;
+
+size_t early_map_page(size_t physical){
     //PD[0] already points to a valid PT (0x73000)
     auto pt = reinterpret_cast<pt_t>(0x73000);
 
-    auto pd = reinterpret_cast<pd_t>(0x72000);
-
-    auto physical = physical_allocator::early_allocate(1);
-
-    pt[256] = reinterpret_cast<page_entry>(physical | PRESENT | WRITE | USER);
+    pt[256] = reinterpret_cast<page_entry>(physical | paging::PRESENT | paging::WRITE);
     flush_tlb(reinterpret_cast<void*>(0x100000));
 
+    //Clear the new allocated block of memory
     auto it = reinterpret_cast<size_t*>(0x100000);
     std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
 
-    pd[1] = reinterpret_cast<pt_t>(physical | PRESENT | WRITE | USER);
+    return 0x100000;
+}
 
-    //Use PD[1] as pt
-    pt = reinterpret_cast<pt_t>(0x100000);
+} //end of anonymous namespace
 
-    for(size_t pd_index = 2; pd_index < 512; ++pd_index){
-        //1. Allocate space for the new Page Table
-        physical = physical_allocator::early_allocate(1);
+void paging::init(){
+    //Compute the amount of physical memory pages needed for the paging tables
+    auto physical_memory_pages = 1 + pml4_entries + pdpt_entries + pd_entries;
 
-        //2. Compute logical address
-        uint64_t logical = 0x200000 + (pd_index - 2) * paging::PAGE_SIZE;
+    //Get some physical memory
+    auto physical_memory = physical_allocator::early_allocate(physical_memory_pages);
 
-        //2. Map it using the valid entries in the first PT
-        pt[pd_index - 2] = reinterpret_cast<page_entry>(physical | PRESENT | WRITE | USER);
-        flush_tlb(reinterpret_cast<void*>(logical));
+    if(!physical_memory){
+        k_print_line("Impossible to allocate enough physical memory for paging tables");
 
-        //3. Clear the new PT
-        it = reinterpret_cast<size_t*>(logical);
-        std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
-
-        //4. Set it in PD
-        pd[pd_index] = reinterpret_cast<pt_t>(physical | PRESENT | WRITE | USER);
+        suspend_boot();
     }
+
+    //Compute the physical offsets of the paging tables
+    physical_pml4t_start = physical_memory;
+    physical_pdpt_start = physical_pml4t_start + paging::PAGE_SIZE;
+    physical_pd_start = physical_pdpt_start + pml4_entries * paging::PAGE_SIZE;
+    physical_pt_start = physical_pd_start + pdpt_entries * paging::PAGE_SIZE;
+
+    auto high_flags = PRESENT | WRITE | USER;
+
+    //1. Prepare PML4T
+    auto virt = early_map_page(physical_pml4t_start);
+    for(size_t i = 0; i < pml4_entries; ++i){
+        (reinterpret_cast<pml4t_t>(virt))[i] = reinterpret_cast<pdpt_t>((physical_pdpt_start + i * PAGE_SIZE) | high_flags);
+    }
+
+    //2. Prepare each PDPT
+    for(size_t i = 0; i < pml4_entries; ++i){
+        virt = early_map_page(physical_pdpt_start + i * PAGE_SIZE);
+
+        for(size_t j = 0; j + i * 512 < pdpt_entries; ++j){
+            auto r = j + i * 512;
+
+            (reinterpret_cast<pdpt_t>(virt))[r] = reinterpret_cast<pd_t>((physical_pd_start + i * PAGE_SIZE) | high_flags);
+        }
+    }
+
+    //3. Prepare each PD
+    for(size_t i = 0; i < pdpt_entries; ++i){
+        virt = early_map_page(physical_pd_start + i * PAGE_SIZE);
+
+        for(size_t j = 0; j + i * 512 < pd_entries; ++j){
+            auto r = j + i * 512;
+
+            (reinterpret_cast<pd_t>(virt))[r] = reinterpret_cast<pt_t>((physical_pt_start + i * PAGE_SIZE) | high_flags);
+        }
+    }
+
+    //4. Prepare each PT
+    for(size_t i = 0; i < pd_entries; ++i){
+        early_map_page(physical_pt_start + i * PAGE_SIZE);
+    }
+
+    //5. Identity map the first MiB
+
+    virt = early_map_page(physical_pt_start);
+    auto page_table_ptr = reinterpret_cast<uint64_t*>(virt);
+    auto phys = PRESENT | WRITE;
+    for(size_t i = 0; i < 256; ++i){
+        *page_table_ptr = phys;
+
+        phys += paging::PAGE_SIZE;
+
+        ++page_table_ptr;
+    }
+
+    //6. Use the new structure as the new paging structure (in CR3)
+
+    asm volatile("mov rax, %0; mov cr3, rax" : : "m"(physical_pml4t_start) : "memory", "rax");
 }
 
 //TODO Update to support offsets at the end of virt

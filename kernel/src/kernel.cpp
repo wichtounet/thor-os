@@ -35,6 +35,7 @@ void  kernel_main(){
     //Prepare memory
     physical_allocator::early_init();
     paging::init();
+
     physical_allocator::init();
     init_memory_manager();
 
@@ -59,4 +60,10 @@ void  kernel_main(){
     return;
 }
 
+}
+
+void suspend_boot(){
+    k_print_line("Impossible to continue boot...");
+    asm volatile("hlt");
+    __builtin_unreachable();
 }
