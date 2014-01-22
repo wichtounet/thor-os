@@ -16,11 +16,19 @@ uintptr_t current_mmap_entry_position = 0;
 
 } //End of anonymous namespace
 
-void init_physical_allocator(){
+void physical_allocator::early_init(){
     e820::finalize_memory_detection();
 }
 
-size_t allocate_physical_memory(size_t blocks){
+void physical_allocator::init(){
+    //TODO
+}
+
+size_t physical_allocator::early_allocate(size_t blocks){
+    return allocate(blocks);
+}
+
+size_t physical_allocator::allocate(size_t blocks){
     if(!current_mmap_entry){
         for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
             auto& entry = e820::mmap_entry(i);

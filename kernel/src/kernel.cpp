@@ -33,8 +33,9 @@ void  kernel_main(){
     interrupt::setup_interrupts();
 
     //Prepare memory
-    init_physical_allocator();
+    physical_allocator::early_init();
     paging::init();
+    physical_allocator::init();
     init_memory_manager();
 
     //Install drivers

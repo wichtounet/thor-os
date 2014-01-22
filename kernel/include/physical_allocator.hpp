@@ -10,8 +10,14 @@
 
 #include "stl/types.hpp"
 
-void init_physical_allocator();
+namespace physical_allocator {
 
-size_t allocate_physical_memory(size_t pages);
+void early_init();
+void init();
+
+size_t early_allocate(size_t pages);
+size_t allocate(size_t pages);
+
+} //end of physical_allocator namespace
 
 #endif

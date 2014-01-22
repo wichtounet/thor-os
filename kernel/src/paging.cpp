@@ -45,7 +45,7 @@ void paging::init(){
 
     auto pd = reinterpret_cast<pd_t>(0x72000);
 
-    auto physical = allocate_physical_memory(1);
+    auto physical = physical_allocator::early_allocate(1);
 
     pt[256] = reinterpret_cast<page_entry>(physical | PRESENT | WRITE | USER);
     flush_tlb(reinterpret_cast<void*>(0x100000));
@@ -60,7 +60,7 @@ void paging::init(){
 
     for(size_t pd_index = 2; pd_index < 512; ++pd_index){
         //1. Allocate space for the new Page Table
-        physical = allocate_physical_memory(1);
+        physical = physical_allocator::early_allocate(1);
 
         //2. Compute logical address
         uint64_t logical = 0x200000 + (pd_index - 2) * paging::PAGE_SIZE;

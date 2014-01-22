@@ -106,7 +106,7 @@ uintptr_t max_address; //Address of the next block being allocated
 uintptr_t current_virtual = 0x400000;
 
 uint64_t* allocate_block(uint64_t blocks){
-    auto memory = allocate_physical_memory(blocks);
+    auto memory = physical_allocator::allocate(blocks);
 
     if(!memory){
         return nullptr;
