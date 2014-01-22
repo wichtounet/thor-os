@@ -85,16 +85,25 @@ constexpr pml4t_t find_pml4t(){
     return reinterpret_cast<pml4t_t>(virtual_pml4t_start);
 }
 
-constexpr pdpt_t find_pdpt(pml4t_t pml4t, size_t pml4e){
-    return reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & ~0xFFF);
+pdpt_t find_pdpt(pml4t_t pml4t, size_t pml4e){
+    auto physical_pdpt = reinterpret_cast<uintptr_t>(pml4t[pml4e]) & ~0xFFF;
+    auto physical_offset = physical_pdpt - physical_pdpt_start;
+    auto virtual_pdpt = virtual_pdpt_start + physical_offset;
+    return reinterpret_cast<pdpt_t>(virtual_pdpt);
 }
 
-constexpr pd_t find_pd(pdpt_t pdpt, size_t pdpte){
-    return reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF);
+pd_t find_pd(pdpt_t pdpt, size_t pdpte){
+    auto physical_pd = reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF;
+    auto physical_offset = physical_pd - physical_pd_start;
+    auto virtual_pd = virtual_pd_start + physical_offset;
+    return reinterpret_cast<pd_t>(virtual_pd);
 }
 
-constexpr pt_t find_pt(pd_t pd, size_t pde){
-    return reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF);
+pt_t find_pt(pd_t pd, size_t pde){
+    auto physical_pt = reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF;
+    auto physical_offset = physical_pt - physical_pt_start;
+    auto virtual_pt = virtual_pt_start + physical_offset;
+    return reinterpret_cast<pt_t>(virtual_pt);
 }
 
 inline void flush_tlb(void* page){
