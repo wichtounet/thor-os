@@ -157,20 +157,37 @@ void paging::init(){
     asm volatile("mov rax, %0; mov cr3, rax" : : "m"(physical_pml4t_start) : "memory", "rax");
 }
 
-constexpr uintptr_t pml4_entry(void* virt){
+constexpr size_t pml4_entry(void* virt){
     return (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
 }
 
-constexpr uintptr_t pdpt_entry(void* virt){
+constexpr size_t pdpt_entry(void* virt){
     return (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
 }
 
-constexpr uintptr_t pd_entry(void* virt){
+constexpr size_t pd_entry(void* virt){
     return (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
 }
 
-constexpr uintptr_t pt_entry(void* virt){
+constexpr size_t pt_entry(void* virt){
     return (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
+}
+
+constexpr pml4t_t find_pml4t(){
+    //TODO Change address
+    return reinterpret_cast<pml4t_t>(0x70000);
+}
+
+constexpr pdpt_t find_pdpt(pml4t_t pml4t, size_t pml4e){
+    return reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & ~0xFFF);
+}
+
+constexpr pd_t find_pd(pdpt_t pdpt, size_t pdpte){
+    return reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF);
+}
+
+constexpr pt_t find_pt(pd_t pd, size_t pde){
+    return reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF);
 }
 
 //TODO Update to support offsets at the end of virt
@@ -181,43 +198,43 @@ void* paging::physical_address(void* virt){
     }
 
     //Find the correct indexes inside the paging table for the physical address
-    auto pml4 = pml4_entry(virt);
-    auto directory_ptr = pdpt_entry(virt);
-    auto directory = pd_entry(virt);
-    auto table = pt_entry(virt);
+    auto pml4e = pml4_entry(virt);
+    auto pdpte = pdpt_entry(virt);
+    auto pde = pd_entry(virt);
+    auto pte = pt_entry(virt);
 
-    pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
+    auto pml4t = find_pml4t();;
+    auto pdpt = find_pdpt(pml4t, pml4e);
+    auto pd = find_pd(pdpt, pdpte);
+    auto pt = find_pt(pd, pde);
 
-    auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
-    auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
-    return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(pt[table]) & ~0xFFF);
+    return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(pt[pte]) & ~0xFFF);
 }
 
 bool paging::page_present(void* virt){
     //Find the correct indexes inside the paging table for the physical address
-    auto pml4 = pml4_entry(virt);
-    auto directory_ptr = pdpt_entry(virt);
-    auto directory = pd_entry(virt);
-    auto table = pt_entry(virt);
+    auto pml4e = pml4_entry(virt);
+    auto pdpte = pdpt_entry(virt);
+    auto pde = pd_entry(virt);
+    auto pte = pt_entry(virt);
 
-    pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
-    if(!(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT)){
+    auto pml4t = find_pml4t();;
+    if(!(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & PRESENT)){
         return false;
     }
 
-    auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
-    if(!(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT)){
+    auto pdpt = find_pdpt(pml4t, pml4e);
+    if(!(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & PRESENT)){
         return false;
     }
 
-    auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
-    if(!(reinterpret_cast<uintptr_t>(pd[directory]) & PRESENT)){
+    auto pd = find_pd(pdpt, pdpte);
+    if(!(reinterpret_cast<uintptr_t>(pd[pde]) & PRESENT)){
         return false;
     }
 
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
-    return reinterpret_cast<uintptr_t>(pt[table]) & PRESENT;
+    auto pt = find_pt(pd, pde);
+    return reinterpret_cast<uintptr_t>(pt[pte]) & PRESENT;
 }
 
 bool paging::page_free_or_set(void* virt, void* physical){
@@ -239,34 +256,31 @@ bool paging::map(void* virt, void* physical, uint8_t flags){
     }
 
     //Find the correct indexes inside the paging table for the virtual address
-    auto pml4 = pml4_entry(virt);
-    auto directory_ptr = pdpt_entry(virt);
-    auto directory = pd_entry(virt);
-    auto table = pt_entry(virt);
+    auto pml4e = pml4_entry(virt);
+    auto pdpte = pdpt_entry(virt);
+    auto pde = pd_entry(virt);
+    auto pte = pt_entry(virt);
 
-    pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
+    auto pml4t = find_pml4t();;
+    thor_assert(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & PRESENT, "A PML4T entry is not PRESENT");
 
-    thor_assert(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT, "A PML4T entry is not PRESENT");
+    auto pdpt = find_pdpt(pml4t, pml4e);
+    thor_assert(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & PRESENT, "A PDPT entry is not PRESENT");
 
-    auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
+    auto pd = find_pd(pdpt, pdpte);
+    thor_assert(reinterpret_cast<uintptr_t>(pd[pde]) & PRESENT, "A PD entry is not PRESENT");
 
-    thor_assert(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT, "A PDPT entry is not PRESENT");
-
-    auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
-
-    thor_assert(reinterpret_cast<uintptr_t>(pd[directory_ptr]) & PRESENT, "A PD entry is not PRESENT");
-
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
+    auto pt = find_pt(pd, pde);
 
     //Check if the page is already present
-    if(reinterpret_cast<uintptr_t>(pt[table]) & PRESENT){
+    if(reinterpret_cast<uintptr_t>(pt[pte]) & PRESENT){
         //If the page is already set to the correct value, return true
         //If the page is set to another value, return false
-        return reinterpret_cast<uintptr_t>(pt[table]) == (reinterpret_cast<uintptr_t>(physical) | flags);
+        return reinterpret_cast<uintptr_t>(pt[pte]) == (reinterpret_cast<uintptr_t>(physical) | flags);
     }
 
     //Map to the physical address
-    pt[table] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(physical) | flags);
+    pt[pte] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(physical) | flags);
 
     //Flush TLB
     flush_tlb(virt);
@@ -311,36 +325,36 @@ bool paging::unmap(void* virt){
     }
 
     //Find the correct indexes inside the paging table for the virtual address
-    auto pml4 = pml4_entry(virt);
-    auto directory_ptr = pdpt_entry(virt);
-    auto directory = pd_entry(virt);
-    auto table = pt_entry(virt);
+    auto pml4e = pml4_entry(virt);
+    auto pdpte = pdpt_entry(virt);
+    auto pde = pd_entry(virt);
+    auto pte = pt_entry(virt);
 
-    pml4t_t pml4t = reinterpret_cast<pml4t_t>(0x70000);
+    auto pml4t = find_pml4t();;
 
     //If not present, returns directly
-    if(!(reinterpret_cast<uintptr_t>(pml4t[pml4]) & PRESENT)){
+    if(!(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & PRESENT)){
         return true;
     }
 
-    auto pdpt = reinterpret_cast<pdpt_t>(reinterpret_cast<uintptr_t>(pml4t[pml4]) & ~0xFFF);
+    auto pdpt = find_pdpt(pml4t, pml4e);
 
     //If not present, returns directly
-    if(!(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & PRESENT)){
+    if(!(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & PRESENT)){
         return true;
     }
 
-    auto pd = reinterpret_cast<pd_t>(reinterpret_cast<uintptr_t>(pdpt[directory_ptr]) & ~0xFFF);
+    auto pd = find_pd(pdpt, pdpte);
 
     //If not present, returns directly
-    if(!(reinterpret_cast<uintptr_t>(pd[directory]) & PRESENT)){
+    if(!(reinterpret_cast<uintptr_t>(pd[pde]) & PRESENT)){
         return true;
     }
 
-    auto pt = reinterpret_cast<pt_t>(reinterpret_cast<uintptr_t>(pd[directory]) & ~0xFFF);
+    auto pt = find_pt(pd, pde);
 
     //Unmap the virtual address
-    pt[table] = 0x0;
+    pt[pte] = 0x0;
 
     //Flush TLB
     flush_tlb(virt);
