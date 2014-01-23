@@ -100,6 +100,16 @@ bool equal_n(Iterator1 it1, Iterator2 it2, size_t n){
     return compare_n(it1, it2, n) == 0;
 }
 
+template<typename T>
+constexpr const T& min(const T& a, const T& b){
+    return a <= b ? a : b;
+}
+
+template<typename T>
+constexpr const T& max(const T& a, const T& b){
+    return a >= b ? a : b;
+}
+
 } //end of namespace std
 
 #endif

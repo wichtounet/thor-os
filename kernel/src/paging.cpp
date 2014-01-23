@@ -13,7 +13,6 @@
 
 #include "stl/types.hpp"
 #include "stl/algorithms.hpp"
-#include "stl/literals.hpp"
 
 namespace {
 
@@ -22,42 +21,6 @@ typedef page_entry* pt_t;
 typedef pt_t* pd_t;
 typedef pd_t* pdpt_t;
 typedef pdpt_t* pml4t_t;
-
-//The virtual size allocated to the kernel
-constexpr const size_t kernel_virtual_size = 1_GiB;
-
-//The physical memory that a PML4T Entry can map
-constexpr const size_t pml4e_allocations = 512_GiB;
-
-//The physical memory that a PDPT Entry can map
-constexpr const size_t pdpte_allocations = 1_GiB;
-
-//The physical memory that a PD Entry can map
-constexpr const size_t pde_allocations = 2_MiB;
-
-//The physical memory that a PD Entry can map
-constexpr const size_t pte_allocations = 4_KiB;
-
-//Virtual address where the paging structures are stored
-constexpr const size_t virtual_paging_start = 0x101000;
-
-constexpr size_t entries(size_t entry_size){
-    return entry_size >= kernel_virtual_size ?
-        1 :
-        kernel_virtual_size / entry_size + (kernel_virtual_size % entry_size == 0 ? 0 : 1);
-}
-
-//Compute the number of entries necessary to map the entire kernel virtual size
-constexpr const auto pml4_entries = entries(pml4e_allocations);
-constexpr const auto pdpt_entries = entries(pdpte_allocations);
-constexpr const auto pd_entries = entries(pde_allocations);
-constexpr const auto pt_entries = entries(pte_allocations);
-
-//Compute the start address of each structures
-constexpr const size_t virtual_pml4t_start = virtual_paging_start;
-constexpr const size_t virtual_pdpt_start = virtual_pml4t_start + paging::PAGE_SIZE;
-constexpr const size_t virtual_pd_start = virtual_pdpt_start + pml4_entries * paging::PAGE_SIZE;
-constexpr const size_t virtual_pt_start = virtual_pd_start + pdpt_entries * paging::PAGE_SIZE;
 
 //The physical offsets of the structures
 size_t physical_pml4t_start;
@@ -82,27 +45,27 @@ constexpr size_t pt_entry(void* virt){
 }
 
 constexpr pml4t_t find_pml4t(){
-    return reinterpret_cast<pml4t_t>(virtual_pml4t_start);
+    return reinterpret_cast<pml4t_t>(paging::virtual_pml4t_start);
 }
 
 pdpt_t find_pdpt(pml4t_t pml4t, size_t pml4e){
     auto physical_pdpt = reinterpret_cast<uintptr_t>(pml4t[pml4e]) & ~0xFFF;
     auto physical_offset = physical_pdpt - physical_pdpt_start;
-    auto virtual_pdpt = virtual_pdpt_start + physical_offset;
+    auto virtual_pdpt = paging::virtual_pdpt_start + physical_offset;
     return reinterpret_cast<pdpt_t>(virtual_pdpt);
 }
 
 pd_t find_pd(pdpt_t pdpt, size_t pdpte){
     auto physical_pd = reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF;
     auto physical_offset = physical_pd - physical_pd_start;
-    auto virtual_pd = virtual_pd_start + physical_offset;
+    auto virtual_pd = paging::virtual_pd_start + physical_offset;
     return reinterpret_cast<pd_t>(virtual_pd);
 }
 
 pt_t find_pt(pd_t pd, size_t pde){
     auto physical_pt = reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF;
     auto physical_offset = physical_pt - physical_pt_start;
-    auto virtual_pt = virtual_pt_start + physical_offset;
+    auto virtual_pt = paging::virtual_pt_start + physical_offset;
     return reinterpret_cast<pt_t>(virtual_pt);
 }
 
@@ -133,9 +96,6 @@ size_t early_map_page_clear(size_t physical){
 } //end of anonymous namespace
 
 void paging::init(){
-    //Compute the amount of physical memory pages needed for the paging tables
-    auto physical_memory_pages = 1 + pml4_entries + pdpt_entries + pd_entries;
-
     //Get some physical memory
     auto physical_memory = physical_allocator::early_allocate(physical_memory_pages);
 
