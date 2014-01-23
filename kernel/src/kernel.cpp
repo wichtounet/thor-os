@@ -7,6 +7,7 @@
 
 #include "kernel.hpp"
 #include "physical_allocator.hpp"
+#include "virtual_allocator.hpp"
 #include "paging.hpp"
 #include "memory.hpp"
 #include "timer.hpp"
@@ -35,6 +36,7 @@ void  kernel_main(){
     //Prepare memory
     physical_allocator::early_init();
     paging::init();
+    virtual_allocator::init();
 
     physical_allocator::init();
     init_memory_manager();

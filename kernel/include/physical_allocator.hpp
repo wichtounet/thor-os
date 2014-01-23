@@ -18,6 +18,10 @@ void init();
 size_t early_allocate(size_t pages);
 size_t allocate(size_t pages);
 
+size_t available();
+size_t allocated();
+size_t free();
+
 } //end of physical_allocator namespace
 
 #endif

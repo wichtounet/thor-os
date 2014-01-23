@@ -18,8 +18,8 @@ namespace {
 const bool DEBUG_MALLOC = false;
 const bool TRACE_MALLOC = false;
 
-uint64_t _used_memory;
-uint64_t _allocated_memory;
+size_t _used_memory;
+size_t _allocated_memory;
 
 struct malloc_footer_chunk;
 
@@ -129,12 +129,9 @@ uint64_t* allocate_block(uint64_t blocks){
 
     max_address = std::max(max_address, virtual_memory);
 
-    auto block = reinterpret_cast<uint64_t*>(virtual_memory);
-
-    //TODO Remove
     _allocated_memory += blocks * BLOCK_SIZE;
 
-    return block;
+    return reinterpret_cast<uint64_t*>(virtual_memory);
 }
 
 template<bool Debug>
@@ -385,16 +382,25 @@ void k_free(void* block){
     debug_malloc<DEBUG_MALLOC>("after free");
 }
 
-uint64_t used_memory(){
-    return _used_memory;
-}
-
-uint64_t allocated_memory(){
+size_t allocated_memory(){
     return _allocated_memory;
 }
 
-uint64_t free_memory(){
-    return e820::available_memory() - _used_memory;
+size_t used_memory(){
+    return _used_memory;
+}
+
+size_t free_memory(){
+    size_t memory_free = 0;
+
+    auto it = malloc_head;
+    do {
+        memory_free += it->size();
+
+        it = it->next();
+    } while(it != malloc_head);
+
+    return memory_free;
 }
 
 void malloc_debug(){

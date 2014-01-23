@@ -20,6 +20,10 @@ void init();
 
 size_t allocate(size_t pages);
 
+size_t available();
+size_t allocated();
+size_t free();
+
 } //end of virtual_allocator namespace
 
 #endif

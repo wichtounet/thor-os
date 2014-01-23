@@ -4,30 +4,33 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include "stl/types.hpp"
+#include "stl/algorithms.hpp"
+#include "stl/vector.hpp"
+#include "stl/string.hpp"
+#include "stl/optional.hpp"
+
+#include "shell.hpp"
 #include "keyboard.hpp"
 #include "kernel_utils.hpp"
 #include "console.hpp"
-#include "shell.hpp"
 #include "timer.hpp"
-#include "memory.hpp"
 #include "disks.hpp"
 #include "ata.hpp"
 #include "acpi.hpp"
-#include "e820.hpp"
 #include "rtc.hpp"
 #include "elf.hpp"
 #include "paging.hpp"
 #include "gdt.hpp"
 #include "vesa.hpp"
 
+#include "physical_allocator.hpp"
+#include "virtual_allocator.hpp"
+#include "memory.hpp"
+#include "e820.hpp"
+
 //Commands
 #include "sysinfo.hpp"
-
-#include "stl/types.hpp"
-#include "stl/algorithms.hpp"
-#include "stl/vector.hpp"
-#include "stl/string.hpp"
-#include "stl/optional.hpp"
 
 namespace {
 
@@ -269,30 +272,32 @@ void echo_command(const std::vector<std::string>& params){
 }
 
 void mmap_command(const std::vector<std::string>&){
-    if(e820::mmap_failed()){
-        k_print_line("The mmap was not correctly loaded from e820");
-    } else {
-        k_printf("There are %u mmap entry\n", e820::mmap_entry_count());
+    k_printf("There are %u mmap entry\n", e820::mmap_entry_count());
 
-        k_print_line("Base         End          Size                  Type");
-        for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
-            auto& entry = e820::mmap_entry(i);
+    k_print_line("Base         End          Size                  Type");
+    for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
+        auto& entry = e820::mmap_entry(i);
 
-            k_printf("%.10h %.10h %.10h %8m %s\n",
-                entry.base, entry.base + entry.size, entry.size, entry.size, e820::str_e820_type(entry.type));
-        }
+        k_printf("%.10h %.10h %.10h %8m %s\n",
+            entry.base, entry.base + entry.size, entry.size, entry.size, e820::str_e820_type(entry.type));
     }
 }
 
 void memory_command(const std::vector<std::string>&){
-    if(e820::mmap_failed()){
-        k_print_line("The mmap was not correctly loaded from e820");
-    } else {
-        k_printf("Total available memory: %m\n", e820::available_memory());
-        k_printf("Total used memory: %m\n", used_memory());
-        k_printf("Total free memory: %m\n", free_memory());
-        k_printf("Total allocated memory: %m\n", allocated_memory());
-    }
+    k_print_line("Physical:");
+    k_printf("\tAvailable: %m (%h)\n", physical_allocator::available(), physical_allocator::available());
+    k_printf("\tAllocated: %m (%h)\n", physical_allocator::allocated(), physical_allocator::allocated());
+    k_printf("\tFree: %m (%h)\n", physical_allocator::free(), physical_allocator::free());
+
+    k_print_line("Virtual:");
+    k_printf("\tAvailable: %m (%h)\n", virtual_allocator::available(), virtual_allocator::available());
+    k_printf("\tAllocated: %m (%h)\n", virtual_allocator::allocated(), virtual_allocator::allocated());
+    k_printf("\tFree: %m (%h)\n", virtual_allocator::free(), virtual_allocator::free());
+
+    k_print_line("Dynamic:");
+    k_printf("\tAllocated: %m (%h)\n", allocated_memory(), allocated_memory());
+    k_printf("\tUsed: %m (%h)\n", used_memory(), used_memory());
+    k_printf("\tFree: %m (%h)\n", free_memory(), free_memory());
 }
 
 void mallocdebug_command(const std::vector<std::string>&){

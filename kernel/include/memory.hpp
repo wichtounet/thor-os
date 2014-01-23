@@ -20,9 +20,9 @@ T* k_malloc(){
     return reinterpret_cast<T*>(k_malloc(sizeof(T)));
 }
 
-uint64_t free_memory();
-uint64_t used_memory();
 uint64_t allocated_memory();
+uint64_t used_memory();
+uint64_t free_memory();
 
 void malloc_debug();
 

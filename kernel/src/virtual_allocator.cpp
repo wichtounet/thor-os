@@ -17,7 +17,7 @@ size_t allocated_pages = 0;
 
 void virtual_allocator::init(){
     auto start = paging::virtual_paging_start;
-    start += paging::physical_memory_pages;
+    start += paging::physical_memory_pages * paging::PAGE_SIZE;
 
     if(start % 0x100000 == 0){
         next_virtual_address = start;
@@ -34,4 +34,16 @@ size_t virtual_allocator::allocate(size_t pages){
     auto address = next_virtual_address;
     next_virtual_address += pages * paging::PAGE_SIZE;
     return address;
+}
+
+size_t virtual_allocator::available(){
+    return kernel_virtual_size;
+}
+
+size_t virtual_allocator::allocated(){
+    return allocated_pages * paging::PAGE_SIZE;
+}
+
+size_t virtual_allocator::free(){
+    return available() - allocated();
 }
