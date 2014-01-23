@@ -53,7 +53,7 @@ void sleep_command(const std::vector<std::string>& params);
 void echo_command(const std::vector<std::string>& params);
 void mmap_command(const std::vector<std::string>& params);
 void memory_command(const std::vector<std::string>& params);
-void memorydebug_command(const std::vector<std::string>& params);
+void mallocdebug_command(const std::vector<std::string>& params);
 void disks_command(const std::vector<std::string>& params);
 void partitions_command(const std::vector<std::string>& params);
 void mount_command(const std::vector<std::string>& params);
@@ -88,7 +88,7 @@ command_definition commands[29] = {
     {"echo", echo_command},
     {"mmap", mmap_command},
     {"memory", memory_command},
-    {"memorydebug", memorydebug_command},
+    {"mallocdebug", mallocdebug_command},
     {"disks", disks_command},
     {"partitions", partitions_command},
     {"mount", mount_command},
@@ -295,8 +295,8 @@ void memory_command(const std::vector<std::string>&){
     }
 }
 
-void memorydebug_command(const std::vector<std::string>&){
-    memory_debug();
+void mallocdebug_command(const std::vector<std::string>&){
+    malloc_debug();
 }
 
 void disks_command(const std::vector<std::string>& params){

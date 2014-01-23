@@ -397,7 +397,7 @@ uint64_t free_memory(){
     return e820::available_memory() - _used_memory;
 }
 
-void memory_debug(){
+void malloc_debug(){
     size_t memory_free = 0;
     size_t non_free_blocks = 0;
     size_t inconsistent = 0;
