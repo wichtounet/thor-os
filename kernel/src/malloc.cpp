@@ -5,7 +5,7 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "memory.hpp"
+#include "malloc.hpp"
 #include "console.hpp"
 #include "physical_allocator.hpp"
 #include "paging.hpp"
@@ -58,7 +58,7 @@ public:
         __prev = reinterpret_cast<malloc_header_chunk*>(reinterpret_cast<uintptr_t>(__prev) & (~0l - 1));
     }
 
-    bool is_free(){
+    bool is_free() const {
         return reinterpret_cast<uintptr_t>(__prev) & 0x1;
     }
 
@@ -215,9 +215,70 @@ void expand_heap(malloc_header_chunk* current){
     insert_after(current, header);
 }
 
+malloc_header_chunk* left_block(malloc_header_chunk* b){
+    auto left_footer = reinterpret_cast<malloc_footer_chunk*>(
+        reinterpret_cast<uintptr_t>(b) - sizeof(malloc_footer_chunk));
+
+    if(reinterpret_cast<uintptr_t>(left_footer)>= min_address){
+        auto left_size = left_footer->size();
+
+        auto left_header = reinterpret_cast<malloc_header_chunk*>(
+            reinterpret_cast<uintptr_t>(left_footer) - left_size - sizeof(malloc_header_chunk));
+
+        if(reinterpret_cast<uintptr_t>(left_header) >= min_address){
+            return left_header;
+        }
+    }
+
+    return nullptr;
+}
+
+malloc_header_chunk* right_block(malloc_header_chunk* b){
+    auto right_header = reinterpret_cast<malloc_header_chunk*>(
+        reinterpret_cast<uintptr_t>(b) + META_SIZE + b->size());
+
+    if(reinterpret_cast<uintptr_t>(right_header) < max_address){
+        auto right_footer = right_header->footer();
+        if(reinterpret_cast<uintptr_t>(right_footer) < max_address){
+            return right_header;
+        }
+    }
+
+    return nullptr;
+}
+
+malloc_header_chunk* coalesce(malloc_header_chunk* b){
+    auto a = left_block(b);
+    auto c = right_block(b);
+
+    if(a && a->is_free()){
+        auto new_size = a->size() + b->size() + META_SIZE;
+
+        //Remove a from the free list
+        remove(a);
+
+        b = a;
+
+        b->size() = new_size;
+        b->footer()->size() = new_size;
+    }
+
+    if(c && c->is_free()){
+        auto new_size = b->size() + c->size() + META_SIZE;
+
+        //Remove c from the free list
+        remove(c);
+
+        b->size() = new_size;
+        b->footer()->size() = new_size;
+    }
+
+    return b;
+}
+
 } //end of anonymous namespace
 
-void init_memory_manager(){
+void malloc::init(){
     //Init the fake head
     init_head();
 
@@ -225,7 +286,7 @@ void init_memory_manager(){
     expand_heap(malloc_head);
 }
 
-void* k_malloc(uint64_t bytes){
+void* malloc::k_malloc(uint64_t bytes){
     auto current = malloc_head->next();
 
     //Try not to create too small blocks
@@ -297,68 +358,7 @@ void* k_malloc(uint64_t bytes){
     return b;
 }
 
-malloc_header_chunk* left_block(malloc_header_chunk* b){
-    auto left_footer = reinterpret_cast<malloc_footer_chunk*>(
-        reinterpret_cast<uintptr_t>(b) - sizeof(malloc_footer_chunk));
-
-    if(reinterpret_cast<uintptr_t>(left_footer)>= min_address){
-        auto left_size = left_footer->size();
-
-        auto left_header = reinterpret_cast<malloc_header_chunk*>(
-            reinterpret_cast<uintptr_t>(left_footer) - left_size - sizeof(malloc_header_chunk));
-
-        if(reinterpret_cast<uintptr_t>(left_header) >= min_address){
-            return left_header;
-        }
-    }
-
-    return nullptr;
-}
-
-malloc_header_chunk* right_block(malloc_header_chunk* b){
-    auto right_header = reinterpret_cast<malloc_header_chunk*>(
-        reinterpret_cast<uintptr_t>(b) + META_SIZE + b->size());
-
-    if(reinterpret_cast<uintptr_t>(right_header) < max_address){
-        auto right_footer = right_header->footer();
-        if(reinterpret_cast<uintptr_t>(right_footer) < max_address){
-            return right_header;
-        }
-    }
-
-    return nullptr;
-}
-
-malloc_header_chunk* coalesce(malloc_header_chunk* b){
-    auto a = left_block(b);
-    auto c = right_block(b);
-
-    if(a && a->is_free()){
-        auto new_size = a->size() + b->size() + META_SIZE;
-
-        //Remove a from the free list
-        remove(a);
-
-        b = a;
-
-        b->size() = new_size;
-        b->footer()->size() = new_size;
-    }
-
-    if(c && c->is_free()){
-        auto new_size = b->size() + c->size() + META_SIZE;
-
-        //Remove c from the free list
-        remove(c);
-
-        b->size() = new_size;
-        b->footer()->size() = new_size;
-    }
-
-    return b;
-}
-
-void k_free(void* block){
+void malloc::k_free(void* block){
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 
@@ -382,15 +382,15 @@ void k_free(void* block){
     debug_malloc<DEBUG_MALLOC>("after free");
 }
 
-size_t allocated_memory(){
+size_t malloc::allocated_memory(){
     return _allocated_memory;
 }
 
-size_t used_memory(){
+size_t malloc::used_memory(){
     return _used_memory;
 }
 
-size_t free_memory(){
+size_t malloc::free_memory(){
     size_t memory_free = 0;
 
     auto it = malloc_head;
@@ -403,7 +403,7 @@ size_t free_memory(){
     return memory_free;
 }
 
-void malloc_debug(){
+void malloc::debug(){
     size_t memory_free = 0;
     size_t non_free_blocks = 0;
     size_t inconsistent = 0;

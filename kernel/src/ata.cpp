@@ -8,7 +8,7 @@
 #include "ata.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"
-#include "memory.hpp"
+#include "malloc.hpp"
 #include "thor.hpp"
 #include "interrupts.hpp"
 #include "console.hpp"

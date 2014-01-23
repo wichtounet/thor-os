@@ -9,7 +9,7 @@
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
-#include "memory.hpp"
+#include "malloc.hpp"
 #include "timer.hpp"
 #include "shell.hpp"
 #include "keyboard.hpp"
@@ -39,7 +39,7 @@ void  kernel_main(){
     virtual_allocator::init();
 
     physical_allocator::init();
-    init_memory_manager();
+    malloc::init();
 
     //Install drivers
     install_timer();

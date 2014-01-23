@@ -5,12 +5,14 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef MALLOC_H
+#define MALLOC_H
 
 #include "stl/types.hpp"
 
-void init_memory_manager();
+namespace malloc {
+
+void init();
 
 void* k_malloc(uint64_t bytes);
 void k_free(void* block);
@@ -24,6 +26,8 @@ uint64_t allocated_memory();
 uint64_t used_memory();
 uint64_t free_memory();
 
-void malloc_debug();
+void debug();
+
+}
 
 #endif

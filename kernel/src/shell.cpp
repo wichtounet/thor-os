@@ -26,7 +26,7 @@
 
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
-#include "memory.hpp"
+#include "malloc.hpp"
 #include "e820.hpp"
 
 //Commands
@@ -295,13 +295,13 @@ void memory_command(const std::vector<std::string>&){
     k_printf("\tFree: %m (%h)\n", virtual_allocator::free(), virtual_allocator::free());
 
     k_print_line("Dynamic:");
-    k_printf("\tAllocated: %m (%h)\n", allocated_memory(), allocated_memory());
-    k_printf("\tUsed: %m (%h)\n", used_memory(), used_memory());
-    k_printf("\tFree: %m (%h)\n", free_memory(), free_memory());
+    k_printf("\tAllocated: %m (%h)\n", malloc::allocated_memory(), malloc::allocated_memory());
+    k_printf("\tUsed: %m (%h)\n", malloc::used_memory(), malloc::used_memory());
+    k_printf("\tFree: %m (%h)\n", malloc::free_memory(), malloc::free_memory());
 }
 
 void mallocdebug_command(const std::vector<std::string>&){
-    malloc_debug();
+    malloc::debug();
 }
 
 void disks_command(const std::vector<std::string>& params){
@@ -781,7 +781,7 @@ bool allocate_segments(char* buffer, void** allocated_segments, uint8_t flags){
             }
 
             //2. Get enough physical memory
-            auto memory = k_malloc(bytes);
+            auto memory = malloc::k_malloc(bytes);
 
             if(!memory){
                 k_print_line("Cannot allocate memory, probably out of memory");
@@ -833,7 +833,7 @@ void* allocate_user_stack(size_t stack_address, size_t stack_size, uint8_t flags
     }
 
     //2. Get enough physical memory
-    auto memory = k_malloc(bytes);
+    auto memory = malloc::k_malloc(bytes);
 
     if(!memory){
         k_print_line("Cannot allocate memory, probably out of memory");
@@ -871,7 +871,7 @@ void release_segments(char* buffer, void** allocated_segments){
 
         auto a = allocated_segments[p];
         if(a){
-            k_free(a);
+            malloc::k_free(a);
 
             auto address = p_header.p_vaddr;
             auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
