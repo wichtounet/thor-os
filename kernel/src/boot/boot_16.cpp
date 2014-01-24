@@ -123,10 +123,6 @@ void setup_vesa(){
     vesa::vbe_info_block.signature[2] = 'E';
     vesa::vbe_info_block.signature[3] = '2';
 
-    vesa::vesa_enabled = false;
-
-    return;
-
     uint16_t return_code;
     asm volatile ("int 0x10"
         : "=a"(return_code)
