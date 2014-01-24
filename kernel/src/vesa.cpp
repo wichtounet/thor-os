@@ -9,8 +9,10 @@
 
 #include "vesa.hpp"
 #include "paging.hpp"
+#include "virtual_allocator.hpp"
 
 #include "console.hpp"
+#include "kernel.hpp"
 
 /**
  * VESA Drawing implementation.
@@ -52,8 +54,8 @@ void init_font(){
 void vesa::init(){
     auto& block = vesa::mode_info_block;
 
-    //Compute the address of the LFB
-    screen = reinterpret_cast<uint32_t*>(block.linear_video_buffer);
+    //Get the physicaladdress of the LFB
+    auto physical = block.linear_video_buffer;
 
     x_shift = 1;
     y_shift = block.bytes_per_scan_line / 4;
@@ -69,7 +71,19 @@ void vesa::init(){
     auto bytes = left_padding + paging::PAGE_SIZE + total_size;
     auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
-    paging::identity_map_pages(reinterpret_cast<void*>(first_page), pages);
+    auto virt = virtual_allocator::allocate(pages);
+
+    if(!virt){
+        //TODO Should print a message or go back to text console
+        suspend_boot();
+    }
+
+    if(!paging::map_pages(reinterpret_cast<void*>(virt), reinterpret_cast<void*>(physical), pages)){
+        //TODO Should print a message or go back to text console
+        suspend_boot();
+    }
+
+    screen = reinterpret_cast<uint32_t*>(virt);
 
     init_font();
 }
