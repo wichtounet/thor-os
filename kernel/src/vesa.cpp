@@ -54,20 +54,13 @@ void init_font(){
 void vesa::init(){
     auto& block = vesa::mode_info_block;
 
+    size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
+
     //Get the physicaladdress of the LFB
     auto physical = block.linear_video_buffer;
 
-    x_shift = 1;
-    y_shift = block.bytes_per_scan_line / 4;
-
-    red_shift = block.linear_red_mask_position;
-    blue_shift = block.linear_blue_mask_position;
-    green_shift = block.linear_green_mask_position;
-
-    size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
-
-    auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(screen));
-    auto left_padding = reinterpret_cast<uintptr_t>(screen) - first_page;
+    auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(physical)));
+    auto left_padding = static_cast<uintptr_t>(physical) - first_page;
     auto bytes = left_padding + paging::PAGE_SIZE + total_size;
     auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
@@ -82,6 +75,13 @@ void vesa::init(){
         //TODO Should print a message or go back to text console
         suspend_boot();
     }
+
+    x_shift = 1;
+    y_shift = block.bytes_per_scan_line / 4;
+
+    red_shift = block.linear_red_mask_position;
+    blue_shift = block.linear_blue_mask_position;
+    green_shift = block.linear_green_mask_position;
 
     screen = reinterpret_cast<uint32_t*>(virt);
 
