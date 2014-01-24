@@ -23,7 +23,11 @@ programs/long/a.out: force_look
 programs/loop/a.out: force_look
 	cd programs/loop; ${MAKE} a.out
 
-thor.flp: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs/one/a.out programs/hello/a.out programs/long/a.out programs/loop/a.out
+hdd.img:
+	dd if=/dev/zero of=hdd.img bs=516096c count=1000
+	(echo n; echo p; echo 1; echo ""; echo ""; echo t; echo c; echo a; echo 1; echo w;) | sudo fdisk -u -C1000 -S63 -H16 hdd.img
+
+thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs/one/a.out programs/hello/a.out programs/long/a.out programs/loop/a.out
 	mkdir -p mnt/fake/
 	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
 	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
