@@ -32,21 +32,6 @@ size_t red_shift;
 size_t blue_shift;
 size_t green_shift;
 
-uint8_t font[256 * 8];
-
-void init_font(){
-    auto start = font + 8 * 'a';
-
-    start[0] = 0x18;
-    start[1] = 0x3C;
-    start[2] = 0x66;
-    start[3] = 0x7E;
-    start[4] = 0x66;
-    start[5] = 0x66;
-    start[6] = 0x00;
-    start[7] = 0x00;
-}
-
 #include "Liberation.c"
 
 } //end of anonymous namespace
@@ -84,8 +69,6 @@ void vesa::init(){
     green_shift = block.linear_green_mask_position;
 
     screen = reinterpret_cast<uint32_t*>(virt);
-
-    init_font();
 }
 
 uint32_t vesa::make_color(uint8_t r, uint8_t g, uint8_t b){
