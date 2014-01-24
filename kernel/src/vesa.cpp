@@ -36,7 +36,7 @@ size_t green_shift;
 
 } //end of anonymous namespace
 
-void vesa::init(){
+bool vesa::init(){
     auto& block = vesa::mode_info_block;
 
     size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
@@ -52,13 +52,11 @@ void vesa::init(){
     auto virt = virtual_allocator::allocate(pages);
 
     if(!virt){
-        //TODO Should print a message or go back to text console
-        suspend_boot();
+        return false;
     }
 
     if(!paging::map_pages(reinterpret_cast<void*>(virt), reinterpret_cast<void*>(physical), pages)){
-        //TODO Should print a message or go back to text console
-        suspend_boot();
+        return false;
     }
 
     x_shift = 1;
@@ -69,6 +67,8 @@ void vesa::init(){
     green_shift = block.linear_green_mask_position;
 
     screen = reinterpret_cast<uint32_t*>(virt);
+
+    return true;
 }
 
 uint32_t vesa::make_color(uint8_t r, uint8_t g, uint8_t b){

@@ -98,7 +98,7 @@ extern vbe_info_block_t vbe_info_block;
 extern bool vesa_enabled;
 extern mode_info_block_t mode_info_block;
 
-void init();
+bool init();
 
 uint32_t make_color(uint8_t r, uint8_t g, uint8_t b);
 

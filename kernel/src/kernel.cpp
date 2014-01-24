@@ -46,7 +46,15 @@ void  kernel_main(){
     //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();
-    vesa::init();
+
+    //Try to init VESA
+    if(!vesa::init()){
+        vesa::vesa_enabled = false;
+
+        //Unfortunately, we are in long mode, we cannot go back
+        //to text mode for now
+        suspend_boot();
+    }
 
     //Only install system calls when everything else is ready
     install_system_calls();
