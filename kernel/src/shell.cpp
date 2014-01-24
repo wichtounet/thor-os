@@ -75,13 +75,14 @@ void execin_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
 void divzero_command(const std::vector<std::string>& params);
+void paginginfo_command(const std::vector<std::string>& params);
 
 struct command_definition {
     const char* name;
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[29] = {
+command_definition commands[30] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -111,6 +112,7 @@ command_definition commands[29] = {
     {"shutdown", shutdown_command},
     {"vesainfo", vesainfo_command},
     {"divzero", divzero_command},
+    {"paginginfo", paginginfo_command},
 };
 
 std::string current_input(16);
@@ -1007,6 +1009,15 @@ void vesainfo_command(const std::vector<std::string>&){
     } else {
         k_print_line("VESA Disabled");
     }
+}
+
+void paginginfo_command(const std::vector<std::string>&){
+    k_printf("Page Size: %u\n", paging::PAGE_SIZE);
+    k_printf("Number of PDPT: %u\n", paging::pml4_entries);
+    k_printf("Number of PD: %u\n", paging::pdpt_entries);
+    k_printf("Number of PT: %u\n", paging::pd_entries);
+    k_printf("Virtual Start: %h\n", paging::virtual_paging_start);
+    k_printf("Physical Size: %h\n", paging::physical_memory_pages * paging::PAGE_SIZE);
 }
 
 void shutdown_command(const std::vector<std::string>&){

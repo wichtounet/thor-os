@@ -15,7 +15,7 @@
 namespace paging {
 
 //The size of page in memory
-constexpr const int PAGE_SIZE = 4096;
+constexpr const size_t PAGE_SIZE = 4096;
 
 //The physical memory that a PML4T Entry can map
 constexpr const size_t pml4e_allocations = 512_GiB;
