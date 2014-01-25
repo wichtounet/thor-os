@@ -11,6 +11,8 @@
 #include "stl/types.hpp"
 #include "stl/vector.hpp"
 
+#include "paging.hpp"
+
 namespace scheduler {
 
 struct segment_t {
@@ -28,6 +30,17 @@ struct process_t {
     std::vector<segment_t> segments;
     std::vector<size_t> physical_paging;
 };
+
+constexpr const size_t program_base = 0x8000000000;
+
+constexpr const auto user_stack_start = program_base + 0x700000;
+constexpr const auto kernel_stack_start = program_base + 0x800000;
+
+constexpr const auto user_stack_size = 2 * paging::PAGE_SIZE;
+constexpr const auto kernel_stack_size = 2 * paging::PAGE_SIZE;
+
+constexpr const auto user_rsp = user_stack_start + (user_stack_size - 8);
+constexpr const auto kernel_rsp = kernel_stack_start + (user_stack_size - 8);
 
 } //end of namespace scheduler
 

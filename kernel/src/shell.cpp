@@ -72,7 +72,6 @@ void rm_command(const std::vector<std::string>& params);
 void touch_command(const std::vector<std::string>& params);
 void readelf_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
-void execin_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
 void divzero_command(const std::vector<std::string>& params);
@@ -83,7 +82,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[30] = {
+command_definition commands[29] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -109,7 +108,6 @@ command_definition commands[30] = {
     {"rm", rm_command},
     {"readelf", readelf_command},
     {"exec", exec_command},
-    {"execin", execin_command},
     {"shutdown", shutdown_command},
     {"vesainfo", vesainfo_command},
     {"divzero", divzero_command},
@@ -752,17 +750,6 @@ std::optional<std::string> read_elf_file(const std::string& file, const std::str
     return {std::move(content)};
 }
 
-constexpr const size_t program_base = 0x8000000000;
-
-constexpr const auto user_stack_start = program_base + 0x700000;
-constexpr const auto kernel_stack_start = program_base + 0x800000;
-
-constexpr const auto user_stack_size = 2 * paging::PAGE_SIZE;
-constexpr const auto kernel_stack_size = 2 * paging::PAGE_SIZE;
-
-constexpr const auto user_rsp = user_stack_start + (user_stack_size - 8);
-constexpr const auto kernel_rsp = kernel_stack_start + (user_stack_size - 8);
-
 bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t size, size_t& ref){
     //1. Calculate some stuff
     auto first_page = paging::page_align(address);
@@ -822,10 +809,10 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     //2. Create all the other necessary structures
 
     //2.1 Allocate user stack
-    allocate_user_memory(process, user_stack_start, user_stack_size, process.physical_user_stack);
+    allocate_user_memory(process, scheduler::user_stack_start, scheduler::user_stack_size, process.physical_user_stack);
 
     //2.2 Allocate kernel stack
-    allocate_user_memory(process, kernel_stack_start, kernel_stack_size, process.physical_kernel_stack);
+    allocate_user_memory(process, scheduler::kernel_stack_start, scheduler::kernel_stack_size, process.physical_kernel_stack);
 
     //2.3 Allocate all user segments
 
@@ -864,147 +851,10 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     }
 
     //3. Clear stacks
-    clear_physical_memory(process.physical_user_stack, user_stack_size / paging::PAGE_SIZE);
-    clear_physical_memory(process.physical_kernel_stack, kernel_stack_size / paging::PAGE_SIZE);
+    clear_physical_memory(process.physical_user_stack, scheduler::user_stack_size / paging::PAGE_SIZE);
+    clear_physical_memory(process.physical_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
 
     return true;
-}
-
-bool allocate_segments(char* buffer, void** allocated_segments, uint8_t flags){
-    auto header = reinterpret_cast<elf::elf_header*>(buffer);
-    auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
-
-    bool failed = false;
-    for(size_t p = 0; p < header->e_phnum; ++p){
-        auto& p_header = program_header_table[p];
-
-        allocated_segments[p] = nullptr;
-
-        if(p_header.p_type == 1){
-            //0. Calculate some stuff
-            auto address = p_header.p_vaddr;
-            auto first_page = paging::page_align(address);
-            auto left_padding = address - first_page;
-            auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
-            auto pages = (bytes / paging::PAGE_SIZE) + 1;
-
-            //1. Verify that all the necessary pages are free
-            for(size_t i = 0; i < pages; ++i){
-                if(paging::page_present(first_page + i * paging::PAGE_SIZE)){
-                    failed = true;
-                    break;
-                }
-            }
-
-            if(failed){
-                k_print_line("Some pages are already mapped");
-                break;
-            }
-
-            //2. Get enough physical memory
-            auto memory = malloc::k_malloc(bytes);
-
-            if(!memory){
-                k_print_line("Cannot allocate memory, probably out of memory");
-                failed = true;
-                break;
-            }
-
-            //Save it to be able to free it later
-            allocated_segments[p] = memory;
-
-            //3. Find a start of a page inside the physical memory
-
-            auto aligned_memory = paging::page_aligned(reinterpret_cast<size_t>(memory)) ? reinterpret_cast<size_t>(memory) :
-                (reinterpret_cast<size_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
-
-            //4. Map physical allocated memory to the necessary virtual memory
-
-            if(!paging::map_pages(first_page, aligned_memory, pages, flags)){
-                k_print_line("Mapping the pages failed");
-                failed = true;
-                break;
-            }
-
-            //5. Copy memory
-
-            auto memory_start = aligned_memory + left_padding;
-
-            std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_memsz);
-        }
-    }
-
-    return failed;
-}
-
-void* allocate_user_stack(size_t stack_address, size_t stack_size, uint8_t flags){
-    //0. Calculate some stuff
-    auto address = stack_address;
-    auto first_page = paging::page_align(address);
-    auto left_padding = address - first_page;
-    auto bytes = left_padding + paging::PAGE_SIZE + stack_size;
-    auto pages = (bytes / paging::PAGE_SIZE) + 1;
-
-    //1. Verify that all the necessary pages are free
-    for(size_t i = 0; i < pages; ++i){
-        if(paging::page_present(first_page + i * paging::PAGE_SIZE)){
-            k_print_line("Some pages are already mapped");
-            return nullptr;
-        }
-    }
-
-    //2. Get enough physical memory
-    auto memory = malloc::k_malloc(bytes);
-
-    if(!memory){
-        k_print_line("Cannot allocate memory, probably out of memory");
-        return nullptr;
-    }
-
-    //3. Find a start of a page inside the physical memory
-
-    auto aligned_memory = paging::page_aligned(reinterpret_cast<size_t>(memory)) ? reinterpret_cast<size_t>(memory) :
-        (reinterpret_cast<size_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
-
-    //4. Map physical allocated memory to the necessary virtual memory
-
-    if(!paging::map_pages(first_page, aligned_memory, pages, flags)){
-        k_print_line("Mapping the pages failed");
-        return nullptr;
-    }
-
-    //5. Zero-out memory
-
-    auto memory_start = aligned_memory + left_padding;
-
-    std::fill_n(reinterpret_cast<char*>(memory_start), stack_size, 0);
-
-    return memory;
-}
-
-void release_segments(char* buffer, void** allocated_segments){
-    auto header = reinterpret_cast<elf::elf_header*>(buffer);
-    auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
-
-    //Release physical memory
-    for(size_t p = 0; p < header->e_phnum; ++p){
-        auto& p_header = program_header_table[p];
-
-        auto a = allocated_segments[p];
-        if(a){
-            malloc::k_free(a);
-
-            auto address = p_header.p_vaddr;
-            auto first_page = paging::page_align(address);
-            auto left_padding = address - first_page;
-            auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
-            auto pages = (bytes / paging::PAGE_SIZE) + 1;
-
-            if(!paging::unmap_pages(first_page, pages)){
-                k_print_line("Unmap failed, memory could be in invalid state");
-            }
-        }
-    }
 }
 
 void exec_command(const std::vector<std::string>& params){
@@ -1036,77 +886,21 @@ void exec_command(const std::vector<std::string>& params){
         return;
     }
 
-    std::unique_heap_array<void*> allocated_segments(header->e_phnum);
+    gdt::tss.rsp0_low = scheduler::kernel_rsp & 0xFFFFFFFF;
+    gdt::tss.rsp0_high = scheduler::kernel_rsp >> 32;
 
-    auto failed = allocate_segments(buffer, allocated_segments.get(), paging::PRESENT | paging::WRITE | paging::USER);
+    asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
+        :  //No outputs
+        : "i" (gdt::USER_DATA_SELECTOR + 3)
+        : "rax");
 
-    if(!failed){
-        auto user_stack_physical = allocate_user_stack(user_stack_start, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
-        auto kernel_stack_physical = allocate_user_stack(kernel_stack_start, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
+    //TODO Check if user_rsp is correctly passed
+    asm volatile("push %0; push %1; pushfq; push %2; push %3; iretq"
+        :  //No outputs
+        : "i" (gdt::USER_DATA_SELECTOR + 3), "r" (scheduler::user_rsp), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
+        : "rax");
 
-        if(user_stack_physical && kernel_stack_physical){
-            gdt::tss.rsp0_low = kernel_rsp & 0xFFFFFFFF;
-            gdt::tss.rsp0_high = kernel_rsp >> 32;
-
-            asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
-                :  //No outputs
-                : "i" (gdt::USER_DATA_SELECTOR + 3)
-                : "rax");
-
-            //TODO Check if user_rsp is correctly passed
-            asm volatile("push %0; push %1; pushfq; push %2; push %3; iretq"
-                :  //No outputs
-                : "i" (gdt::USER_DATA_SELECTOR + 3), "r" (user_rsp), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
-                : "rax");
-
-            //TODO Release stack
-        } else {
-            k_print_line("Unable to allocate a stack for the program");
-        }
-    } else {
-        k_print_line("execin: Unable to execute the program");
-    }
-
-    release_segments(buffer, allocated_segments.get());
-}
-
-void execin_command(const std::vector<std::string>& params){
-    if(params.size() < 2){
-        k_print_line("execin: Need the name of the executable to read");
-
-        return;
-    }
-
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    auto content = read_elf_file(params[1], "execin");
-
-    if(!content){
-        return;
-    }
-
-    auto buffer = content->c_str();
-    auto header = reinterpret_cast<elf::elf_header*>(buffer);
-
-    std::unique_heap_array<void*> allocated_segments(header->e_phnum);
-
-    auto failed = allocate_segments(buffer, allocated_segments.get(), paging::PRESENT | paging::WRITE);
-
-    if(!failed){
-        auto main_function = reinterpret_cast<int(*)()>(header->e_entry);
-
-        auto return_code = main_function();
-
-        k_printf("Returned %d\n", return_code);
-    } else {
-        k_print_line("execin: Unable to execute the program");
-    }
-
-    release_segments(buffer, allocated_segments.get());
+    //TODO Release all physical memory
 }
 
 void vesainfo_command(const std::vector<std::string>&){

@@ -5,14 +5,15 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include "stl/types.hpp"
+#include "stl/algorithms.hpp"
+
 #include "paging.hpp"
 #include "kernel.hpp"
 #include "physical_allocator.hpp"
 #include "console.hpp"
 #include "assert.hpp"
-
-#include "stl/types.hpp"
-#include "stl/algorithms.hpp"
+#include "process.hpp"
 
 namespace {
 

@@ -12,7 +12,11 @@
 #include "stl/literals.hpp"
 
 #include "virtual_allocator.hpp"
-#include "process.hpp"
+
+//Forward declaration
+namespace scheduler {
+struct process_t;
+}
 
 namespace paging {
 
