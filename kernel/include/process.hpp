@@ -8,10 +8,24 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
+#include "stl/types.hpp"
+#include "stl/vector.hpp"
+
 namespace scheduler {
 
-struct process_t {
+struct segment_t {
+    size_t physical;
+    size_t size;
+};
 
+struct process_t {
+    size_t physical_cr3;
+    size_t paging_size;
+
+    size_t physical_user_stack;
+    size_t physical_kernel_stack;
+
+    std::vector<segment_t> segments;
 };
 
 } //end of namespace scheduler

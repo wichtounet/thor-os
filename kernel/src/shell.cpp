@@ -23,6 +23,7 @@
 #include "paging.hpp"
 #include "gdt.hpp"
 #include "vesa.hpp"
+#include "process.hpp"
 
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
@@ -751,6 +752,87 @@ std::optional<std::string> read_elf_file(const std::string& file, const std::str
     return {std::move(content)};
 }
 
+constexpr const size_t program_base = 0x8000000000;
+
+constexpr const auto user_stack_start = program_base + 0x700000;
+constexpr const auto kernel_stack_start = program_base + 0x800000;
+
+constexpr const auto user_stack_size = 2 * paging::PAGE_SIZE;
+constexpr const auto kernel_stack_size = 2 * paging::PAGE_SIZE;
+
+constexpr const auto user_rsp = user_stack_start + (user_stack_size - 8);
+constexpr const auto kernel_rsp = kernel_stack_start + (user_stack_size - 8);
+
+bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t size){
+    //1. Calculate some stuff
+    auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+    auto left_padding = address - first_page;
+    auto bytes = left_padding + paging::PAGE_SIZE + size;
+    auto pages = (bytes / paging::PAGE_SIZE) + 1;
+
+    //2. Get enough physical memory
+    auto physical_memory = physical_allocator::allocate(pages);
+
+    if(!physical_memory){
+        k_print_line("Cannot allocate physical memory, probably out of memory");
+        return false;
+    }
+
+    //3. Find a start of a page inside the physical memory
+
+    auto aligned_physical_memory = paging::page_aligned(reinterpret_cast<void*>(physical_memory)) ? physical_memory :
+            (physical_memory / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
+
+    //4. Map physical allocated memory to the necessary virtual memory
+
+    paging::user_map_pages(process, first_page, aligned_physical_memory, pages);
+
+    return true;
+}
+
+bool create_paging(char* buffer, scheduler::process_t& process){
+    //1. Prepare PML4T
+
+    //Get memory for cr3
+    process.physical_cr3 = physical_allocator::allocate(1);
+    process.paging_size = paging::PAGE_SIZE;
+
+    //Get temporary virtual memory for CR3
+    auto virtual_cr3= virtual_allocator::allocate(1);
+
+    if(!paging::map(reinterpret_cast<void*>(virtual_cr3), reinterpret_cast<void*>(process.physical_cr3))){
+        return false;
+    }
+
+    //Clear the page
+    auto it = reinterpret_cast<uint64_t*>(virtual_cr3);
+    std::fill_n(it, paging::PAGE_SIZE / sizeof(uint64_t), 0);
+
+    //Map the kernel pages inside the user memory space
+    paging::map_kernel_inside_user(*reinterpret_cast<paging::pml4t_t*>(virtual_cr3));
+
+ //   auto header = reinterpret_cast<elf::elf_header*>(buffer);
+ //   auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
+
+    //2. Create all the other necessary structures
+
+    //2.1 Allocate user stack
+    allocate_user_memory(process, user_stack_start, user_stack_size);
+
+    //2.2 Allocate kernel stack
+    allocate_user_memory(process, kernel_stack_start, kernel_stack_size);
+
+
+
+    //TODO Zero-out stack memory
+
+    paging::unmap(reinterpret_cast<void*>(virtual_cr3));
+
+    //TODO We should release the temporary virtual memory
+
+    return true;
+}
+
 bool allocate_segments(char* buffer, void** allocated_segments, uint8_t flags){
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
     auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
@@ -910,22 +992,23 @@ void exec_command(const std::vector<std::string>& params){
     auto buffer = content->c_str();
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
 
+    scheduler::process_t process;
+
+    if(!create_paging(buffer, process)){
+        k_print_line("Impossible to initialize paging");
+        return;
+    }
+
     std::unique_heap_array<void*> allocated_segments(header->e_phnum);
 
     auto failed = allocate_segments(buffer, allocated_segments.get(), paging::PRESENT | paging::WRITE | paging::USER);
 
     if(!failed){
-        constexpr const uint64_t user_rsp_start = 0x700000;
-        constexpr const uint64_t kernel_rsp_start = 0x800000;
-
-        constexpr const uint64_t user_rsp = user_rsp_start + (paging::PAGE_SIZE * 2 - 8);
-        constexpr const uint64_t kernel_rsp = kernel_rsp_start + (paging::PAGE_SIZE * 2 - 8);
-
-        auto user_stack_physical = allocate_user_stack(user_rsp_start, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
-        auto kernel_stack_physical = allocate_user_stack(kernel_rsp_start, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
+        auto user_stack_physical = allocate_user_stack(user_stack_start, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
+        auto kernel_stack_physical = allocate_user_stack(kernel_stack_start, paging::PAGE_SIZE * 2, paging::PRESENT | paging::WRITE | paging::USER);
 
         if(user_stack_physical && kernel_stack_physical){
-            gdt::tss.rsp0_low = kernel_rsp;
+            gdt::tss.rsp0_low = kernel_rsp & 0xFFFFFFFF;
             gdt::tss.rsp0_high = kernel_rsp >> 32;
 
             asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
@@ -933,9 +1016,10 @@ void exec_command(const std::vector<std::string>& params){
                 : "i" (gdt::USER_DATA_SELECTOR + 3)
                 : "rax");
 
+            //TODO Check if user_rsp is correctly passed
             asm volatile("push %0; push %1; pushfq; push %2; push %3; iretq"
                 :  //No outputs
-                : "i" (gdt::USER_DATA_SELECTOR + 3), "i" (user_rsp), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
+                : "i" (gdt::USER_DATA_SELECTOR + 3), "r" (user_rsp), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
                 : "rax");
 
             //TODO Release stack

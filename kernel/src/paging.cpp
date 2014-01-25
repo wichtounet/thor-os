@@ -16,11 +16,7 @@
 
 namespace {
 
-typedef uint64_t* page_entry;
-typedef page_entry* pt_t;
-typedef pt_t* pd_t;
-typedef pd_t* pdpt_t;
-typedef pdpt_t* pml4t_t;
+using namespace paging;
 
 //The physical offsets of the structures
 size_t physical_pml4t_start;
@@ -307,7 +303,7 @@ bool paging::map_pages(void* virt, void* physical, size_t pages, uint8_t flags){
         }
     }
 
-    //Identity map each page
+    //Map each page
     for(size_t page = 0; page < pages; ++page){
         auto virt_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
         auto phys_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(physical) + page * PAGE_SIZE);
@@ -388,4 +384,46 @@ bool paging::identity_map(void* virt, uint8_t flags){
 
 bool paging::identity_map_pages(void* virt, size_t pages, uint8_t flags){
     return map_pages(virt, virt, pages, flags);
+}
+
+void paging::map_kernel_inside_user(pml4t_t& pml4t){
+    //As we are ensuring that the first PML4T entries are reserved to the
+    //kernel, it is enough to link these ones to the kernel ones
+
+    for(size_t i = 0; i < pml4_entries; ++i){
+        pml4t[i] = reinterpret_cast<pdpt_t>((physical_pdpt_start + i * PAGE_SIZE) | USER | PRESENT);
+    }
+}
+
+//TODO It is highly inefficient to remap CR3 each time
+bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physical){
+    //Get temporary virtual memory for CR3
+    auto virtual_cr3 = virtual_allocator::allocate(1);
+
+    if(!map(reinterpret_cast<void*>(virtual_cr3), reinterpret_cast<void*>(process.physical_cr3))){
+        return false;
+    }
+
+    //TODO Map
+
+    paging::unmap(reinterpret_cast<void*>(virtual_cr3));
+
+    //TODO Release virtual memory
+
+    return true;
+}
+
+bool paging::user_map_pages(scheduler::process_t& process, size_t virt, size_t physical, size_t pages){
+
+    //Map each page
+    for(size_t page = 0; page < pages; ++page){
+        auto virt_addr = virt + page * PAGE_SIZE;
+        auto phys_addr = physical + page * PAGE_SIZE;
+
+        if(!user_map(process, virt_addr, phys_addr)){
+            return false;
+        }
+    }
+
+    return true;
 }

@@ -10,9 +10,17 @@
 
 #include "stl/types.hpp"
 #include "stl/literals.hpp"
+
 #include "virtual_allocator.hpp"
+#include "process.hpp"
 
 namespace paging {
+
+typedef uint64_t* page_entry;
+typedef page_entry* pt_t;
+typedef pt_t* pd_t;
+typedef pd_t* pdpt_t;
+typedef pdpt_t* pml4t_t;
 
 //The size of page in memory
 constexpr const size_t PAGE_SIZE = 4096;
@@ -86,6 +94,10 @@ bool map_pages(void* virt, void* physical, size_t pages, uint8_t flags = PRESENT
 
 bool unmap(void* virt);
 bool unmap_pages(void* virt, size_t pages);
+
+void map_kernel_inside_user(pml4t_t& pml4t);
+bool user_map(scheduler::process_t& process, size_t virt, size_t physical);
+bool user_map_pages(scheduler::process_t& process, size_t virt, size_t physical, size_t pages);
 
 } //end of namespace paging
 
