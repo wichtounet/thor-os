@@ -8,7 +8,7 @@ include ../../cpp.mk
 	$(CC) $(PROGRAM_FLAGS) $(CPP_FLAGS_64) $(WARNING_FLAGS) -c $< -o $@
 
 a.out: main.cpp.o
-	$(CC) $(COMMON_LINK_FLAGS) -e main $(CPP_FLAGS_64) -o a.out main.cpp.o
+	$(CC) $(PROGRAM_LINK_FLAGS) -e main $(CPP_FLAGS_64) -o a.out main.cpp.o
 
 clean:
 	rm *.cpp.o
