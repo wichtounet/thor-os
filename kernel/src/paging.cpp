@@ -24,20 +24,20 @@ size_t physical_pdpt_start;
 size_t physical_pd_start;
 size_t physical_pt_start;
 
-constexpr size_t pml4_entry(void* virt){
-    return (reinterpret_cast<uintptr_t>(virt) >> 39) & 0x1FF;
+constexpr size_t pml4_entry(size_t virt){
+    return (virt >> 39) & 0x1FF;
 }
 
-constexpr size_t pdpt_entry(void* virt){
-    return (reinterpret_cast<uintptr_t>(virt) >> 30) & 0x1FF;
+constexpr size_t pdpt_entry(size_t virt){
+    return (virt >> 30) & 0x1FF;
 }
 
-constexpr size_t pd_entry(void* virt){
-    return (reinterpret_cast<uintptr_t>(virt) >> 21) & 0x1FF;
+constexpr size_t pd_entry(size_t virt){
+    return (virt >> 21) & 0x1FF;
 }
 
-constexpr size_t pt_entry(void* virt){
-    return (reinterpret_cast<uintptr_t>(virt) >> 12) & 0x1FF;
+constexpr size_t pt_entry(size_t virt){
+    return (virt >> 12) & 0x1FF;
 }
 
 constexpr pml4t_t find_pml4t(){
@@ -65,8 +65,8 @@ pt_t find_pt(pd_t pd, size_t pde){
     return reinterpret_cast<pt_t>(virtual_pt);
 }
 
-inline void flush_tlb(void* page){
-    asm volatile("invlpg [%0]" :: "r" (reinterpret_cast<uintptr_t>(page)) : "memory");
+inline void flush_tlb(size_t page){
+    asm volatile("invlpg [%0]" :: "r" (page) : "memory");
 }
 
 size_t early_map_page(size_t physical){
@@ -74,7 +74,7 @@ size_t early_map_page(size_t physical){
     auto pt = reinterpret_cast<pt_t>(0x73000);
 
     pt[256] = reinterpret_cast<page_entry>(physical | paging::PRESENT | paging::WRITE);
-    flush_tlb(reinterpret_cast<void*>(0x100000));
+    flush_tlb(0x100000);
 
     return 0x100000;
 }
@@ -163,10 +163,10 @@ void paging::init(){
     size_t current_pt_index = 0;
     uintptr_t current_virt = 0;
     for(size_t i = 0; i < physical_memory_pages; ++i){
-        auto pml4e = pml4_entry(reinterpret_cast<void*>(virt_page));
-        auto pdpte = pdpt_entry(reinterpret_cast<void*>(virt_page));
-        auto pde = pd_entry(reinterpret_cast<void*>(virt_page));
-        auto pte = pt_entry(reinterpret_cast<void*>(virt_page));
+        auto pml4e = pml4_entry(virt_page);
+        auto pdpte = pdpt_entry(virt_page);
+        auto pde = pd_entry(virt_page);
+        auto pte = pt_entry(virt_page);
 
         auto pt_index = pde * 512 + pdpte * 512 * 512 + pml4e * 512 * 512 * 512;
         auto physical = physical_pt_start + pt_index * paging::PAGE_SIZE;
@@ -190,9 +190,9 @@ void paging::init(){
 
 //TODO Update to support offsets at the end of virt
 //TODO Improve to support a status
-void* paging::physical_address(void* virt){
+size_t paging::physical_address(size_t virt){
     if(!page_present(virt)){
-        return nullptr;
+        return 0;
     }
 
     //Find the correct indexes inside the paging table for the physical address
@@ -206,10 +206,10 @@ void* paging::physical_address(void* virt){
     auto pd = find_pd(pdpt, pdpte);
     auto pt = find_pt(pd, pde);
 
-    return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(pt[pte]) & ~0xFFF);
+    return reinterpret_cast<uintptr_t>(pt[pte]) & ~0xFFF;
 }
 
-bool paging::page_present(void* virt){
+bool paging::page_present(size_t virt){
     //Find the correct indexes inside the paging table for the physical address
     auto pml4e = pml4_entry(virt);
     auto pdpte = pdpt_entry(virt);
@@ -235,7 +235,7 @@ bool paging::page_present(void* virt){
     return reinterpret_cast<uintptr_t>(pt[pte]) & PRESENT;
 }
 
-bool paging::page_free_or_set(void* virt, void* physical){
+bool paging::page_free_or_set(size_t virt, size_t physical){
     if(!page_present(virt)){
         return true;
     }
@@ -247,7 +247,7 @@ bool paging::page_free_or_set(void* virt, void* physical){
     return false;
 }
 
-bool paging::map(void* virt, void* physical, uint8_t flags){
+bool paging::map(size_t virt, size_t physical, uint8_t flags){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -274,11 +274,11 @@ bool paging::map(void* virt, void* physical, uint8_t flags){
     if(reinterpret_cast<uintptr_t>(pt[pte]) & PRESENT){
         //If the page is already set to the correct value, return true
         //If the page is set to another value, return false
-        return reinterpret_cast<uintptr_t>(pt[pte]) == (reinterpret_cast<uintptr_t>(physical) | flags);
+        return reinterpret_cast<uintptr_t>(pt[pte]) == (physical | flags);
     }
 
     //Map to the physical address
-    pt[pte] = reinterpret_cast<page_entry>(reinterpret_cast<uintptr_t>(physical) | flags);
+    pt[pte] = reinterpret_cast<page_entry>(physical | flags);
 
     //Flush TLB
     flush_tlb(virt);
@@ -286,7 +286,7 @@ bool paging::map(void* virt, void* physical, uint8_t flags){
     return true;
 }
 
-bool paging::map_pages(void* virt, void* physical, size_t pages, uint8_t flags){
+bool paging::map_pages(size_t virt, size_t physical, size_t pages, uint8_t flags){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -295,8 +295,8 @@ bool paging::map_pages(void* virt, void* physical, size_t pages, uint8_t flags){
     //To avoid mapping only a subset of the pages
     //check if one of the page is already mapped to another value
     for(size_t page = 0; page < pages; ++page){
-        auto virt_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
-        auto phys_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(physical) + page * PAGE_SIZE);
+        auto virt_addr = virt + page * PAGE_SIZE;
+        auto phys_addr = physical + page * PAGE_SIZE;
 
         if(!page_free_or_set(virt_addr, phys_addr)){
             return false;
@@ -305,8 +305,8 @@ bool paging::map_pages(void* virt, void* physical, size_t pages, uint8_t flags){
 
     //Map each page
     for(size_t page = 0; page < pages; ++page){
-        auto virt_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
-        auto phys_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(physical) + page * PAGE_SIZE);
+        auto virt_addr = virt + page * PAGE_SIZE;
+        auto phys_addr = physical + page * PAGE_SIZE;
 
         if(!map(virt_addr, phys_addr, flags)){
             return false;
@@ -316,7 +316,7 @@ bool paging::map_pages(void* virt, void* physical, size_t pages, uint8_t flags){
     return true;
 }
 
-bool paging::unmap(void* virt){
+bool paging::unmap(size_t virt){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -360,7 +360,7 @@ bool paging::unmap(void* virt){
     return true;
 }
 
-bool paging::unmap_pages(void* virt, size_t pages){
+bool paging::unmap_pages(size_t virt, size_t pages){
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -368,7 +368,7 @@ bool paging::unmap_pages(void* virt, size_t pages){
 
     //Unmap each page
     for(size_t page = 0; page < pages; ++page){
-        auto virt_addr = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(virt) + page * PAGE_SIZE);
+        auto virt_addr = virt + page * PAGE_SIZE;
 
         if(!unmap(virt_addr)){
             return false;
@@ -378,11 +378,11 @@ bool paging::unmap_pages(void* virt, size_t pages){
     return true;
 }
 
-bool paging::identity_map(void* virt, uint8_t flags){
+bool paging::identity_map(size_t virt, uint8_t flags){
     return map(virt, virt, flags);
 }
 
-bool paging::identity_map_pages(void* virt, size_t pages, uint8_t flags){
+bool paging::identity_map_pages(size_t virt, size_t pages, uint8_t flags){
     return map_pages(virt, virt, pages, flags);
 }
 
@@ -400,13 +400,13 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
     //Get temporary virtual memory for CR3
     auto virtual_cr3 = virtual_allocator::allocate(1);
 
-    if(!map(reinterpret_cast<void*>(virtual_cr3), reinterpret_cast<void*>(process.physical_cr3))){
+    if(!map(virtual_cr3, process.physical_cr3)){
         return false;
     }
 
     //TODO Map
 
-    paging::unmap(reinterpret_cast<void*>(virtual_cr3));
+    paging::unmap(virtual_cr3);
 
     //TODO Release virtual memory
 

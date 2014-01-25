@@ -70,30 +70,28 @@ constexpr const uint8_t WRITE_THROUGH = 0x8;
 constexpr const uint8_t CACHE_DISABLED = 0x10;
 constexpr const uint8_t ACCESSED= 0x20;
 
-template<typename T>
-constexpr bool page_aligned(T* addr){
-    return !(reinterpret_cast<uintptr_t>(addr) & (paging::PAGE_SIZE - 1));
+constexpr bool page_aligned(size_t addr){
+    return !(addr & (paging::PAGE_SIZE - 1));
 }
 
-template<typename T>
-constexpr T* page_align(T* addr){
-    return reinterpret_cast<T*>((reinterpret_cast<uintptr_t>(addr) / paging::PAGE_SIZE) * paging::PAGE_SIZE);
+constexpr size_t page_align(size_t addr){
+    return (addr / paging::PAGE_SIZE) * paging::PAGE_SIZE;
 }
 
 void init();
 
-void* physical_address(void* virt);
-bool page_present(void* virt);
-bool page_free_or_set(void* virt, void* physical);
+size_t physical_address(size_t virt);
+bool page_present(size_t virt);
+bool page_free_or_set(size_t virt, size_t physical);
 
-bool identity_map(void* virt, uint8_t flags = PRESENT | WRITE);
-bool identity_map_pages(void* virt, size_t pages, uint8_t flags = PRESENT | WRITE);
+bool identity_map(size_t virt, uint8_t flags = PRESENT | WRITE);
+bool identity_map_pages(size_t virt, size_t pages, uint8_t flags = PRESENT | WRITE);
 
-bool map(void* virt, void* physical, uint8_t flags = PRESENT | WRITE);
-bool map_pages(void* virt, void* physical, size_t pages, uint8_t flags = PRESENT | WRITE);
+bool map(size_t virt, size_t physical, uint8_t flags = PRESENT | WRITE);
+bool map_pages(size_t virt, size_t physical, size_t pages, uint8_t flags = PRESENT | WRITE);
 
-bool unmap(void* virt);
-bool unmap_pages(void* virt, size_t pages);
+bool unmap(size_t virt);
+bool unmap_pages(size_t virt, size_t pages);
 
 void map_kernel_inside_user(pml4t_t& pml4t);
 bool user_map(scheduler::process_t& process, size_t virt, size_t physical);

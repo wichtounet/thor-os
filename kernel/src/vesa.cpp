@@ -44,7 +44,7 @@ bool vesa::init(){
     //Get the physicaladdress of the LFB
     auto physical = block.linear_video_buffer;
 
-    auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(physical)));
+    auto first_page = paging::page_align(physical);
     auto left_padding = static_cast<uintptr_t>(physical) - first_page;
     auto bytes = left_padding + paging::PAGE_SIZE + total_size;
     auto pages = (bytes / paging::PAGE_SIZE) + 1;
@@ -55,7 +55,7 @@ bool vesa::init(){
         return false;
     }
 
-    if(!paging::map_pages(reinterpret_cast<void*>(virt), reinterpret_cast<void*>(physical), pages)){
+    if(!paging::map_pages(virt, physical, pages)){
         return false;
     }
 

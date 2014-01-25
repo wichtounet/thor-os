@@ -119,7 +119,7 @@ uint64_t* allocate_block(uint64_t blocks){
     }
 
     //Map the physical memory at the virtual address
-    paging::map_pages(reinterpret_cast<void*>(virtual_memory), reinterpret_cast<void*>(physical_memory), blocks);
+    paging::map_pages(virtual_memory, physical_memory, blocks);
 
     if(min_address == 0){
         min_address = virtual_memory;

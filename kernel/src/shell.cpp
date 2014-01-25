@@ -765,7 +765,7 @@ constexpr const auto kernel_rsp = kernel_stack_start + (user_stack_size - 8);
 
 bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t size){
     //1. Calculate some stuff
-    auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+    auto first_page = paging::page_align(address);
     auto left_padding = address - first_page;
     auto bytes = left_padding + paging::PAGE_SIZE + size;
     auto pages = (bytes / paging::PAGE_SIZE) + 1;
@@ -780,7 +780,7 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
 
     //3. Find a start of a page inside the physical memory
 
-    auto aligned_physical_memory = paging::page_aligned(reinterpret_cast<void*>(physical_memory)) ? physical_memory :
+    auto aligned_physical_memory = paging::page_aligned(physical_memory) ? physical_memory :
             (physical_memory / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
 
     //4. Map physical allocated memory to the necessary virtual memory
@@ -800,7 +800,7 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     //Get temporary virtual memory for CR3
     auto virtual_cr3= virtual_allocator::allocate(1);
 
-    if(!paging::map(reinterpret_cast<void*>(virtual_cr3), reinterpret_cast<void*>(process.physical_cr3))){
+    if(!paging::map(virtual_cr3, process.physical_cr3)){
         return false;
     }
 
@@ -826,7 +826,7 @@ bool create_paging(char* buffer, scheduler::process_t& process){
 
     //TODO Zero-out stack memory
 
-    paging::unmap(reinterpret_cast<void*>(virtual_cr3));
+    paging::unmap(virtual_cr3);
 
     //TODO We should release the temporary virtual memory
 
@@ -846,14 +846,14 @@ bool allocate_segments(char* buffer, void** allocated_segments, uint8_t flags){
         if(p_header.p_type == 1){
             //0. Calculate some stuff
             auto address = p_header.p_vaddr;
-            auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+            auto first_page = paging::page_align(address);
             auto left_padding = address - first_page;
             auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
             auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
             //1. Verify that all the necessary pages are free
             for(size_t i = 0; i < pages; ++i){
-                if(paging::page_present(reinterpret_cast<void*>(first_page + i * paging::PAGE_SIZE))){
+                if(paging::page_present(first_page + i * paging::PAGE_SIZE)){
                     failed = true;
                     break;
                 }
@@ -878,12 +878,12 @@ bool allocate_segments(char* buffer, void** allocated_segments, uint8_t flags){
 
             //3. Find a start of a page inside the physical memory
 
-            auto aligned_memory = paging::page_aligned(memory) ? memory :
-                reinterpret_cast<void*>((reinterpret_cast<uintptr_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE);
+            auto aligned_memory = paging::page_aligned(reinterpret_cast<size_t>(memory)) ? reinterpret_cast<size_t>(memory) :
+                (reinterpret_cast<size_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
 
             //4. Map physical allocated memory to the necessary virtual memory
 
-            if(!paging::map_pages(reinterpret_cast<void*>(first_page), aligned_memory, pages, flags)){
+            if(!paging::map_pages(first_page, aligned_memory, pages, flags)){
                 k_print_line("Mapping the pages failed");
                 failed = true;
                 break;
@@ -891,7 +891,7 @@ bool allocate_segments(char* buffer, void** allocated_segments, uint8_t flags){
 
             //5. Copy memory
 
-            auto memory_start = reinterpret_cast<uintptr_t>(aligned_memory) + left_padding;
+            auto memory_start = aligned_memory + left_padding;
 
             std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_memsz);
         }
@@ -903,14 +903,14 @@ bool allocate_segments(char* buffer, void** allocated_segments, uint8_t flags){
 void* allocate_user_stack(size_t stack_address, size_t stack_size, uint8_t flags){
     //0. Calculate some stuff
     auto address = stack_address;
-    auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+    auto first_page = paging::page_align(address);
     auto left_padding = address - first_page;
     auto bytes = left_padding + paging::PAGE_SIZE + stack_size;
     auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
     //1. Verify that all the necessary pages are free
     for(size_t i = 0; i < pages; ++i){
-        if(paging::page_present(reinterpret_cast<void*>(first_page + i * paging::PAGE_SIZE))){
+        if(paging::page_present(first_page + i * paging::PAGE_SIZE)){
             k_print_line("Some pages are already mapped");
             return nullptr;
         }
@@ -926,19 +926,19 @@ void* allocate_user_stack(size_t stack_address, size_t stack_size, uint8_t flags
 
     //3. Find a start of a page inside the physical memory
 
-    auto aligned_memory = paging::page_aligned(memory) ? memory :
-        reinterpret_cast<void*>((reinterpret_cast<uintptr_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE);
+    auto aligned_memory = paging::page_aligned(reinterpret_cast<size_t>(memory)) ? reinterpret_cast<size_t>(memory) :
+        (reinterpret_cast<size_t>(memory) / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
 
     //4. Map physical allocated memory to the necessary virtual memory
 
-    if(!paging::map_pages(reinterpret_cast<void*>(first_page), aligned_memory, pages, flags)){
+    if(!paging::map_pages(first_page, aligned_memory, pages, flags)){
         k_print_line("Mapping the pages failed");
         return nullptr;
     }
 
     //5. Zero-out memory
 
-    auto memory_start = reinterpret_cast<uintptr_t>(aligned_memory) + left_padding;
+    auto memory_start = aligned_memory + left_padding;
 
     std::fill_n(reinterpret_cast<char*>(memory_start), stack_size, 0);
 
@@ -958,12 +958,12 @@ void release_segments(char* buffer, void** allocated_segments){
             malloc::k_free(a);
 
             auto address = p_header.p_vaddr;
-            auto first_page = reinterpret_cast<uintptr_t>(paging::page_align(reinterpret_cast<void*>(address)));
+            auto first_page = paging::page_align(address);
             auto left_padding = address - first_page;
             auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
             auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
-            if(!paging::unmap_pages(reinterpret_cast<void*>(first_page), pages)){
+            if(!paging::unmap_pages(first_page, pages)){
                 k_print_line("Unmap failed, memory could be in invalid state");
             }
         }
