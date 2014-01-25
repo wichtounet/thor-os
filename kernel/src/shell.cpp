@@ -892,6 +892,8 @@ void exec_command(const std::vector<std::string>& params){
         : "i" (gdt::USER_DATA_SELECTOR + 3)
         : "rax");
 
+    asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
+
     //TODO Check if user_rsp is correctly passed
     asm volatile("push %0; push %1; pushfq; push %2; push %3; iretq"
         :  //No outputs
