@@ -780,16 +780,14 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
 }
 
 void clear_physical_memory(size_t memory, size_t pages){
-    auto virt = virtual_allocator::allocate(1);
+    auto virt = virtual_allocator::allocate(pages);
 
-    for(size_t page = 0; page < pages; ++page){
-        paging::map(virt, memory);
+    paging::map_pages(virt, memory, pages);
 
-        auto it = reinterpret_cast<uint64_t*>(virt);
-        std::fill_n(it, (pages * paging::PAGE_SIZE) / sizeof(uint64_t), 0);
+    auto it = reinterpret_cast<uint64_t*>(virt);
+    std::fill_n(it, (pages * paging::PAGE_SIZE) / sizeof(uint64_t), 0);
 
-        paging::unmap(virt);
-    }
+    paging::unmap_pages(virt, pages);
 
     //TODO virt should be deallocated
 }
