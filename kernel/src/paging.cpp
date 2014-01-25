@@ -386,13 +386,35 @@ bool paging::identity_map_pages(size_t virt, size_t pages, uint8_t flags){
     return map_pages(virt, virt, pages, flags);
 }
 
-void paging::map_kernel_inside_user(pml4t_t& pml4t){
+void paging::map_kernel_inside_user(scheduler::process_t& process){
+    auto virt = virtual_allocator::allocate(1);
+
+    map(virt, process.physical_cr3);
+
     //As we are ensuring that the first PML4T entries are reserved to the
     //kernel, it is enough to link these ones to the kernel ones
 
+    auto pml4t = reinterpret_cast<pml4t_t>(virt);
     for(size_t i = 0; i < pml4_entries; ++i){
         pml4t[i] = reinterpret_cast<pdpt_t>((physical_pdpt_start + i * PAGE_SIZE) | USER | PRESENT);
     }
+
+    unmap(virt);
+
+    //TODO Release virtual memory
+}
+
+void clear_physical_page(size_t physical){
+    auto virt = virtual_allocator::allocate(1);
+
+    map(virt, physical);
+
+    auto it = reinterpret_cast<uint64_t*>(virt);
+    std::fill_n(it, paging::PAGE_SIZE / sizeof(uint64_t), 0);
+
+    unmap(virt);
+
+    //TODO Release virtual memory
 }
 
 //TODO It is highly inefficient to remap CR3 each time
@@ -404,8 +426,77 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
         return false;
     }
 
-    //TODO Map
+    //Find the correct indexes inside the paging table for the virtual address
+    auto pml4e = pml4_entry(virt);
+    auto pdpte = pdpt_entry(virt);
+    auto pde = pd_entry(virt);
+    auto pte = pt_entry(virt);
 
+    auto pml4t = reinterpret_cast<pml4t_t>(virtual_cr3);
+    if(!(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & PRESENT)){
+        auto physical_pdpt = physical_allocator::allocate(1);
+
+        pml4t[pml4e] = reinterpret_cast<pdpt_t>(physical_pdpt | WRITE | USER | PRESENT);
+
+        clear_physical_page(physical_pdpt);
+
+        process.paging_size += paging::PAGE_SIZE;
+        process.physical_paging.push_back(physical_pdpt);
+    }
+
+    auto virtual_pdpt = virtual_allocator::allocate(1);
+    auto physical_pdpt = reinterpret_cast<uintptr_t>(pml4t[pml4e]) & ~0xFFF;
+
+    if(!map(virtual_pdpt, physical_pdpt)){
+        return false;
+    }
+
+    auto pdpt = reinterpret_cast<pdpt_t>(virtual_pdpt);
+    if(!(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & PRESENT)){
+        auto physical_pd = physical_allocator::allocate(1);
+
+        pdpt[pdpte] = reinterpret_cast<pd_t>(physical_pd | WRITE | USER | PRESENT);
+
+        clear_physical_page(physical_pd);
+
+        process.paging_size += paging::PAGE_SIZE;
+        process.physical_paging.push_back(physical_pd);
+    }
+
+    auto virtual_pd = virtual_allocator::allocate(1);
+    auto physical_pd = reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF;
+
+    if(!map(virtual_pd, physical_pd)){
+        return false;
+    }
+
+    auto pd = reinterpret_cast<pd_t>(virtual_pd);
+    if(!(reinterpret_cast<uintptr_t>(pd[pde]) & PRESENT)){
+        auto physical_pt = physical_allocator::allocate(1);
+
+        pd[pde] = reinterpret_cast<pt_t>(physical_pt | WRITE | USER | PRESENT);
+
+        clear_physical_page(physical_pt);
+
+        process.paging_size += paging::PAGE_SIZE;
+        process.physical_paging.push_back(physical_pt);
+    }
+
+    auto virtual_pt = virtual_allocator::allocate(1);
+    auto physical_pt = reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF;
+
+    if(!map(virtual_pt, physical_pt)){
+        return false;
+    }
+
+    auto pt = reinterpret_cast<pt_t>(virtual_pt);
+
+    //Map to the physical address
+    pt[pte] = reinterpret_cast<page_entry>(physical | WRITE | USER | PRESENT);
+
+    paging::unmap(virtual_pt);
+    paging::unmap(virtual_pd);
+    paging::unmap(virtual_pdpt);
     paging::unmap(virtual_cr3);
 
     //TODO Release virtual memory

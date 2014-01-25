@@ -763,7 +763,7 @@ constexpr const auto kernel_stack_size = 2 * paging::PAGE_SIZE;
 constexpr const auto user_rsp = user_stack_start + (user_stack_size - 8);
 constexpr const auto kernel_rsp = kernel_stack_start + (user_stack_size - 8);
 
-bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t size){
+bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t size, size_t& ref){
     //1. Calculate some stuff
     auto first_page = paging::page_align(address);
     auto left_padding = address - first_page;
@@ -787,7 +787,24 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
 
     paging::user_map_pages(process, first_page, aligned_physical_memory, pages);
 
+    ref = physical_memory;
+
     return true;
+}
+
+void clear_physical_memory(size_t memory, size_t pages){
+    auto virt = virtual_allocator::allocate(1);
+
+    for(size_t page = 0; page < pages; ++page){
+        paging::map(virt, memory);
+
+        auto it = reinterpret_cast<uint64_t*>(virt);
+        std::fill_n(it, (pages * paging::PAGE_SIZE) / sizeof(uint64_t), 0);
+
+        paging::unmap(virt);
+    }
+
+    //TODO virt should be deallocated
 }
 
 bool create_paging(char* buffer, scheduler::process_t& process){
@@ -797,38 +814,58 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     process.physical_cr3 = physical_allocator::allocate(1);
     process.paging_size = paging::PAGE_SIZE;
 
-    //Get temporary virtual memory for CR3
-    auto virtual_cr3= virtual_allocator::allocate(1);
-
-    if(!paging::map(virtual_cr3, process.physical_cr3)){
-        return false;
-    }
-
-    //Clear the page
-    auto it = reinterpret_cast<uint64_t*>(virtual_cr3);
-    std::fill_n(it, paging::PAGE_SIZE / sizeof(uint64_t), 0);
+    clear_physical_memory(process.physical_cr3, 1);
 
     //Map the kernel pages inside the user memory space
-    paging::map_kernel_inside_user(*reinterpret_cast<paging::pml4t_t*>(virtual_cr3));
-
- //   auto header = reinterpret_cast<elf::elf_header*>(buffer);
- //   auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
+    paging::map_kernel_inside_user(process);
 
     //2. Create all the other necessary structures
 
     //2.1 Allocate user stack
-    allocate_user_memory(process, user_stack_start, user_stack_size);
+    allocate_user_memory(process, user_stack_start, user_stack_size, process.physical_user_stack);
 
     //2.2 Allocate kernel stack
-    allocate_user_memory(process, kernel_stack_start, kernel_stack_size);
+    allocate_user_memory(process, kernel_stack_start, kernel_stack_size, process.physical_kernel_stack);
 
+    //2.3 Allocate all user segments
 
+    auto header = reinterpret_cast<elf::elf_header*>(buffer);
+    auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
 
-    //TODO Zero-out stack memory
+    for(size_t p = 0; p < header->e_phnum; ++p){
+        auto& p_header = program_header_table[p];
 
-    paging::unmap(virtual_cr3);
+        if(p_header.p_type == 1){
+            auto address = p_header.p_vaddr;
+            auto first_page = paging::page_align(address);
+            auto left_padding = address - first_page;
+            auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
+            auto pages = (bytes / paging::PAGE_SIZE) + 1;
 
-    //TODO We should release the temporary virtual memory
+            scheduler::segment_t segment;
+            segment.size = pages * paging::PAGE_SIZE;
+
+            allocate_user_memory(process, first_page, pages, segment.physical);
+
+            process.segments.push_back(segment);
+
+            //Copy the code into memory
+
+            auto virtual_memory = virtual_allocator::allocate(pages);
+
+            paging::map_pages(virtual_memory, segment.physical, pages);
+
+            auto memory_start = virtual_memory + left_padding;
+
+            std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_memsz);
+
+            paging::unmap_pages(virtual_memory, pages);
+        }
+    }
+
+    //3. Clear stacks
+    clear_physical_memory(process.physical_user_stack, user_stack_size / paging::PAGE_SIZE);
+    clear_physical_memory(process.physical_kernel_stack, kernel_stack_size / paging::PAGE_SIZE);
 
     return true;
 }

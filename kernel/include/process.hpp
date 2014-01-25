@@ -26,6 +26,7 @@ struct process_t {
     size_t physical_kernel_stack;
 
     std::vector<segment_t> segments;
+    std::vector<size_t> physical_paging;
 };
 
 } //end of namespace scheduler

@@ -93,7 +93,7 @@ bool map_pages(size_t virt, size_t physical, size_t pages, uint8_t flags = PRESE
 bool unmap(size_t virt);
 bool unmap_pages(size_t virt, size_t pages);
 
-void map_kernel_inside_user(pml4t_t& pml4t);
+void map_kernel_inside_user(scheduler::process_t& process);
 bool user_map(scheduler::process_t& process, size_t virt, size_t physical);
 bool user_map_pages(scheduler::process_t& process, size_t virt, size_t physical, size_t pages);
 
