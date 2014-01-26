@@ -44,6 +44,7 @@ struct syscall_regs {
     uint64_t cs;
     uint64_t rflags;
     uint64_t rsp;
+    uint64_t ds;
 } __attribute__((packed));
 
 void setup_interrupts();

@@ -114,14 +114,14 @@ void scheduler::kill_current_process(){
     processes.erase(current_index);
     rounds.erase(current_index);
 
+    //TODO At this point, memory should be released
+
     //Start from the first again
     current_index = 0;
 
     //Select the next process and switch to it
     auto index = select_next_process();
     switch_to_process(index);
-
-    //TODO At this point, memory should be released
 }
 
 void scheduler::reschedule(const interrupt::syscall_regs& regs){
