@@ -8,6 +8,8 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
+#include "process.hpp"
+
 namespace scheduler {
 
 void init();
@@ -16,6 +18,9 @@ void start();
 void kill_current_process();
 
 void reschedule();
+
+process_t new_process();
+void queue_process(process_t&& p);
 
 } //end of namespace scheduler
 

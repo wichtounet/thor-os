@@ -6,9 +6,9 @@
 //=======================================================================
 
 #include "scheduler.hpp"
-#include "process.hpp"
 #include "paging.hpp"
 #include "assert.hpp"
+#include "gdt.hpp"
 
 #include "console.hpp"
 
@@ -46,6 +46,9 @@ void create_idle_task(){
     idle_process.user_rsp = reinterpret_cast<size_t>(&idle_stack[63]);
     idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[4095]);
 
+    idle_process.code_selector = gdt::LONG_SELECTOR;
+    idle_process.data_selector = gdt::DATA_SELECTOR;
+
     processes.push_back(std::move(idle_process));
     rounds.push_back(0);
 }
@@ -55,7 +58,24 @@ void switch_to_process(size_t index){
 
     k_printf("Switched to %u\n", index);
 
-    //TODO
+    //TODO Move that to scheduler
+    auto& process = processes[current_index];
+
+    gdt::tss.rsp0_low = process.kernel_rsp & 0xFFFFFFFF;
+    gdt::tss.rsp0_high = process.kernel_rsp >> 32;
+
+    asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
+        :  //No outputs
+        : "r" (process.data_selector)
+        : "rax");
+
+    asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
+
+    //TODO Check if user_rsp is correctly passed
+    asm volatile("xor rax, rax; mov ax, %0; push rax; mov rax, %1; push rax; pushfq; xor rax, rax; mov ax, %2; push rax; mov rax, %3; push rax; iretq"
+        :  //No outputs
+        : "r" (process.data_selector), "r" (process.user_rsp), "r" (process.code_selector), "r" (process.rip)
+        : "rax");
 }
 
 size_t select_next_process(){
@@ -89,6 +109,8 @@ void scheduler::kill_current_process(){
 }
 
 void scheduler::reschedule(){
+    k_print_line("RS");
+
     //Test if the current process just got killed
     if(current_index == processes.size()){
         current_index = 0;
@@ -107,4 +129,18 @@ void scheduler::reschedule(){
     }
 
     //At this point we just have to return to the current process
+}
+
+scheduler::process_t scheduler::new_process(){
+    process_t p;
+
+    p.system = false;
+    p.pid = next_pid++;
+
+    return std::move(p);
+}
+
+void scheduler::queue_process(process_t&& p){
+    processes.push_back(std::forward<scheduler::process_t>(p));
+    rounds.push_back(0);
 }

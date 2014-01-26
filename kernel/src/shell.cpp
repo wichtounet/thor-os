@@ -880,30 +880,24 @@ void exec_command(const std::vector<std::string>& params){
     auto buffer = content->c_str();
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
 
-    scheduler::process_t process;
+    auto process = scheduler::new_process();
 
     if(!create_paging(buffer, process)){
         k_print_line("Impossible to initialize paging");
         return;
     }
 
-    gdt::tss.rsp0_low = scheduler::kernel_rsp & 0xFFFFFFFF;
-    gdt::tss.rsp0_high = scheduler::kernel_rsp >> 32;
+    process.kernel_rsp = scheduler::kernel_rsp;
+    process.user_rsp = scheduler::user_rsp;
 
-    asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
-        :  //No outputs
-        : "i" (gdt::USER_DATA_SELECTOR + 3)
-        : "rax");
+    process.rip = header->e_entry;
 
-    asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
+    process.code_selector = gdt::USER_CODE_SELECTOR + 3;
+    process.data_selector = gdt::USER_DATA_SELECTOR + 3;
 
-    //TODO Check if user_rsp is correctly passed
-    asm volatile("push %0; push %1; pushfq; push %2; push %3; iretq"
-        :  //No outputs
-        : "i" (gdt::USER_DATA_SELECTOR + 3), "r" (scheduler::user_rsp), "i" (gdt::USER_CODE_SELECTOR + 3), "r" (header->e_entry)
-        : "rax");
+    scheduler::queue_process(std::move(process));
 
-    //TODO Release all physical memory
+    scheduler::start();
 }
 
 void vesainfo_command(const std::vector<std::string>&){
