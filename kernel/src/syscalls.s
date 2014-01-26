@@ -33,17 +33,7 @@ create_syscall 8
 create_syscall 9
 
 syscall_common_handler:
-    push r12
-    push r11
-    push r10
-    push r9
-    push r8
-    push rdi
-    push rsi
-    push rdx
-    push rcx
-    push rbx
-    push rax
+    save_context
 
     restore_kernel_segments
 
@@ -51,17 +41,7 @@ syscall_common_handler:
 
     restore_user_segments
 
-    pop rax
-    pop rbx
-    pop rcx
-    pop rdx
-    pop rsi
-    pop rdi
-    pop r8
-    pop r9
-    pop r10
-    pop r11
-    pop r12
+    restore_context
 
     //Was pushed by the base handler code
     add rsp, 8
