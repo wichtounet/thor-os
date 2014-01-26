@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include <print.hpp>
+#include <system.hpp>
 
 volatile uint64_t current = 45;
 
@@ -25,5 +26,6 @@ int main(){
         ++i;
     }
 
+    exit(0);
     return 0;
 }

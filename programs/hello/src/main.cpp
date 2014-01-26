@@ -6,11 +6,13 @@
 //=======================================================================
 
 #include <print.hpp>
+#include <system.hpp>
 
 const char* source = "Hello world";
 
 int main(){
     print_line(source);
 
+    exit(0);
     return 0;
 }
