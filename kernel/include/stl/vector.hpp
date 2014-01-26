@@ -11,6 +11,8 @@
 #include "stl/types.hpp"
 #include "stl/algorithms.hpp"
 
+//TODO The vector does not call any destructor
+
 namespace std {
 
 template<typename T>
@@ -102,6 +104,14 @@ public:
 
     void clear(){
         _size = 0;
+    }
+
+    void erase(size_t position){
+        for(size_t i = position; i < _size - 1; ++i){
+            data[i] = std::move(data[i+1]);
+        }
+
+        --_size;
     }
 
     //Iterators

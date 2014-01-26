@@ -15,7 +15,11 @@
 namespace {
 
 std::vector<scheduler::process_t> processes;
-size_t current_pid;
+std::vector<size_t> rounds;
+
+constexpr const size_t TURNOVER = 10;
+
+size_t current_index;
 
 size_t next_pid = 1;
 
@@ -43,14 +47,19 @@ void create_idle_task(){
     idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[4095]);
 
     processes.push_back(std::move(idle_process));
+    rounds.push_back(0);
 }
 
-void switch_to_process(size_t pid){
-    current_pid = pid;
+void switch_to_process(size_t index){
+    current_index = index;
 
-    k_printf("Switched to %u\n", current_pid);
+    k_printf("Switched to %u\n", index);
 
     //TODO
+}
+
+size_t select_next_process(){
+    return (current_index + 1) % processes.size();
 }
 
 } //end of anonymous namespace
@@ -67,11 +76,35 @@ void scheduler::start(){
 }
 
 void scheduler::kill_current_process(){
-    k_printf("Kill %u\n", current_pid);
+    k_printf("Kill %u\n", current_index);
 
-    //TODO
+    processes.erase(current_index);
+    rounds.erase(current_index);
+
+    current_index = processes.size();
+
+    //TODO At this point, memory should be released
+
+    reschedule();
 }
 
 void scheduler::reschedule(){
-    //TODO
+    //Test if the current process just got killed
+    if(current_index == processes.size()){
+        current_index = 0;
+
+        auto index = select_next_process();
+        switch_to_process(index);
+    }
+
+    if(rounds[current_index] == TURNOVER){
+        rounds[current_index] = 0;
+
+        auto index = select_next_process();
+        switch_to_process(index);
+    } else {
+        ++rounds[current_index];
+    }
+
+    //At this point we just have to return to the current process
 }
