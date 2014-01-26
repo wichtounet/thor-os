@@ -14,6 +14,8 @@
 
 namespace {
 
+bool started = false;
+
 std::vector<scheduler::process_t> processes;
 std::vector<size_t> rounds;
 
@@ -70,7 +72,7 @@ void switch_to_process(size_t index){
 
     asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
 
-    asm volatile("xor rax, rax; mov ax, %0; push rax; mov rax, %1; push rax; pushfq; xor rax, rax; mov ax, %2; push rax; mov rax, %3; push rax; iretq"
+    asm volatile("xor rax, rax; mov ax, %0; push rax; mov rax, %1; push rax; pushfq; pop rax; or rax, 0x200; push rax; xor rax, rax; mov ax, %2; push rax; mov rax, %3; push rax; iretq"
         :  //No outputs
         : "r" (process.data_selector), "r" (process.user_rsp), "r" (process.code_selector), "r" (process.rip)
         : "rax", "memory");
@@ -90,6 +92,8 @@ void scheduler::init(){
 void scheduler::start(){
     thor_assert(!processes.empty(), "There should at least be the idle task");
 
+    started = true;
+
     switch_to_process(processes.size() - 1);
 }
 
@@ -107,6 +111,10 @@ void scheduler::kill_current_process(){
 }
 
 void scheduler::reschedule(){
+    if(!started){
+        return;
+    }
+
     k_print_line("RS");
 
     //Test if the current process just got killed
@@ -121,6 +129,11 @@ void scheduler::reschedule(){
         rounds[current_index] = 0;
 
         auto index = select_next_process();
+
+        if(index == current_index){
+            return;
+        }
+
         switch_to_process(index);
     } else {
         ++rounds[current_index];

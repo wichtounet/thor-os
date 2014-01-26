@@ -7,6 +7,7 @@
 
 #include "timer.hpp"
 #include "interrupts.hpp"
+#include "scheduler.hpp"
 
 #include "kernel_utils.hpp"
 
@@ -26,6 +27,8 @@ void timer_handler(){
 
     if(_timer_ticks % 1000 == 0){
         ++_timer_seconds;
+
+        scheduler::reschedule();
     }
 }
 
