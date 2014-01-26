@@ -82,6 +82,13 @@ size_t select_next_process(){
     return (current_index + 1) % processes.size();
 }
 
+void save_context(const interrupt::syscall_regs& regs){
+    auto& process = processes[current_index];
+
+    process.user_rsp = regs.rsp;
+    process.rip = regs.rip;
+}
+
 } //end of anonymous namespace
 
 void scheduler::init(){
@@ -111,8 +118,6 @@ void scheduler::kill_current_process(){
     switch_to_process(index);
 
     //TODO At this point, memory should be released
-
-    reschedule();
 }
 
 void scheduler::reschedule(const interrupt::syscall_regs& regs){
@@ -120,7 +125,8 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
         return;
     }
 
-    k_print_line("RS");
+    k_printf("BS from %u\n", regs.rip);
+    k_printf("BS from %u\n", regs.rsp);
 
     if(rounds[current_index] == TURNOVER){
         rounds[current_index] = 0;
@@ -131,6 +137,8 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
         if(index == current_index){
             return;
         }
+
+        save_context(regs);
 
         switch_to_process(index);
     } else {

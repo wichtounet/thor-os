@@ -18,7 +18,7 @@ uint64_t _timer_seconds = 0;
 
 volatile uint64_t _timer_countdown = 0;
 
-void timer_handler(const interrupt::syscall_regs&){
+void timer_handler(const interrupt::syscall_regs& regs){
     ++_timer_ticks;
 
     if(_timer_countdown != 0){
@@ -28,7 +28,7 @@ void timer_handler(const interrupt::syscall_regs&){
     if(_timer_ticks % 1000 == 0){
         ++_timer_seconds;
 
-        scheduler::reschedule();
+        scheduler::reschedule(regs);
     }
 }
 
