@@ -55,6 +55,7 @@ void create_idle_task(){
     rounds.push_back(0);
 }
 
+void switch_to_process(size_t index) __attribute__((noreturn));
 void switch_to_process(size_t index){
     current_index = index;
 
@@ -65,17 +66,20 @@ void switch_to_process(size_t index){
     gdt::tss.rsp0_low = process.kernel_rsp & 0xFFFFFFFF;
     gdt::tss.rsp0_high = process.kernel_rsp >> 32;
 
-    asm volatile("mov ax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
+    //TODO Check if that generate the correct code
+    asm volatile("mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
         :  //No outputs
-        : "r" (process.data_selector)
+        : "rax" (process.data_selector)
         : "rax");
 
     asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
 
-    asm volatile("xor rax, rax; mov ax, %0; push rax; mov rax, %1; push rax; pushfq; pop rax; or rax, 0x200; push rax; xor rax, rax; mov ax, %2; push rax; mov rax, %3; push rax; iretq"
+    asm volatile("push %0; push %1; pushfq; pop rax; or rax, 0x200; push rax; push %2; push %3; iretq"
         :  //No outputs
         : "r" (process.data_selector), "r" (process.user_rsp), "r" (process.code_selector), "r" (process.rip)
         : "rax", "memory");
+
+    __builtin_unreachable();
 }
 
 size_t select_next_process(){
@@ -125,8 +129,7 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
         return;
     }
 
-    k_printf("BS from %u\n", regs.rip);
-    k_printf("BS from %u\n", regs.rsp);
+    k_print_line("BS");
 
     if(rounds[current_index] == TURNOVER){
         rounds[current_index] = 0;

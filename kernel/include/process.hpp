@@ -25,8 +25,8 @@ struct process_t {
 
     bool system;
 
-    uint16_t code_selector;
-    uint16_t data_selector;
+    size_t code_selector;
+    size_t data_selector;
 
     size_t physical_cr3;
     size_t paging_size;
