@@ -84,19 +84,14 @@ public:
 
     //Modifiers
 
+    void push_back(value_type&& element){
+        ensure_capacity();
+
+        data[_size++] = std::forward<value_type>(element);
+    }
+
     void push_back(const value_type& element){
-        if(_capacity == 0){
-            _capacity = 1;
-            data = new T[_capacity];
-        } else if(_capacity == _size){
-            _capacity= _capacity * 2;
-
-            auto new_data = new T[_capacity];
-            std::move_n(new_data, data, _size);
-
-            delete[] data;
-            data = new_data;
-        }
+        ensure_capacity();
 
         data[_size++] = element;
     }
@@ -125,6 +120,22 @@ public:
 
     constexpr const_iterator end() const {
         return const_iterator(&data[_size]);
+    }
+
+private:
+    void ensure_capacity(){
+        if(_capacity == 0){
+            _capacity = 1;
+            data = new T[_capacity];
+        } else if(_capacity == _size){
+            _capacity= _capacity * 2;
+
+            auto new_data = new T[_capacity];
+            std::move_n(new_data, data, _size);
+
+            delete[] data;
+            data = new_data;
+        }
     }
 };
 

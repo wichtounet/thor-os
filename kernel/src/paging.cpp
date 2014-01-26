@@ -519,3 +519,7 @@ bool paging::user_map_pages(scheduler::process_t& process, size_t virt, size_t p
 
     return true;
 }
+
+size_t paging::get_physical_pml4t(){
+    return physical_pml4t_start;
+}

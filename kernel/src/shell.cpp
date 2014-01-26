@@ -24,6 +24,7 @@
 #include "gdt.hpp"
 #include "vesa.hpp"
 #include "process.hpp"
+#include "scheduler.hpp"
 
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
@@ -867,6 +868,8 @@ void exec_command(const std::vector<std::string>& params){
 
         return;
     }
+
+    scheduler::init();
 
     auto content = read_elf_file(params[1], "exec");
 

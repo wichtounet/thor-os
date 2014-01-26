@@ -13,6 +13,10 @@ namespace scheduler {
 void init();
 void start();
 
+void kill_current_process();
+
+void reschedule();
+
 } //end of namespace scheduler
 
 #endif

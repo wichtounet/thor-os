@@ -21,11 +21,19 @@ struct segment_t {
 };
 
 struct process_t {
+    size_t pid;
+
+    bool system;
+
     size_t physical_cr3;
     size_t paging_size;
 
     size_t physical_user_stack;
     size_t physical_kernel_stack;
+
+    size_t rip;
+    size_t user_rsp;
+    size_t kernel_rsp;
 
     std::vector<segment_t> segments;
     std::vector<size_t> physical_paging;
