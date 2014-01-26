@@ -224,14 +224,14 @@ void _fault_handler(interrupt::fault_regs regs){
     __asm__ __volatile__("hlt" : : );
 }
 
-void _irq_handler(size_t code){
+void _irq_handler(interrupt::syscall_regs regs){
     //If there is an handler, call it
-    if(irq_handlers[code]){
-        irq_handlers[code]();
+    if(irq_handlers[regs.code]){
+        irq_handlers[regs.code]();
     }
 
     //If the IRQ is on the slave controller, send EOI to it
-    if(code >= 8){
+    if(regs.code >= 8){
         out_byte(0xA0, 0x20);
     }
 
@@ -240,7 +240,7 @@ void _irq_handler(size_t code){
 }
 
 void _syscall_handler(interrupt::syscall_regs regs){
-    //If there is a handler call, it
+    //If there is a handler call it
     if(syscall_handlers[regs.code]){
         syscall_handlers[regs.code](regs);
     }
