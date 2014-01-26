@@ -103,7 +103,12 @@ void scheduler::kill_current_process(){
     processes.erase(current_index);
     rounds.erase(current_index);
 
-    current_index = processes.size();
+    //Start from the first again
+    current_index = 0;
+
+    //Select the next process and switch to it
+    auto index = select_next_process();
+    switch_to_process(index);
 
     //TODO At this point, memory should be released
 
@@ -117,19 +122,12 @@ void scheduler::reschedule(){
 
     k_print_line("RS");
 
-    //Test if the current process just got killed
-    if(current_index == processes.size()){
-        current_index = 0;
-
-        auto index = select_next_process();
-        switch_to_process(index);
-    }
-
     if(rounds[current_index] == TURNOVER){
         rounds[current_index] = 0;
 
         auto index = select_next_process();
 
+        //If it is the same, no need to go to the switching process
         if(index == current_index){
             return;
         }
