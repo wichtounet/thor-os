@@ -38,7 +38,7 @@ struct idtr {
 idt_entry idt_64[64];
 idtr idtr_64;
 
-void (*irq_handlers[16])();
+void (*irq_handlers[16])(const interrupt::syscall_regs&);
 void (*syscall_handlers[interrupt::SYSCALL_MAX])(const interrupt::syscall_regs&);
 
 void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, uint8_t flags){
@@ -227,7 +227,7 @@ void _fault_handler(interrupt::fault_regs regs){
 void _irq_handler(interrupt::syscall_regs regs){
     //If there is an handler, call it
     if(irq_handlers[regs.code]){
-        irq_handlers[regs.code]();
+        irq_handlers[regs.code](regs);
     }
 
     //If the IRQ is on the slave controller, send EOI to it
@@ -250,7 +250,7 @@ void _syscall_handler(interrupt::syscall_regs regs){
 
 } //end of extern "C"
 
-void interrupt::register_irq_handler(size_t irq, void (*handler)()){
+void interrupt::register_irq_handler(size_t irq, void (*handler)(const interrupt::syscall_regs&)){
     irq_handlers[irq] = handler;
 }
 

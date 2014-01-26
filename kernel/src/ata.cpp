@@ -58,11 +58,11 @@ volatile bool secondary_invoked = false;
 //TODO In the future, the wait for IRQs, could
 //be done with a semaphore
 
-void primary_controller_handler(){
+void primary_controller_handler(const interrupt::syscall_regs&){
     primary_invoked = true;
 }
 
-void secondary_controller_handler(){
+void secondary_controller_handler(const interrupt::syscall_regs&){
     secondary_invoked = true;
 }
 

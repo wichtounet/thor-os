@@ -95,7 +95,7 @@ char input_buffer[BUFFER_SIZE];
 volatile uint8_t start;
 volatile uint8_t count;
 
-void keyboard_handler(){
+void keyboard_handler(const interrupt::syscall_regs&){
     auto key = static_cast<char>(in_byte(0x60));
 
     if(count == BUFFER_SIZE){

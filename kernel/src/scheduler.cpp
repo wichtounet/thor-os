@@ -115,7 +115,7 @@ void scheduler::kill_current_process(){
     reschedule();
 }
 
-void scheduler::reschedule(){
+void scheduler::reschedule(const interrupt::syscall_regs& regs){
     if(!started){
         return;
     }
