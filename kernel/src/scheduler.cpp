@@ -58,7 +58,6 @@ void switch_to_process(size_t index){
 
     k_printf("Switched to %u\n", index);
 
-    //TODO Move that to scheduler
     auto& process = processes[current_index];
 
     gdt::tss.rsp0_low = process.kernel_rsp & 0xFFFFFFFF;
@@ -71,11 +70,10 @@ void switch_to_process(size_t index){
 
     asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
 
-    //TODO Check if user_rsp is correctly passed
     asm volatile("xor rax, rax; mov ax, %0; push rax; mov rax, %1; push rax; pushfq; xor rax, rax; mov ax, %2; push rax; mov rax, %3; push rax; iretq"
         :  //No outputs
         : "r" (process.data_selector), "r" (process.user_rsp), "r" (process.code_selector), "r" (process.rip)
-        : "rax");
+        : "rax", "memory");
 }
 
 size_t select_next_process(){

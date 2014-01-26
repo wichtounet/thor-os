@@ -7,6 +7,7 @@
 
 #include "system_calls.hpp"
 #include "console.hpp"
+#include "scheduler.hpp"
 
 namespace {
 
@@ -41,7 +42,7 @@ void system_call_entry(const interrupt::syscall_regs& regs){
             break;
 
         case 0x666:
-            //TODO Indicate to the scheduler that the process is over
+            scheduler::kill_current_process();
             break;
 
         default:

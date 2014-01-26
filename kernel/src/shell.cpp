@@ -809,11 +809,9 @@ bool create_paging(char* buffer, scheduler::process_t& process){
 
     //2.1 Allocate user stack
     allocate_user_memory(process, scheduler::user_stack_start, scheduler::user_stack_size, process.physical_user_stack);
+    process.user_rsp = scheduler::user_rsp;
 
-    //2.2 Allocate kernel stack
-    allocate_user_memory(process, scheduler::kernel_stack_start, scheduler::kernel_stack_size, process.physical_kernel_stack);
-
-    //2.3 Allocate all user segments
+    //2.2 Allocate all user segments
 
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
     auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
@@ -848,6 +846,17 @@ bool create_paging(char* buffer, scheduler::process_t& process){
             paging::unmap_pages(virtual_memory, pages);
         }
     }
+
+    //2.3 Allocate kernel stack
+    auto virtual_kernel_stack = virtual_allocator::allocate(scheduler::kernel_stack_size / paging::PAGE_SIZE);
+    auto physical_kernel_stack = physical_allocator::allocate(scheduler::kernel_stack_size / paging::PAGE_SIZE);
+
+    if(!paging::map_pages(virtual_kernel_stack, physical_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE)){
+        return false;
+    }
+
+    process.physical_kernel_stack = physical_kernel_stack;
+    process.kernel_rsp = virtual_kernel_stack + (scheduler::user_stack_size - 8);
 
     //3. Clear stacks
     clear_physical_memory(process.physical_user_stack, scheduler::user_stack_size / paging::PAGE_SIZE);
@@ -886,9 +895,6 @@ void exec_command(const std::vector<std::string>& params){
         k_print_line("Impossible to initialize paging");
         return;
     }
-
-    process.kernel_rsp = scheduler::kernel_rsp;
-    process.user_rsp = scheduler::user_rsp;
 
     process.rip = header->e_entry;
 
