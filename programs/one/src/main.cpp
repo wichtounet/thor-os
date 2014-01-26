@@ -13,5 +13,4 @@ int main(){
     print_line();
 
     exit(0);
-    return 1;
 }

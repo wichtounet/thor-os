@@ -14,5 +14,4 @@ int main(){
     print_line(source);
 
     exit(0);
-    return 0;
 }
