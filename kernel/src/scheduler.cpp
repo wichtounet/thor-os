@@ -27,6 +27,7 @@ size_t next_pid = 1;
 
 void idle_task(){
     while(true){
+        k_print('a');
         asm volatile("hlt");
     }
 }
@@ -66,10 +67,9 @@ void switch_to_process(size_t index){
     gdt::tss.rsp0_low = process.kernel_rsp & 0xFFFFFFFF;
     gdt::tss.rsp0_high = process.kernel_rsp >> 32;
 
-    //TODO Check if that generate the correct code
-    asm volatile("mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
+    asm volatile("mov rax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
         :  //No outputs
-        : "rax" (process.data_selector)
+        : "r" (process.data_selector)
         : "rax");
 
     asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
@@ -128,8 +128,6 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
     if(!started){
         return;
     }
-
-    k_print_line("BS");
 
     if(rounds[current_index] == TURNOVER){
         rounds[current_index] = 0;
