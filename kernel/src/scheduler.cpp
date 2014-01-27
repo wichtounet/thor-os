@@ -45,12 +45,13 @@ void create_idle_task(){
     idle_process.physical_user_stack = 0;
     idle_process.physical_kernel_stack = 0;
 
-    idle_process.rip = reinterpret_cast<size_t>(&idle_task);
-    idle_process.user_rsp = reinterpret_cast<size_t>(&idle_stack[63]);
+    idle_process.regs.rflags = 0x200;
+    idle_process.regs.rip = reinterpret_cast<size_t>(&idle_task);
+    idle_process.regs.rsp = reinterpret_cast<size_t>(&idle_stack[63]);
     idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[4095]);
 
-    idle_process.code_selector = gdt::LONG_SELECTOR;
-    idle_process.data_selector = gdt::DATA_SELECTOR;
+    idle_process.regs.cs = gdt::LONG_SELECTOR;
+    idle_process.regs.ds = gdt::DATA_SELECTOR;
 
     processes.push_back(std::move(idle_process));
     rounds.push_back(0);
@@ -68,13 +69,13 @@ void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
 
     auto stack_pointer = reinterpret_cast<uint64_t*>(regs.placeholder);
 
-    *(stack_pointer + 4) = process.data_selector;
-    *(stack_pointer + 3) = process.user_rsp;
-    //TODO rflags
-    *(stack_pointer + 1) = process.code_selector;
-    *(stack_pointer + 0) = process.rip;
+    *(stack_pointer + 4) = process.regs.ds;
+    *(stack_pointer + 3) = process.regs.rsp;
+    *(stack_pointer + 2) = process.regs.rflags;
+    *(stack_pointer + 1) = process.regs.cs;
+    *(stack_pointer + 0) = process.regs.rip;
 
-    *(stack_pointer - 14) = process.data_selector;
+    *(stack_pointer - 14) = process.regs.ds;
 
     asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
 
@@ -98,8 +99,7 @@ size_t select_next_process(){
 void save_context(const interrupt::syscall_regs& regs){
     auto& process = processes[current_index];
 
-    process.user_rsp = regs.rsp;
-    process.rip = regs.rip;
+    process.regs = regs;
 }
 
 } //end of anonymous namespace

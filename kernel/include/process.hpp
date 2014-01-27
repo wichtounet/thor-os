@@ -12,6 +12,7 @@
 #include "stl/vector.hpp"
 
 #include "paging.hpp"
+#include "interrupts.hpp"
 
 namespace scheduler {
 
@@ -25,18 +26,15 @@ struct process_t {
 
     bool system;
 
-    size_t code_selector;
-    size_t data_selector;
-
     size_t physical_cr3;
     size_t paging_size;
 
     size_t physical_user_stack;
     size_t physical_kernel_stack;
 
-    size_t rip;
-    size_t user_rsp;
     size_t kernel_rsp;
+
+    interrupt::syscall_regs regs;
 
     std::vector<segment_t> segments;
     std::vector<size_t> physical_paging;
