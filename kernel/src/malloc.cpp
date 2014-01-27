@@ -200,15 +200,25 @@ void init_head(){
     malloc_head->prev_ref() = malloc_head;
 }
 
-void expand_heap(malloc_header_chunk* current){
+void expand_heap(malloc_header_chunk* current, size_t bytes = 0){
+    auto blocks = MIN_BLOCKS;
+
+    if(bytes){
+        auto necessary_blocks = ((bytes + META_SIZE) / BLOCK_SIZE) + 1;
+
+        if(necessary_blocks > blocks){
+            blocks = necessary_blocks;
+        }
+    }
+
     //Allocate a new block of memory
-    uint64_t* block = allocate_block(MIN_BLOCKS);
+    uint64_t* block = allocate_block(blocks);
 
     //Transform it into a malloc chunk
     auto header = reinterpret_cast<malloc_header_chunk*>(block);
 
     //Update the sizes
-    header->size() = MIN_BLOCKS * BLOCK_SIZE - META_SIZE;
+    header->size() = blocks * BLOCK_SIZE - META_SIZE;
     header->footer()->size() = header->size();
 
     //Insert the new block into the free list
@@ -301,7 +311,7 @@ void* malloc::k_malloc(uint64_t bytes){
         if(current == malloc_head){
             //There are no blocks big enough to hold this request
             //So expand the heap
-            expand_heap(current);
+            expand_heap(current, bytes);
         } else if(current->size() >= bytes){
             //This block is big enough
 
