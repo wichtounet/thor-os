@@ -1,7 +1,7 @@
 ENTRY(main)
 
 SECTIONS {
-	. = 0x8000401000;
+	. = 0x8000400000;
 
 	.text BLOCK(4096) : ALIGN(4096)
 	{
@@ -9,7 +9,7 @@ SECTIONS {
 		*(.text*)
 	}
 
-	. = 0x8000602000;
+	. = 0x8000600000;
 
 	.data BLOCK(4096) : ALIGN(4096)
 	{
