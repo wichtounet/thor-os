@@ -74,7 +74,17 @@ void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
     *(stack_pointer + 2) = process.regs.rflags;
     *(stack_pointer + 1) = process.regs.cs;
     *(stack_pointer + 0) = process.regs.rip;
-
+    *(stack_pointer - 3) = process.regs.r12;
+    *(stack_pointer - 4) = process.regs.r11;
+    *(stack_pointer - 5) = process.regs.r10;
+    *(stack_pointer - 6) = process.regs.r9;
+    *(stack_pointer - 7) = process.regs.r8;
+    *(stack_pointer - 8) = process.regs.rdi;
+    *(stack_pointer - 9) = process.regs.rsi;
+    *(stack_pointer - 10) = process.regs.rdx;
+    *(stack_pointer - 11) = process.regs.rcx;
+    *(stack_pointer - 12) = process.regs.rbx;
+    *(stack_pointer - 13) = process.regs.rax;
     *(stack_pointer - 14) = process.regs.ds;
 
     asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
