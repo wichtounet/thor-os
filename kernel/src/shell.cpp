@@ -865,22 +865,8 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     return true;
 }
 
-void exec_command(const std::vector<std::string>& params){
-    if(params.size() < 2){
-        k_print_line("exec: Need the name of the executable to read");
-
-        return;
-    }
-
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    scheduler::init();
-
-    auto content = read_elf_file(params[1], "exec");
+void queue_process(const std::string& file){
+    auto content = read_elf_file(file, "exec");
 
     if(!content){
         return;
@@ -904,6 +890,26 @@ void exec_command(const std::vector<std::string>& params){
     process.regs.rflags = 0x200;
 
     scheduler::queue_process(std::move(process));
+}
+
+void exec_command(const std::vector<std::string>& params){
+    if(params.size() < 2){
+        k_print_line("exec: Need the name of the executable to read");
+
+        return;
+    }
+
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    scheduler::init();
+
+    for(size_t i = 1; i < params.size(); ++i){
+        queue_process(params[i]);
+    }
 
     scheduler::start();
 }
