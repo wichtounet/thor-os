@@ -42,7 +42,7 @@ void system_call_entry(const interrupt::syscall_regs& regs){
             break;
 
         case 0x666:
-            scheduler::kill_current_process();
+            scheduler::kill_current_process(regs);
             break;
 
         default:

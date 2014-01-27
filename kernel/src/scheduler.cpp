@@ -56,8 +56,7 @@ void create_idle_task(){
     rounds.push_back(0);
 }
 
-void switch_to_process(size_t index) __attribute__((noreturn));
-void switch_to_process(size_t index){
+void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
     current_index = index;
 
     k_printf("Switched to %u\n", index);
@@ -67,7 +66,19 @@ void switch_to_process(size_t index){
     gdt::tss.rsp0_low = process.kernel_rsp & 0xFFFFFFFF;
     gdt::tss.rsp0_high = process.kernel_rsp >> 32;
 
-    asm volatile("mov rax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
+    auto stack_pointer = reinterpret_cast<uint64_t*>(regs.placeholder);
+
+    *(stack_pointer + 4) = process.data_selector;
+    *(stack_pointer + 3) = process.user_rsp;
+    //TODO rflags
+    *(stack_pointer + 1) = process.code_selector;
+    *(stack_pointer + 0) = process.rip;
+
+    *(stack_pointer - 14) = process.data_selector;
+
+    asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
+
+    /*asm volatile("mov rax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
         :  //No outputs
         : "r" (process.data_selector)
         : "rax");
@@ -77,9 +88,7 @@ void switch_to_process(size_t index){
     asm volatile("push %0; push %1; pushfq; pop rax; or rax, 0x200; push rax; push %2; push %3; iretq"
         :  //No outputs
         : "r" (process.data_selector), "r" (process.user_rsp), "r" (process.code_selector), "r" (process.rip)
-        : "rax", "memory");
-
-    __builtin_unreachable();
+        : "rax", "memory");*/
 }
 
 size_t select_next_process(){
@@ -105,10 +114,16 @@ void scheduler::start(){
 
     started = true;
 
-    switch_to_process(processes.size() - 1);
+    current_index = 0;
+    rounds[current_index] = TURNOVER;
+
+    //Wait for the next interrupt
+    while(true){
+        asm volatile ("nop; nop; nop; nop");
+    }
 }
 
-void scheduler::kill_current_process(){
+void scheduler::kill_current_process(const interrupt::syscall_regs& regs){
     k_printf("Kill %u\n", current_index);
 
     processes.erase(current_index);
@@ -121,7 +136,7 @@ void scheduler::kill_current_process(){
 
     //Select the next process and switch to it
     auto index = select_next_process();
-    switch_to_process(index);
+    switch_to_process(regs, index);
 }
 
 void scheduler::reschedule(const interrupt::syscall_regs& regs){
@@ -141,7 +156,7 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
 
         save_context(regs);
 
-        switch_to_process(index);
+        switch_to_process(regs, index);
     } else {
         ++rounds[current_index];
     }
