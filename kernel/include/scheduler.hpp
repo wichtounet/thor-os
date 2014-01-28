@@ -13,11 +13,18 @@
 
 namespace scheduler {
 
+typedef size_t pid_t;
+
+pid_t get_pid();
+void block_process(pid_t pid);
+void unblock_process(pid_t pid);
+
 void init();
 void start();
 
 void kill_current_process(const interrupt::syscall_regs& regs);
 
+void timer_reschedule(const interrupt::syscall_regs& regs);
 void reschedule(const interrupt::syscall_regs& regs);
 
 process_t new_process();

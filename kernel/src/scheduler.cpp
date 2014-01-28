@@ -14,6 +14,9 @@
 
 namespace {
 
+//TODO It is not a good idea to use growing vector since then the indexes
+//will not always be valid
+
 bool started = false;
 
 std::vector<scheduler::process_t> processes;
@@ -156,15 +159,17 @@ void scheduler::kill_current_process(const interrupt::syscall_regs& regs){
     switch_to_process(regs, index);
 }
 
-void scheduler::reschedule(const interrupt::syscall_regs& regs){
+void scheduler::timer_reschedule(const interrupt::syscall_regs& regs){
     if(!started){
         return;
     }
 
+    auto& process = processes[current_index];
+
     if(rounds[current_index] == TURNOVER){
         rounds[current_index] = 0;
 
-        processes[current_index].state = process_state::READY;
+        process.state = process_state::READY;
 
         auto index = select_next_process();
 
@@ -178,6 +183,23 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
         switch_to_process(regs, index);
     } else {
         ++rounds[current_index];
+    }
+
+    //At this point we just have to return to the current process
+}
+
+void scheduler::reschedule(const interrupt::syscall_regs& regs){
+    thor_assert(started, "No interest in rescheduling before start");
+
+    auto& process = processes[current_index];
+
+    //The process just got blocked, choose another one
+    if(process.state == process_state::BLOCKED){
+        auto index = select_next_process();
+
+        save_context(regs);
+
+        switch_to_process(regs, index);
     }
 
     //At this point we just have to return to the current process
@@ -198,4 +220,22 @@ void scheduler::queue_process(process_t&& p){
     rounds.push_back(0);
 
     processes.back().state = process_state::READY;
+}
+
+scheduler::pid_t scheduler::get_pid(){
+    return processes[current_index].pid;
+}
+
+void scheduler::block_process(pid_t pid){
+    thor_assert(pid < processes.size(), "pid out of bounds");
+    thor_assert(processes[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
+
+    processes[pid].state = process_state::BLOCKED;
+}
+
+void scheduler::unblock_process(pid_t pid){
+    thor_assert(pid < processes.size(), "pid out of bounds");
+    thor_assert(processes[pid].state == process_state::BLOCKED, "Can only unblock BLOCKED processes");
+
+    processes[pid].state = process_state::READY;
 }

@@ -49,6 +49,9 @@ void system_call_entry(const interrupt::syscall_regs& regs){
             k_print_line("Invalid system call");
             break;
     }
+
+    //Reschedule to make sure that BLOCKED process will be preempted
+    scheduler::reschedule(regs);
 }
 
 void install_system_calls(){

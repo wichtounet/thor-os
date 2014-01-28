@@ -28,7 +28,7 @@ void timer_handler(const interrupt::syscall_regs& regs){
     if(_timer_ticks % 1000 == 0){
         ++_timer_seconds;
 
-        scheduler::reschedule(regs);
+        scheduler::timer_reschedule(regs);
     }
 }
 
