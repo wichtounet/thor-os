@@ -31,11 +31,35 @@ private:
 
 public:
     size_t size() const {
-        return __size;
+        return __size & ~0x3;
     }
 
     size_t& size_ref(){
         return __size;
+    }
+
+    bool has_left() const {
+        return __size & 0x1;
+    }
+
+    bool has_right() const {
+        return __size & 0x2;
+    }
+
+    bool set_left(bool left){
+        if(left){
+            __size = __size | 0x1;
+        } else {
+            __size = __size & ~0x1;
+        }
+    }
+
+    bool set_right(bool right){
+        if(right){
+            __size = __size | 0x2;
+        } else {
+            __size = __size & ~0x2;
+        }
     }
 
     constexpr malloc_header_chunk* next() const {
@@ -109,10 +133,6 @@ static_assert(MIN_SPLIT == aligned_size(MIN_SPLIT), "The size of minimum split m
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
 
-//All allocated memory is in [min_address, max_address[
-uintptr_t min_address; //Address of the first block being allocated
-uintptr_t max_address; //Address of the next block being allocated
-
 uint64_t* allocate_block(uint64_t blocks){
     //Allocate the physical necessary memory
     auto physical_memory = physical_allocator::allocate(blocks);
@@ -130,14 +150,6 @@ uint64_t* allocate_block(uint64_t blocks){
 
     //Map the physical memory at the virtual address
     paging::map_pages(virtual_memory, physical_memory, blocks);
-
-    if(min_address == 0){
-        min_address = virtual_memory;
-    } else {
-        min_address = std::min(min_address, virtual_memory);
-    }
-
-    max_address = std::max(max_address, virtual_memory);
 
     _allocated_memory += blocks * BLOCK_SIZE;
 
@@ -208,6 +220,8 @@ void init_head(){
     malloc_head = reinterpret_cast<malloc_header_chunk*>(&head);
     malloc_head->next_ref() = malloc_head;
     malloc_head->prev_ref() = malloc_head;
+    malloc_head->set_left(false);
+    malloc_head->set_right(false);
 }
 
 void expand_heap(malloc_header_chunk* current, size_t bytes = 0){
@@ -231,37 +245,36 @@ void expand_heap(malloc_header_chunk* current, size_t bytes = 0){
     header->size_ref() = blocks * BLOCK_SIZE - META_SIZE;
     header->footer()->size_ref() = header->size();
 
+    //When created a block has no left and right neighbour
+    header->set_left(false);
+    header->set_right(false);
+
     //Insert the new block into the free list
     insert_after(current, header);
 }
 
 malloc_header_chunk* left_block(malloc_header_chunk* b){
-    auto left_footer = reinterpret_cast<malloc_footer_chunk*>(
-        reinterpret_cast<uintptr_t>(b) - sizeof(malloc_footer_chunk));
+    if(b->has_left()){
+        auto left_footer = reinterpret_cast<malloc_footer_chunk*>(
+            reinterpret_cast<uintptr_t>(b) - sizeof(malloc_footer_chunk));
 
-    if(reinterpret_cast<uintptr_t>(left_footer)>= min_address){
         auto left_size = left_footer->size();
 
         auto left_header = reinterpret_cast<malloc_header_chunk*>(
             reinterpret_cast<uintptr_t>(left_footer) - left_size - sizeof(malloc_header_chunk));
 
-        if(reinterpret_cast<uintptr_t>(left_header) >= min_address){
-            return left_header;
-        }
+        return left_header;
     }
 
     return nullptr;
 }
 
 malloc_header_chunk* right_block(malloc_header_chunk* b){
-    auto right_header = reinterpret_cast<malloc_header_chunk*>(
-        reinterpret_cast<uintptr_t>(b) + META_SIZE + b->size());
+    if(b->has_right()){
+        auto right_header = reinterpret_cast<malloc_header_chunk*>(
+            reinterpret_cast<uintptr_t>(b) + META_SIZE + b->size());
 
-    if(reinterpret_cast<uintptr_t>(right_header) < max_address){
-        auto right_footer = right_header->footer();
-        if(reinterpret_cast<uintptr_t>(right_footer) < max_address){
-            return right_header;
-        }
+        return right_header;
     }
 
     return nullptr;
@@ -274,6 +287,9 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
     if(a && a->is_free()){
         auto new_size = a->size() + b->size() + META_SIZE;
 
+        auto block_left = a->has_left();
+        auto block_right = b->has_right();
+
         //Remove a from the free list
         remove(a);
 
@@ -281,16 +297,25 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
 
         b->size_ref() = new_size;
         b->footer()->size_ref() = new_size;
+
+        b->set_left(block_left);
+        b->set_right(block_right);
     }
 
     if(c && c->is_free()){
         auto new_size = b->size() + c->size() + META_SIZE;
+
+        auto block_left = b->has_left();
+        auto block_right = c->has_right();
 
         //Remove c from the free list
         remove(c);
 
         b->size_ref() = new_size;
         b->footer()->size_ref() = new_size;
+
+        b->set_left(block_left);
+        b->set_right(block_right);
     }
 
     return b;
@@ -332,9 +357,15 @@ void* malloc::k_malloc(uint64_t bytes){
             if(current->size() > necessary_space + MIN_SPLIT + META_SIZE){
                 auto new_block_size = current->size() - necessary_space;
 
+                auto block_left = current->has_left();
+                auto block_right = current->has_right();
+
                 //Set the new size of the current block
                 current->size_ref() = bytes;
                 current->footer()->size_ref() = bytes;
+
+                current->set_left(block_left);
+                current->set_right(true);
 
                 //Create a new block inside the current one
                 auto new_block = reinterpret_cast<malloc_header_chunk*>(
@@ -343,6 +374,9 @@ void* malloc::k_malloc(uint64_t bytes){
                 //Update the size of the new block
                 new_block->size_ref() = new_block_size;
                 new_block->footer()->size_ref() = new_block->size();
+
+                new_block->set_left(true);
+                new_block->set_right(block_right);
 
                 //Add the new block to the free list
                 insert_after(current, new_block);
