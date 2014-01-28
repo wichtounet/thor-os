@@ -77,7 +77,7 @@ void install_idt(){
 }
 
 void install_isrs(){
-    //TODO The GDT Selector should be computed in a better way
+    //TODO The Flags should be computed in a better way
 
     idt_set_gate(0, _isr0, gdt::LONG_SELECTOR, 0x8E);
     idt_set_gate(1, _isr1, gdt::LONG_SELECTOR, 0x8E);
@@ -135,6 +135,8 @@ void remap_irqs(){
 }
 
 void install_irqs(){
+    //TODO The Flags should be computed in a better way
+
     idt_set_gate(32, _irq0, gdt::LONG_SELECTOR, 0x8E);
     idt_set_gate(33, _irq1, gdt::LONG_SELECTOR, 0x8E);
     idt_set_gate(34, _irq2, gdt::LONG_SELECTOR, 0x8E);
@@ -154,6 +156,8 @@ void install_irqs(){
 }
 
 void install_syscalls(){
+    //TODO The Flags should be computed in a better way
+
     idt_set_gate(interrupt::SYSCALL_FIRST+0, _syscall0, gdt::LONG_SELECTOR, 0xEE);
     idt_set_gate(interrupt::SYSCALL_FIRST+1, _syscall1, gdt::LONG_SELECTOR, 0xEE);
     idt_set_gate(interrupt::SYSCALL_FIRST+2, _syscall2, gdt::LONG_SELECTOR, 0xEE);

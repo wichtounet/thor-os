@@ -35,8 +35,8 @@ void idle_task(){
     }
 }
 
-size_t idle_stack[64];
-size_t idle_kernel_stack[4096]; //TODO Perhaps not good
+char idle_stack[scheduler::user_stack_stack];
+char idle_kernel_stack[scheduler::kernel_stack_size];
 
 void create_idle_task(){
     auto idle_process = scheduler::new_process();
@@ -49,8 +49,8 @@ void create_idle_task(){
 
     idle_process.regs.rflags = 0x200;
     idle_process.regs.rip = reinterpret_cast<size_t>(&idle_task);
-    idle_process.regs.rsp = reinterpret_cast<size_t>(&idle_stack[63]);
-    idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[4095]);
+    idle_process.regs.rsp = reinterpret_cast<size_t>(&idle_stack[scheduler::user_stack_size - 1]);
+    idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[scheduler::kernel_stack_size - 1]);
 
     idle_process.regs.cs = gdt::LONG_SELECTOR;
     idle_process.regs.ds = gdt::DATA_SELECTOR;
