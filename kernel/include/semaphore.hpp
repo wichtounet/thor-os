@@ -8,6 +8,8 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
+#include "stl/lock_guard.hpp"
+
 #include "spinlock.hpp"
 #include "vector.hpp"
 
@@ -25,7 +27,7 @@ public:
     }
 
     void wait(){
-        lock.acquire();
+        std::lock_guard<spinlock> l(lock);
 
         if(value > 0){
             --value;
@@ -33,12 +35,10 @@ public:
             queue.push_back(scheduler::get_pid());
             scheduler::block_process(scheduler::get_pid());
         }
-
-        lock.release();
     }
 
     void signal(){
-        lock.acquire();
+        std::lock_guard<spinlock> l(lock);
 
         if(queue.empty()){
             ++value;
@@ -49,8 +49,6 @@ public:
             //No need to increment value, the process won't
             //decrement it
         }
-
-        lock.release();
     }
 };
 
