@@ -46,7 +46,7 @@ public:
         return __size & 0x2;
     }
 
-    bool set_left(bool left){
+    void set_left(bool left){
         if(left){
             __size = __size | 0x1;
         } else {
@@ -54,7 +54,7 @@ public:
         }
     }
 
-    bool set_right(bool right){
+    void set_right(bool right){
         if(right){
             __size = __size | 0x2;
         } else {
