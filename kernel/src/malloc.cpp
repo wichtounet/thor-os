@@ -30,7 +30,11 @@ private:
     malloc_header_chunk* __prev;
 
 public:
-    size_t& size(){
+    size_t size() const {
+        return __size;
+    }
+
+    size_t& size_ref(){
         return __size;
     }
 
@@ -69,9 +73,15 @@ public:
 };
 
 struct malloc_footer_chunk {
+private:
     uint64_t __size;
 
-    size_t& size(){
+public:
+    size_t size() const {
+        return __size;
+    }
+
+    size_t& size_ref(){
         return __size;
     }
 };
@@ -218,8 +228,8 @@ void expand_heap(malloc_header_chunk* current, size_t bytes = 0){
     auto header = reinterpret_cast<malloc_header_chunk*>(block);
 
     //Update the sizes
-    header->size() = blocks * BLOCK_SIZE - META_SIZE;
-    header->footer()->size() = header->size();
+    header->size_ref() = blocks * BLOCK_SIZE - META_SIZE;
+    header->footer()->size_ref() = header->size();
 
     //Insert the new block into the free list
     insert_after(current, header);
@@ -269,8 +279,8 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
 
         b = a;
 
-        b->size() = new_size;
-        b->footer()->size() = new_size;
+        b->size_ref() = new_size;
+        b->footer()->size_ref() = new_size;
     }
 
     if(c && c->is_free()){
@@ -279,8 +289,8 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
         //Remove c from the free list
         remove(c);
 
-        b->size() = new_size;
-        b->footer()->size() = new_size;
+        b->size_ref() = new_size;
+        b->footer()->size_ref() = new_size;
     }
 
     return b;
@@ -323,16 +333,16 @@ void* malloc::k_malloc(uint64_t bytes){
                 auto new_block_size = current->size() - necessary_space;
 
                 //Set the new size of the current block
-                current->size() = bytes;
-                current->footer()->size() = bytes;
+                current->size_ref() = bytes;
+                current->footer()->size_ref() = bytes;
 
                 //Create a new block inside the current one
                 auto new_block = reinterpret_cast<malloc_header_chunk*>(
                     reinterpret_cast<uintptr_t>(current) + bytes + META_SIZE);
 
                 //Update the size of the new block
-                new_block->size() = new_block_size;
-                new_block->footer()->size() = new_block->size();
+                new_block->size_ref() = new_block_size;
+                new_block->footer()->size_ref() = new_block->size();
 
                 //Add the new block to the free list
                 insert_after(current, new_block);
