@@ -14,7 +14,7 @@ private:
 
 public:
     void acquire(){
-        asm volatile(".retry: ; lock bts [%0], 0; jc .retry" : : "m" (lock));
+        asm volatile("1: ; lock bts [%0], 0; jc 1" : : "m" (lock));
     }
 
     void release(){

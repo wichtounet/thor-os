@@ -8,22 +8,23 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
+#include "stl/vector.hpp"
 #include "stl/lock_guard.hpp"
 
 #include "spinlock.hpp"
-#include "vector.hpp"
+#include "scheduler.hpp"
 
 //TODO Implement a queue and use it for more fairness
 
 struct semaphore {
 private:
     spinlock lock;
-    std::size_t value;
+    size_t value;
     std::vector<scheduler::pid_t> queue;
 
 public:
-    void init(std::size_t value) : value(value) {
-        //Nothing else to init
+    void init(size_t v){
+        value = v;
     }
 
     void wait(){
@@ -43,8 +44,10 @@ public:
         if(queue.empty()){
             ++value;
         } else {
-            auto pid = queue.pop_back();
+            auto pid = queue.back();
             scheduler::unblock_process(pid);
+
+            queue.pop_back();
 
             //No need to increment value, the process won't
             //decrement it
