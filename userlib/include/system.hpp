@@ -12,7 +12,6 @@
 
 void exit(size_t return_code) __attribute__((noreturn));
 
-//TODO Put the function in noreturn once the system call is written
 void exit(size_t return_code) {
     asm volatile("mov rax, 0x666; mov rbx, %0; int 50"
         : //No outputs
