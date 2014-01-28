@@ -197,5 +197,5 @@ void scheduler::queue_process(process_t&& p){
     processes.push_back(std::forward<scheduler::process_t>(p));
     rounds.push_back(0);
 
-    p.state = process_state::READY;
+    processes.back().state = process_state::READY;
 }

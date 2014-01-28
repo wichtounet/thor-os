@@ -84,6 +84,22 @@ public:
         return data[pos];
     }
 
+    value_type& front(){
+        return data[0];
+    }
+
+    const value_type& front() const  {
+        return data[0];
+    }
+
+    value_type& back(){
+        return data[size() - 1];
+    }
+
+    const value_type& back() const  {
+        return data[size() - 1];
+    }
+
     //Modifiers
 
     void push_back(value_type&& element){
