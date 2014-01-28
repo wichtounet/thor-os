@@ -16,6 +16,13 @@
 
 namespace scheduler {
 
+enum class process_state : char {
+    NEW = 0,
+    READY = 1,
+    RUNNING = 2,
+    BLOCKED = 3
+};
+
 struct segment_t {
     size_t physical;
     size_t size;
@@ -23,6 +30,8 @@ struct segment_t {
 
 struct process_t {
     size_t pid;
+
+    process_state state;
 
     bool system;
 

@@ -36,8 +36,7 @@ size_t idle_stack[64];
 size_t idle_kernel_stack[4096]; //TODO Perhaps not good
 
 void create_idle_task(){
-    scheduler::process_t idle_process;
-    idle_process.pid = next_pid++;
+    auto idle_process = scheduler::new_process();
     idle_process.system = true;
     idle_process.physical_cr3 = paging::get_physical_pml4t();
     idle_process.paging_size = 0;
@@ -53,8 +52,7 @@ void create_idle_task(){
     idle_process.regs.cs = gdt::LONG_SELECTOR;
     idle_process.regs.ds = gdt::DATA_SELECTOR;
 
-    processes.push_back(std::move(idle_process));
-    rounds.push_back(0);
+    queue_process(std::move(idle_process));
 }
 
 void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
@@ -63,6 +61,8 @@ void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
     k_printf("Switched to %u\n", index);
 
     auto& process = processes[current_index];
+
+    process.state = scheduler::process_state::RUNNING;
 
     gdt::tss.rsp0_low = process.kernel_rsp & 0xFFFFFFFF;
     gdt::tss.rsp0_high = process.kernel_rsp >> 32;
@@ -103,7 +103,13 @@ void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
 }
 
 size_t select_next_process(){
-    return (current_index + 1) % processes.size();
+    auto next = (current_index + 1) % processes.size();
+
+    while(processes[next].state != scheduler::process_state::READY){
+        next = (next + 1) % processes.size();
+    }
+
+    return next;
 }
 
 void save_context(const interrupt::syscall_regs& regs){
@@ -126,6 +132,7 @@ void scheduler::start(){
 
     current_index = 0;
     rounds[current_index] = TURNOVER;
+    processes[current_index].state = process_state::RUNNING;
 
     //Wait for the next interrupt
     while(true){
@@ -157,6 +164,8 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
     if(rounds[current_index] == TURNOVER){
         rounds[current_index] = 0;
 
+        processes[current_index].state = process_state::READY;
+
         auto index = select_next_process();
 
         //If it is the same, no need to go to the switching process
@@ -179,6 +188,7 @@ scheduler::process_t scheduler::new_process(){
 
     p.system = false;
     p.pid = next_pid++;
+    p.state = process_state::NEW;
 
     return std::move(p);
 }
@@ -186,4 +196,6 @@ scheduler::process_t scheduler::new_process(){
 void scheduler::queue_process(process_t&& p){
     processes.push_back(std::forward<scheduler::process_t>(p));
     rounds.push_back(0);
+
+    p.state = process_state::READY;
 }
