@@ -45,19 +45,19 @@ void create_idle_task(){
     idle_process.physical_user_stack = 0;
     idle_process.physical_kernel_stack = 0;
 
-    idle_process.rip = reinterpret_cast<size_t>(&idle_task);
-    idle_process.user_rsp = reinterpret_cast<size_t>(&idle_stack[63]);
+    idle_process.regs.rflags = 0x200;
+    idle_process.regs.rip = reinterpret_cast<size_t>(&idle_task);
+    idle_process.regs.rsp = reinterpret_cast<size_t>(&idle_stack[63]);
     idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[4095]);
 
-    idle_process.code_selector = gdt::LONG_SELECTOR;
-    idle_process.data_selector = gdt::DATA_SELECTOR;
+    idle_process.regs.cs = gdt::LONG_SELECTOR;
+    idle_process.regs.ds = gdt::DATA_SELECTOR;
 
     processes.push_back(std::move(idle_process));
     rounds.push_back(0);
 }
 
-void switch_to_process(size_t index) __attribute__((noreturn));
-void switch_to_process(size_t index){
+void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
     current_index = index;
 
     k_printf("Switched to %u\n", index);
@@ -67,7 +67,29 @@ void switch_to_process(size_t index){
     gdt::tss.rsp0_low = process.kernel_rsp & 0xFFFFFFFF;
     gdt::tss.rsp0_high = process.kernel_rsp >> 32;
 
-    asm volatile("mov rax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
+    auto stack_pointer = reinterpret_cast<uint64_t*>(regs.placeholder);
+
+    *(stack_pointer + 4) = process.regs.ds;
+    *(stack_pointer + 3) = process.regs.rsp;
+    *(stack_pointer + 2) = process.regs.rflags;
+    *(stack_pointer + 1) = process.regs.cs;
+    *(stack_pointer + 0) = process.regs.rip;
+    *(stack_pointer - 3) = process.regs.r12;
+    *(stack_pointer - 4) = process.regs.r11;
+    *(stack_pointer - 5) = process.regs.r10;
+    *(stack_pointer - 6) = process.regs.r9;
+    *(stack_pointer - 7) = process.regs.r8;
+    *(stack_pointer - 8) = process.regs.rdi;
+    *(stack_pointer - 9) = process.regs.rsi;
+    *(stack_pointer - 10) = process.regs.rdx;
+    *(stack_pointer - 11) = process.regs.rcx;
+    *(stack_pointer - 12) = process.regs.rbx;
+    *(stack_pointer - 13) = process.regs.rax;
+    *(stack_pointer - 14) = process.regs.ds;
+
+    asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
+
+    /*asm volatile("mov rax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
         :  //No outputs
         : "r" (process.data_selector)
         : "rax");
@@ -77,9 +99,7 @@ void switch_to_process(size_t index){
     asm volatile("push %0; push %1; pushfq; pop rax; or rax, 0x200; push rax; push %2; push %3; iretq"
         :  //No outputs
         : "r" (process.data_selector), "r" (process.user_rsp), "r" (process.code_selector), "r" (process.rip)
-        : "rax", "memory");
-
-    __builtin_unreachable();
+        : "rax", "memory");*/
 }
 
 size_t select_next_process(){
@@ -89,8 +109,7 @@ size_t select_next_process(){
 void save_context(const interrupt::syscall_regs& regs){
     auto& process = processes[current_index];
 
-    process.user_rsp = regs.rsp;
-    process.rip = regs.rip;
+    process.regs = regs;
 }
 
 } //end of anonymous namespace
@@ -105,10 +124,16 @@ void scheduler::start(){
 
     started = true;
 
-    switch_to_process(processes.size() - 1);
+    current_index = 0;
+    rounds[current_index] = TURNOVER;
+
+    //Wait for the next interrupt
+    while(true){
+        asm volatile ("nop; nop; nop; nop");
+    }
 }
 
-void scheduler::kill_current_process(){
+void scheduler::kill_current_process(const interrupt::syscall_regs& regs){
     k_printf("Kill %u\n", current_index);
 
     processes.erase(current_index);
@@ -121,7 +146,7 @@ void scheduler::kill_current_process(){
 
     //Select the next process and switch to it
     auto index = select_next_process();
-    switch_to_process(index);
+    switch_to_process(regs, index);
 }
 
 void scheduler::reschedule(const interrupt::syscall_regs& regs){
@@ -141,7 +166,7 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
 
         save_context(regs);
 
-        switch_to_process(index);
+        switch_to_process(regs, index);
     } else {
         ++rounds[current_index];
     }

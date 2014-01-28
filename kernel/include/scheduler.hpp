@@ -16,7 +16,7 @@ namespace scheduler {
 void init();
 void start();
 
-void kill_current_process();
+void kill_current_process(const interrupt::syscall_regs& regs);
 
 void reschedule(const interrupt::syscall_regs& regs);
 

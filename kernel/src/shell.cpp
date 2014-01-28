@@ -809,7 +809,7 @@ bool create_paging(char* buffer, scheduler::process_t& process){
 
     //2.1 Allocate user stack
     allocate_user_memory(process, scheduler::user_stack_start, scheduler::user_stack_size, process.physical_user_stack);
-    process.user_rsp = scheduler::user_rsp;
+    process.regs.rsp = scheduler::user_rsp;
 
     //2.2 Allocate all user segments
 
@@ -865,22 +865,8 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     return true;
 }
 
-void exec_command(const std::vector<std::string>& params){
-    if(params.size() < 2){
-        k_print_line("exec: Need the name of the executable to read");
-
-        return;
-    }
-
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    scheduler::init();
-
-    auto content = read_elf_file(params[1], "exec");
+void queue_process(const std::string& file){
+    auto content = read_elf_file(file, "exec");
 
     if(!content){
         return;
@@ -896,12 +882,34 @@ void exec_command(const std::vector<std::string>& params){
         return;
     }
 
-    process.rip = header->e_entry;
+    process.regs.rip = header->e_entry;
 
-    process.code_selector = gdt::USER_CODE_SELECTOR + 3;
-    process.data_selector = gdt::USER_DATA_SELECTOR + 3;
+    process.regs.cs = gdt::USER_CODE_SELECTOR + 3;
+    process.regs.ds = gdt::USER_DATA_SELECTOR + 3;
+
+    process.regs.rflags = 0x200;
 
     scheduler::queue_process(std::move(process));
+}
+
+void exec_command(const std::vector<std::string>& params){
+    if(params.size() < 2){
+        k_print_line("exec: Need the name of the executable to read");
+
+        return;
+    }
+
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        k_print_line("Nothing is mounted");
+
+        return;
+    }
+
+    scheduler::init();
+
+    for(size_t i = 1; i < params.size(); ++i){
+        queue_process(params[i]);
+    }
 
     scheduler::start();
 }
