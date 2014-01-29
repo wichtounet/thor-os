@@ -8,8 +8,7 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
-#include "stl/vector.hpp"
-#include "stl/list.hpp"
+#include "stl/queue.hpp"
 #include "stl/lock_guard.hpp"
 
 #include "spinlock.hpp"
@@ -19,7 +18,7 @@ struct semaphore {
 private:
     spinlock lock;
     size_t value;
-    std::list<scheduler::pid_t> queue;
+    std::queue<scheduler::pid_t> queue;
 
 public:
     void init(size_t v){
@@ -32,7 +31,7 @@ public:
         if(value > 0){
             --value;
         } else {
-            queue.push_back(scheduler::get_pid());
+            queue.push(scheduler::get_pid());
             scheduler::block_process(scheduler::get_pid());
         }
     }
@@ -43,10 +42,10 @@ public:
         if(queue.empty()){
             ++value;
         } else {
-            auto pid = queue.front();
+            auto pid = queue.top();
             scheduler::unblock_process(pid);
 
-            queue.pop_front();
+            queue.pop();
 
             //No need to increment value, the process won't
             //decrement it
