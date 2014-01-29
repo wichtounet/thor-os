@@ -24,7 +24,7 @@ char get_char();
 char key_to_ascii(uint8_t key);
 char shift_key_to_ascii(uint8_t key);
 
-char get_char_blocking();
+void get_char_blocking();
 
 }
 

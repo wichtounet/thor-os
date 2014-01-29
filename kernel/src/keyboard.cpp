@@ -10,6 +10,7 @@
 #include "kernel_utils.hpp"
 #include "semaphore.hpp"
 #include "spinlock.hpp"
+#include "sleep_queue.hpp"
 
 namespace {
 
@@ -93,22 +94,31 @@ char shifted_qwertz[128] = {
 
 const uint8_t BUFFER_SIZE = 64;
 
+//TODO Encapsulate the buffer
 char input_buffer[BUFFER_SIZE];
 volatile uint8_t start;
 volatile uint8_t count;
 
 spinlock lock;
-semaphore sem;
+sleep_queue queue;
 
 void keyboard_handler(const interrupt::syscall_regs&){
     auto key = static_cast<char>(in_byte(0x60));
 
+    std::lock_guard<spinlock> l(lock);
+
     if(count == BUFFER_SIZE){
         //The buffer is full, we loose the characters
     } else {
-        auto end = (start + count) % BUFFER_SIZE;
-        input_buffer[end] = key;
-        ++count;
+        if(queue.empty()){
+            auto end = (start + count) % BUFFER_SIZE;
+            input_buffer[end] = key;
+            ++count;
+        } else {
+            auto pid = queue.wake_up();
+
+            //TODO Give key to process pid
+        }
     }
 }
 
@@ -119,12 +129,23 @@ void keyboard::install_driver(){
 
     start = 0;
     count = 0;
-
-    sem.init(0);
 }
 
-char keyboard::get_char_blocking(){
-    //TODO
+void keyboard::get_char_blocking(){
+    std::lock_guard<spinlock> l(lock);
+
+    if(count > 0){
+        auto key = input_buffer[start];
+        start = (start + 1) % BUFFER_SIZE;
+        --count;
+
+        auto pid = scheduler::current_pid();
+
+        //TODO Give key to process pid
+    } else {
+        //Wait for a char
+        queue.sleep();
+    }
 }
 
 //TODO Once shell is user mode, can be removed
