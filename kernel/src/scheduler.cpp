@@ -35,7 +35,7 @@ void idle_task(){
     }
 }
 
-char idle_stack[scheduler::user_stack_stack];
+char idle_stack[scheduler::user_stack_size];
 char idle_kernel_stack[scheduler::kernel_stack_size];
 
 void create_idle_task(){
