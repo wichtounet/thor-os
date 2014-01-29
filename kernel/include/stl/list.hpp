@@ -33,6 +33,12 @@ public:
         //Nothing else to init
     }
 
+    ~list(){
+        while(!empty()){
+            pop_back();
+        }
+    }
+
     // Disable copy for now
     list(const list& rhs) = delete;
     list& operator=(const list& rhs) = delete;
