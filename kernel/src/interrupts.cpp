@@ -18,11 +18,20 @@
 
 namespace {
 
+struct idt_flags {
+    uint8_t type    : 4;
+    uint8_t zero    : 1;
+    uint8_t dpl     : 2;
+    uint8_t present : 1;
+} __attribute__((packed));
+
+static_assert(sizeof(idt_flags) == 1, "The Flags of an IDT entry take one byte");
+
 struct idt_entry {
     uint16_t offset_low;
     uint16_t segment_selector;
     uint8_t  zero;
-    uint8_t flags;
+    idt_flags flags;
     uint16_t offset_middle;
     uint32_t offset_high;
     uint32_t reserved;
@@ -41,7 +50,7 @@ idtr idtr_64;
 void (*irq_handlers[16])(const interrupt::syscall_regs&);
 void (*syscall_handlers[interrupt::SYSCALL_MAX])(const interrupt::syscall_regs&);
 
-void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, uint8_t flags){
+void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, idt_flags flags){
     auto& entry = idt_64[gate];
 
     entry.segment_selector = gdt_selector;
@@ -77,40 +86,38 @@ void install_idt(){
 }
 
 void install_isrs(){
-    //TODO The Flags should be computed in a better way
-
-    idt_set_gate(0, _isr0, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(1, _isr1, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(2, _isr2, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(3, _isr3, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(4, _isr4, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(5, _isr5, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(6, _isr6, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(7, _isr7, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(8, _isr8, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(9, _isr9, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(10, _isr10, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(11, _isr11, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(12, _isr12, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(13, _isr13, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(14, _isr14, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(15, _isr15, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(16, _isr16, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(17, _isr17, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(18, _isr18, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(19, _isr19, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(20, _isr20, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(21, _isr21, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(22, _isr22, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(23, _isr23, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(24, _isr24, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(25, _isr25, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(26, _isr26, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(27, _isr27, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(28, _isr28, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(29, _isr29, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(30, _isr30, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(31, _isr31, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(0, _isr0, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(1, _isr1, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(2, _isr2, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(3, _isr3, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(4, _isr4, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(5, _isr5, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(6, _isr6, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(7, _isr7, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(8, _isr8, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(9, _isr9, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(10, _isr10, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(11, _isr11, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(12, _isr12, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(13, _isr13, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(14, _isr14, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(15, _isr15, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(16, _isr16, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(17, _isr17, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(18, _isr18, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(19, _isr19, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(20, _isr20, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(21, _isr21, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(22, _isr22, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(23, _isr23, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(24, _isr24, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(25, _isr25, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(26, _isr26, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(27, _isr27, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(28, _isr28, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(29, _isr29, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(30, _isr30, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(31, _isr31, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
 }
 
 void remap_irqs(){
@@ -135,39 +142,35 @@ void remap_irqs(){
 }
 
 void install_irqs(){
-    //TODO The Flags should be computed in a better way
-
-    idt_set_gate(32, _irq0, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(33, _irq1, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(34, _irq2, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(35, _irq3, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(36, _irq4, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(37, _irq5, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(38, _irq6, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(39, _irq7, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(40, _irq8, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(41, _irq9, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(42, _irq10, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(43, _irq11, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(44, _irq12, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(45, _irq13, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(46, _irq14, gdt::LONG_SELECTOR, 0x8E);
-    idt_set_gate(47, _irq15, gdt::LONG_SELECTOR, 0x8E);
+    idt_set_gate(32, _irq0, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(33, _irq1, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(34, _irq2, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(35, _irq3, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(36, _irq4, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(37, _irq5, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(38, _irq6, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(39, _irq7, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(40, _irq8, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(41, _irq9, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(42, _irq10, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(43, _irq11, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(44, _irq12, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(45, _irq13, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(46, _irq14, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
+    idt_set_gate(47, _irq15, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 0, 1});
 }
 
 void install_syscalls(){
-    //TODO The Flags should be computed in a better way
-
-    idt_set_gate(interrupt::SYSCALL_FIRST+0, _syscall0, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+1, _syscall1, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+2, _syscall2, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+3, _syscall3, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+4, _syscall4, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+5, _syscall5, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+6, _syscall6, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+7, _syscall7, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+8, _syscall8, gdt::LONG_SELECTOR, 0xEE);
-    idt_set_gate(interrupt::SYSCALL_FIRST+9, _syscall9, gdt::LONG_SELECTOR, 0xEE);
+    idt_set_gate(interrupt::SYSCALL_FIRST+0, _syscall0, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+1, _syscall1, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+2, _syscall2, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+3, _syscall3, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+4, _syscall4, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+5, _syscall5, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+6, _syscall6, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+7, _syscall7, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+8, _syscall8, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
+    idt_set_gate(interrupt::SYSCALL_FIRST+9, _syscall9, gdt::LONG_SELECTOR, {gdt::SEG_INTERRUPT_GATE, 0, 3, 1});
 }
 
 void enable_interrupts(){
