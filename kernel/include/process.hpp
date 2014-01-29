@@ -17,10 +17,11 @@
 namespace scheduler {
 
 enum class process_state : char {
-    NEW = 0,
-    READY = 1,
-    RUNNING = 2,
-    BLOCKED = 3
+    EMPTY = 0,
+    NEW = 1,
+    READY = 2,
+    RUNNING = 3,
+    BLOCKED = 4
 };
 
 struct segment_t {
@@ -30,8 +31,6 @@ struct segment_t {
 
 struct process_t {
     size_t pid;
-
-    process_state state;
 
     bool system;
 

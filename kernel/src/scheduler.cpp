@@ -12,21 +12,24 @@
 
 #include "console.hpp"
 
+#include "stl/array.hpp"
+
 namespace {
 
-//TODO It is not a good idea to use growing vector since then the indexes
-//will not always be valid
+struct process_control_t {
+    scheduler::process_t process;
+    scheduler::process_state state;
+    size_t rounds;
+};
+
+std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
 
 bool started = false;
 
-std::vector<scheduler::process_t> processes;
-std::vector<size_t> rounds;
-
 constexpr const size_t TURNOVER = 10;
 
-size_t current_index;
-
-size_t next_pid = 1;
+size_t current_pid;
+size_t next_pid = 0;
 
 void idle_task(){
     while(true){
@@ -39,7 +42,8 @@ char idle_stack[scheduler::user_stack_size];
 char idle_kernel_stack[scheduler::kernel_stack_size];
 
 void create_idle_task(){
-    auto idle_process = scheduler::new_process();
+    auto& idle_process = scheduler::new_process();
+
     idle_process.system = true;
     idle_process.physical_cr3 = paging::get_physical_pml4t();
     idle_process.paging_size = 0;
@@ -55,42 +59,42 @@ void create_idle_task(){
     idle_process.regs.cs = gdt::LONG_SELECTOR;
     idle_process.regs.ds = gdt::DATA_SELECTOR;
 
-    queue_process(std::move(idle_process));
+    scheduler::queue_process(idle_process.pid);
 }
 
-void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
-    current_index = index;
+void switch_to_process(const interrupt::syscall_regs& regs, size_t pid){
+    current_pid = pid;
 
-    k_printf("Switched to %u\n", index);
+    k_printf("Switched to %u\n", current_pid);
 
-    auto& process = processes[current_index];
+    auto& process = pcb[current_pid];
 
     process.state = scheduler::process_state::RUNNING;
 
-    gdt::tss.rsp0_low = process.kernel_rsp & 0xFFFFFFFF;
-    gdt::tss.rsp0_high = process.kernel_rsp >> 32;
+    gdt::tss.rsp0_low = process.process.kernel_rsp & 0xFFFFFFFF;
+    gdt::tss.rsp0_high = process.process.kernel_rsp >> 32;
 
     auto stack_pointer = reinterpret_cast<uint64_t*>(regs.placeholder);
 
-    *(stack_pointer + 4) = process.regs.ds;
-    *(stack_pointer + 3) = process.regs.rsp;
-    *(stack_pointer + 2) = process.regs.rflags;
-    *(stack_pointer + 1) = process.regs.cs;
-    *(stack_pointer + 0) = process.regs.rip;
-    *(stack_pointer - 3) = process.regs.r12;
-    *(stack_pointer - 4) = process.regs.r11;
-    *(stack_pointer - 5) = process.regs.r10;
-    *(stack_pointer - 6) = process.regs.r9;
-    *(stack_pointer - 7) = process.regs.r8;
-    *(stack_pointer - 8) = process.regs.rdi;
-    *(stack_pointer - 9) = process.regs.rsi;
-    *(stack_pointer - 10) = process.regs.rdx;
-    *(stack_pointer - 11) = process.regs.rcx;
-    *(stack_pointer - 12) = process.regs.rbx;
-    *(stack_pointer - 13) = process.regs.rax;
-    *(stack_pointer - 14) = process.regs.ds;
+    *(stack_pointer + 4) = process.process.regs.ds;
+    *(stack_pointer + 3) = process.process.regs.rsp;
+    *(stack_pointer + 2) = process.process.regs.rflags;
+    *(stack_pointer + 1) = process.process.regs.cs;
+    *(stack_pointer + 0) = process.process.regs.rip;
+    *(stack_pointer - 3) = process.process.regs.r12;
+    *(stack_pointer - 4) = process.process.regs.r11;
+    *(stack_pointer - 5) = process.process.regs.r10;
+    *(stack_pointer - 6) = process.process.regs.r9;
+    *(stack_pointer - 7) = process.process.regs.r8;
+    *(stack_pointer - 8) = process.process.regs.rdi;
+    *(stack_pointer - 9) = process.process.regs.rsi;
+    *(stack_pointer - 10) = process.process.regs.rdx;
+    *(stack_pointer - 11) = process.process.regs.rcx;
+    *(stack_pointer - 12) = process.process.regs.rbx;
+    *(stack_pointer - 13) = process.process.regs.rax;
+    *(stack_pointer - 14) = process.process.regs.ds;
 
-    asm volatile("mov cr3, %0" : : "r" (process.physical_cr3) : "memory");
+    asm volatile("mov cr3, %0" : : "r" (process.process.physical_cr3) : "memory");
 
     /*asm volatile("mov rax, %0; mov ds, ax; mov es, ax; mov fs, ax; mov gs, ax;"
         :  //No outputs
@@ -106,19 +110,19 @@ void switch_to_process(const interrupt::syscall_regs& regs, size_t index){
 }
 
 size_t select_next_process(){
-    auto next = (current_index + 1) % processes.size();
+    auto next = (current_pid+ 1) % pcb.size();
 
-    while(processes[next].state != scheduler::process_state::READY){
-        next = (next + 1) % processes.size();
+    while(pcb[next].state != scheduler::process_state::READY){
+        next = (next + 1) % pcb.size();
     }
 
     return next;
 }
 
 void save_context(const interrupt::syscall_regs& regs){
-    auto& process = processes[current_index];
+    auto& process = pcb[current_pid];
 
-    process.regs = regs;
+    process.process.regs = regs;
 }
 
 } //end of anonymous namespace
@@ -129,13 +133,11 @@ void scheduler::init(){
 }
 
 void scheduler::start(){
-    thor_assert(!processes.empty(), "There should at least be the idle task");
-
     started = true;
 
-    current_index = 0;
-    rounds[current_index] = TURNOVER;
-    processes[current_index].state = process_state::RUNNING;
+    current_pid = 0;
+    pcb[current_pid].rounds = TURNOVER;
+    pcb[current_pid].state = process_state::RUNNING;
 
     //Wait for the next interrupt
     while(true){
@@ -144,15 +146,13 @@ void scheduler::start(){
 }
 
 void scheduler::kill_current_process(const interrupt::syscall_regs& regs){
-    k_printf("Kill %u\n", current_index);
-
-    processes.erase(current_index);
-    rounds.erase(current_index);
+    k_printf("Kill %u\n", current_pid);
 
     //TODO At this point, memory should be released
 
-    //Start from the first again
-    current_index = 0;
+    pcb[current_pid].state = scheduler::process_state::EMPTY;
+
+    current_pid = (current_pid + 1) % scheduler::MAX_PROCESS;
 
     //Select the next process and switch to it
     auto index = select_next_process();
@@ -164,25 +164,25 @@ void scheduler::timer_reschedule(const interrupt::syscall_regs& regs){
         return;
     }
 
-    auto& process = processes[current_index];
+    auto& process = pcb[current_pid];
 
-    if(rounds[current_index] == TURNOVER){
-        rounds[current_index] = 0;
+    if(process.rounds  == TURNOVER){
+        process.rounds = 0;
 
         process.state = process_state::READY;
 
-        auto index = select_next_process();
+        auto pid = select_next_process();
 
         //If it is the same, no need to go to the switching process
-        if(index == current_index){
+        if(pid == current_pid){
             return;
         }
 
         save_context(regs);
 
-        switch_to_process(regs, index);
+        switch_to_process(regs, pid);
     } else {
-        ++rounds[current_index];
+        ++process.rounds;
     }
 
     //At this point we just have to return to the current process
@@ -191,7 +191,7 @@ void scheduler::timer_reschedule(const interrupt::syscall_regs& regs){
 void scheduler::reschedule(const interrupt::syscall_regs& regs){
     thor_assert(started, "No interest in rescheduling before start");
 
-    auto& process = processes[current_index];
+    auto& process = pcb[current_pid];
 
     //The process just got blocked, choose another one
     if(process.state == process_state::BLOCKED){
@@ -205,37 +205,36 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
     //At this point we just have to return to the current process
 }
 
-scheduler::process_t scheduler::new_process(){
-    process_t p;
+scheduler::process_t& scheduler::new_process(){
+    auto pid = next_pid++;
 
-    p.system = false;
-    p.pid = next_pid++;
-    p.state = process_state::NEW;
+    auto& process = pcb[pid];
 
-    return std::move(p);
+    process.process.system = false;
+    process.process.pid = pid;
+    process.state = process_state::NEW;
+
+    return process.process;
 }
 
-void scheduler::queue_process(process_t&& p){
-    processes.push_back(std::forward<scheduler::process_t>(p));
-    rounds.push_back(0);
-
-    processes.back().state = process_state::READY;
+void scheduler::queue_process(scheduler::pid_t p){
+    pcb[p].state = process_state::READY;
 }
 
 scheduler::pid_t scheduler::get_pid(){
-    return processes[current_index].pid;
+    return current_pid;
 }
 
 void scheduler::block_process(pid_t pid){
-    thor_assert(pid < processes.size(), "pid out of bounds");
-    thor_assert(processes[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+    thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
 
-    processes[pid].state = process_state::BLOCKED;
+    pcb[pid].state = process_state::BLOCKED;
 }
 
 void scheduler::unblock_process(pid_t pid){
-    thor_assert(pid < processes.size(), "pid out of bounds");
-    thor_assert(processes[pid].state == process_state::BLOCKED, "Can only unblock BLOCKED processes");
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+    thor_assert(pcb[pid].state == process_state::BLOCKED, "Can only block BLOCKED processes");
 
-    processes[pid].state = process_state::READY;
+    pcb[pid].state = process_state::READY;
 }

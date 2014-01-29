@@ -875,7 +875,7 @@ void queue_process(const std::string& file){
     auto buffer = content->c_str();
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
 
-    auto process = scheduler::new_process();
+    auto& process = scheduler::new_process();
 
     if(!create_paging(buffer, process)){
         k_print_line("Impossible to initialize paging");
@@ -889,7 +889,7 @@ void queue_process(const std::string& file){
 
     process.regs.rflags = 0x200;
 
-    scheduler::queue_process(std::move(process));
+    scheduler::queue_process(process.pid);
 }
 
 void exec_command(const std::vector<std::string>& params){
