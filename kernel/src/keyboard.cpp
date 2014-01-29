@@ -123,7 +123,7 @@ void keyboard::install_driver(){
     sem.init(0);
 }
 
-char blocking::get_char_blocking(){
+char keyboard::get_char_blocking(){
     //TODO
 }
 
