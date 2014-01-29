@@ -8,6 +8,7 @@
 #include "system_calls.hpp"
 #include "console.hpp"
 #include "scheduler.hpp"
+#include "keyboard.hpp"
 
 namespace {
 
@@ -21,6 +22,11 @@ void sc_print_string(const interrupt::syscall_regs& regs){
 
 void sc_print_digit(const interrupt::syscall_regs& regs){
     k_print(regs.rbx);
+}
+
+void sc_get_char(const interrupt::syscall_regs& regs){
+    auto c = keyboard::get_char_blocking();
+    //TODO
 }
 
 } //End of anonymous namespace
@@ -39,6 +45,10 @@ void system_call_entry(const interrupt::syscall_regs& regs){
 
         case 2:
             sc_print_digit(regs);
+            break;
+
+        case 3:
+            sc_get_char(regs);
             break;
 
         case 0x666:

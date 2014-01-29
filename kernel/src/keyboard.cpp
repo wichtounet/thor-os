@@ -8,6 +8,8 @@
 #include "keyboard.hpp"
 #include "interrupts.hpp"
 #include "kernel_utils.hpp"
+#include "semaphore.hpp"
+#include "spinlock.hpp"
 
 namespace {
 
@@ -95,6 +97,9 @@ char input_buffer[BUFFER_SIZE];
 volatile uint8_t start;
 volatile uint8_t count;
 
+spinlock lock;
+semaphore sem;
+
 void keyboard_handler(const interrupt::syscall_regs&){
     auto key = static_cast<char>(in_byte(0x60));
 
@@ -107,15 +112,22 @@ void keyboard_handler(const interrupt::syscall_regs&){
     }
 }
 
-}
+} //end of anonymous namespace
 
 void keyboard::install_driver(){
     interrupt::register_irq_handler(1, keyboard_handler);
 
     start = 0;
     count = 0;
+
+    sem.init(0);
 }
 
+char blocking::get_char_blocking(){
+    //TODO
+}
+
+//TODO Once shell is user mode, can be removed
 char keyboard::get_char(){
     //Wait for the buffer to contains something
     while(count == 0){
