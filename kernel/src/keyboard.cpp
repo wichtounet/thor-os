@@ -120,7 +120,7 @@ void keyboard_handler(const interrupt::syscall_regs&){
             ++count;
         } else {
             auto pid = queue.wake_up();
-            give_char(pid, key);
+            give_char(pid, keyboard::shift_key_to_ascii(key));
         }
     }
 }
@@ -143,7 +143,7 @@ void keyboard::get_char_blocking(){
         --count;
 
         auto pid = scheduler::get_pid();
-        give_char(pid, key);
+        give_char(pid, shift_key_to_ascii(key));
     } else {
         //Wait for a char
         queue.sleep();
