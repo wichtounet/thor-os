@@ -8,9 +8,11 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
+#include "stl/types.hpp"
+
 namespace std {
 
-template<typename T, uint64_t N>
+template<typename T, size_t N>
 class array {
 private:
     T data[N];
@@ -19,7 +21,7 @@ public:
     typedef T                       value_type;
     typedef value_type*             iterator;
     typedef const value_type*       const_iterator;
-    typedef uint64_t                size_type;
+    typedef size_t                size_type;
 
     T& operator[](size_type pos){
         return data[pos];
@@ -57,11 +59,11 @@ public:
     typedef value_type*             pointer_type;
     typedef value_type*             iterator;
     typedef const value_type*       const_iterator;
-    typedef uint64_t                size_type;
+    typedef size_t                size_type;
 
 private:
     T* array;
-    uint64_t _size;
+    size_t _size;
 
 public:
     unique_heap_array() : array(nullptr), _size(0) {}

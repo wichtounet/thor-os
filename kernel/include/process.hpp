@@ -16,9 +16,10 @@
 
 namespace scheduler {
 
-constexpr const size_t MAX_PRIORITY = 2;
+constexpr const size_t MAX_PRIORITY = 3;
 constexpr const size_t MIN_PRIORITY = 0;
 constexpr const size_t PRIORITY_LEVELS = MAX_PRIORITY - MIN_PRIORITY + 1;
+constexpr const size_t DEFAULT_PRIORITY = 2;
 
 typedef size_t pid_t;
 
@@ -37,6 +38,7 @@ struct segment_t {
 
 struct process_t {
     pid_t pid;
+    size_t priority;
 
     bool system;
 

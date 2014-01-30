@@ -19,3 +19,8 @@ void __thor_assert(bool condition, const char* message){
         suspend_kernel();
     }
 }
+
+void __thor_unreachable(const char* message){
+    k_print_line(message);
+    suspend_kernel();
+}
