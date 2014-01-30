@@ -269,6 +269,12 @@ scheduler::pid_t scheduler::get_pid(){
     return current_pid;
 }
 
+scheduler::process_t& scheduler::get_process(pid_t pid){
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+
+    return pcb[pid].process;
+}
+
 void scheduler::block_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
