@@ -139,7 +139,7 @@ void keyboard::get_char_blocking(){
         start = (start + 1) % BUFFER_SIZE;
         --count;
 
-        auto pid = scheduler::current_pid();
+        auto pid = scheduler::get_pid();
 
         //TODO Give key to process pid
     } else {

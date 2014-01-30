@@ -13,8 +13,6 @@
 
 namespace scheduler {
 
-typedef size_t pid_t;
-
 constexpr const size_t MAX_PROCESS = 128;
 
 pid_t get_pid();
