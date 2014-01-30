@@ -103,7 +103,7 @@ spinlock lock;
 sleep_queue queue;
 
 void give_char(scheduler::pid_t pid, char t){
-    scheduler::get_process(pid).regs.eax = t;
+    scheduler::get_process(pid).regs.rax = t;
 }
 
 void keyboard_handler(const interrupt::syscall_regs&){
