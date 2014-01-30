@@ -8,6 +8,8 @@
 #ifndef USER_PRINT_HPP
 #define USER_PRINT_HPP
 
+//TODO Rename in console
+
 #include <types.hpp>
 
 void print(char c){
@@ -43,6 +45,15 @@ void print_line(const char* s){
 void print_line(size_t v){
     print(v);
     print_line();
+}
+
+char read_char(){
+    size_t value;
+    asm volatile("mov rax, 3; int 50; mov %0, rax"
+        : "=m" (value)
+        : //No inputs
+        : "rax", "rbx");
+    return value;
 }
 
 #endif
