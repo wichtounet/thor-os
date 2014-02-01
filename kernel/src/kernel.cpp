@@ -21,6 +21,7 @@
 #include "vesa.hpp"
 #include "console.hpp"
 #include "gdt.hpp"
+#include "terminal.hpp"
 
 extern "C" {
 
@@ -55,6 +56,8 @@ void  kernel_main(){
         //to text mode for now
         suspend_boot();
     }
+
+    stdio::init_terminals();
 
     //Only install system calls when everything else is ready
     install_system_calls();
