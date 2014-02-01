@@ -12,6 +12,7 @@
 #include "paging.hpp"
 #include "assert.hpp"
 #include "gdt.hpp"
+#include "terminal.hpp"
 
 #include "console.hpp"
 

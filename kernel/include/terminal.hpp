@@ -17,7 +17,8 @@ constexpr const size_t INPUT_BUFFER_SIZE = 128;
 struct virtual_terminal {
     size_t id;
     bool active;
-    char buffer[INPUT_BUFFER_SIZE];
+
+    char input_buffer[INPUT_BUFFER_SIZE];
 
     void print(char c);
     void send_input(char c);
