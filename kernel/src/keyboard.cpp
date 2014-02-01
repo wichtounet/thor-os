@@ -102,6 +102,10 @@ volatile uint8_t count;
 spinlock lock;
 sleep_queue queue;
 
+void give_char(scheduler::pid_t pid, char t){
+    scheduler::get_process(pid).regs.rax = t;
+}
+
 void keyboard_handler(const interrupt::syscall_regs&){
     auto key = static_cast<char>(in_byte(0x60));
 
@@ -116,8 +120,7 @@ void keyboard_handler(const interrupt::syscall_regs&){
             ++count;
         } else {
             auto pid = queue.wake_up();
-
-            //TODO Give key to process pid
+            give_char(pid, keyboard::shift_key_to_ascii(key));
         }
     }
 }
@@ -139,9 +142,8 @@ void keyboard::get_char_blocking(){
         start = (start + 1) % BUFFER_SIZE;
         --count;
 
-        auto pid = scheduler::current_pid();
-
-        //TODO Give key to process pid
+        auto pid = scheduler::get_pid();
+        give_char(pid, shift_key_to_ascii(key));
     } else {
         //Wait for a char
         queue.sleep();
