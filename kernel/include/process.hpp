@@ -34,6 +34,8 @@ struct process_t {
 
     bool system;
 
+    size_t tty;
+
     size_t physical_cr3;
     size_t paging_size;
 

@@ -213,6 +213,7 @@ scheduler::process_t& scheduler::new_process(){
     process.process.system = false;
     process.process.pid = pid;
     process.state = process_state::NEW;
+    process.process.tty = stdio::get_active_terminal().id;
 
     return process.process;
 }
