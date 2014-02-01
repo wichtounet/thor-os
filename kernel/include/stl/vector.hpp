@@ -102,14 +102,27 @@ public:
 
     //Modifiers
 
+    void resize(size_t new_size){
+        if(new_size > size()){
+            ensure_capacity(new_size);
+
+            //The elements will automatically be created to their defaults when
+            //the array gets resized in ensure_capacity
+            _size = new_size;
+        } else if(new_size < _size){
+            //By diminishing the size, the last elements become unreachable
+            _size = new_size;
+        }
+    }
+
     void push_back(value_type&& element){
-        ensure_capacity();
+        ensure_capacity(_size + 1);
 
         data[_size++] = std::forward<value_type>(element);
     }
 
     void push_back(const value_type& element){
-        ensure_capacity();
+        ensure_capacity(_size + 1);
 
         data[_size++] = element;
     }
@@ -149,12 +162,15 @@ public:
     }
 
 private:
-    void ensure_capacity(){
+    void ensure_capacity(size_t new_capacity){
         if(_capacity == 0){
-            _capacity = 1;
+            _capacity = new_capacity;
             data = new T[_capacity];
-        } else if(_capacity == _size){
+        } else if(_capacity < new_capacity){
             _capacity= _capacity * 2;
+            if(new_capacity > _capacity){
+                _capacity = new_capacity;
+            }
 
             auto new_data = new T[_capacity];
             std::move_n(new_data, data, _size);
