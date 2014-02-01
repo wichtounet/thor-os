@@ -9,6 +9,7 @@
 #define TERMINAL_H
 
 #include "stl/types.hpp"
+#include "stl/circular_buffer.hpp"
 
 namespace stdio {
 
@@ -17,8 +18,9 @@ constexpr const size_t INPUT_BUFFER_SIZE = 128;
 struct virtual_terminal {
     size_t id;
     bool active;
+    bool canonical;
 
-    char input_buffer[INPUT_BUFFER_SIZE];
+    circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
 
     void print(char c);
     void send_input(char c);
