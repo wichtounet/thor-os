@@ -9,6 +9,7 @@
 #include "console.hpp"
 #include "scheduler.hpp"
 #include "keyboard.hpp"
+#include "terminal.hpp"
 
 namespace {
 
@@ -25,7 +26,10 @@ void sc_print_digit(const interrupt::syscall_regs& regs){
 }
 
 void sc_get_input(const interrupt::syscall_regs& regs){
-    //TODO
+    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
+    auto& tty = stdio::get_terminal(ttyid);
+
+    tty.read_input(reinterpret_cast<char*>(regs.rbx), regs.rcx);
 }
 
 } //End of anonymous namespace

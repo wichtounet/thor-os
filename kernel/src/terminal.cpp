@@ -9,6 +9,7 @@
 
 #include "terminal.hpp"
 #include "keyboard.hpp"
+#include "console.hpp"
 
 namespace {
 
@@ -20,6 +21,11 @@ bool shift = false;
 std::vector<stdio::virtual_terminal> terminals;
 
 } //end of anonymous namespace
+
+void stdio::virtual_terminal::print(char key){
+    //TODO If it is not the active terminal, buffer it
+    k_print(key);
+}
 
 void stdio::virtual_terminal::send_input(char key){
     if(canonical){
@@ -46,16 +52,42 @@ void stdio::virtual_terminal::send_input(char key){
                     : keyboard::key_to_ascii(key);
 
                 if(qwertz_key){
-                    input_buffer.push(qwertz_key);
+                    if(input_queue.empty()){
+                        input_buffer.push(qwertz_key);
+                    } else {
+                        //TODO
+                    }
 
                     print(qwertz_key);
                 }
             }
         }
     } else {
-
+        //TODO
     }
-    //TODO
+}
+
+size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
+    size_t read = 0;
+
+    while(read < max && !input_buffer.empty()){
+        buffer[read] = input_buffer.pop();
+
+        if(buffer[read] == '\n'){
+            ++read;
+            break;
+        }
+
+        ++read;
+    }
+
+    if(read == max || buffer[read] == '\n'){
+        scheduler::get_process(scheduler::get_pid()).regs.rax = read;
+    } else {
+        input_queue.sleep();
+    }
+
+    return 0;
 }
 
 void stdio::init_terminals(){
@@ -73,4 +105,8 @@ void stdio::init_terminals(){
 
 stdio::virtual_terminal& stdio::get_active_terminal(){
     return terminals[active_terminal];
+}
+
+stdio::virtual_terminal& stdio::get_terminal(size_t id){
+    return terminals[id];
 }

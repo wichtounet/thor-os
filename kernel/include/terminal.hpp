@@ -11,6 +11,8 @@
 #include "stl/types.hpp"
 #include "stl/circular_buffer.hpp"
 
+#include "sleep_queue.hpp"
+
 namespace stdio {
 
 constexpr const size_t INPUT_BUFFER_SIZE = 128;
@@ -22,8 +24,19 @@ struct virtual_terminal {
 
     circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
 
+    sleep_queue input_queue;
+
     void print(char c);
     void send_input(char c);
+    size_t read_input(char* buffer, size_t max);
+
+    virtual_terminal() : id(65535) {}
+
+/*    virtual_terminal(const virtual_terminal& rhs) = delete;
+    virtual_terminal& operator=(const virtual_terminal& rhs) = delete;
+
+    virtual_terminal(virtual_terminal&& rhs) = default;
+    virtual_terminal& operator=(virtual_terminal&& rhs) = default;*/
 };
 
 void init_terminals();
