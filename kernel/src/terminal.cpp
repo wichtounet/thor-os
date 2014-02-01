@@ -17,6 +17,10 @@ std::vector<stdio::virtual_terminal> terminals;
 
 } //end of anonymous namespace
 
+void stdio::terminal::send_input(char c){
+    //TODO
+}
+
 void stdio::init_terminals(){
     terminals.resize(DEFAULT_TERMINALS);
 

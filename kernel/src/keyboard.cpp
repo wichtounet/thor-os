@@ -8,6 +8,9 @@
 #include "keyboard.hpp"
 #include "interrupts.hpp"
 #include "kernel_utils.hpp"
+#include "terminal.hpp"
+
+//TODO Remove that later
 #include "semaphore.hpp"
 #include "spinlock.hpp"
 #include "sleep_queue.hpp"
@@ -105,6 +108,8 @@ void give_char(scheduler::pid_t pid, char t){
 
 void keyboard_handler(const interrupt::syscall_regs&){
     auto key = static_cast<char>(in_byte(0x60));
+
+    stdio::get_active_terminal().send_input(key);
 
     if(count == BUFFER_SIZE){
         //The buffer is full, we loose the characters
