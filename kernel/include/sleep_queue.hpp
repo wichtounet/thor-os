@@ -27,6 +27,10 @@ public:
         return queue.empty();
     }
 
+    scheduler::pid_t top_process(){
+        return queue.top();
+    }
+
     scheduler::pid_t wake_up(){
         std::lock_guard<spinlock> l(lock);
 

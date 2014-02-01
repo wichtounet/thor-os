@@ -34,18 +34,35 @@ public:
     }
 
     ~list(){
-        while(!empty()){
-            pop_back();
-        }
+        clear();
     }
 
     // Disable copy for now
     list(const list& rhs) = delete;
     list& operator=(const list& rhs) = delete;
 
-    // Disable move for now
-    list(list&& rhs) = delete;
-    list& operator=(list&& rhs) = delete;
+    //Allow move
+    list(list&& rhs) : _size(rhs._size), head(rhs.head), tail(rhs.tail){
+        rhs._size = 0;
+        rhs.head = nullptr;
+        rhs.tail = nullptr;
+    }
+
+    list& operator=(list&& rhs){
+        if(size() > 0){
+            clear();
+        }
+
+        _size = rhs._size;
+        head = rhs.head;
+        tail = rhs.tail;
+
+        rhs._size = 0;
+        rhs.head = nullptr;
+        rhs.tail = nullptr;
+
+        return *this;
+    }
 
     size_t size() const {
         return _size;
@@ -53,6 +70,12 @@ public:
 
     bool empty() const {
         return _size;
+    }
+
+    void clear(){
+        while(!empty()){
+            pop_back();
+        }
     }
 
     void push_front(const value_type& value){
