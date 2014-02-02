@@ -82,7 +82,7 @@ size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
     }
 
     if(read == max || buffer[read] == '\n'){
-        scheduler::get_process(scheduler::get_pid()).regs.rax = read;
+        scheduler::get_process(scheduler::get_pid()).context->rax = read;
     } else {
         input_queue.sleep();
     }

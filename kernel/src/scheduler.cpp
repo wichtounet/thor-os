@@ -39,7 +39,6 @@ size_t next_pid = 0;
 
 void idle_task(){
     while(true){
-        k_print('a');
         asm volatile("hlt");
     }
 }
@@ -59,21 +58,32 @@ void create_idle_task(){
     idle_process.physical_user_stack = 0;
     idle_process.physical_kernel_stack = 0;
 
-    idle_process.regs.rflags = 0x200;
-    idle_process.regs.rip = reinterpret_cast<size_t>(&idle_task);
-    idle_process.regs.rsp = reinterpret_cast<size_t>(&idle_stack[scheduler::user_stack_size - 1]);
-    idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[scheduler::kernel_stack_size - 1]);
+    auto rsp = &idle_stack[scheduler::user_stack_size - 1];
+    rsp -= sizeof(interrupt::syscall_regs);
 
-    idle_process.regs.cs = gdt::LONG_SELECTOR;
-    idle_process.regs.ds = gdt::DATA_SELECTOR;
+    idle_process.context = reinterpret_cast<interrupt::syscall_regs*>(rsp);
+
+    idle_process.context->rflags = 0x200;
+    idle_process.context->rip = reinterpret_cast<size_t>(&idle_task);
+    idle_process.context->rsp = reinterpret_cast<size_t>(&idle_stack[scheduler::user_stack_size - 1] - sizeof(interrupt::syscall_regs) * 8);
+    idle_process.context->cs = gdt::LONG_SELECTOR;
+    idle_process.context->ds = gdt::DATA_SELECTOR;
+
+    idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[scheduler::kernel_stack_size - 1]);
 
     scheduler::queue_process(idle_process.pid);
 }
 
-void switch_to_process(const interrupt::syscall_regs& regs, size_t pid){
+extern "C" {
+extern void task_switch(size_t current, size_t next);
+extern void init_task_switch(size_t current);
+}
+
+void switch_to_process(interrupt::syscall_regs* context, size_t pid){
+    auto old_pid = current_pid;
     current_pid = pid;
 
-    k_printf("Switched to %u\n", current_pid);
+    k_printf("Switch to %u\n", current_pid);
 
     auto& process = pcb[current_pid];
 
@@ -82,27 +92,7 @@ void switch_to_process(const interrupt::syscall_regs& regs, size_t pid){
     gdt::tss.rsp0_low = process.process.kernel_rsp & 0xFFFFFFFF;
     gdt::tss.rsp0_high = process.process.kernel_rsp >> 32;
 
-    auto stack_pointer = reinterpret_cast<uint64_t*>(regs.placeholder);
-
-    *(stack_pointer + 4) = process.process.regs.ds;
-    *(stack_pointer + 3) = process.process.regs.rsp;
-    *(stack_pointer + 2) = process.process.regs.rflags;
-    *(stack_pointer + 1) = process.process.regs.cs;
-    *(stack_pointer + 0) = process.process.regs.rip;
-    *(stack_pointer - 3) = process.process.regs.r12;
-    *(stack_pointer - 4) = process.process.regs.r11;
-    *(stack_pointer - 5) = process.process.regs.r10;
-    *(stack_pointer - 6) = process.process.regs.r9;
-    *(stack_pointer - 7) = process.process.regs.r8;
-    *(stack_pointer - 8) = process.process.regs.rdi;
-    *(stack_pointer - 9) = process.process.regs.rsi;
-    *(stack_pointer - 10) = process.process.regs.rdx;
-    *(stack_pointer - 11) = process.process.regs.rcx;
-    *(stack_pointer - 12) = process.process.regs.rbx;
-    *(stack_pointer - 13) = process.process.regs.rax;
-    *(stack_pointer - 14) = process.process.regs.ds;
-
-    asm volatile("mov cr3, %0" : : "r" (process.process.physical_cr3) : "memory");
+    task_switch(old_pid, current_pid);
 }
 
 size_t select_next_process(){
@@ -153,16 +143,14 @@ size_t select_next_process(){
     thor_unreachable("No process is READY");
 }
 
-void save_context(const interrupt::syscall_regs& regs){
-    auto& process = pcb[current_pid];
+void save_context(interrupt::syscall_regs* context){
+    //auto& process = pcb[current_pid];
 
-    process.process.regs = regs;
+    //TODO Review process.process.regs = regs;
 }
 
 } //end of anonymous namespace
-
-void scheduler::init(){
-    //Create the idle task
+void scheduler::init(){ //Create the idle task
     create_idle_task();
 }
 
@@ -173,13 +161,10 @@ void scheduler::start(){
     pcb[current_pid].rounds = TURNOVER;
     pcb[current_pid].state = process_state::RUNNING;
 
-    //Wait for the next interrupt
-    while(true){
-        asm volatile ("nop; nop; nop; nop");
-    }
+    init_task_switch(current_pid);
 }
 
-void scheduler::kill_current_process(const interrupt::syscall_regs& regs){
+void scheduler::kill_current_process(interrupt::syscall_regs* context){
     k_printf("Kill %u\n", current_pid);
 
     //TODO At this point, memory should be released
@@ -190,10 +175,10 @@ void scheduler::kill_current_process(const interrupt::syscall_regs& regs){
 
     //Select the next process and switch to it
     auto index = select_next_process();
-    switch_to_process(regs, index);
+    switch_to_process(context, index);
 }
 
-void scheduler::timer_reschedule(const interrupt::syscall_regs& regs){
+void scheduler::timer_reschedule(interrupt::syscall_regs* context){
     if(!started){
         return;
     }
@@ -212,9 +197,9 @@ void scheduler::timer_reschedule(const interrupt::syscall_regs& regs){
             return;
         }
 
-        save_context(regs);
+        //save_context(context);
 
-        switch_to_process(regs, pid);
+        switch_to_process(context, pid);
     } else {
         ++process.rounds;
     }
@@ -222,7 +207,7 @@ void scheduler::timer_reschedule(const interrupt::syscall_regs& regs){
     //At this point we just have to return to the current process
 }
 
-void scheduler::reschedule(const interrupt::syscall_regs& regs){
+void scheduler::reschedule(interrupt::syscall_regs* context){
     thor_assert(started, "No interest in rescheduling before start");
 
     auto& process = pcb[current_pid];
@@ -231,9 +216,9 @@ void scheduler::reschedule(const interrupt::syscall_regs& regs){
     if(process.state == process_state::BLOCKED){
         auto index = select_next_process();
 
-        save_context(regs);
+        //save_context(context);
 
-        switch_to_process(regs, index);
+        switch_to_process(context, index);
     }
 
     //At this point we just have to return to the current process
@@ -290,3 +275,15 @@ void scheduler::unblock_process(pid_t pid){
 
     pcb[pid].state = process_state::READY;
 }
+
+extern "C" {
+
+uint64_t get_context_address(size_t pid){
+    return reinterpret_cast<uint64_t>(&pcb[pid].process.context);
+}
+
+uint64_t get_process_cr3(size_t pid){
+    return reinterpret_cast<uint64_t>(pcb[pid].process.physical_cr3);
+}
+
+} //end of extern "C"

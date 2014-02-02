@@ -810,7 +810,6 @@ bool create_paging(char* buffer, scheduler::process_t& process){
 
     //2.1 Allocate user stack
     allocate_user_memory(process, scheduler::user_stack_start, scheduler::user_stack_size, process.physical_user_stack);
-    process.regs.rsp = scheduler::user_rsp;
 
     //2.2 Allocate all user segments
 
@@ -866,6 +865,32 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     return true;
 }
 
+void init_context(scheduler::process_t& process, const char* buffer){
+    auto header = reinterpret_cast<const elf::elf_header*>(buffer);
+
+    auto pages = scheduler::user_stack_size / paging::PAGE_SIZE;
+    auto virt = virtual_allocator::allocate(pages);
+
+    paging::map_pages(virt, process.physical_user_stack, pages);
+
+    auto rsp = virt + scheduler::user_stack_size - 8;
+    rsp -= sizeof(interrupt::syscall_regs) * 8;
+
+    auto regs = reinterpret_cast<interrupt::syscall_regs*>(rsp);
+
+    regs->rsp = scheduler::user_rsp - sizeof(interrupt::syscall_regs) * 8; //Not sure about that
+    regs->rip = header->e_entry;
+    regs->cs = gdt::USER_CODE_SELECTOR + 3;
+    regs->ds = gdt::USER_DATA_SELECTOR + 3;
+    regs->rflags = 0x200;
+
+    process.context = reinterpret_cast<interrupt::syscall_regs*>(scheduler::user_rsp - sizeof(interrupt::syscall_regs) * 8);
+
+    paging::unmap_pages(virt, pages);
+
+    //TODO virt should be deallocated
+}
+
 void queue_process(const std::string& file){
     auto content = read_elf_file(file, "exec");
 
@@ -874,7 +899,6 @@ void queue_process(const std::string& file){
     }
 
     auto buffer = content->c_str();
-    auto header = reinterpret_cast<elf::elf_header*>(buffer);
 
     auto& process = scheduler::new_process();
 
@@ -883,12 +907,7 @@ void queue_process(const std::string& file){
         return;
     }
 
-    process.regs.rip = header->e_entry;
-
-    process.regs.cs = gdt::USER_CODE_SELECTOR + 3;
-    process.regs.ds = gdt::USER_DATA_SELECTOR + 3;
-
-    process.regs.rflags = 0x200;
+    init_context(process, buffer);
 
     scheduler::queue_process(process.pid);
 }

@@ -102,11 +102,7 @@ char input_buffer[BUFFER_SIZE];
 volatile uint8_t start;
 volatile uint8_t count;
 
-void give_char(scheduler::pid_t pid, char t){
-    scheduler::get_process(pid).regs.rax = t;
-}
-
-void keyboard_handler(const interrupt::syscall_regs&){
+void keyboard_handler(interrupt::syscall_regs*){
     auto key = static_cast<char>(in_byte(0x60));
 
     //TODO stdio::get_active_terminal().send_input(key);

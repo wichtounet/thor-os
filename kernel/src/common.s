@@ -8,15 +8,13 @@
 .intel_syntax noprefix
 
 .macro restore_kernel_segments
-    xor rax, rax
-    mov eax, ds
     push rax
-
     mov eax, 0x10
     mov ds, eax
     mov es, eax
     mov es, eax
     mov gs, eax
+    pop rax
 .endm
 
 .macro restore_user_segments

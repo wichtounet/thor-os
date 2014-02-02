@@ -13,7 +13,7 @@ KERNEL_D_FILES=$(KERNEL_CPP_FILES:%.cpp=%.cpp.d)
 KERNEL_D_STL_FILES=$(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.d)
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:%.cpp=%.cpp.o) $(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.o) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o
+KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:%.cpp=%.cpp.o) $(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.o) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
 
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
@@ -33,7 +33,7 @@ boot_32_64.o: boot_32.o
 	$(OC) -I elf32-i386 -O elf64-x86-64 boot_32.o boot_32_64.o
 
 src/%.s.o: src/%.s
-	$(AS) -c $< -o $@
+	$(AS) -g -c $< -o $@
 
 src/%.cpp.d: $(KERNEL_CPP_FILES)
 	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@

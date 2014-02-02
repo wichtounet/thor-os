@@ -13,29 +13,29 @@
 
 namespace {
 
-void sc_print_char(const interrupt::syscall_regs& regs){
-    k_print(static_cast<char>(regs.rbx));
+void sc_print_char(interrupt::syscall_regs* regs){
+    k_print(static_cast<char>(regs->rbx));
 }
 
-void sc_print_string(const interrupt::syscall_regs& regs){
-    k_print(reinterpret_cast<const char*>(regs.rbx));
+void sc_print_string(interrupt::syscall_regs* regs){
+    k_print(reinterpret_cast<const char*>(regs->rbx));
 }
 
-void sc_print_digit(const interrupt::syscall_regs& regs){
-    k_print(regs.rbx);
+void sc_print_digit(interrupt::syscall_regs* regs){
+    k_print(regs->rbx);
 }
 
-void sc_get_input(const interrupt::syscall_regs& regs){
+void sc_get_input(interrupt::syscall_regs* regs){
     auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
     auto& tty = stdio::get_terminal(ttyid);
 
-    tty.read_input(reinterpret_cast<char*>(regs.rbx), regs.rcx);
+    tty.read_input(reinterpret_cast<char*>(regs->rbx), regs->rcx);
 }
 
 } //End of anonymous namespace
 
-void system_call_entry(const interrupt::syscall_regs& regs){
-    auto code = regs.rax;
+void system_call_entry(interrupt::syscall_regs* regs){
+    auto code = regs->rax;
 
     switch(code){
         case 0:

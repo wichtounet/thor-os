@@ -26,7 +26,7 @@ struct fault_regs {
 } __attribute__((packed));
 
 struct syscall_regs {
-    uint64_t data_segment;
+//    uint64_t data_segment;
     uint64_t rax;
     uint64_t rbx;
     uint64_t rcx;
@@ -49,8 +49,8 @@ struct syscall_regs {
 
 void setup_interrupts();
 
-void register_irq_handler(size_t irq, void (*handler)(const syscall_regs&));
-void register_syscall_handler(size_t irq, void (*handler)(const syscall_regs&));
+void register_irq_handler(size_t irq, void (*handler)(syscall_regs*));
+void register_syscall_handler(size_t irq, void (*handler)(syscall_regs*));
 
 } //end of interrupt namespace
 

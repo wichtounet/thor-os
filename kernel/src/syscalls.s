@@ -38,9 +38,8 @@ syscall_common_handler:
 
     restore_kernel_segments
 
+    mov rdi, rsp
     call _syscall_handler
-
-    restore_user_segments
 
     restore_context
 

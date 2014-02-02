@@ -44,9 +44,8 @@ irq_common_handler:
 
     restore_kernel_segments
 
+    mov rdi, rsp
     call _irq_handler
-
-    restore_user_segments
 
     restore_context
 

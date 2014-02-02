@@ -47,8 +47,8 @@ struct idtr {
 idt_entry idt_64[64];
 idtr idtr_64;
 
-void (*irq_handlers[16])(const interrupt::syscall_regs&);
-void (*syscall_handlers[interrupt::SYSCALL_MAX])(const interrupt::syscall_regs&);
+void (*irq_handlers[16])(interrupt::syscall_regs*);
+void (*syscall_handlers[interrupt::SYSCALL_MAX])(interrupt::syscall_regs*);
 
 void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, idt_flags flags){
     auto& entry = idt_64[gate];
@@ -231,9 +231,9 @@ void _fault_handler(interrupt::fault_regs regs){
     __asm__ __volatile__("hlt" : : );
 }
 
-void _irq_handler(interrupt::syscall_regs regs){
+void _irq_handler(interrupt::syscall_regs* regs){
     //If the IRQ is on the slave controller, send EOI to it
-    if(regs.code >= 8){
+    if(regs->code >= 8){
         out_byte(0xA0, 0x20);
     }
 
@@ -241,15 +241,15 @@ void _irq_handler(interrupt::syscall_regs regs){
     out_byte(0x20, 0x20);
 
     //If there is an handler, call it
-    if(irq_handlers[regs.code]){
-        irq_handlers[regs.code](regs);
+    if(irq_handlers[regs->code]){
+        irq_handlers[regs->code](regs);
     }
 }
 
-void _syscall_handler(interrupt::syscall_regs regs){
+void _syscall_handler(interrupt::syscall_regs* regs){
     //If there is a handler call it
-    if(syscall_handlers[regs.code]){
-        syscall_handlers[regs.code](regs);
+    if(syscall_handlers[regs->code]){
+        syscall_handlers[regs->code](regs);
     }
 
     //TODO Emit an error somehow if there is no handler
@@ -257,11 +257,11 @@ void _syscall_handler(interrupt::syscall_regs regs){
 
 } //end of extern "C"
 
-void interrupt::register_irq_handler(size_t irq, void (*handler)(const interrupt::syscall_regs&)){
+void interrupt::register_irq_handler(size_t irq, void (*handler)(interrupt::syscall_regs*)){
     irq_handlers[irq] = handler;
 }
 
-void interrupt::register_syscall_handler(size_t syscall, void (*handler)(const interrupt::syscall_regs&)){
+void interrupt::register_syscall_handler(size_t syscall, void (*handler)(interrupt::syscall_regs*)){
     syscall_handlers[syscall] = handler;
 }
 
