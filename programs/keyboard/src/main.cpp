@@ -11,9 +11,12 @@
 const char* source = "Hello world";
 
 int main(){
+    char buffer[16];
+
     for(int i = 0; i < 10; ++i){
-        auto c = read_char();
-        print(c);
+        auto c = read_input(buffer, 15);
+        buffer[c] = '\0';
+        print(buffer);
     }
 
     exit(0);

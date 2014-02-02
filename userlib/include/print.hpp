@@ -47,12 +47,12 @@ void print_line(size_t v){
     print_line();
 }
 
-char read_char(){
+size_t read_input(char* buffer, size_t max){
     size_t value;
     asm volatile("mov rax, 3; int 50; mov %0, rax"
         : "=m" (value)
-        : //No inputs
-        : "rax", "rbx");
+        : "b" (buffer), "c" (max)
+        : "rax");
     return value;
 }
 
