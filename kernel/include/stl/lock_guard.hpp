@@ -21,6 +21,9 @@ struct lock_guard {
     lock_guard(const lock_guard&) = delete;
     lock_guard& operator=(const lock_guard&) = delete;
 
+    lock_guard(lock_guard&&) = delete;
+    lock_guard& operator=(const lock_guard&&) = delete;
+
     ~lock_guard(){
         lock.release();
     }

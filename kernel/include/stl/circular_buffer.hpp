@@ -14,6 +14,7 @@ private:
     static constexpr const size_t Size = S + 1;
 
     T buffer[Size];
+
     volatile size_t start;
     volatile size_t end;
 

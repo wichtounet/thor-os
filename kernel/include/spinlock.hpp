@@ -10,15 +10,16 @@
 
 struct spinlock {
 private:
-    size_t lock;
+    volatile size_t lock = 0;
 
 public:
     void acquire(){
-        asm volatile("1: ; lock bts [%0], 0; jc 1" : : "m" (lock));
+        while(!__sync_bool_compare_and_swap(&lock, 0, 1));
     }
 
     void release(){
-        asm volatile("lock btr [%0], 0" : : "m" (lock) );
+        __sync_synchronize();
+        lock = 0;
     }
 };
 

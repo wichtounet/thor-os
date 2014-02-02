@@ -14,6 +14,8 @@
 #include "spinlock.hpp"
 #include "scheduler.hpp"
 
+#include "console.hpp"
+
 struct sleep_queue {
 private:
     mutable spinlock lock;
@@ -27,7 +29,9 @@ public:
         return queue.empty();
     }
 
-    scheduler::pid_t top_process(){
+    scheduler::pid_t top_process() const {
+        std::lock_guard<spinlock> l(lock);
+
         return queue.top();
     }
 
@@ -37,27 +41,29 @@ public:
         //Get the first process
         auto pid = queue.top();
 
+        //Remove the process from the queue
+        queue.pop();
+
         //Indicate to the scheduler that this process will be able
         //to run
         scheduler::unblock_process(pid);
-
-        //Remove the process from the queue
-        queue.pop();
 
         return pid;
     }
 
     void sleep(){
-        std::lock_guard<spinlock> l(lock);
+        lock.acquire();
 
         //Get the current process information
         auto pid = scheduler::get_pid();
 
-        //This process will sleep
-        scheduler::block_process(pid);
-
         //Enqueue the process in the sleep queue
         queue.push(pid);
+
+        lock.release();
+
+        //This process will sleep
+        scheduler::block_process(pid);
     }
 };
 
