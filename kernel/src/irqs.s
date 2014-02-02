@@ -14,7 +14,6 @@
 _irq\number:
     cli
 
-    push rsp
     push \number
 
     jmp irq_common_handler
@@ -50,7 +49,6 @@ irq_common_handler:
     restore_context
 
     //Was pushed by the base handler code
-    add rsp, 8
     add rsp, 8
 
     iretq // iret will clean the other automatically pushed stuff

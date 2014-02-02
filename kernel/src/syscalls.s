@@ -16,7 +16,6 @@
 _syscall\number:
     cli
 
-    push rsp
     push \number
 
     jmp syscall_common_handler
@@ -44,7 +43,6 @@ syscall_common_handler:
     restore_context
 
     //Was pushed by the base handler code
-    add rsp, 8
     add rsp, 8
 
     iretq // iret will clean the other automatically pushed stuff

@@ -31,7 +31,6 @@ init_task_switch:
 
     //Was pushed by the base handler code
     add rsp, 8
-    add rsp, 8
 
     iretq // iret will clean the other automatically pushed stuff
 
@@ -51,10 +50,6 @@ task_switch:
     push rax
     lea rax, [resume_rip]
     push rax
-
-// Place holder (will be removed)
-    mov rax, rsp
-    push rsp
 
 // Fake error code
     push 0
@@ -91,7 +86,6 @@ task_switch:
     restore_context
 
     //Was pushed by the base handler code
-    add rsp, 8
     add rsp, 8
 
     iretq // iret will clean the other automatically pushed stuff
