@@ -9,7 +9,7 @@ CPP_FLAGS_LOW=-march=i386 -m32 -fno-strict-aliasing -fno-pic -fno-toplevel-reord
 
 CPP_FLAGS_16=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mregparm=3 -mpreferred-stack-boundary=2
 CPP_FLAGS_32=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mpreferred-stack-boundary=4
-CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2
+CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mno-sse -mno-sse2 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2 -mno-avx
 
 COMMON_LINK_FLAGS=-lgcc
 PROGRAM_LINK_FLAGS=$(COMMON_LINK_FLAGS) -z max-page-size=0x1000 -T ../linker.ld
