@@ -232,11 +232,6 @@ void _fault_handler(interrupt::fault_regs regs){
 }
 
 void _irq_handler(interrupt::syscall_regs regs){
-    //If there is an handler, call it
-    if(irq_handlers[regs.code]){
-        irq_handlers[regs.code](regs);
-    }
-
     //If the IRQ is on the slave controller, send EOI to it
     if(regs.code >= 8){
         out_byte(0xA0, 0x20);
@@ -244,6 +239,11 @@ void _irq_handler(interrupt::syscall_regs regs){
 
     //Send EOI to the master controller
     out_byte(0x20, 0x20);
+
+    //If there is an handler, call it
+    if(irq_handlers[regs.code]){
+        irq_handlers[regs.code](regs);
+    }
 }
 
 void _syscall_handler(interrupt::syscall_regs regs){
