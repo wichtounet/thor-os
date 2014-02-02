@@ -23,6 +23,7 @@ struct virtual_terminal {
     bool canonical;
 
     circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
+    circular_buffer<char, INPUT_BUFFER_SIZE> canonical_buffer;
 
     sleep_queue input_queue;
 
@@ -30,13 +31,13 @@ struct virtual_terminal {
     void send_input(char c);
     size_t read_input(char* buffer, size_t max);
 
-    virtual_terminal() : id(65535) {}
+    virtual_terminal(){}
 
-/*    virtual_terminal(const virtual_terminal& rhs) = delete;
+    virtual_terminal(const virtual_terminal& rhs) = delete;
     virtual_terminal& operator=(const virtual_terminal& rhs) = delete;
 
-    virtual_terminal(virtual_terminal&& rhs) = default;
-    virtual_terminal& operator=(virtual_terminal&& rhs) = default;*/
+    virtual_terminal(virtual_terminal&& rhs) = delete;
+    virtual_terminal& operator=(virtual_terminal&& rhs) = delete;
 };
 
 void init_terminals();

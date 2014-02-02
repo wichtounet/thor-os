@@ -62,10 +62,6 @@ void system_call_entry(interrupt::syscall_regs* regs){
             k_print_line("Invalid system call");
             break;
     }
-
-    //TODO Perhaps not interesting anymore
-    //Reschedule to make sure that BLOCKED process will be preempted
-    scheduler::reschedule();
 }
 
 void install_system_calls(){

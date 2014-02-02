@@ -178,7 +178,7 @@ void start_shell(){
         else {
             //ENTER validate the command
             if(key == keyboard::KEY_ENTER){
-                k_print_line();
+  //              k_print_line();
 
                 if(current_input.size() > 0){
                     exec_shell_command();
@@ -197,7 +197,7 @@ void start_shell(){
                 history_key(key);
             } else if(key == keyboard::KEY_BACKSPACE){
                 if(current_input.size() > 0){
-                    k_print('\b');
+//                    k_print('\b');
 
                     current_input.pop_back();
                 }
@@ -210,7 +210,7 @@ void start_shell(){
                 if(qwertz_key){
                     current_input += qwertz_key;
 
-                    k_print(qwertz_key);
+ //                   k_print(qwertz_key);
                 }
             }
         }

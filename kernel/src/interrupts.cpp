@@ -228,7 +228,7 @@ void _fault_handler(interrupt::fault_regs regs){
 
     //TODO Improve that with kind of blue screen
 
-    __asm__ __volatile__("hlt" : : );
+    asm volatile("hlt" : : );
 }
 
 void _irq_handler(interrupt::syscall_regs* regs){

@@ -105,7 +105,7 @@ volatile uint8_t count;
 void keyboard_handler(interrupt::syscall_regs*){
     auto key = static_cast<char>(in_byte(0x60));
 
-    //TODO stdio::get_active_terminal().send_input(key);
+    stdio::get_active_terminal().send_input(key);
 
     if(count == BUFFER_SIZE){
         //The buffer is full, we loose the characters

@@ -163,6 +163,7 @@ void scheduler::kill_current_process(){
     k_printf("Kill %u\n", current_pid);
 
     //TODO At this point, memory should be released
+    //TODO The process should also be removed from the run queue
 
     pcb[current_pid].state = scheduler::process_state::EMPTY;
 
@@ -257,12 +258,18 @@ void scheduler::block_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
 
+    k_printf("Block process %u\n", pid);
+
     pcb[pid].state = process_state::BLOCKED;
+
+    reschedule();
 }
 
 void scheduler::unblock_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::BLOCKED, "Can only block BLOCKED processes");
+
+    k_printf("Unblock process %u\n", pid);
 
     pcb[pid].state = process_state::READY;
 }
