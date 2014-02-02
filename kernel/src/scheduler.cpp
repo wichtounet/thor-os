@@ -16,6 +16,12 @@
 
 #include "console.hpp"
 
+//Provided by task_switch.s
+extern "C" {
+extern void task_switch(size_t current, size_t next);
+extern void init_task_switch(size_t current);
+}
+
 namespace {
 
 struct process_control_t {
@@ -72,11 +78,6 @@ void create_idle_task(){
     idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[scheduler::kernel_stack_size - 1]);
 
     scheduler::queue_process(idle_process.pid);
-}
-
-extern "C" {
-extern void task_switch(size_t current, size_t next);
-extern void init_task_switch(size_t current);
 }
 
 void switch_to_process(interrupt::syscall_regs* context, size_t pid){
@@ -143,12 +144,6 @@ size_t select_next_process(){
     thor_unreachable("No process is READY");
 }
 
-void save_context(interrupt::syscall_regs* context){
-    //auto& process = pcb[current_pid];
-
-    //TODO Review process.process.regs = regs;
-}
-
 } //end of anonymous namespace
 void scheduler::init(){ //Create the idle task
     create_idle_task();
@@ -197,8 +192,6 @@ void scheduler::timer_reschedule(interrupt::syscall_regs* context){
             return;
         }
 
-        //save_context(context);
-
         switch_to_process(context, pid);
     } else {
         ++process.rounds;
@@ -215,8 +208,6 @@ void scheduler::reschedule(interrupt::syscall_regs* context){
     //The process just got blocked, choose another one
     if(process.state == process_state::BLOCKED){
         auto index = select_next_process();
-
-        //save_context(context);
 
         switch_to_process(context, index);
     }
@@ -275,6 +266,8 @@ void scheduler::unblock_process(pid_t pid){
 
     pcb[pid].state = process_state::READY;
 }
+
+//Provided for task_switch.s
 
 extern "C" {
 
