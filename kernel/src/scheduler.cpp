@@ -80,7 +80,7 @@ void create_idle_task(){
     scheduler::queue_process(idle_process.pid);
 }
 
-void switch_to_process(interrupt::syscall_regs* context, size_t pid){
+void switch_to_process(size_t pid){
     auto old_pid = current_pid;
     current_pid = pid;
 
@@ -159,7 +159,7 @@ void scheduler::start(){
     init_task_switch(current_pid);
 }
 
-void scheduler::kill_current_process(interrupt::syscall_regs* context){
+void scheduler::kill_current_process(){
     k_printf("Kill %u\n", current_pid);
 
     //TODO At this point, memory should be released
@@ -170,10 +170,10 @@ void scheduler::kill_current_process(interrupt::syscall_regs* context){
 
     //Select the next process and switch to it
     auto index = select_next_process();
-    switch_to_process(context, index);
+    switch_to_process(index);
 }
 
-void scheduler::timer_reschedule(interrupt::syscall_regs* context){
+void scheduler::timer_reschedule(){
     if(!started){
         return;
     }
@@ -192,7 +192,7 @@ void scheduler::timer_reschedule(interrupt::syscall_regs* context){
             return;
         }
 
-        switch_to_process(context, pid);
+        switch_to_process(pid);
     } else {
         ++process.rounds;
     }
@@ -200,7 +200,7 @@ void scheduler::timer_reschedule(interrupt::syscall_regs* context){
     //At this point we just have to return to the current process
 }
 
-void scheduler::reschedule(interrupt::syscall_regs* context){
+void scheduler::reschedule(){
     thor_assert(started, "No interest in rescheduling before start");
 
     auto& process = pcb[current_pid];
@@ -209,7 +209,7 @@ void scheduler::reschedule(interrupt::syscall_regs* context){
     if(process.state == process_state::BLOCKED){
         auto index = select_next_process();
 
-        switch_to_process(context, index);
+        switch_to_process(index);
     }
 
     //At this point we just have to return to the current process

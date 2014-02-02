@@ -9,7 +9,6 @@
 #define SCHEDULER_H
 
 #include "process.hpp"
-#include "interrupts.hpp"
 
 namespace scheduler {
 
@@ -24,10 +23,10 @@ void unblock_process(pid_t pid);
 void init();
 void start();
 
-void kill_current_process(interrupt::syscall_regs* regs);
+void kill_current_process();
 
-void timer_reschedule(interrupt::syscall_regs* regs);
-void reschedule(interrupt::syscall_regs* regs);
+void timer_reschedule();
+void reschedule();
 
 process_t& new_process();
 void queue_process(pid_t p);

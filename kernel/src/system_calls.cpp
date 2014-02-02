@@ -29,7 +29,7 @@ void sc_get_input(interrupt::syscall_regs* regs){
     auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
     auto& tty = stdio::get_terminal(ttyid);
 
-    tty.read_input(reinterpret_cast<char*>(regs->rbx), regs->rcx);
+    regs->rax = tty.read_input(reinterpret_cast<char*>(regs->rbx), regs->rcx);
 }
 
 } //End of anonymous namespace
@@ -55,7 +55,7 @@ void system_call_entry(interrupt::syscall_regs* regs){
             break;
 
         case 0x666:
-            scheduler::kill_current_process(regs);
+            scheduler::kill_current_process();
             break;
 
         default:
@@ -63,8 +63,9 @@ void system_call_entry(interrupt::syscall_regs* regs){
             break;
     }
 
+    //TODO Perhaps not interesting anymore
     //Reschedule to make sure that BLOCKED process will be preempted
-    scheduler::reschedule(regs);
+    scheduler::reschedule();
 }
 
 void install_system_calls(){
