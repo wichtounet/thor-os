@@ -13,15 +13,15 @@ int main(){
     char input_buffer[64];
 
     while(true){
-        for(int i = 0; i < 10; ++i){
-            auto c = read_input(input_buffer, 63);
-            input_buffer[c-1] = '\0';
+        print("thor> ");
 
-            if(str_equals(input_buffer, "exit")){
-                exit(0);
-            } else {
-                print_line("Unknown command");
-            }
+        auto c = read_input(input_buffer, 63);
+        input_buffer[c-1] = '\0';
+
+        if(str_equals(input_buffer, "exit")){
+            exit(0);
+        } else {
+            print_line("Unknown command");
         }
     }
 }
