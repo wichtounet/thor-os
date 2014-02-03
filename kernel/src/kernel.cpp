@@ -22,6 +22,7 @@
 #include "console.hpp"
 #include "gdt.hpp"
 #include "terminal.hpp"
+#include "scheduler.hpp"
 
 extern "C" {
 
@@ -66,6 +67,8 @@ void  kernel_main(){
     _init();
 
     init_console();
+
+    scheduler::init();
 
     //Launch the shell
     init_shell();

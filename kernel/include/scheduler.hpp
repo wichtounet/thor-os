@@ -8,6 +8,8 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
+#include "stl/string.hpp"
+
 #include "process.hpp"
 
 namespace scheduler {
@@ -21,15 +23,13 @@ void block_process(pid_t pid);
 void unblock_process(pid_t pid);
 
 void init();
-void start();
+
+int64_t exec(const std::string& path);
 
 void kill_current_process();
 
 void tick();
 void reschedule();
-
-process_t& new_process();
-void queue_process(pid_t p);
 
 void sleep_ms(pid_t pid, size_t time);
 
