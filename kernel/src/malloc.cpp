@@ -28,66 +28,49 @@ private:
     size_t __size;
     malloc_header_chunk* __next;
     malloc_header_chunk* __prev;
+    uint32_t _free;
+    uint16_t left;
+    uint16_t right;
 
 public:
-    size_t size() const {
-        return __size & ~0x3;
-    }
-
-    size_t& size_ref(){
+    size_t& size(){
         return __size;
     }
 
     bool has_left() const {
-        return __size & 0x1;
+        return left;
     }
 
     bool has_right() const {
-        return __size & 0x2;
+        return right;
     }
 
     void set_left(bool left){
-        if(left){
-            __size = __size | 0x1;
-        } else {
-            __size = __size & ~0x1;
-        }
+        this->left = left;
     }
 
     void set_right(bool right){
-        if(right){
-            __size = __size | 0x2;
-        } else {
-            __size = __size & ~0x2;
-        }
+        this->right = right;
     }
 
-    constexpr malloc_header_chunk* next() const {
+    malloc_header_chunk*& next(){
         return __next;
     }
 
-    malloc_header_chunk*& next_ref(){
-        return __next;
-    }
-
-    constexpr malloc_header_chunk* prev() const {
-        return reinterpret_cast<malloc_header_chunk*>(reinterpret_cast<uintptr_t>(__prev) & (~0l - 1));
-    }
-
-    malloc_header_chunk*& prev_ref(){
+    malloc_header_chunk*& prev(){
         return __prev;
     }
 
     void set_free(){
-        __prev = reinterpret_cast<malloc_header_chunk*>(reinterpret_cast<uintptr_t>(__prev) | 0x1);
+        _free = 1;
     }
 
     void set_not_free(){
-        __prev = reinterpret_cast<malloc_header_chunk*>(reinterpret_cast<uintptr_t>(__prev) & (~0l - 1));
+        _free = 0;
     }
 
     bool is_free() const {
-        return reinterpret_cast<uintptr_t>(__prev) & 0x1;
+        return _free;
     }
 
     constexpr malloc_footer_chunk* footer() const {
@@ -101,11 +84,7 @@ private:
     uint64_t __size;
 
 public:
-    size_t size() const {
-        return __size;
-    }
-
-    size_t& size_ref(){
+    size_t& size(){
         return __size;
     }
 };
@@ -117,18 +96,21 @@ struct fake_head {
     uint64_t size_2;
 };
 
+constexpr size_t ALIGNMENT = 16;
+
+constexpr bool aligned(size_t value){
+    return (value & (ALIGNMENT - 1)) == 0;
+}
+
 constexpr const uint64_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
-constexpr const uint64_t MIN_SPLIT = 32;
 constexpr const uint64_t BLOCK_SIZE = paging::PAGE_SIZE;
 constexpr const uint64_t MIN_BLOCKS = 4;
 
-constexpr size_t ALIGNMENT = 8;
-constexpr size_t aligned_size(size_t bytes){
-    return (bytes + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
-}
+constexpr const uint64_t MIN_SPLIT_BASE = ALIGNMENT == 8 ? 32 : 2 * ALIGNMENT;
+constexpr const uint64_t MIN_SPLIT = MIN_SPLIT_BASE - sizeof(malloc_footer_chunk);
 
-static_assert(META_SIZE == aligned_size(META_SIZE), "The size of headers must be aligned");
-static_assert(MIN_SPLIT == aligned_size(MIN_SPLIT), "The size of minimum split must be aligned");
+static_assert(aligned(sizeof(malloc_header_chunk)), "The header must be aligned");
+static_assert(aligned(MIN_SPLIT + sizeof(malloc_footer_chunk)), "The size of minimum split must guarantee alignment");
 
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
@@ -188,27 +170,30 @@ void debug_malloc(const char* point = nullptr){
 //Insert new_block after current in the free list and update
 //all the necessary links
 void insert_after(malloc_header_chunk* current, malloc_header_chunk* new_block){
-    new_block->next_ref() = current->next();
-    new_block->prev_ref() = current;
-    new_block->set_free();
+    //Link the new block to its surroundings
+    new_block->next() = current->next();
+    new_block->prev() = current;
 
-    current->next()->prev_ref() = new_block;
-    current->next()->set_free();
-    current->next_ref() = new_block;
+    //Link surroundings to the new block
+    current->next()->prev() = new_block;
+    current->next() = new_block;
+
+    new_block->set_free();
 }
 
 //Remove the given block from the free list
 //The node is directly marked as not free
 void remove(malloc_header_chunk* current){
-    current->prev()->next_ref() = current->next();
-    current->next()->prev_ref() = current->prev();
-    current->next()->set_free();
+    //Unlink the node
+    current->prev()->next() = current->next();
+    current->next()->prev() = current->prev();
 
     //Make sure the node is clean
-    current->prev_ref() = nullptr;
-    current->next_ref() = nullptr;
+    current->prev() = nullptr;
+    current->next() = nullptr;
 
-    //No need to unmark the free bit here as we set current->next to zero
+    //The node is not free anymore
+    current->set_not_free();
 }
 
 void init_head(){
@@ -218,8 +203,8 @@ void init_head(){
     head.size_2 = 0;
 
     malloc_head = reinterpret_cast<malloc_header_chunk*>(&head);
-    malloc_head->next_ref() = malloc_head;
-    malloc_head->prev_ref() = malloc_head;
+    malloc_head->next() = malloc_head;
+    malloc_head->prev() = malloc_head;
     malloc_head->set_left(false);
     malloc_head->set_right(false);
 }
@@ -242,8 +227,8 @@ void expand_heap(malloc_header_chunk* current, size_t bytes = 0){
     auto header = reinterpret_cast<malloc_header_chunk*>(block);
 
     //Update the sizes
-    header->size_ref() = blocks * BLOCK_SIZE - META_SIZE;
-    header->footer()->size_ref() = header->size();
+    header->size() = blocks * BLOCK_SIZE - META_SIZE;
+    header->footer()->size() = header->size();
 
     //When created a block has no left and right neighbour
     header->set_left(false);
@@ -295,8 +280,8 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
 
         b = a;
 
-        b->size_ref() = new_size;
-        b->footer()->size_ref() = new_size;
+        b->size() = new_size;
+        b->footer()->size() = new_size;
 
         b->set_left(block_left);
         b->set_right(block_right);
@@ -311,8 +296,8 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
         //Remove c from the free list
         remove(c);
 
-        b->size_ref() = new_size;
-        b->footer()->size_ref() = new_size;
+        b->size() = new_size;
+        b->footer()->size() = new_size;
 
         b->set_left(block_left);
         b->set_right(block_right);
@@ -339,8 +324,11 @@ void* malloc::k_malloc(uint64_t bytes){
         bytes = MIN_SPLIT;
     }
 
-    //Make sure the addresses will be aligned on ALIGNMENT bytes
-    bytes = aligned_size(bytes);
+    //Make sure that blocks will have the correct alignment at the end
+    auto size_to_align = bytes + sizeof(malloc_footer_chunk);
+    if(!aligned(size_to_align)){
+        bytes = ((size_to_align / ALIGNMENT) + 1) * ALIGNMENT - sizeof(malloc_footer_chunk);
+    }
 
     while(true){
         if(current == malloc_head){
@@ -361,8 +349,8 @@ void* malloc::k_malloc(uint64_t bytes){
                 auto block_right = current->has_right();
 
                 //Set the new size of the current block
-                current->size_ref() = bytes;
-                current->footer()->size_ref() = bytes;
+                current->size() = bytes;
+                current->footer()->size() = bytes;
 
                 current->set_left(block_left);
                 current->set_right(true);
@@ -372,8 +360,8 @@ void* malloc::k_malloc(uint64_t bytes){
                     reinterpret_cast<uintptr_t>(current) + bytes + META_SIZE);
 
                 //Update the size of the new block
-                new_block->size_ref() = new_block_size;
-                new_block->footer()->size_ref() = new_block->size();
+                new_block->size() = new_block_size;
+                new_block->footer()->size() = new_block->size();
 
                 new_block->set_left(true);
                 new_block->set_right(block_right);
@@ -402,14 +390,14 @@ void* malloc::k_malloc(uint64_t bytes){
 
     _used_memory += current->size() + META_SIZE;
 
-    auto b = reinterpret_cast<void*>(
-        reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
+    //Address of the start of the block
+    auto block_start = reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk);
 
     if(TRACE_MALLOC){
-        k_printf("m %u(%u) %h ", bytes, current->size(), reinterpret_cast<uint64_t>(b));
+        k_printf("m %u(%u) %h ", bytes, current->size(), block_start);
     }
 
-    return b;
+    return reinterpret_cast<void*>(block_start);
 }
 
 void malloc::k_free(void* block){
