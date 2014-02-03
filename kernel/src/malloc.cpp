@@ -28,6 +28,7 @@ private:
     size_t __size;
     malloc_header_chunk* __next;
     malloc_header_chunk* __prev;
+    size_t pad;
 
 public:
     size_t size() const {
@@ -117,18 +118,21 @@ struct fake_head {
     uint64_t size_2;
 };
 
+constexpr size_t ALIGNMENT = 16;
+
+constexpr bool aligned(size_t value){
+    return (value & (ALIGNMENT - 1)) == 0;
+}
+
 constexpr const uint64_t META_SIZE = sizeof(malloc_header_chunk) + sizeof(malloc_footer_chunk);
-constexpr const uint64_t MIN_SPLIT = 32;
 constexpr const uint64_t BLOCK_SIZE = paging::PAGE_SIZE;
 constexpr const uint64_t MIN_BLOCKS = 4;
 
-constexpr size_t ALIGNMENT = 8;
-constexpr size_t aligned_size(size_t bytes){
-    return (bytes + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1);
-}
+constexpr const uint64_t MIN_SPLIT_BASE = ALIGNMENT == 8 ? 32 : 2 * ALIGNMENT;
+constexpr const uint64_t MIN_SPLIT = MIN_SPLIT_BASE - sizeof(malloc_footer_chunk);
 
-static_assert(META_SIZE == aligned_size(META_SIZE), "The size of headers must be aligned");
-static_assert(MIN_SPLIT == aligned_size(MIN_SPLIT), "The size of minimum split must be aligned");
+static_assert(aligned(sizeof(malloc_header_chunk)), "The header must be aligned");
+static_assert(aligned(MIN_SPLIT + sizeof(malloc_footer_chunk)), "The size of minimum split must guarantee alignment");
 
 fake_head head;
 malloc_header_chunk* malloc_head = 0;
@@ -339,8 +343,11 @@ void* malloc::k_malloc(uint64_t bytes){
         bytes = MIN_SPLIT;
     }
 
-    //Make sure the addresses will be aligned on ALIGNMENT bytes
-    bytes = aligned_size(bytes);
+    //Make sure that blocks will have the correct alignment at the end
+    auto size_to_align = bytes + sizeof(malloc_footer_chunk);
+    if(!aligned(size_to_align)){
+        bytes = ((size_to_align / ALIGNMENT) + 1) * ALIGNMENT - sizeof(malloc_footer_chunk);
+    }
 
     while(true){
         if(current == malloc_head){
@@ -402,14 +409,16 @@ void* malloc::k_malloc(uint64_t bytes){
 
     _used_memory += current->size() + META_SIZE;
 
-    auto b = reinterpret_cast<void*>(
-        reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk));
+    //Address of the start of the block
+    auto block_start = reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk);
+
+    k_printf("%h\n", block_start);
 
     if(TRACE_MALLOC){
-        k_printf("m %u(%u) %h ", bytes, current->size(), reinterpret_cast<uint64_t>(b));
+        k_printf("m %u(%u) %h ", bytes, current->size(), block_start);
     }
 
-    return b;
+    return reinterpret_cast<void*>(block_start);
 }
 
 void malloc::k_free(void* block){
