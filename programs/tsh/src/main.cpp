@@ -23,7 +23,7 @@ int main(){
                 continue;
             }
 
-            input_buffer[c] = '\0';
+            input_buffer[c-1] = '\0';
 
             if(str_equals(input_buffer, "exit")){
                 exit(0);
