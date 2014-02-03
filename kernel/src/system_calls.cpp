@@ -38,6 +38,18 @@ void sc_sleep_ms(interrupt::syscall_regs* regs){
     scheduler::sleep_ms(scheduler::get_pid(), time);
 }
 
+void sc_exec(interrupt::syscall_regs* regs){
+    auto file = reinterpret_cast<char*>(regs->rbx);
+
+    regs->rax = scheduler::exec(file);
+}
+
+void sc_await_termination(interrupt::syscall_regs* regs){
+    auto pid = regs->rbx;
+
+    //TODO Implement
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -62,6 +74,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 4:
             sc_sleep_ms(regs);
+            break;
+
+        case 5:
+            sc_exec(regs);
+            break;
+
+        case 6:
+            sc_await_termination(regs);
             break;
 
         case 0x666:
