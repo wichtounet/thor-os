@@ -16,6 +16,8 @@
 
 #include "console.hpp"
 
+constexpr const bool DEBUG_SCHEDULER = false;
+
 //Provided by task_switch.s
 extern "C" {
 extern void task_switch(size_t current, size_t next);
@@ -84,7 +86,9 @@ void switch_to_process(size_t pid){
     auto old_pid = current_pid;
     current_pid = pid;
 
-    k_printf("Switch to %u\n", current_pid);
+    if(DEBUG_SCHEDULER){
+        k_printf("Switch to %u\n", current_pid);
+    }
 
     auto& process = pcb[current_pid];
 
@@ -160,7 +164,9 @@ void scheduler::start(){
 }
 
 void scheduler::kill_current_process(){
-    k_printf("Kill %u\n", current_pid);
+    if(DEBUG_SCHEDULER){
+        k_printf("Kill %u\n", current_pid);
+    }
 
     //TODO At this point, memory should be released
     //TODO The process should also be removed from the run queue
@@ -258,7 +264,9 @@ void scheduler::block_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
 
-    k_printf("Block process %u\n", pid);
+    if(DEBUG_SCHEDULER){
+        k_printf("Block process %u\n", pid);
+    }
 
     pcb[pid].state = process_state::BLOCKED;
 
@@ -269,7 +277,9 @@ void scheduler::unblock_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::BLOCKED, "Can only block BLOCKED processes");
 
-    k_printf("Unblock process %u\n", pid);
+    if(DEBUG_SCHEDULER){
+        k_printf("Unblock process %u\n", pid);
+    }
 
     pcb[pid].state = process_state::READY;
 }
