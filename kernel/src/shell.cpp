@@ -55,7 +55,6 @@ void help_command(const std::vector<std::string>& params);
 void uptime_command(const std::vector<std::string>& params);
 void clear_command(const std::vector<std::string>& params);
 void date_command(const std::vector<std::string>& params);
-void sleep_command(const std::vector<std::string>& params);
 void echo_command(const std::vector<std::string>& params);
 void mmap_command(const std::vector<std::string>& params);
 void memory_command(const std::vector<std::string>& params);
@@ -90,7 +89,6 @@ command_definition commands[29] = {
     {"uptime", uptime_command},
     {"clear", clear_command},
     {"date", date_command},
-    {"sleep", sleep_command},
     {"echo", echo_command},
     {"mmap", mmap_command},
     {"memory", memory_command},
@@ -260,10 +258,6 @@ void date_command(const std::vector<std::string>&){
     auto data = rtc::all_data();
 
     k_printf("%u.%u.%u %u:%.2d:%.2d\n", data.day, data.month, data.year, data.hour, data.minute, data.second);
-}
-
-void sleep_command(const std::vector<std::string>& params){
-    timer::sleep_ms(parse(params[1]) * 1000);
 }
 
 void echo_command(const std::vector<std::string>& params){
