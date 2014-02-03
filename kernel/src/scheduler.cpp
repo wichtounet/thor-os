@@ -16,7 +16,7 @@
 
 #include "console.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = false;
+constexpr const bool DEBUG_SCHEDULER = true;
 
 //Provided by task_switch.s
 extern "C" {
@@ -30,6 +30,7 @@ struct process_control_t {
     scheduler::process_t process;
     scheduler::process_state state;
     size_t rounds;
+    size_t sleep_timeout;
 };
 
 //The Process Control Block
@@ -192,6 +193,16 @@ void scheduler::tick(){
 
     ++current_ticks;
 
+    for(auto& process : pcb){
+        if(process.state == process_state::SLEEPING){
+            --process.sleep_timeout;
+
+            if(process.sleep_timeout == 0){
+                process.state = process_state::READY;
+            }
+        }
+    }
+
     if(current_ticks % QUANTUM_SIZE == 0){
         auto& process = pcb[current_pid];
 
@@ -221,8 +232,8 @@ void scheduler::reschedule(){
 
     auto& process = pcb[current_pid];
 
-    //The process just got blocked, choose another one
-    if(process.state == process_state::BLOCKED){
+    //The process just got blocked or put to sleep, choose another one
+    if(process.state != process_state::RUNNING){
         auto index = select_next_process();
 
         switch_to_process(index);
@@ -297,8 +308,14 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
+    if(DEBUG_SCHEDULER){
+        k_printf("Put %u to sleep\n", pid);
+    }
+
     pcb[pid].state = process_state::SLEEPING;
-    pcb[pid].process.sleep_timeout = time;
+    pcb[pid].sleep_timeout = time;
+
+    reschedule();
 }
 
 //Provided for task_switch.s

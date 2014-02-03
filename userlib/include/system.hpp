@@ -13,12 +13,19 @@
 void exit(size_t return_code) __attribute__((noreturn));
 
 void exit(size_t return_code) {
-    asm volatile("mov rax, 0x666; mov rbx, %0; int 50"
+    asm volatile("mov rax, 0x666; int 50"
         : //No outputs
-        : "r" (return_code)
-        : "rax", "rbx");
+        : "b" (return_code)
+        : "rax");
 
     __builtin_unreachable();
+}
+
+void sleep_ms(size_t ms){
+    asm volatile("mov rax, 4; int 50"
+        : //No outputs
+        : "b" (ms)
+        : "rax");
 }
 
 #endif

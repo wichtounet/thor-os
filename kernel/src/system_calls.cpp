@@ -32,6 +32,12 @@ void sc_get_input(interrupt::syscall_regs* regs){
     regs->rax = tty.read_input(reinterpret_cast<char*>(regs->rbx), regs->rcx);
 }
 
+void sc_sleep_ms(interrupt::syscall_regs* regs){
+    auto time = regs->rbx;
+
+    scheduler::sleep_ms(scheduler::get_pid(), time);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -54,7 +60,12 @@ void system_call_entry(interrupt::syscall_regs* regs){
             sc_get_input(regs);
             break;
 
+        case 4:
+            sc_sleep_ms(regs);
+            break;
+
         case 0x666:
+            //TODO Do something with return code
             scheduler::kill_current_process();
             break;
 
