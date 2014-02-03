@@ -94,7 +94,7 @@ static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t va
     uint8_t status;
     do {
         status = in_byte(controller + ATA_STATUS);
-        sleep_ms(1);
+        timer::sleep_ms(1);
     } while ((status & mask) != value && --timeout);
 
     return timeout;
@@ -113,7 +113,7 @@ bool select_device(ata::drive_descriptor& drive){
     out_byte(controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
 
     //Sleep at least 400ns before reading the status register
-    sleep_ms(1);
+    timer::sleep_ms(1);
 
     if(!wait_for_controller(controller, wait_mask, 0, 10000)){
         return false;
@@ -146,7 +146,7 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
     out_byte(controller + ATA_COMMAND, command);
 
     //Wait at least 400ns before reading status register
-    sleep_ms(1);
+    timer::sleep_ms(1);
 
     //Wait at most 30 seconds for BSY flag to be cleared
     if(!wait_for_controller(controller, ATA_STATUS_BSY, 0, 30000)){
@@ -192,7 +192,7 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
 bool reset_controller(uint16_t controller){
     out_byte(controller + ATA_DEV_CTL, ATA_CTL_SRST);
 
-    sleep_ms(5);
+    timer::sleep_ms(5);
 
     //The controller should set the BSY flag after, SRST has been set
     if(!wait_for_controller(controller, ATA_STATUS_BSY, ATA_STATUS_BSY, 1000)){
@@ -255,11 +255,11 @@ void identify(ata::drive_descriptor& drive){
 
     //Select the device
     out_byte(drive.controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
-    sleep_ms(1);
+    timer::sleep_ms(1);
 
     //Generate the IDENTIFY command
     out_byte(drive.controller + ATA_COMMAND, ATA_IDENTIFY);
-    sleep_ms(1);
+    timer::sleep_ms(1);
 
     //If status == 0, there are no device
     if(in_byte(drive.controller + ATA_STATUS) == 0){
@@ -299,7 +299,7 @@ void identify(ata::drive_descriptor& drive){
 
         //Generate the ATAPI IDENTIFY command
         out_byte(drive.controller + ATA_COMMAND, 0xA1);
-        sleep_ms(1);
+        timer::sleep_ms(1);
     }
 
     drive.present = true;

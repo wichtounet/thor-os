@@ -253,7 +253,7 @@ void help_command(const std::vector<std::string>&){
 }
 
 void uptime_command(const std::vector<std::string>&){
-    k_printf("Uptime: %us\n", timer_seconds());
+    k_printf("Uptime: %us\n", timer::seconds());
 }
 
 void date_command(const std::vector<std::string>&){
@@ -263,7 +263,7 @@ void date_command(const std::vector<std::string>&){
 }
 
 void sleep_command(const std::vector<std::string>& params){
-    sleep_ms(parse(params[1]) * 1000);
+    timer::sleep_ms(parse(params[1]) * 1000);
 }
 
 void echo_command(const std::vector<std::string>& params){

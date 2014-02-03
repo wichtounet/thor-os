@@ -8,12 +8,14 @@ KERNEL_LINK_FLAGS=$(COMMON_LINK_FLAGS) -T linker.ld
 
 KERNEL_CPP_FILES=$(wildcard src/*.cpp)
 KERNEL_CPP_STL_FILES=$(wildcard src/stl/*.cpp)
+KERNEL_CPP_DRIVERS_FILES=$(wildcard src/drivers/*.cpp)
 
 KERNEL_D_FILES=$(KERNEL_CPP_FILES:%.cpp=%.cpp.d)
 KERNEL_D_STL_FILES=$(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.d)
+KERNEL_D_DRIVERS_FILES=$(KERNEL_CPP_DRIVERS_FILES:%.cpp=%.cpp.d)
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:%.cpp=%.cpp.o) $(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.o) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
+KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:%.cpp=%.cpp.o) $(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.o) $(KERNEL_CPP_DRIVERS_FILES:%.cpp=%.cpp.o) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
 
 CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
@@ -41,26 +43,30 @@ src/%.cpp.d: $(KERNEL_CPP_FILES)
 src/stl/%.cpp.d: $(KERNEL_CPP_STL_FILES)
 	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/stl/$*.cpp.o src/stl/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
+src/drivers/%.cpp.d: $(KERNEL_CPP_DRIVERS_FILES)
+	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/drivers/$*.cpp.o src/drivers/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
 src/%.cpp.o:
 	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 src/stl/%.cpp.o:
 	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
+src/drivers/%.cpp.o:
+	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+
 -include $(KERNEL_D_FILES)
 -include $(KERNEL_D_STL_FILES)
+-include $(KERNEL_D_DRIVERS_FILES)
 
 kernel.bin: $(LINK_O_FILES)
 	$(CC) $(KERNEL_LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
 	$(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents kernel.bin.o kernel.bin
 
-debug:
-	echo $(KERNEL_CPP_STL_FILES)
-	echo $(KERNEL_D_STL_FILES)
-
 clean:
 	rm -f $(KERNEL_D_FILES)
 	rm -f $(KERNEL_D_STL_FILES)
+	rm -f $(KERNEL_D_DRIVERS_FILES)
 	rm -f $(KERNEL_O_FILES)
 	rm -f crti.o
 	rm -f crts.o

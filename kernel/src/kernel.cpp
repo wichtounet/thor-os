@@ -43,7 +43,7 @@ void  kernel_main(){
     malloc::init();
 
     //Install drivers
-    install_timer();
+    timer::install();
     //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();

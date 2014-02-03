@@ -5,23 +5,13 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef DRIVER_PIT_H
+#define DRIVER_PIT_H
 
-#include "stl/types.hpp"
-
-namespace timer {
+namespace pit {
 
 void install();
 
-uint64_t ticks();
-uint64_t seconds();
-
-//TODO Remove when kernel shell is no more
-void sleep_ms(uint64_t delay);
-
-void tick();
-
-} //end of timer namespace
+} //end of namespace pit
 
 #endif

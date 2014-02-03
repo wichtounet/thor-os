@@ -6,10 +6,9 @@
 //=======================================================================
 
 #include "timer.hpp"
-#include "interrupts.hpp"
 #include "scheduler.hpp"
 
-#include "kernel_utils.hpp"
+#include "drivers/pit.hpp"
 
 namespace {
 
@@ -18,7 +17,13 @@ uint64_t _timer_seconds = 0;
 
 volatile uint64_t _timer_countdown = 0;
 
-void timer_handler(interrupt::syscall_regs*){
+} //End of anonymous namespace
+
+void timer::install(){
+    pit::install();
+}
+
+void timer::tick(){
     ++_timer_ticks;
 
     if(_timer_countdown != 0){
@@ -32,19 +37,7 @@ void timer_handler(interrupt::syscall_regs*){
     }
 }
 
-} //End of anonymous namespace
-
-void install_timer(){
-    uint64_t divisor = 1193180 / 1000;
-
-    out_byte(0x43, 0x36);
-    out_byte(0x40, static_cast<uint8_t>(divisor));
-    out_byte(0x40, static_cast<uint8_t>(divisor >> 8));
-
-    interrupt::register_irq_handler(0, timer_handler);
-}
-
-void sleep_ms(uint64_t delay){
+void timer::sleep_ms(uint64_t delay){
     _timer_countdown = delay;
 
     while(true){
@@ -65,10 +58,10 @@ void sleep_ms(uint64_t delay){
     __asm__  __volatile__ ("sti");
 }
 
-uint64_t timer_ticks(){
+uint64_t timer::ticks(){
     return _timer_ticks;
 }
 
-uint64_t timer_seconds(){
+uint64_t timer::seconds(){
     return _timer_seconds;
 }

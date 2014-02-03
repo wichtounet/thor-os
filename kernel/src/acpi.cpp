@@ -135,7 +135,7 @@ int acpiEnable(void){
             for (i=0; i<300; i++ ){
                 if ( (in_word(PM1a_CNT) & SCI_EN) == 1 )
                     break;
-                sleep_ms(10);
+                timer::sleep_ms(10);
             }
 
             if (PM1b_CNT != 0)
@@ -143,7 +143,7 @@ int acpiEnable(void){
                 {
                     if ( (in_word(PM1b_CNT) & SCI_EN) == 1 )
                         break;
-                    sleep_ms(10);
+                    timer::sleep_ms(10);
                 }
             if (i<300) {
                 k_print_line("ACPI enabled");
