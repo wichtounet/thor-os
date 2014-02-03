@@ -15,7 +15,7 @@ int main(){
     while(true){
         for(int i = 0; i < 10; ++i){
             auto c = read_input(input_buffer, 63);
-            input_buffer[c] = '\0';
+            input_buffer[c-1] = '\0';
 
             if(str_equals(input_buffer, "exit")){
                 exit(0);
