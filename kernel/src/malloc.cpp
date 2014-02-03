@@ -393,8 +393,6 @@ void* malloc::k_malloc(uint64_t bytes){
     //Address of the start of the block
     auto block_start = reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk);
 
-    k_printf("%h\n", block_start);
-
     if(TRACE_MALLOC){
         k_printf("m %u(%u) %h ", bytes, current->size(), block_start);
     }
