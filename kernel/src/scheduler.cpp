@@ -171,7 +171,7 @@ void scheduler::kill_current_process(){
     //TODO At this point, memory should be released
     //TODO The process should also be removed from the run queue
 
-    pcb[current_pid].state = scheduler::process_state::EMPTY;
+    pcb[current_pid].state = scheduler::process_state::KILLED;
 
     current_pid = (current_pid + 1) % scheduler::MAX_PROCESS;
 
