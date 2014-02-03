@@ -27,6 +27,9 @@ int main(){
 
             if(str_equals(input_buffer, "exit")){
                 exit(0);
+            } else if(str_equals(input_buffer, "long")){
+                //TODO Remove this function when exec system is complete
+                exec_and_wait("long");
             } else if(str_equals(input_buffer, "sleep")){
                 //TODO Once better infrastrucure, parse command line and sleep the
                 //correct number of milliseconds
