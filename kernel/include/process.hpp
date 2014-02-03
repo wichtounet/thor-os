@@ -54,6 +54,8 @@ struct process_t {
 
     size_t kernel_rsp;
 
+    size_t sleep_timeout;
+
     volatile interrupt::syscall_regs* context;
 
     std::vector<segment_t> segments;

@@ -25,11 +25,13 @@ void start();
 
 void kill_current_process();
 
-void timer_reschedule();
+void tick();
 void reschedule();
 
 process_t& new_process();
 void queue_process(pid_t p);
+
+void sleep_ms(pid_t pid, size_t time);
 
 } //end of namespace scheduler
 

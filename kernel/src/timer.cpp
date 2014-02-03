@@ -30,10 +30,10 @@ void timer::tick(){
         --_timer_countdown;
     }
 
+    scheduler::tick();
+
     if(_timer_ticks % 1000 == 0){
         ++_timer_seconds;
-
-        scheduler::timer_reschedule();
     }
 }
 

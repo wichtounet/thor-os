@@ -42,6 +42,9 @@ bool started = false;
 
 constexpr const size_t TURNOVER = 10;
 
+constexpr const size_t QUANTUM_SIZE = 1000;
+size_t current_ticks = 0;
+
 size_t current_pid;
 size_t next_pid = 0;
 
@@ -156,6 +159,8 @@ void scheduler::init(){ //Create the idle task
 void scheduler::start(){
     started = true;
 
+    current_ticks = 0;
+
     current_pid = 0;
     pcb[current_pid].rounds = TURNOVER;
     pcb[current_pid].state = process_state::RUNNING;
@@ -180,28 +185,32 @@ void scheduler::kill_current_process(){
     switch_to_process(index);
 }
 
-void scheduler::timer_reschedule(){
+void scheduler::tick(){
     if(!started){
         return;
     }
 
-    auto& process = pcb[current_pid];
+    ++current_ticks;
 
-    if(process.rounds  == TURNOVER){
-        process.rounds = 0;
+    if(current_ticks % QUANTUM_SIZE == 0){
+        auto& process = pcb[current_pid];
 
-        process.state = process_state::READY;
+        if(process.rounds  == TURNOVER){
+            process.rounds = 0;
 
-        auto pid = select_next_process();
+            process.state = process_state::READY;
 
-        //If it is the same, no need to go to the switching process
-        if(pid == current_pid){
-            return;
+            auto pid = select_next_process();
+
+            //If it is the same, no need to go to the switching process
+            if(pid == current_pid){
+                return;
+            }
+
+            switch_to_process(pid);
+        } else {
+            ++process.rounds;
         }
-
-        switch_to_process(pid);
-    } else {
-        ++process.rounds;
     }
 
     //At this point we just have to return to the current process
@@ -282,6 +291,14 @@ void scheduler::unblock_process(pid_t pid){
     }
 
     pcb[pid].state = process_state::READY;
+}
+
+void scheduler::sleep_ms(pid_t pid, size_t time){
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+    thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
+
+    pcb[pid].state = process_state::SLEEPING;
+    pcb[pid].process.sleep_timeout = time;
 }
 
 //Provided for task_switch.s
