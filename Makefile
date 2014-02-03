@@ -83,5 +83,11 @@ clean:
 	cd kernel; $(MAKE) clean
 	cd programs/one; $(MAKE) clean
 	cd programs/hello; $(MAKE) clean
+	cd programs/long;$(MAKE) clean
+	cd programs/loop; $(MAKE) clean
+	cd programs/longone; $(MAKE) clean
+	cd programs/longtwo; $(MAKE) clean
+	cd programs/keyboard; $(MAKE) clean
+	cd programs/tsh; $(MAKE) clean
 	rm -f *.bin
 	rm -f *.flp

@@ -21,7 +21,7 @@
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = false;
+constexpr const bool DEBUG_SCHEDULER = true;
 
 //Provided by task_switch.s
 extern "C" {
