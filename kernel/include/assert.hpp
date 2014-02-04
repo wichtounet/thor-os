@@ -25,6 +25,7 @@ inline void thor_assert(bool condition, const char* message){
 }
 #endif
 
+inline void thor_unreachable(const char* message) __attribute__((noreturn));
 inline void thor_unreachable(const char* message){
     __thor_unreachable(message);
     __builtin_unreachable();

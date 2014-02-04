@@ -44,6 +44,10 @@ std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
 //Define one run queue for each priority level
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
 
+std::vector<scheduler::pid_t>& run_queue(size_t priority){
+    return run_queues[priority - scheduler::MIN_PRIORITY];
+}
+
 bool started = false;
 
 constexpr const size_t TURNOVER = 10;
@@ -104,7 +108,7 @@ void queue_process(scheduler::pid_t pid){
 
     process.state = scheduler::process_state::READY;
 
-    run_queues[process.process.priority].push_back(pid);
+    run_queue(process.process.priority).push_back(pid);
 }
 
 scheduler::process_t& create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)()){
@@ -174,7 +178,7 @@ size_t select_next_process(){
 
     //1. Run a process of higher priority, if any
     for(size_t p = scheduler::MAX_PRIORITY; p > current_priority; --p){
-        for(auto pid : run_queues[p]){
+        for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
                 return pid;
             }
@@ -183,7 +187,7 @@ size_t select_next_process(){
 
     //2. Run the next process of the same priority
 
-    auto& current_run_queue = run_queues[current_priority];
+    auto& current_run_queue = run_queue(current_priority);
 
     size_t next_index = 0;
     for(size_t i = 0; i < current_run_queue.size(); ++i){
@@ -207,7 +211,7 @@ size_t select_next_process(){
     //3. Run a process of lower priority
 
     for(size_t p = current_priority - 1; p >= scheduler::MIN_PRIORITY; --p){
-        for(auto pid : run_queues[p]){
+        for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
                 return pid;
             }

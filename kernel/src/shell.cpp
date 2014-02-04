@@ -720,7 +720,7 @@ void readelf_command(const std::vector<std::string>& params){
     }
 }
 
-void exec_command(const std::vector<std::string>& params){
+void exec_command(const std::vector<std::string>&){
     //Fake exec just to start() the scheduler
     scheduler::exec("");
 }
