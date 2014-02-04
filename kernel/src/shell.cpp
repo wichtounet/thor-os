@@ -83,7 +83,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[29] = {
+command_definition commands[28] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
