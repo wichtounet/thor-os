@@ -40,9 +40,11 @@ struct segment_t {
 
 struct process_t {
     pid_t pid;
-    size_t priority;
+    pid_t ppid;
 
     bool system;
+
+    size_t priority;
 
     size_t tty;
 

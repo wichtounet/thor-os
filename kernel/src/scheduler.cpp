@@ -71,6 +71,7 @@ scheduler::process_t& new_process(){
 
     process.process.system = false;
     process.process.pid = pid;
+    process.process.ppid = current_pid;
     process.process.priority = scheduler::DEFAULT_PRIORITY;
     process.state = scheduler::process_state::NEW;
     process.process.tty = stdio::get_active_terminal().id;
