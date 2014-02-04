@@ -21,7 +21,7 @@
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = false;
+constexpr const bool DEBUG_SCHEDULER = true;
 
 //Provided by task_switch.s
 extern "C" {
@@ -60,8 +60,18 @@ void idle_task(){
     }
 }
 
+void init_task(){
+    while(true){
+        //TODO exec tsh
+        //Await for termination
+    }
+}
+
 char idle_stack[scheduler::user_stack_size];
 char idle_kernel_stack[scheduler::kernel_stack_size];
+
+char init_stack[scheduler::user_stack_size];
+char init_kernel_stack[scheduler::kernel_stack_size];
 
 scheduler::process_t& new_process(){
     //TODO use get_free_pid() that searchs through the PCB
@@ -92,32 +102,46 @@ void queue_process(scheduler::pid_t pid){
     run_queues[process.process.priority].push_back(pid);
 }
 
+scheduler::process_t& create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)()){
+    auto& process = new_process();
+
+    process.system = true;
+    process.physical_cr3 = paging::get_physical_pml4t();
+    process.paging_size = 0;
+
+    process.physical_user_stack = 0;
+    process.physical_kernel_stack = 0;
+
+    auto rsp = &user_stack[scheduler::user_stack_size - 1];
+    rsp -= sizeof(interrupt::syscall_regs);
+
+    process.context = reinterpret_cast<interrupt::syscall_regs*>(rsp);
+
+    process.context->rflags = 0x200;
+    process.context->rip = reinterpret_cast<size_t>(fun);
+    process.context->rsp = reinterpret_cast<size_t>(&user_stack[scheduler::user_stack_size - 1] - sizeof(interrupt::syscall_regs) * 8);
+    process.context->cs = gdt::LONG_SELECTOR;
+    process.context->ds = gdt::DATA_SELECTOR;
+
+    process.kernel_rsp = reinterpret_cast<size_t>(&kernel_stack[scheduler::kernel_stack_size - 1]);
+
+    return process;
+}
+
 void create_idle_task(){
-    auto& idle_process = new_process();
+    auto& idle_process = create_kernel_task(idle_stack, idle_kernel_stack, &idle_task);
 
     idle_process.priority = scheduler::MIN_PRIORITY;
 
-    idle_process.system = true;
-    idle_process.physical_cr3 = paging::get_physical_pml4t();
-    idle_process.paging_size = 0;
-
-    idle_process.physical_user_stack = 0;
-    idle_process.physical_kernel_stack = 0;
-
-    auto rsp = &idle_stack[scheduler::user_stack_size - 1];
-    rsp -= sizeof(interrupt::syscall_regs);
-
-    idle_process.context = reinterpret_cast<interrupt::syscall_regs*>(rsp);
-
-    idle_process.context->rflags = 0x200;
-    idle_process.context->rip = reinterpret_cast<size_t>(&idle_task);
-    idle_process.context->rsp = reinterpret_cast<size_t>(&idle_stack[scheduler::user_stack_size - 1] - sizeof(interrupt::syscall_regs) * 8);
-    idle_process.context->cs = gdt::LONG_SELECTOR;
-    idle_process.context->ds = gdt::DATA_SELECTOR;
-
-    idle_process.kernel_rsp = reinterpret_cast<size_t>(&idle_kernel_stack[scheduler::kernel_stack_size - 1]);
-
     queue_process(idle_process.pid);
+}
+
+void create_init_task(){
+    auto& init_process = create_kernel_task(init_stack, init_kernel_stack, &init_task);
+
+    init_process.priority = scheduler::MIN_PRIORITY;
+
+    queue_process(init_process.pid);
 }
 
 void switch_to_process(size_t pid){
@@ -360,6 +384,7 @@ void start(){
 
 void scheduler::init(){ //Create the idle task
     create_idle_task();
+    create_init_task();
 }
 
 int64_t scheduler::exec(const std::string& file){
