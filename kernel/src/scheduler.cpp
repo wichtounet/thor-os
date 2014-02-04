@@ -95,6 +95,9 @@ scheduler::process_t& new_process(){
     process.state = scheduler::process_state::NEW;
     process.process.tty = stdio::get_active_terminal().id;
 
+    process.process.brk_start = 0;
+    process.process.brk_end = 0;
+
     return process.process;
 }
 
@@ -425,6 +428,9 @@ int64_t scheduler::exec(const std::string& file){
         k_print_line("Impossible to initialize paging");
         return -1;
     }
+
+    process.brk_start = program_break;
+    process.brk_end = program_break;
 
     init_context(process, buffer);
 

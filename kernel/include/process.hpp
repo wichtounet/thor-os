@@ -57,6 +57,9 @@ struct process_t {
 
     size_t kernel_rsp;
 
+    size_t brk_start;
+    size_t brk_end;
+
     volatile interrupt::syscall_regs* context;
 
     std::vector<segment_t> segments;
@@ -64,6 +67,7 @@ struct process_t {
 };
 
 constexpr const size_t program_base = 0x8000000000;
+constexpr const size_t program_break = 0x9000000000;
 
 constexpr const auto user_stack_size = 2 * paging::PAGE_SIZE;
 constexpr const auto kernel_stack_size = 2 * paging::PAGE_SIZE;
