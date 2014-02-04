@@ -60,10 +60,15 @@ void idle_task(){
     }
 }
 
+//TODO tsh should be configured somewhere
 void init_task(){
     while(true){
-        //TODO exec tsh
-        //Await for termination
+        auto pid = scheduler::exec("tsh");
+        scheduler::await_termination(pid);
+
+        if(DEBUG_SCHEDULER){
+            k_print_line("shell exited, run new one");
+        }
     }
 }
 
@@ -131,6 +136,7 @@ scheduler::process_t& create_kernel_task(char* user_stack, char* kernel_stack, v
 void create_idle_task(){
     auto& idle_process = create_kernel_task(idle_stack, idle_kernel_stack, &idle_task);
 
+    idle_process.ppid = 0;
     idle_process.priority = scheduler::MIN_PRIORITY;
 
     queue_process(idle_process.pid);
@@ -139,6 +145,7 @@ void create_idle_task(){
 void create_init_task(){
     auto& init_process = create_kernel_task(init_stack, init_kernel_stack, &init_task);
 
+    init_process.ppid = 0;
     init_process.priority = scheduler::MIN_PRIORITY;
 
     queue_process(init_process.pid);
@@ -371,11 +378,11 @@ void start() __attribute__((noreturn));
 void start(){
     started = true;
 
-    current_ticks = 0;
-
-    current_pid = 0;
-    pcb[current_pid].rounds = TURNOVER;
-    pcb[current_pid].state = scheduler::process_state::RUNNING;
+    for(auto& process : pcb){
+        if(process.state != scheduler::process_state::EMPTY){
+            k_printf("pid: %u ppid: %u\n", process.process.pid, process.process.ppid);
+        }
+    }
 
     init_task_switch(current_pid);
 }
@@ -384,10 +391,22 @@ void start(){
 
 void scheduler::init(){ //Create the idle task
     create_idle_task();
-    //create_init_task();
+    create_init_task();
+
+    current_ticks = 0;
+
+    current_pid = 1;
+    pcb[current_pid].rounds = TURNOVER;
+    pcb[current_pid].state = scheduler::process_state::RUNNING;
 }
 
 int64_t scheduler::exec(const std::string& file){
+    //TODO Once shell removed, start will be called in init()
+    if(!started){
+        start();
+        //Unreachable
+    }
+
     auto content = read_elf_file(file);
 
     if(!content){
@@ -407,11 +426,7 @@ int64_t scheduler::exec(const std::string& file){
 
     queue_process(process.pid);
 
-    if(!started){
-        start();
-    } else {
-        return process.pid;
-    }
+    return process.pid;
 }
 
 void scheduler::await_termination(pid_t pid){

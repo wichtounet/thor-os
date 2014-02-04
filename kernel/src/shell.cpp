@@ -721,19 +721,8 @@ void readelf_command(const std::vector<std::string>& params){
 }
 
 void exec_command(const std::vector<std::string>& params){
-    if(params.size() < 2){
-        k_print_line("exec: Need the name of the executable to read");
-
-        return;
-    }
-
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    scheduler::exec(params[1]);
+    //Fake exec just to start() the scheduler
+    scheduler::exec("");
 }
 
 void vesainfo_command(const std::vector<std::string>&){
