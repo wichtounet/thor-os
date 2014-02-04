@@ -384,7 +384,7 @@ void start(){
 
 void scheduler::init(){ //Create the idle task
     create_idle_task();
-    create_init_task();
+    //create_init_task();
 }
 
 int64_t scheduler::exec(const std::string& file){
@@ -414,9 +414,39 @@ int64_t scheduler::exec(const std::string& file){
     }
 }
 
+void scheduler::await_termination(pid_t pid){
+    while(true){
+        bool found = false;
+        for(auto& process : pcb){
+            if(process.process.ppid == current_pid && process.process.pid == pid){
+                if(process.state == process_state::KILLED){
+                    return;
+                }
+
+                found = true;
+            }
+        }
+
+        if(!found){
+            return;
+        }
+
+        pcb[current_pid].state = process_state::WAITING;
+        reschedule();
+    }
+}
+
 void scheduler::kill_current_process(){
     if(DEBUG_SCHEDULER){
         k_printf("Kill %u\n", current_pid);
+    }
+
+    //Notify parent if waiting
+    auto ppid = pcb[current_pid].process.ppid;
+    for(auto& process : pcb){
+        if(process.process.pid == ppid && process.state == process_state::WAITING){
+            unblock_process(process.process.pid);
+        }
     }
 
     //TODO At this point, memory should be released
@@ -424,11 +454,8 @@ void scheduler::kill_current_process(){
 
     pcb[current_pid].state = scheduler::process_state::KILLED;
 
-    current_pid = (current_pid + 1) % scheduler::MAX_PROCESS;
-
-    //Select the next process and switch to it
-    auto index = select_next_process();
-    switch_to_process(index);
+    //Run another process
+    reschedule();
 }
 
 void scheduler::tick(){
@@ -512,7 +539,7 @@ void scheduler::block_process(pid_t pid){
 
 void scheduler::unblock_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
-    thor_assert(pcb[pid].state == process_state::BLOCKED, "Can only block BLOCKED processes");
+    thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
     if(DEBUG_SCHEDULER){
         k_printf("Unblock process %u\n", pid);

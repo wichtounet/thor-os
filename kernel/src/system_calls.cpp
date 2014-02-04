@@ -47,7 +47,7 @@ void sc_exec(interrupt::syscall_regs* regs){
 void sc_await_termination(interrupt::syscall_regs* regs){
     auto pid = regs->rbx;
 
-    //TODO Implement
+    scheduler::await_termination(pid);
 }
 
 } //End of anonymous namespace

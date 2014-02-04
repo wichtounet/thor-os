@@ -30,7 +30,8 @@ enum class process_state : char {
     RUNNING = 3,
     BLOCKED = 4,
     SLEEPING= 5,
-    KILLED = 6
+    WAITING = 6,
+    KILLED = 7
 };
 
 struct segment_t {
