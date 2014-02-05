@@ -15,7 +15,7 @@ namespace std {
 template<typename T, size_t N>
 class array {
 private:
-    T data[N];
+    T __data[N];
 
 public:
     typedef T                       value_type;
@@ -24,11 +24,11 @@ public:
     typedef size_t                size_type;
 
     T& operator[](size_type pos){
-        return data[pos];
+        return __data[pos];
     }
 
     const T& operator[](size_type pos) const {
-        return data[pos];
+        return __data[pos];
     }
 
     size_type size(){
@@ -36,19 +36,23 @@ public:
     }
 
     iterator begin(){
-        return iterator(&data[0]);
+        return iterator(&__data[0]);
     }
 
     const_iterator begin() const {
-        return const_iterator(&data[0]);
+        return const_iterator(&__data[0]);
     }
 
     iterator end(){
-        return iterator(&data[N]);
+        return iterator(&__data[N]);
     }
 
     const_iterator end() const {
-        return const_iterator(&data[N]);
+        return const_iterator(&__data[N]);
+    }
+
+    value_type* data(){
+        return __data;
     }
 };
 
