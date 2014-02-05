@@ -10,22 +10,16 @@
 
 namespace {
 
-size_t next_virtual_address = 0;
-size_t allocated_pages = 0;
+constexpr const size_t virtual_start = paging::virtual_paging_start + (paging::physical_memory_pages * paging::PAGE_SIZE);
+constexpr const size_t first_virtual_address = virtual_start % 0x100000 == 0 ? virtual_start : (virtual_start / 0x100000 + 1) * 0x100000;
+
+size_t next_virtual_address = first_virtual_address;
+size_t allocated_pages = first_virtual_address / paging::PAGE_SIZE;
 
 } //end of anonymous namespace
 
 void virtual_allocator::init(){
-    auto start = paging::virtual_paging_start;
-    start += paging::physical_memory_pages * paging::PAGE_SIZE;
 
-    if(start % 0x100000 == 0){
-        next_virtual_address = start;
-    } else {
-        next_virtual_address = (start / 0x100000 + 1) * 0x100000;
-    }
-
-    allocated_pages = next_virtual_address / paging::PAGE_SIZE;
 }
 
 size_t virtual_allocator::allocate(size_t pages){
