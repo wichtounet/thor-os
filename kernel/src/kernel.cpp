@@ -50,7 +50,7 @@ void  kernel_main(){
     disks::detect_disks();
 
     //Try to init VESA
-    if(!vesa::init()){
+    if(vesa::vesa_enabled && !vesa::init()){
         vesa::vesa_enabled = false;
 
         //Unfortunately, we are in long mode, we cannot go back
