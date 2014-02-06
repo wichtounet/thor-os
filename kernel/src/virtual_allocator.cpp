@@ -125,6 +125,16 @@ size_t level(size_t pages){
     }
 }
 
+size_t level_size(size_t level){
+    size_t size = 1;
+
+    for(size_t i = 0; i < level; ++i){
+        size *= 2;
+    }
+
+    return size;
+}
+
 size_t get_free_block_index(size_t level){
     auto& bitmap = bitmaps[level];
     return bitmap.free_bit();
@@ -149,20 +159,114 @@ void virtual_allocator::init(){
     }
 }
 
+void taken_down(size_t level, size_t index){
+    if(level == 0){
+        return;
+    }
+
+    bitmaps[level-1].unset(index * 2);
+    bitmaps[level-1].unset(index * 2 + 1);
+
+    taken_down(level - 1, index * 2);
+    taken_down(level - 1, index * 2 + 1);
+}
+
+void free_down(size_t level, size_t index){
+    if(level == 0){
+        return;
+    }
+
+    bitmaps[level-1].set(index * 2);
+    bitmaps[level-1].set(index * 2 + 1);
+
+    taken_down(level - 1, index * 2);
+    taken_down(level - 1, index * 2 + 1);
+}
+
+void taken_up(size_t level, size_t index){
+    if(level == bitmaps.size() - 1){
+        return;
+    }
+
+    bitmaps[level+1].unset(index / 2);
+    taken_up(level+1, index / 2);
+}
+
+void free_up(size_t level, size_t index){
+    if(level == bitmaps.size() - 1){
+        return;
+    }
+
+    size_t buddy_index;
+    if(index % 2 == 0){
+        buddy_index = index + 1;
+    } else {
+        buddy_index = index - 1;
+    }
+
+    //If buddy is also free, free the block one level higher
+    if(bitmaps[level].is_set(buddy_index)){
+        bitmaps[level+1].set(index / 2);
+        taken_up(level+1, index / 2);
+    }
+}
+
+uintptr_t compute_address(size_t level, size_t index){
+    return first_virtual_address + index * level_size(level) * unit;
+}
+
+size_t get_block_index(size_t address, size_t level){
+    return (address - first_virtual_address) / (level_size(level) * unit);
+}
+
 size_t virtual_allocator::allocate(size_t pages){
+    //TODO Do something if not enough pages
+
+    allocated_pages += pages;
+
+    if(pages > max_block){
+        //TODO Special algorithm for big pages
+        return 0;
+    } else {
+        auto l = level(pages);
+        auto index = get_free_block_index(l);
+        auto address = compute_address(l, index);
+
+        if(address > last_virtual_address){
+            return 0;
+        }
+
+        //The current level block is not free anymore
+        bitmaps[l].unset(index);
+
+        //Mark all sub blocks as taken
+        taken_down(l, index);
+
+        //Mark all up blocks as taken
+        taken_up(l, index);
+
+        return address;
+    }
+}
+
+void virtual_allocator::free(size_t address, size_t pages){
     allocated_pages += pages;
 
     if(pages > max_block){
         //TODO Special algorithm for big pages
     } else {
         auto l = level(pages);
-        auto index = get_free_block_index(l);
+        auto index = get_block_index(address, l);
+
+        //Free block
+        bitmaps[l].set(index);
+
+        //Free all sub blocks
+        free_down(l, index);
+
+        //Free higher blocks if buddies are free too
+        free_up(l, index);
     }
-
-
-    auto address = next_virtual_address;
-    next_virtual_address += pages * paging::PAGE_SIZE;
-    return address;
 }
 
 size_t virtual_allocator::available(){
