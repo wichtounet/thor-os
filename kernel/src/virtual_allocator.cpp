@@ -145,25 +145,6 @@ size_t level_size(size_t level){
     return size;
 }
 
-} //end of anonymous namespace
-
-void virtual_allocator::init(){
-    //Give room to the bitmaps
-    bitmaps[0].init(data_bitmap_1);
-    bitmaps[1].init(data_bitmap_2);
-    bitmaps[2].init(data_bitmap_4);
-    bitmaps[3].init(data_bitmap_8);
-    bitmaps[4].init(data_bitmap_16);
-    bitmaps[5].init(data_bitmap_32);
-    bitmaps[6].init(data_bitmap_64);
-    bitmaps[7].init(data_bitmap_128);
-
-    //By default all blocks are free
-    for(auto& bitmap : bitmaps){
-        bitmap.set_all();
-    }
-}
-
 void taken_down(size_t level, size_t index){
     if(level == 0){
         return;
@@ -235,6 +216,36 @@ void mark_used(size_t l, size_t index){
     taken_up(l, index);
 }
 
+void mark_free(size_t l, size_t index){
+    //Free block
+    bitmaps[l].set(index);
+
+    //Free all sub blocks
+    free_down(l, index);
+
+    //Free higher blocks if buddies are free too
+    free_up(l, index);
+}
+
+} //end of anonymous namespace
+
+void virtual_allocator::init(){
+    //Give room to the bitmaps
+    bitmaps[0].init(data_bitmap_1);
+    bitmaps[1].init(data_bitmap_2);
+    bitmaps[2].init(data_bitmap_4);
+    bitmaps[3].init(data_bitmap_8);
+    bitmaps[4].init(data_bitmap_16);
+    bitmaps[5].init(data_bitmap_32);
+    bitmaps[6].init(data_bitmap_64);
+    bitmaps[7].init(data_bitmap_128);
+
+    //By default all blocks are free
+    for(auto& bitmap : bitmaps){
+        bitmap.set_all();
+    }
+}
+
 size_t virtual_allocator::allocate(size_t pages){
     //TODO Return 0 if not enough pages
 
@@ -288,14 +299,7 @@ void virtual_allocator::free(size_t address, size_t pages){
         auto l = level(pages);
         auto index = get_block_index(address, l);
 
-        //Free block
-        bitmaps[l].set(index);
-
-        //Free all sub blocks
-        free_down(l, index);
-
-        //Free higher blocks if buddies are free too
-        free_up(l, index);
+        mark_free(l, index);
     }
 }
 
