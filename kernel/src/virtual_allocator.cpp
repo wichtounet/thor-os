@@ -170,12 +170,10 @@ void free_down(size_t level, size_t index){
 }
 
 void taken_up(size_t level, size_t index){
-    if(level == bitmaps.size() - 1){
-        return;
+    for(size_t l = level + 1; l < bitmaps.size();  ++l){
+        index /= 2;
+        bitmaps[l].unset(index);
     }
-
-    bitmaps[level+1].unset(index / 2);
-    taken_up(level+1, index / 2);
 }
 
 void free_up(size_t level, size_t index){
@@ -206,22 +204,22 @@ size_t get_block_index(size_t address, size_t level){
 }
 
 void mark_used(size_t l, size_t index){
-    //The current level block is not free anymore
-    bitmaps[l].unset(index);
-
     //Mark all sub blocks as taken
     taken_down(l, index);
+
+    //The current level block is not free anymore
+    bitmaps[l].unset(index);
 
     //Mark all up blocks as taken
     taken_up(l, index);
 }
 
 void mark_free(size_t l, size_t index){
-    //Free block
-    bitmaps[l].set(index);
-
     //Free all sub blocks
     free_down(l, index);
+
+    //Free block at the current level
+    bitmaps[l].set(index);
 
     //Free higher blocks if buddies are free too
     free_up(l, index);
