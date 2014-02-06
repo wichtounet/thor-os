@@ -20,6 +20,7 @@
 #include "console.hpp"
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
+#include "physical_pointer.hpp"
 
 constexpr const bool DEBUG_SCHEDULER = true;
 
@@ -272,16 +273,10 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
 }
 
 void clear_physical_memory(size_t memory, size_t pages){
-    auto virt = virtual_allocator::allocate(pages);
+    physical_pointer phys_ptr(memory, pages);
 
-    paging::map_pages(virt, memory, pages);
-
-    auto it = reinterpret_cast<uint64_t*>(virt);
+    auto it = phys_ptr.as_ptr<uint64_t>();
     std::fill_n(it, (pages * paging::PAGE_SIZE) / sizeof(uint64_t), 0);
-
-    paging::unmap_pages(virt, pages);
-
-    //TODO virt should be deallocated
 }
 
 bool create_paging(char* buffer, scheduler::process_t& process){
@@ -325,15 +320,11 @@ bool create_paging(char* buffer, scheduler::process_t& process){
 
             //Copy the code into memory
 
-            auto virtual_memory = virtual_allocator::allocate(pages);
+            physical_pointer phys_ptr(segment. physical, pages);
 
-            paging::map_pages(virtual_memory, segment.physical, pages);
-
-            auto memory_start = virtual_memory + left_padding;
+            auto memory_start = phys_ptr.get() + left_padding;
 
             std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_memsz);
-
-            paging::unmap_pages(virtual_memory, pages);
         }
     }
 
@@ -359,11 +350,10 @@ void init_context(scheduler::process_t& process, const char* buffer){
     auto header = reinterpret_cast<const elf::elf_header*>(buffer);
 
     auto pages = scheduler::user_stack_size / paging::PAGE_SIZE;
-    auto virt = virtual_allocator::allocate(pages);
 
-    paging::map_pages(virt, process.physical_user_stack, pages);
+    physical_pointer phys_ptr(process.physical_user_stack, pages);
 
-    auto rsp = virt + scheduler::user_stack_size - 8;
+    auto rsp = phys_ptr.get() + scheduler::user_stack_size - 8;
     rsp -= sizeof(interrupt::syscall_regs) * 8;
 
     auto regs = reinterpret_cast<interrupt::syscall_regs*>(rsp);
@@ -375,10 +365,6 @@ void init_context(scheduler::process_t& process, const char* buffer){
     regs->rflags = 0x200;
 
     process.context = reinterpret_cast<interrupt::syscall_regs*>(scheduler::user_rsp - sizeof(interrupt::syscall_regs) * 8);
-
-    paging::unmap_pages(virt, pages);
-
-    //TODO virt should be deallocated
 }
 
 void start() __attribute__((noreturn));

@@ -14,6 +14,7 @@
 #include "console.hpp"
 #include "assert.hpp"
 #include "process.hpp"
+#include "physical_pointer.hpp"
 
 namespace {
 
@@ -386,44 +387,30 @@ bool paging::identity_map(size_t virt, uint8_t flags){
 bool paging::identity_map_pages(size_t virt, size_t pages, uint8_t flags){
     return map_pages(virt, virt, pages, flags);
 }
-
 void paging::map_kernel_inside_user(scheduler::process_t& process){
-    auto virt = virtual_allocator::allocate(1);
-
-    map(virt, process.physical_cr3);
+    physical_pointer cr3_ptr(process.physical_cr3, 1);
 
     //As we are ensuring that the first PML4T entries are reserved to the
     //kernel, it is enough to link these ones to the kernel ones
 
-    auto pml4t = reinterpret_cast<pml4t_t>(virt);
+    auto pml4t = cr3_ptr.as<pml4t_t>();
     for(size_t i = 0; i < pml4_entries; ++i){
         pml4t[i] = reinterpret_cast<pdpt_t>((physical_pdpt_start + i * PAGE_SIZE) | USER | PRESENT);
     }
-
-    unmap(virt);
-
-    //TODO Release virtual memory
 }
 
 void clear_physical_page(size_t physical){
-    auto virt = virtual_allocator::allocate(1);
+    physical_pointer ptr(physical, 1);
 
-    map(virt, physical);
-
-    auto it = reinterpret_cast<uint64_t*>(virt);
+    auto it = ptr.as_ptr<uint64_t>();
     std::fill_n(it, paging::PAGE_SIZE / sizeof(uint64_t), 0);
-
-    unmap(virt);
-
-    //TODO Release virtual memory
 }
 
 //TODO It is highly inefficient to remap CR3 each time
 bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physical){
-    //Get temporary virtual memory for CR3
-    auto virtual_cr3 = virtual_allocator::allocate(1);
+    physical_pointer cr3_ptr(process.physical_cr3, 1);
 
-    if(!map(virtual_cr3, process.physical_cr3)){
+    if(!cr3_ptr){
         return false;
     }
 
@@ -433,7 +420,7 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
     auto pde = pd_entry(virt);
     auto pte = pt_entry(virt);
 
-    auto pml4t = reinterpret_cast<pml4t_t>(virtual_cr3);
+    auto pml4t = cr3_ptr.as<pml4t_t>();
     if(!(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & PRESENT)){
         auto physical_pdpt = physical_allocator::allocate(1);
 
@@ -445,14 +432,14 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
         process.physical_paging.push_back(physical_pdpt);
     }
 
-    auto virtual_pdpt = virtual_allocator::allocate(1);
     auto physical_pdpt = reinterpret_cast<uintptr_t>(pml4t[pml4e]) & ~0xFFF;
+    physical_pointer pdpt_ptr(physical_pdpt, 1);
 
-    if(!map(virtual_pdpt, physical_pdpt)){
+    if(!pdpt_ptr){
         return false;
     }
 
-    auto pdpt = reinterpret_cast<pdpt_t>(virtual_pdpt);
+    auto pdpt = pdpt_ptr.as<pdpt_t>();
     if(!(reinterpret_cast<uintptr_t>(pdpt[pdpte]) & PRESENT)){
         auto physical_pd = physical_allocator::allocate(1);
 
@@ -464,14 +451,14 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
         process.physical_paging.push_back(physical_pd);
     }
 
-    auto virtual_pd = virtual_allocator::allocate(1);
     auto physical_pd = reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF;
+    physical_pointer pd_ptr(physical_pd, 1);
 
-    if(!map(virtual_pd, physical_pd)){
+    if(!pd_ptr){
         return false;
     }
 
-    auto pd = reinterpret_cast<pd_t>(virtual_pd);
+    auto pd = pd_ptr.as<pd_t>();
     if(!(reinterpret_cast<uintptr_t>(pd[pde]) & PRESENT)){
         auto physical_pt = physical_allocator::allocate(1);
 
@@ -483,24 +470,17 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
         process.physical_paging.push_back(physical_pt);
     }
 
-    auto virtual_pt = virtual_allocator::allocate(1);
     auto physical_pt = reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF;
+    physical_pointer pt_ptr(physical_pt, 1);
 
-    if(!map(virtual_pt, physical_pt)){
+    if(!pt_ptr){
         return false;
     }
 
-    auto pt = reinterpret_cast<pt_t>(virtual_pt);
+    auto pt = pt_ptr.as<pt_t>();
 
     //Map to the physical address
     pt[pte] = reinterpret_cast<page_entry>(physical | WRITE | USER | PRESENT);
-
-    paging::unmap(virtual_pt);
-    paging::unmap(virtual_pd);
-    paging::unmap(virtual_pdpt);
-    paging::unmap(virtual_cr3);
-
-    //TODO Release virtual memory
 
     return true;
 }
