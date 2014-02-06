@@ -45,12 +45,12 @@ public:
         return right;
     }
 
-    void set_left(bool left){
-        this->left = left;
+    void set_left(bool l){
+        left = l;
     }
 
-    void set_right(bool right){
-        this->right = right;
+    void set_right(bool r){
+        right = r;
     }
 
     malloc_header_chunk*& next(){
