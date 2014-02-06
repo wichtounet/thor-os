@@ -280,7 +280,7 @@ size_t virtual_allocator::allocate(size_t pages){
 }
 
 void virtual_allocator::free(size_t address, size_t pages){
-    allocated_pages += pages;
+    allocated_pages -= pages;
 
     if(pages > max_block){
         //TODO Special algorithm for big pages
