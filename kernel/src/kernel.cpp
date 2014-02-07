@@ -35,12 +35,19 @@ void  kernel_main(){
 
     interrupt::setup_interrupts();
 
-    //Prepare memory
-    physical_allocator::early_init();
-    paging::init();
+    //Init the virtual allocator
     virtual_allocator::init();
 
+    //Prepare basic physical allocator for paging init
+    physical_allocator::early_init();
+
+    //Init all the physical
+    paging::init();
+
+    //Finalize physical allocator initialization for malloc
     physical_allocator::init();
+
+    //Init dynamic memory allocation
     malloc::init();
 
     //Install drivers
