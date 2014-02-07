@@ -12,6 +12,8 @@
 #include "console.hpp"
 #include "kernel.hpp"
 #include "bitmap.hpp"
+#include "buddy_allocator.hpp"
+#include "assert.hpp"
 
 namespace {
 
@@ -27,9 +29,6 @@ constexpr size_t array_size(int block){
     return (managed_space / (block * unit) + 1) / (sizeof(uint64_t) * 8) + 1;
 }
 
-static constexpr const size_t levels = 8;
-static constexpr const size_t max_block = 128;
-
 std::array<uint64_t, array_size(1)> data_bitmap_1;
 std::array<uint64_t, array_size(2)> data_bitmap_2;
 std::array<uint64_t, array_size(4)> data_bitmap_4;
@@ -39,214 +38,37 @@ std::array<uint64_t, array_size(32)> data_bitmap_32;
 std::array<uint64_t, array_size(64)> data_bitmap_64;
 std::array<uint64_t, array_size(128)> data_bitmap_128;
 
-std::array<static_bitmap, levels> bitmaps;
-
-size_t level(size_t pages){
-    if(pages > 64){
-        return 7;
-    } else if(pages > 32){
-        return 6;
-    } else if(pages > 16){
-        return 5;
-    } else if(pages > 8){
-        return 4;
-    } else if(pages > 4){
-        return 3;
-    } else if(pages > 2){
-        return 2;
-    } else if(pages > 1){
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-size_t level_size(size_t level){
-    size_t size = 1;
-
-    for(size_t i = 0; i < level; ++i){
-        size *= 2;
-    }
-
-    return size;
-}
-
-void taken_down(size_t level, size_t index){
-    auto start = index * 2;
-    auto end = start + 1;
-
-    for(size_t l = level; l > 0; --l){
-        for(size_t i = start; i <= end; ++i){
-            bitmaps[l-1].unset(i);
-        }
-
-        start *= 2;
-        end = (end * 2) + 1;
-    }
-}
-
-void free_down(size_t level, size_t index){
-    auto start = index * 2;
-    auto end = start + 1;
-
-    for(size_t l = level; l > 0; --l){
-        for(size_t i = start; i <= end; ++i){
-            bitmaps[l-1].set(i);
-        }
-
-        start *= 2;
-        end = (end * 2) + 1;
-    }
-}
-
-void taken_up(size_t level, size_t index){
-    for(size_t l = level + 1; l < bitmaps.size();  ++l){
-        index /= 2;
-        bitmaps[l].unset(index);
-    }
-}
-
-void free_up(size_t level, size_t index){
-    for(size_t l = level; l + 1 < bitmaps.size();  ++l){
-        size_t buddy_index;
-        if(index % 2 == 0){
-            buddy_index = index + 1;
-        } else {
-            buddy_index = index - 1;
-        }
-
-        //If buddy is also free, free the block one level higher
-        if(bitmaps[l].is_set(buddy_index)){
-            index /= 2;
-            bitmaps[l+1].set(index);
-        } else {
-            break;
-        }
-    }
-}
-
-uintptr_t block_start(size_t level, size_t index){
-    return first_virtual_address + index * level_size(level) * unit;
-}
-
-size_t get_block_index(size_t address, size_t level){
-    return (address - first_virtual_address) / (level_size(level) * unit);
-}
-
-void mark_used(size_t l, size_t index){
-    //Mark all sub blocks as taken
-    taken_down(l, index);
-
-    //The current level block is not free anymore
-    bitmaps[l].unset(index);
-
-    //Mark all up blocks as taken
-    taken_up(l, index);
-}
-
-void mark_free(size_t l, size_t index){
-    //Free all sub blocks
-    free_down(l, index);
-
-    //Free block at the current level
-    bitmaps[l].set(index);
-
-    //Free higher blocks if buddies are free too
-    free_up(l, index);
-}
+typedef buddy_allocator<8, first_virtual_address, last_virtual_address, unit> buddy_type;
+buddy_type allocator;
 
 } //end of anonymous namespace
 
 void virtual_allocator::init(){
     //Give room to the bitmaps
-    bitmaps[0].init(data_bitmap_1);
-    bitmaps[1].init(data_bitmap_2);
-    bitmaps[2].init(data_bitmap_4);
-    bitmaps[3].init(data_bitmap_8);
-    bitmaps[4].init(data_bitmap_16);
-    bitmaps[5].init(data_bitmap_32);
-    bitmaps[6].init(data_bitmap_64);
-    bitmaps[7].init(data_bitmap_128);
+    allocator.init<0>(array_size(1), data_bitmap_1.data());
+    allocator.init<1>(array_size(2), data_bitmap_2.data());
+    allocator.init<2>(array_size(4), data_bitmap_4.data());
+    allocator.init<3>(array_size(8), data_bitmap_8.data());
+    allocator.init<4>(array_size(16), data_bitmap_16.data());
+    allocator.init<5>(array_size(32), data_bitmap_32.data());
+    allocator.init<6>(array_size(64), data_bitmap_64.data());
+    allocator.init<7>(array_size(128), data_bitmap_128.data());
 
-    //By default all blocks are free
-    for(auto& bitmap : bitmaps){
-        bitmap.set_all();
-    }
+    allocator.init();
 }
 
 size_t virtual_allocator::allocate(size_t pages){
-    //TODO Return 0 if not enough pages
+    thor_assert(pages < free() / paging::PAGE_SIZE, "Not enough virtual memory");
 
-    allocated_pages += pages;
+    allocated_pages += buddy_type::level_size(pages);
 
-    if(pages > max_block){
-        if(pages > max_block * static_bitmap::bits_per_word){
-            k_print_line("Virtual block too big");
-            suspend_boot();
-
-            //That means we try to allocate more than 33M at the same time
-            //probably not a good idea
-            //TODO Implement it all the same
-            return 0;
-        } else {
-            auto l = bitmaps.size() - 1;
-            auto index = bitmaps[l].free_word();
-            auto address = block_start(l, index);
-
-            //TODO check also address + size
-            if(address >= last_virtual_address){
-                return 0;
-            }
-
-            //Mark all bits of the word as used
-            for(size_t b = 0; b < static_bitmap::bits_per_word; ++b){
-                mark_used(l, index + b);
-            }
-
-            return address;
-        }
-    } else {
-        auto l = level(pages);
-        auto index = bitmaps[l].free_bit();
-        auto address = block_start(l, index);
-
-        //TODO check also address + size
-        if(address >= last_virtual_address){
-            return 0;
-        }
-
-        mark_used(l, index);
-
-        return address;
-    }
+    return allocator.allocate(pages);
 }
 
 void virtual_allocator::free(size_t address, size_t pages){
-    allocated_pages -= pages;
+    allocated_pages -= buddy_type::level_size(pages);
 
-    if(pages > max_block){
-        if(pages > max_block * static_bitmap::bits_per_word){
-            k_print_line("Virtual block too big");
-            suspend_boot();
-
-            //That means we try to allocate more than 33M at the same time
-            //probably not a good idea
-            //TODO Implement it all the same
-        } else {
-            auto l = level(pages);
-            auto index = get_block_index(address, l);
-
-            //Mark all bits of the word as free
-            for(size_t b = 0; b < static_bitmap::bits_per_word; ++b){
-                mark_free(l, index + b);
-            }
-        }
-    } else {
-        auto l = level(pages);
-        auto index = get_block_index(address, l);
-
-        mark_free(l, index);
-    }
+    allocator.free(address, pages);
 }
 
 size_t virtual_allocator::available(){

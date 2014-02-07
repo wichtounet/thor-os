@@ -22,6 +22,11 @@ struct static_bitmap {
         data = array.data();
     }
 
+    void init(size_t w, data_type* d){
+        words = w;
+        data = d;
+    }
+
     static constexpr size_t word_offset(size_t bit){
         return bit / bits_per_word;
     }
