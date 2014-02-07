@@ -38,12 +38,14 @@ std::array<uint64_t, array_size(32)> data_bitmap_32;
 std::array<uint64_t, array_size(64)> data_bitmap_64;
 std::array<uint64_t, array_size(128)> data_bitmap_128;
 
-typedef buddy_allocator<8, first_virtual_address, last_virtual_address, unit> buddy_type;
+typedef buddy_allocator<8, unit> buddy_type;
 buddy_type allocator;
 
 } //end of anonymous namespace
 
 void virtual_allocator::init(){
+    allocator.set_memory_range(first_virtual_address, last_virtual_address);
+
     //Give room to the bitmaps
     allocator.init<0>(array_size(1), data_bitmap_1.data());
     allocator.init<1>(array_size(2), data_bitmap_2.data());

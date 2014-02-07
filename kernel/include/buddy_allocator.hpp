@@ -15,16 +15,22 @@ inline constexpr T pow(T const& x, size_t n){
     return n > 0 ? x * pow(x, n - 1) : 1;
 }
 
-template<size_t Levels, size_t First, size_t Last, size_t Unit>
+template<size_t Levels, size_t Unit>
 struct buddy_allocator {
     static constexpr const size_t levels = Levels;
     static constexpr const size_t max_block = pow(2, levels - 1);
-    static constexpr const size_t first_address = First;
-    static constexpr const size_t last_address = Last;
 
     std::array<static_bitmap, levels> bitmaps;
 
+    size_t first_address;
+    size_t last_address;
+
 public:
+    void set_memory_range(size_t first, size_t last){
+        first_address = first;
+        last_address = last;
+    }
+
     template<size_t I>
     void init(size_t words, uint64_t* data){
         bitmaps[I].init(words, data);
