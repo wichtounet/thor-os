@@ -36,12 +36,13 @@ size_t array_size(size_t managed_space, size_t block){
 
 uint64_t* create_array(size_t managed_space, size_t block){
     auto size = array_size(managed_space, block) * sizeof(uint64_t);
+    auto pages = size % paging::PAGE_SIZE == 0 ? size / paging::PAGE_SIZE : size / paging::PAGE_SIZE + 1;
+
     auto physical_address = current_mmap_entry_position;
 
-    allocated_memory += size;
-    current_mmap_entry_position += size;
+    allocated_memory += pages * paging::PAGE_SIZE;
+    current_mmap_entry_position += pages * paging::PAGE_SIZE;
 
-    auto pages = size / paging::PAGE_SIZE + 1;
     auto virtual_address = virtual_allocator::allocate(pages);
 
     thor_assert(paging::map_pages(virtual_address, physical_address, pages), "Impossible to map pages for the physical allocator");
@@ -93,6 +94,12 @@ void physical_allocator::init(){
     auto size = current_mmap_entry->size;
     auto managed_space = size - (current_mmap_entry_position -  current_mmap_entry->base);
 
+    //Make sure to start with an aligned address
+    if((current_mmap_entry_position % paging::PAGE_SIZE) != 0){
+        allocated_memory += current_mmap_entry_position % paging::PAGE_SIZE;
+        current_mmap_entry_position = current_mmap_entry_position + current_mmap_entry_position % paging::PAGE_SIZE;
+    }
+
     auto data_bitmap_1 = create_array(managed_space, 1);
     auto data_bitmap_2 = create_array(managed_space, 2);
     auto data_bitmap_4 = create_array(managed_space, 4);
@@ -116,6 +123,8 @@ void physical_allocator::init(){
     allocator.init<6>(array_size(managed_space, 64), data_bitmap_64);
     allocator.init<7>(array_size(managed_space, 128), data_bitmap_128);
 
+    allocator.init();
+
     //TODO The current system uses more memory than necessary,
     //because it also tries to index memory that is used for the
     //buddy system.
@@ -128,7 +137,11 @@ size_t physical_allocator::allocate(size_t blocks){
 
     allocated_memory += buddy_type::level_size(blocks) * unit;
 
-    return allocator.allocate(blocks);
+    auto block = allocator.allocate(blocks);
+
+    k_print_line(block);
+
+    return block;
 }
 
 size_t physical_allocator::available(){
