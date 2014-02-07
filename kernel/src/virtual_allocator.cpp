@@ -9,11 +9,12 @@
 
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
-#include "console.hpp"
-#include "kernel.hpp"
-#include "bitmap.hpp"
 #include "buddy_allocator.hpp"
 #include "assert.hpp"
+
+//For problems during boot
+#include "kernel.hpp"
+#include "console.hpp"
 
 namespace {
 

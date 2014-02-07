@@ -8,7 +8,13 @@
 #ifndef BUDDY_ALLOCATOR_H
 #define BUDDY_ALLOCATOR_H
 
+#include "stl/array.hpp"
+
 #include "bitmap.hpp"
+
+//For problems during boot
+#include "kernel.hpp"
+#include "console.hpp"
 
 template <class T>
 inline constexpr T pow(T const& x, size_t n){
