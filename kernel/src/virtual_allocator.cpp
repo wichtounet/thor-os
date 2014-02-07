@@ -10,6 +10,7 @@
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
 #include "console.hpp"
+#include "kernel.hpp"
 
 namespace {
 
@@ -256,6 +257,9 @@ size_t virtual_allocator::allocate(size_t pages){
 
     if(pages > max_block){
         if(pages > max_block * static_bitmap::bits_per_word){
+            k_print_line("Virtual block too big");
+            suspend_boot();
+
             //That means we try to allocate more than 33M at the same time
             //probably not a good idea
             //TODO Implement it all the same
@@ -297,7 +301,22 @@ void virtual_allocator::free(size_t address, size_t pages){
     allocated_pages -= pages;
 
     if(pages > max_block){
-        //TODO Special algorithm for big pages
+        if(pages > max_block * static_bitmap::bits_per_word){
+            k_print_line("Virtual block too big");
+            suspend_boot();
+
+            //That means we try to allocate more than 33M at the same time
+            //probably not a good idea
+            //TODO Implement it all the same
+        } else {
+            auto l = level(pages);
+            auto index = get_block_index(address, l);
+
+            //Mark all bits of the word as free
+            for(size_t b = 0; b < static_bitmap::bits_per_word; ++b){
+                mark_free(l, index + b);
+            }
+        }
     } else {
         auto l = level(pages);
         auto index = get_block_index(address, l);
