@@ -9,6 +9,7 @@
 
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
+#include "console.hpp"
 
 namespace {
 
@@ -146,27 +147,31 @@ size_t level_size(size_t level){
 }
 
 void taken_down(size_t level, size_t index){
-    if(level == 0){
-        return;
+    auto start = index * 2;
+    auto end = start + 1;
+
+    for(size_t l = level; l > 0; --l){
+        for(size_t i = start; i <= end; ++i){
+            bitmaps[l-1].unset(i);
+        }
+
+        start *= 2;
+        end = (end * 2) + 1;
     }
-
-    bitmaps[level-1].unset(index * 2);
-    bitmaps[level-1].unset(index * 2 + 1);
-
-    taken_down(level - 1, index * 2);
-    taken_down(level - 1, index * 2 + 1);
 }
 
 void free_down(size_t level, size_t index){
-    if(level == 0){
-        return;
+    auto start = index * 2;
+    auto end = start + 1;
+
+    for(size_t l = level; l > 0; --l){
+        for(size_t i = start; i <= end; ++i){
+            bitmaps[l-1].set(i);
+        }
+
+        start *= 2;
+        end = (end * 2) + 1;
     }
-
-    bitmaps[level-1].set(index * 2);
-    bitmaps[level-1].set(index * 2 + 1);
-
-    taken_down(level - 1, index * 2);
-    taken_down(level - 1, index * 2 + 1);
 }
 
 void taken_up(size_t level, size_t index){
@@ -177,21 +182,21 @@ void taken_up(size_t level, size_t index){
 }
 
 void free_up(size_t level, size_t index){
-    if(level == bitmaps.size() - 1){
-        return;
-    }
+    for(size_t l = level; l + 1 < bitmaps.size();  ++l){
+        size_t buddy_index;
+        if(index % 2 == 0){
+            buddy_index = index + 1;
+        } else {
+            buddy_index = index - 1;
+        }
 
-    size_t buddy_index;
-    if(index % 2 == 0){
-        buddy_index = index + 1;
-    } else {
-        buddy_index = index - 1;
-    }
-
-    //If buddy is also free, free the block one level higher
-    if(bitmaps[level].is_set(buddy_index)){
-        bitmaps[level+1].set(index / 2);
-        taken_up(level+1, index / 2);
+        //If buddy is also free, free the block one level higher
+        if(bitmaps[l].is_set(buddy_index)){
+            index /= 2;
+            bitmaps[l+1].set(index);
+        } else {
+            break;
+        }
     }
 }
 
