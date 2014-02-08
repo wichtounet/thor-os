@@ -92,12 +92,6 @@ void gc_task(){
                 //1. Release physical memory of PML4T
                 physical_allocator::free(desc.physical_cr3, 1);
 
-                //2. Release physical memory of paging structures
-                for(auto page : desc.physical_paging){
-                    physical_allocator::free(page, 1);
-                }
-                desc.physical_paging.clear();
-
                 //3. Release physical stacks
                 physical_allocator::free(desc.physical_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
                 physical_allocator::free(desc.physical_user_stack, scheduler::user_stack_size / paging::PAGE_SIZE);
