@@ -551,6 +551,8 @@ void scheduler::sbrk(size_t inc){
         return;
     }
 
+    process.segments.push_back({physical, pages});
+
     process.brk_end += size;
 }
 
