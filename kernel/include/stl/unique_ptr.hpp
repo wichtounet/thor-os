@@ -25,19 +25,6 @@ struct default_delete {
     }
 };
 
-template<typename T>
-struct malloc_delete {
-    malloc_delete() {}
-
-    template<typename Up>
-    malloc_delete(const malloc_delete<Up>&) {}
-
-    void operator()(T* ptr) const {
-        static_assert(sizeof(T) > 0, "Type must be complete");
-        k_free(ptr);
-    }
-};
-
 template <typename T, typename D = default_delete<T>>
 class unique_ptr {
 public:
