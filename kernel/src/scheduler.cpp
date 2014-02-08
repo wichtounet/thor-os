@@ -59,6 +59,8 @@ size_t current_ticks = 0;
 size_t current_pid;
 size_t next_pid = 0;
 
+size_t gc_pid = 0;
+
 void idle_task(){
     while(true){
         asm volatile("hlt");
@@ -67,7 +69,11 @@ void idle_task(){
 
 void gc_task(){
     while(true){
-        //TODO
+        //TODO At this point, memory should be released
+        //TODO The process should also be removed from the run queue
+
+        //Wait until there is something to do
+        scheduler::block_process(scheduler::get_pid());
     }
 }
 
@@ -175,6 +181,8 @@ void create_gc_task(){
     gc_process.priority = scheduler::MIN_PRIORITY + 1;
 
     queue_process(gc_process.pid);
+
+    gc_pid = gc_process.pid;
 }
 
 void switch_to_process(size_t pid){
@@ -403,6 +411,7 @@ void start(){
 void scheduler::init(){ //Create the idle task
     create_idle_task();
     create_init_task();
+    create_gc_task();
 
     current_ticks = 0;
 
@@ -478,8 +487,8 @@ void scheduler::kill_current_process(){
         }
     }
 
-    //TODO At this point, memory should be released
-    //TODO The process should also be removed from the run queue
+    //The GC thread will clean up eventually
+    unblock_process(gc_pid);
 
     pcb[current_pid].state = scheduler::process_state::KILLED;
 
