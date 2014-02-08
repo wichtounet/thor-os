@@ -40,6 +40,5 @@ int main(){
         } else {
             //TODO Once in good shape, just append to current input buffer
         }
-
     }
 }
