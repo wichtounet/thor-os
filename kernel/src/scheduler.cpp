@@ -78,6 +78,10 @@ void gc_task(){
             if(process.state == scheduler::process_state::KILLED){
                 auto& desc = process.process;
 
+                if(DEBUG_SCHEDULER){
+                    k_printf("Clean process %u\n", desc.pid);
+                }
+
                 //1. Release physical memory of PML4T
                 physical_allocator::free(desc.physical_cr3, 1);
 
