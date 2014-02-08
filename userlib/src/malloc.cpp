@@ -191,8 +191,15 @@ void* malloc(size_t bytes){
     return reinterpret_cast<void*>(block_start);
 }
 
-void free(void* pointer){
-    //TODO
+void free(void* block){
+    auto free_header = reinterpret_cast<malloc_header_chunk*>(
+        reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
+
+    //Less memory is used
+    _used -= free_header->size + META_SIZE;
+
+    //Add the freed block in the free list
+    insert_after(malloc_head, free_header);
 }
 
 size_t brk_start(){
