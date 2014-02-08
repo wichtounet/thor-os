@@ -5,10 +5,10 @@ default: a.out
 include ../../cpp.mk
 
 %.cpp.o: src/%.cpp
-	$(CC) $(PROGRAM_FLAGS) $(CPP_FLAGS_64) $(WARNING_FLAGS) -c $< -o $@
+	$(CC) -c $< -o $@ $(PROGRAM_FLAGS)
 
 a.out: main.cpp.o
-	$(CC) $(PROGRAM_LINK_FLAGS) $(CPP_FLAGS_64) -o a.out main.cpp.o
+	$(CC) -o a.out main.cpp.o $(PROGRAM_LINK_FLAGS)
 
 clean:
 	rm *.cpp.o
