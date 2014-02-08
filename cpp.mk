@@ -17,5 +17,5 @@ COMMON_LINK_FLAGS=-lgcc
 LIB_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC
 LIB_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC
 
-PROGRAM_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -I../../userlib/include/ -static -L../../userlib/ -ltlib -mcmodel=small -fPIC
-PROGRAM_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../userlib/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld
+PROGRAM_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -static -L../../tlib/ -ltlib -mcmodel=small -fPIC
+PROGRAM_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld

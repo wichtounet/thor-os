@@ -5,8 +5,8 @@ default: thor.flp
 kernel/kernel.bin: force_look
 	cd kernel; $(MAKE)
 
-userlib/libtlib.a: force_look
-	cd userlib; $(MAKE)
+tlib/libtlib.a: force_look
+	cd tlib; $(MAKE)
 
 bootloader/stage1.bin: force_look
 	cd bootloader; $(MAKE) stage1.bin
@@ -14,28 +14,28 @@ bootloader/stage1.bin: force_look
 bootloader/stage2.bin: force_look
 	cd bootloader; $(MAKE) stage2.bin
 
-programs/one/a.out: force_look userlib/libtlib.a
+programs/one/a.out: force_look tlib/libtlib.a
 	cd programs/one; ${MAKE} a.out
 
-programs/hello/a.out: force_look userlib/libtlib.a
+programs/hello/a.out: force_look tlib/libtlib.a
 	cd programs/hello; ${MAKE} a.out
 
-programs/long/a.out: force_look userlib/libtlib.a
+programs/long/a.out: force_look tlib/libtlib.a
 	cd programs/long; ${MAKE} a.out
 
-programs/longone/a.out: force_look userlib/libtlib.a
+programs/longone/a.out: force_look tlib/libtlib.a
 	cd programs/longone; ${MAKE} a.out
 
-programs/longtwo/a.out: force_look userlib/libtlib.a
+programs/longtwo/a.out: force_look tlib/libtlib.a
 	cd programs/longtwo; ${MAKE} a.out
 
-programs/loop/a.out: force_look userlib/libtlib.a
+programs/loop/a.out: force_look tlib/libtlib.a
 	cd programs/loop; ${MAKE} a.out
 
-programs/keyboard/a.out: force_look userlib/libtlib.a
+programs/keyboard/a.out: force_look tlib/libtlib.a
 	cd programs/keyboard; ${MAKE} a.out
 
-programs/tsh/tsh: force_look userlib/libtlib.a
+programs/tsh/tsh: force_look tlib/libtlib.a
 	cd programs/tsh; ${MAKE} tsh
 
 hdd.img:
@@ -92,5 +92,6 @@ clean:
 	cd programs/longtwo; $(MAKE) clean
 	cd programs/keyboard; $(MAKE) clean
 	cd programs/tsh; $(MAKE) clean
+	cd tlib/; $(MAKE) clean
 	rm -f *.bin
 	rm -f *.flp
