@@ -54,6 +54,7 @@ struct process_t {
 
     size_t physical_user_stack;
     size_t physical_kernel_stack;
+    size_t virtual_kernel_stack;
 
     size_t kernel_rsp;
 

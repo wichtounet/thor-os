@@ -69,11 +69,65 @@ void idle_task(){
 
 void gc_task(){
     while(true){
-        //TODO At this point, memory should be released
-        //TODO The process should also be removed from the run queue
-
         //Wait until there is something to do
         scheduler::block_process(scheduler::get_pid());
+
+        //2. Clean up each killed process
+
+        for(auto& process : pcb){
+            if(process.state == scheduler::process_state::KILLED){
+                auto& desc = process.process;
+
+                //1. Release physical memory of PML4T
+                physical_allocator::free(desc.physical_cr3, 1);
+
+                //2. Release physical memory of paging structures
+                for(auto page : desc.physical_paging){
+                    physical_allocator::free(page, 1);
+                }
+                desc.physical_paging.clear();
+
+                //3. Release physical stacks
+                physical_allocator::free(desc.physical_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
+                physical_allocator::free(desc.physical_user_stack, scheduler::user_stack_size / paging::PAGE_SIZE);
+
+                //4. Release segment's physical memory
+                for(auto& segment : desc.segments){
+                    physical_allocator::free(segment.physical, segment.size / paging::PAGE_SIZE);
+                }
+                desc.segments.clear();
+
+                //5. Release break space
+                //TODO Implement that once break space is done
+
+                //6. Release virtual kernel stack
+                virtual_allocator::free(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
+                paging::unmap_pages(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
+
+                //7. Remove process from run queue
+                size_t index = 0;
+                for(; index < run_queue(desc.priority).size(); ++index){
+                    if(run_queue(desc.priority)[index] == desc.pid){
+                        run_queue(desc.priority).erase(index);
+                        break;
+                    }
+                }
+
+                //8. Clean process
+                desc.pid = 0;
+                desc.ppid = 0;
+                desc.system = false;
+                desc.physical_cr3 = 0;
+                desc.physical_user_stack = 0;
+                desc.physical_kernel_stack = 0;
+                desc.paging_size = 0;
+                desc.context = nullptr;
+                desc.brk_start = desc.brk_end = 0;
+
+                //9. Release the PCB slot
+                process.state = scheduler::process_state::EMPTY;
+            }
+        }
     }
 }
 
@@ -363,6 +417,7 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     }
 
     process.physical_kernel_stack = physical_kernel_stack;
+    process.virtual_kernel_stack = virtual_kernel_stack;
     process.kernel_rsp = virtual_kernel_stack + (scheduler::user_stack_size - 8);
 
     //3. Clear stacks
