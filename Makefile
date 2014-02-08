@@ -67,16 +67,16 @@ qemu: default
 
 bochs: default
 	echo "c" > commands
-	bochs -qf bochsrc.txt -rc commands
+	bochs -qf tools/bochsrc.txt -rc commands
 	rm commands
 
 debug: default
 	echo "c" > commands
-	bochs -qf debug_bochsrc.txt -rc commands
+	bochs -qf tools/debug_bochsrc.txt -rc commands
 	rm commands
 
 gdb: default
-	bochs -qf gdb_bochsrc.txt
+	bochs -qf tools/gdb_bochsrc.txt
 
 force_look:
 	true
