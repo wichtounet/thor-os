@@ -9,6 +9,7 @@
 #include "stl/vector.hpp"
 #include "stl/optional.hpp"
 #include "stl/string.hpp"
+#include "stl/lock_guard.hpp"
 
 #include "scheduler.hpp"
 #include "paging.hpp"
@@ -21,6 +22,7 @@
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 #include "physical_pointer.hpp"
+#include "mutex.hpp"
 
 constexpr const bool DEBUG_SCHEDULER = true;
 
@@ -44,9 +46,14 @@ std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
 
 //Define one run queue for each priority level
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
+std::array<mutex, scheduler::PRIORITY_LEVELS> run_queue_locks;
 
 std::vector<scheduler::pid_t>& run_queue(size_t priority){
     return run_queues[priority - scheduler::MIN_PRIORITY];
+}
+
+mutex& run_queue_lock(size_t priority){
+    return run_queue_locks[priority - scheduler::MIN_PRIORITY];
 }
 
 bool started = false;
@@ -111,6 +118,8 @@ void gc_task(){
                 //7. Remove process from run queue
                 size_t index = 0;
                 for(; index < run_queue(desc.priority).size(); ++index){
+                    std::lock_guard<mutex> l(run_queue_lock(desc.priority));
+
                     if(run_queue(desc.priority)[index] == desc.pid){
                         run_queue(desc.priority).erase(index);
                         break;
@@ -185,6 +194,7 @@ void queue_process(scheduler::pid_t pid){
 
     process.state = scheduler::process_state::READY;
 
+    std::lock_guard<mutex> l(run_queue_lock(process.process.priority));
     run_queue(process.process.priority).push_back(pid);
 }
 
@@ -266,6 +276,8 @@ size_t select_next_process(){
 
     //1. Run a process of higher priority, if any
     for(size_t p = scheduler::MAX_PRIORITY; p > current_priority; --p){
+        std::lock_guard<mutex> l(run_queue_lock(p));
+
         for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
                 return pid;
@@ -275,22 +287,26 @@ size_t select_next_process(){
 
     //2. Run the next process of the same priority
 
-    auto& current_run_queue = run_queue(current_priority);
+    {
+        std::lock_guard<mutex> l(run_queue_lock(current_priority));
 
-    size_t next_index = 0;
-    for(size_t i = 0; i < current_run_queue.size(); ++i){
-        if(current_run_queue[i] == current_pid){
-            next_index = (i + 1) % current_run_queue.size();
-            break;
+        auto& current_run_queue = run_queue(current_priority);
+
+        size_t next_index = 0;
+        for(size_t i = 0; i < current_run_queue.size(); ++i){
+            if(current_run_queue[i] == current_pid){
+                next_index = (i + 1) % current_run_queue.size();
+                break;
+            }
         }
-    }
 
-    for(size_t i = 0; i < current_run_queue.size(); ++i){
-        auto index = (next_index + i) % current_run_queue.size();
-        auto pid = current_run_queue[index];
+        for(size_t i = 0; i < current_run_queue.size(); ++i){
+            auto index = (next_index + i) % current_run_queue.size();
+            auto pid = current_run_queue[index];
 
-        if(pcb[pid].state == scheduler::process_state::READY){
-            return pid;
+            if(pcb[pid].state == scheduler::process_state::READY){
+                return pid;
+            }
         }
     }
 
@@ -299,6 +315,8 @@ size_t select_next_process(){
     //3. Run a process of lower priority
 
     for(size_t p = current_priority - 1; p >= scheduler::MIN_PRIORITY; --p){
+        std::lock_guard<mutex> l(run_queue_lock(p));
+
         for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
                 return pid;
@@ -468,12 +486,19 @@ void start(){
 } //end of anonymous namespace
 
 void scheduler::init(){ //Create the idle task
+    //Init all the semaphores
+    for(auto& lock : run_queue_locks){
+        lock.init();
+    }
+
+    //Create all the kernel tasks
     create_idle_task();
     create_init_task();
     create_gc_task();
 
     current_ticks = 0;
 
+    //Run the init queue by default
     current_pid = 1;
     pcb[current_pid].rounds = TURNOVER;
     pcb[current_pid].state = scheduler::process_state::RUNNING;
