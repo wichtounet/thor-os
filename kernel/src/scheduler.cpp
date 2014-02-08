@@ -533,7 +533,7 @@ int64_t scheduler::exec(const std::string& file){
 void scheduler::sbrk(size_t inc){
     auto& process = pcb[current_pid].process;
 
-    size_t size = inc + (inc % paging::PAGE_SIZE);
+    size_t size = (inc + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
     size_t pages = size / paging::PAGE_SIZE;
 
     //Get some physical memory
