@@ -28,6 +28,7 @@ int64_t exec(const std::string& path);
 
 void kill_current_process();
 void await_termination(pid_t pid);
+void sbrk(size_t inc);
 
 void tick();
 void reschedule();

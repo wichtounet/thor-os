@@ -536,6 +536,30 @@ int64_t scheduler::exec(const std::string& file){
     return process.pid;
 }
 
+void scheduler::sbrk(size_t inc){
+    auto& process = pcb[current_pid].process;
+
+    size_t size = inc + (inc % paging::PAGE_SIZE);
+    size_t pages = size / paging::PAGE_SIZE;
+
+    //Get some physical memory
+    auto physical = physical_allocator::allocate(pages);
+
+    if(!physical){
+        return;
+    }
+
+    auto virtual_start = process.brk_start;
+
+    //Map the memory inside the process memory space
+    if(!paging::user_map_pages(process, virtual_start, physical, pages)){
+        physical_allocator::free(physical, pages);
+        return;
+    }
+
+    process.brk_end += size;
+}
+
 void scheduler::await_termination(pid_t pid){
     while(true){
         bool found = false;

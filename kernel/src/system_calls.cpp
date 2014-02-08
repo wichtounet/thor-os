@@ -50,6 +50,25 @@ void sc_await_termination(interrupt::syscall_regs* regs){
     scheduler::await_termination(pid);
 }
 
+void sc_brk_start(interrupt::syscall_regs* regs){
+    auto& process = scheduler::get_process(scheduler::get_pid());
+
+    regs->rax = process.brk_start;
+}
+
+void sc_brk_end(interrupt::syscall_regs* regs){
+    auto& process = scheduler::get_process(scheduler::get_pid());
+
+    regs->rax = process.brk_end;
+}
+
+void sc_sbrk(interrupt::syscall_regs* regs){
+    scheduler::sbrk(regs->rbx);
+
+    auto& process = scheduler::get_process(scheduler::get_pid());
+    regs->rax = process.brk_end;
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -82,6 +101,18 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 6:
             sc_await_termination(regs);
+            break;
+
+        case 7:
+            sc_brk_start(regs);
+            break;
+
+        case 8:
+            sc_brk_end(regs);
+            break;
+
+        case 9:
+            sc_sbrk(regs);
             break;
 
         case 0x666:

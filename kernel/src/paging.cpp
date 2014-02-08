@@ -486,7 +486,6 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
 }
 
 bool paging::user_map_pages(scheduler::process_t& process, size_t virt, size_t physical, size_t pages){
-
     //Map each page
     for(size_t page = 0; page < pages; ++page){
         auto virt_addr = virt + page * PAGE_SIZE;
