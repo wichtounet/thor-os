@@ -65,6 +65,12 @@ void idle_task(){
     }
 }
 
+void gc_task(){
+    while(true){
+        //TODO
+    }
+}
+
 //TODO tsh should be configured somewhere
 void init_task(){
     while(true){
@@ -82,6 +88,9 @@ char idle_kernel_stack[scheduler::kernel_stack_size];
 
 char init_stack[scheduler::user_stack_size];
 char init_kernel_stack[scheduler::kernel_stack_size];
+
+char gc_stack[scheduler::user_stack_size];
+char gc_kernel_stack[scheduler::kernel_stack_size];
 
 scheduler::process_t& new_process(){
     //TODO use get_free_pid() that searchs through the PCB
@@ -154,9 +163,18 @@ void create_init_task(){
     auto& init_process = create_kernel_task(init_stack, init_kernel_stack, &init_task);
 
     init_process.ppid = 0;
-    init_process.priority = scheduler::MIN_PRIORITY;
+    init_process.priority = scheduler::MIN_PRIORITY + 1;
 
     queue_process(init_process.pid);
+}
+
+void create_gc_task(){
+    auto& gc_process = create_kernel_task(gc_stack, gc_kernel_stack, &gc_task);
+
+    gc_process.ppid = 1;
+    gc_process.priority = scheduler::MIN_PRIORITY + 1;
+
+    queue_process(gc_process.pid);
 }
 
 void switch_to_process(size_t pid){
