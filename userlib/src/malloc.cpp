@@ -228,3 +228,19 @@ size_t sbrk(size_t inc){
         : "rax");
     return value;
 }
+
+void* operator new(uint64_t size){
+    return malloc(size);
+}
+
+void operator delete(void* p){
+    free(p);
+}
+
+void* operator new[](uint64_t size){
+    return malloc(size);
+}
+
+void operator delete[](void* p){
+    return free(p);
+}

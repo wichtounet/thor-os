@@ -10,6 +10,12 @@
 
 #include "types.hpp"
 
+void* operator new(uint64_t size);
+void operator delete(void* p);
+
+void* operator new[](uint64_t size);
+void operator delete[](void* p);
+
 void* malloc(size_t size);
 void free(void* pointer);
 
