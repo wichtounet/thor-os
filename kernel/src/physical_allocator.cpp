@@ -137,11 +137,13 @@ size_t physical_allocator::allocate(size_t blocks){
 
     allocated_memory += buddy_type::level_size(blocks) * unit;
 
-    auto block = allocator.allocate(blocks);
+    return allocator.allocate(blocks);
+}
 
-    k_print_line(block);
+void physical_allocator::free(size_t address, size_t blocks){
+    allocated_memory -= buddy_type::level_size(blocks) * unit;
 
-    return block;
+    return allocator.free(address, blocks);
 }
 
 size_t physical_allocator::available(){

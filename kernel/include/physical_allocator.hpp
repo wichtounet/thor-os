@@ -13,10 +13,13 @@
 namespace physical_allocator {
 
 void early_init();
-void init();
 
 size_t early_allocate(size_t pages);
+
+void init();
+
 size_t allocate(size_t pages);
+void free(size_t address, size_t pages);
 
 size_t available();
 size_t allocated();
