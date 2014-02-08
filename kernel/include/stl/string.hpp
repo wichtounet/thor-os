@@ -14,7 +14,13 @@
 
 namespace std {
 
-uint64_t str_len(const char* a);
+inline uint64_t str_len(const char* a){
+    uint64_t length = 0;
+    while(*a++){
+        ++length;
+    }
+    return length;
+}
 
 template<typename CharT>
 struct basic_string {
@@ -217,11 +223,64 @@ public:
 
 typedef basic_string<char> string;
 
-uint64_t parse(const char* str);
-uint64_t parse(const char* str, const char* end);
-uint64_t parse(const string& str);
+inline uint64_t parse(const char* it, const char* end){
+    int i = end - it - 1;
 
-vector<string> split(const string& s);
+    uint64_t factor = 1;
+    uint64_t acc = 0;
+
+    for(; i >= 0; --i){
+        acc += (it[i] - '0') * factor;
+        factor *= 10;
+    }
+
+    return acc;
+}
+
+inline uint64_t parse(const char* str){
+    int i = 0;
+
+    const char* it = str;
+    while(*++it){
+        ++i;
+    }
+
+    uint64_t factor = 1;
+    uint64_t acc = 0;
+
+    for(; i >= 0; --i){
+        acc += (str[i] - '0') * factor;
+        factor *= 10;
+    }
+
+    return acc;
+}
+
+inline uint64_t parse(const string& str){
+    return parse(str.begin(), str.end());
+}
+
+template<typename Char>
+std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s){
+    std::vector<std::basic_string<Char>> parts;
+
+    std::basic_string<Char> current(s.size());
+
+    for(char c : s){
+        if(c == ' ' && !current.empty()){
+            parts.push_back(current);
+            current.clear();
+        } else {
+            current += c;
+        }
+    }
+
+    if(!current.empty()){
+        parts.push_back(current);
+    }
+
+    return std::move(parts);
+}
 
 } //end of namespace std
 
