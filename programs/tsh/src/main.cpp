@@ -7,7 +7,7 @@
 
 #include <print.hpp>
 #include <system.hpp>
-#include <string.hpp>
+#include <cstring.hpp>
 
 int main(){
     char input_buffer[64];
