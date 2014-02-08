@@ -8,6 +8,9 @@
 #ifndef USERLIB_STRING_H
 #define USERLIB_STRING_H
 
+//TODO Once the shell use std::string, remove this file and its source file
+//equivalent
+
 int str_compare(const char *s1, const char *s2);
 bool str_equals(const char* s1, const char* s2);
 
