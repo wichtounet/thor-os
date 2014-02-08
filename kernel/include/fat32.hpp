@@ -8,10 +8,10 @@
 #ifndef FAT32_H
 #define FAT32_H
 
-#include "disks.hpp"
+#include <vector.hpp>
+#include <string.hpp>
 
-#include "stl/vector.hpp"
-#include "stl/string.hpp"
+#include "disks.hpp"
 
 namespace fat32 {
 

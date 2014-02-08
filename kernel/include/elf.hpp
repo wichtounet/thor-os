@@ -8,8 +8,8 @@
 #ifndef ELF_H
 #define ELF_H
 
-#include "stl/types.hpp"
-#include "stl/string.hpp"
+#include <types.hpp>
+#include <string.hpp>
 
 namespace elf {
 

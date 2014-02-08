@@ -8,6 +8,8 @@
 #ifndef ALGORITHMS_H
 #define ALGORITHMS_H
 
+#include <types.hpp>
+
 namespace std {
 
 template< class T > struct remove_reference      {typedef T type;};

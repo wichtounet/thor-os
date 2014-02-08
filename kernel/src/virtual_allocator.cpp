@@ -5,7 +5,7 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "stl/array.hpp"
+#include <array.hpp>
 
 #include "virtual_allocator.hpp"
 #include "paging.hpp"

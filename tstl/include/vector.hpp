@@ -8,8 +8,8 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "stl/types.hpp"
-#include "stl/algorithms.hpp"
+#include <types.hpp>
+#include <algorithms.hpp>
 
 //TODO The vector does not call any destructor
 

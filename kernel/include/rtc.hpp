@@ -8,7 +8,7 @@
 #ifndef RTC_H
 #define RTC_H
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 namespace rtc {
 

@@ -5,13 +5,13 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <types.hpp>
+
 #include "acpi.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"
 #include "paging.hpp"
 #include "console.hpp"
-
-#include "stl/types.hpp"
 
 namespace {
 

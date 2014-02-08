@@ -8,7 +8,7 @@
 #ifndef GDT_H
 #define GDT_H
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 namespace gdt {
 

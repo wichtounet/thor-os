@@ -8,8 +8,8 @@
 #ifndef ATA_H
 #define ATA_H
 
-#include "stl/types.hpp"
-#include "stl/string.hpp"
+#include <types.hpp>
+#include <string.hpp>
 
 namespace ata {
 

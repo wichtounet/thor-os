@@ -8,7 +8,7 @@
 #ifndef ARRAY_H
 #define ARRAY_H
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 namespace std {
 

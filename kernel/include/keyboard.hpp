@@ -8,7 +8,7 @@
 #ifndef KEYBOARD_H
 #define KEYBOARD_H
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 namespace keyboard {
 

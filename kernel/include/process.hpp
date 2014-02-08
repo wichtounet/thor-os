@@ -8,8 +8,8 @@
 #ifndef PROCESS_H
 #define PROCESS_H
 
-#include "stl/types.hpp"
-#include "stl/vector.hpp"
+#include <types.hpp>
+#include <vector.hpp>
 
 #include "paging.hpp"
 #include "interrupts.hpp"

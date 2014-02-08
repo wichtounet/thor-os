@@ -10,10 +10,10 @@
 
 #include "datetime.hpp"
 
-#include "stl/types.hpp"
-#include "stl/array.hpp"
-#include "stl/vector.hpp"
-#include "stl/string.hpp"
+#include <types.hpp>
+#include <array.hpp>
+#include <vector.hpp>
+#include <string.hpp>
 
 namespace disks {
 

@@ -8,8 +8,8 @@
 #ifndef TERMINAL_H
 #define TERMINAL_H
 
-#include "stl/types.hpp"
-#include "stl/circular_buffer.hpp"
+#include <types.hpp>
+#include <circular_buffer.hpp>
 
 #include "sleep_queue.hpp"
 

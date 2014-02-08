@@ -8,7 +8,7 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
-#include "stl/string.hpp"
+#include <string.hpp>
 
 #include "process.hpp"
 

@@ -8,7 +8,7 @@
 #ifndef INTERRUPTS_H
 #define INTERRUPTS_H
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 namespace interrupt {
 

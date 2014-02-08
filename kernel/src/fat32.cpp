@@ -9,10 +9,10 @@
 #include "console.hpp"
 #include "rtc.hpp"
 
-#include "stl/types.hpp"
-#include "stl/unique_ptr.hpp"
-#include "stl/algorithms.hpp"
-#include "stl/pair.hpp"
+#include <types.hpp>
+#include <unique_ptr.hpp>
+#include <algorithms.hpp>
+#include <pair.hpp>
 
 namespace {
 

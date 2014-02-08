@@ -8,8 +8,8 @@
 #ifndef VIRTUAL_ALLOCATOR_H
 #define VIRTUAL_ALLOCATOR_H
 
-#include "stl/types.hpp"
-#include "stl/literals.hpp"
+#include <types.hpp>
+#include <literals.hpp>
 
 namespace virtual_allocator {
 

@@ -8,8 +8,8 @@
 #ifndef SLEEP_QUEUE_H
 #define SLEEP_QUEUE_H
 
-#include "stl/queue.hpp"
-#include "stl/lock_guard.hpp"
+#include <queue.hpp>
+#include <lock_guard.hpp>
 
 #include "spinlock.hpp"
 #include "scheduler.hpp"

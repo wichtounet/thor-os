@@ -8,7 +8,7 @@
 #ifndef TEXT_CONSOLE_H
 #define TEXT_CONSOLE_H
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 struct text_console {
     void init();

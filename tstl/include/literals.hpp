@@ -8,7 +8,7 @@
 #ifndef LITERALS_HPP
 #define LITERALS_HPP
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 static_assert(sizeof(size_t) == sizeof(unsigned long long), "Unmatching sizes for literals");
 

@@ -5,8 +5,9 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <algorithms.hpp>
+
 #include "text_console.hpp"
-#include "stl/algorithms.hpp"
 
 namespace {
 

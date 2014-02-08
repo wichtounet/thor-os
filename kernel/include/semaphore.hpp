@@ -8,8 +8,8 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
-#include "stl/queue.hpp"
-#include "stl/lock_guard.hpp"
+#include <queue.hpp>
+#include <lock_guard.hpp>
 
 #include "spinlock.hpp"
 #include "scheduler.hpp"

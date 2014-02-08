@@ -8,8 +8,8 @@
 #ifndef STL_QUEUE_H
 #define STL_QUEUE_H
 
-#include "stl/list.hpp"
-#include "stl/types.hpp"
+#include <list.hpp>
+#include <types.hpp>
 
 namespace std {
 

@@ -8,8 +8,8 @@
 #ifndef SYSINFO_H
 #define SYSINFO_H
 
-#include "stl/string.hpp"
-#include "stl/vector.hpp"
+#include <string.hpp>
+#include <vector.hpp>
 
 void sysinfo_command(const std::vector<std::string>& params);
 

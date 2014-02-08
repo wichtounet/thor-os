@@ -8,8 +8,8 @@
 #ifndef PAGING_H
 #define PAGING_H
 
-#include "stl/types.hpp"
-#include "stl/literals.hpp"
+#include <types.hpp>
+#include <literals.hpp>
 
 #include "virtual_allocator.hpp"
 

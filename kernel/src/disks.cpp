@@ -5,15 +5,15 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <unique_ptr.hpp>
+#include <array.hpp>
+#include <string.hpp>
+
 #include "disks.hpp"
 #include "ata.hpp"
 #include "thor.hpp"
 #include "console.hpp"
 #include "fat32.hpp"
-
-#include "stl/unique_ptr.hpp"
-#include "stl/array.hpp"
-#include "stl/string.hpp"
 
 namespace {
 

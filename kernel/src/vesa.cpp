@@ -5,7 +5,7 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 #include "vesa.hpp"
 #include "paging.hpp"

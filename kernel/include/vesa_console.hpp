@@ -8,7 +8,7 @@
 #ifndef VESA_CONSOLE_H
 #define VESA_CONSOLE_H
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 struct vesa_console {
     void init();

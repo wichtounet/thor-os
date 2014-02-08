@@ -5,6 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <types.hpp>
+
 #include "interrupts.hpp"
 #include "console.hpp"
 #include "kernel_utils.hpp"
@@ -13,8 +15,6 @@
 #include "isrs.hpp"
 #include "irqs.hpp"
 #include "syscalls.hpp"
-
-#include "stl/types.hpp"
 
 namespace {
 

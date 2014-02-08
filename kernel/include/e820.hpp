@@ -11,7 +11,7 @@
  * mode.
  */
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 #ifndef E820_HPP
 #define E820_HPP

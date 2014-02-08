@@ -8,9 +8,9 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include "stl/types.hpp"
-#include "stl/enable_if.hpp"
-#include "stl/string.hpp"
+#include <types.hpp>
+#include <enable_if.hpp>
+#include <string.hpp>
 
 void init_console();
 

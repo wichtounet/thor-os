@@ -5,11 +5,11 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "stl/types.hpp"
-#include "stl/algorithms.hpp"
-#include "stl/vector.hpp"
-#include "stl/string.hpp"
-#include "stl/optional.hpp"
+#include <types.hpp>
+#include <algorithms.hpp>
+#include <vector.hpp>
+#include <string.hpp>
+#include <optional.hpp>
 
 #include "shell.hpp"
 #include "keyboard.hpp"

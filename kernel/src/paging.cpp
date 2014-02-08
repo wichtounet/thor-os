@@ -5,8 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "stl/types.hpp"
-#include "stl/algorithms.hpp"
+#include <types.hpp>
+#include <algorithms.hpp>
 
 #include "paging.hpp"
 #include "kernel.hpp"

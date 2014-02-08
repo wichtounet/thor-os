@@ -7,8 +7,8 @@
 
 #include <stdarg.h>
 
-#include "stl/types.hpp"
-#include "stl/string.hpp"
+#include <types.hpp>
+#include <string.hpp>
 
 #include "console.hpp"
 #include "vesa.hpp"

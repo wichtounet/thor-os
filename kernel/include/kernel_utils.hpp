@@ -8,7 +8,7 @@
 #ifndef KERNEL_UTILS_H
 #define KERNEL_UTILS_H
 
-#include "stl/types.hpp"
+#include <types.hpp>
 
 uint8_t in_byte(uint16_t _port);
 void out_byte(uint16_t _port, uint8_t _data);

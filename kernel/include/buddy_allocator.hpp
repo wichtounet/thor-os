@@ -8,7 +8,7 @@
 #ifndef BUDDY_ALLOCATOR_H
 #define BUDDY_ALLOCATOR_H
 
-#include "stl/array.hpp"
+#include <array.hpp>
 
 #include "bitmap.hpp"
 

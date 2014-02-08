@@ -8,9 +8,9 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "stl/types.hpp"
-#include "stl/algorithms.hpp"
-#include "stl/vector.hpp"
+#include <types.hpp>
+#include <algorithms.hpp>
+#include <vector.hpp>
 
 namespace std {
 

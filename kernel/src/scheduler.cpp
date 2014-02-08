@@ -5,11 +5,11 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "stl/array.hpp"
-#include "stl/vector.hpp"
-#include "stl/optional.hpp"
-#include "stl/string.hpp"
-#include "stl/lock_guard.hpp"
+#include <array.hpp>
+#include <vector.hpp>
+#include <optional.hpp>
+#include <string.hpp>
+#include <lock_guard.hpp>
 
 #include "scheduler.hpp"
 #include "paging.hpp"
