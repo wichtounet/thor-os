@@ -11,4 +11,4 @@ Build procedure is described on the Wiki: https://github.com/wichtounet/thor-os/
 
 ## License ##
 
-This project is distributed under the Boost Software License 1.0. Read `LICENSE_1_0.txt` for details.
+This project is distributed under the Boost Software License 1.0. Read `LICENSE` for details.
