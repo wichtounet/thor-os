@@ -5,6 +5,9 @@ default: thor.flp
 kernel/kernel.bin: force_look
 	cd kernel; $(MAKE)
 
+userlib/libtlib.a: force_look
+	cd userlib; $(MAKE)
+
 bootloader/stage1.bin: force_look
 	cd bootloader; $(MAKE) stage1.bin
 
@@ -39,7 +42,7 @@ hdd.img:
 	dd if=/dev/zero of=hdd.img bs=516096c count=1000
 	(echo n; echo p; echo 1; echo ""; echo ""; echo t; echo c; echo a; echo 1; echo w;) | sudo fdisk -u -C1000 -S63 -H16 hdd.img
 
-thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs/one/a.out programs/hello/a.out programs/long/a.out programs/loop/a.out programs/longone/a.out programs/longtwo/a.out programs/keyboard/a.out programs/tsh/tsh
+thor.flp: hdd.img userlib/libtlib.a bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs/one/a.out programs/hello/a.out programs/long/a.out programs/loop/a.out programs/longone/a.out programs/longtwo/a.out programs/keyboard/a.out programs/tsh/tsh
 	mkdir -p mnt/fake/
 	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
 	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
