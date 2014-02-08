@@ -7,6 +7,9 @@
 
 #include "malloc.hpp"
 
+#define likely(x)    __builtin_expect (!!(x), 1)
+#define unlikely(x)  __builtin_expect (!!(x), 0)
+
 namespace {
 
 bool init = false;
@@ -72,7 +75,7 @@ void remove(malloc_header_chunk* current){
 bool expand_heap(malloc_header_chunk* current, size_t bytes = 0){
     auto blocks = MIN_BLOCKS;
 
-    if(bytes){
+    if(unlikely(bytes)){
         auto necessary_blocks = ((bytes + META_SIZE) / BLOCK_SIZE) + 1;
 
         if(necessary_blocks > blocks){
@@ -121,7 +124,7 @@ void init_head(){
 } //end of anonymous namespace
 
 void* malloc(size_t bytes){
-    if(!init){
+    if(unlikely(!init)){
         init_head();
     }
 
