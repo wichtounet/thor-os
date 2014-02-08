@@ -7,3 +7,4 @@
 commands
 mnt
 programs/tsh/tsh
+*.a
