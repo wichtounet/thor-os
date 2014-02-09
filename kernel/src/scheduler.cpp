@@ -325,8 +325,15 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
     //1. Calculate some stuff
     auto first_page = paging::page_align(address);
     auto left_padding = address - first_page;
-    auto bytes = left_padding + paging::PAGE_SIZE + size;
-    auto pages = (bytes / paging::PAGE_SIZE) + 1;
+
+    auto bytes = left_padding + size;
+
+    //Make sure only complete pages are allocated
+    if(bytes % paging::PAGE_SIZE != 0){
+        bytes += paging::PAGE_SIZE - (bytes % paging::PAGE_SIZE);
+    }
+
+    auto pages = bytes / paging::PAGE_SIZE;
 
     //2. Get enough physical memory
     auto physical_memory = physical_allocator::allocate(pages);
@@ -342,6 +349,7 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
             (physical_memory / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
 
     //4. Map physical allocated memory to the necessary virtual memory
+    k_printf("fpage: %h, lp:%u, pages:%u\n", first_page, left_padding, pages);
 
     paging::user_map_pages(process, first_page, aligned_physical_memory, pages);
 
@@ -383,29 +391,36 @@ bool create_paging(char* buffer, scheduler::process_t& process){
         auto& p_header = program_header_table[p];
 
         if(p_header.p_type == 1){
-            auto address = p_header.p_vaddr;
-            auto first_page = paging::page_align(address);
-            auto left_padding = address - first_page;
-            auto bytes = left_padding + paging::PAGE_SIZE + p_header.p_memsz;
-            auto pages = (bytes / paging::PAGE_SIZE) + 1;
+            auto first_page = p_header.p_vaddr;
+            auto left_padding = p_header.p_vaddr - first_page;
+
+            auto bytes = left_padding + p_header.p_memsz;
+
+            //Make sure only complete pages are allocated
+            if(bytes % paging::PAGE_SIZE != 0){
+                bytes += paging::PAGE_SIZE - (bytes % paging::PAGE_SIZE);
+            }
+
+            auto pages = bytes / paging::PAGE_SIZE;
 
             scheduler::segment_t segment;
-            segment.size = pages * paging::PAGE_SIZE;
+            segment.size = bytes;
 
-            allocate_user_memory(process, first_page, pages, segment.physical);
+            allocate_user_memory(process, first_page, bytes, segment.physical);
 
             process.segments.push_back(segment);
 
             //Copy the code into memory
 
-            physical_pointer phys_ptr(segment. physical, pages);
+            physical_pointer phys_ptr(segment.physical, pages);
 
             auto memory_start = phys_ptr.get() + left_padding;
 
             //In the case of the BSS segment, the segment must be
             //filled with zero
-            if(p_header.p_filesize == 0){
-                std::fill_n(reinterpret_cast<char*>(memory_start), p_header.p_memsz, 0);
+            if(p_header.p_filesize != p_header.p_memsz){
+                std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_filesize);
+                std::fill_n(reinterpret_cast<char*>(memory_start + p_header.p_filesize), p_header.p_memsz - p_header.p_filesize, 0);
             } else {
                 std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_memsz);
             }
