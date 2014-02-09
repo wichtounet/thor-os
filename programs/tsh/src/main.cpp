@@ -7,10 +7,11 @@
 
 #include <print.hpp>
 #include <system.hpp>
-#include <cstring.hpp>
+#include <string.hpp>
 
 int main(){
     char input_buffer[64];
+    std::string current_input;
 
     while(true){
         print("thor> ");
@@ -18,27 +19,28 @@ int main(){
         auto c = read_input(input_buffer, 63);
 
         if(input_buffer[c-1] == '\n'){
-            if(c == 1){
-                print_line();
-                continue;
-            }
-
             input_buffer[c-1] = '\0';
 
-            if(str_equals(input_buffer, "exit")){
+            current_input = input_buffer;
+
+            if(current_input == "exit"){
                 exit(0);
-            } else if(str_equals(input_buffer, "long")){
+            } else if(current_input == "long"){
                 //TODO Remove this function when exec system is complete
                 exec_and_wait("long");
-            } else if(str_equals(input_buffer, "sleep")){
+            } else if(current_input == "sleep"){
                 //TODO Once better infrastrucure, parse command line and sleep the
                 //correct number of milliseconds
                 sleep_ms(5000);
             } else {
                 print_line("Unknown command");
             }
+
+            current_input.clear();
         } else {
-            //TODO Once in good shape, just append to current input buffer
+            input_buffer[c] = '\0';
+
+            current_input += input_buffer;
         }
     }
 }

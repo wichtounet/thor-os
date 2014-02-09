@@ -142,6 +142,34 @@ public:
         return *this;
     }
 
+    basic_string& operator+=(const char* rhs){
+        auto len = str_len(rhs);
+        if(!_data || _capacity <= _size + len){
+            _capacity = _capacity ? _capacity * 2 : 1;
+
+            if(_capacity < _size + len){
+                _capacity = _size + len + 1;
+            }
+
+            auto new_data = new CharT[_capacity];
+
+            if(_data){
+                std::copy_n(new_data, _data, _size);
+                delete[] _data;
+            }
+
+            _data = new_data;
+        }
+
+        std::copy_n(_data + _size, rhs, len);
+
+        _size += len;
+
+        _data[_size] = '\0';
+
+        return *this;
+    }
+
     //Accessors
 
     size_t size() const {
