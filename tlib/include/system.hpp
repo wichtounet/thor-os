@@ -13,11 +13,10 @@
 
 void exit(size_t return_code) __attribute__((noreturn));
 
-int64_t exec(const char* executable);
+std::expected<size_t> exec(const char* executable);
+std::expected<size_t> exec_and_wait(const char* executable);
 
 void await_termination(size_t pid);
-
-int64_t exec_and_wait(const char* executable);
 
 void sleep_ms(size_t ms);
 

@@ -16,13 +16,28 @@ void exit(size_t return_code) {
     __builtin_unreachable();
 }
 
-int64_t exec(const char* executable) {
+std::expected<size_t> exec(const char* executable){
     int64_t pid;
     asm volatile("mov rax, 5; int 50; mov %0, rax"
         : "=m" (pid)
         : "b" (reinterpret_cast<size_t>(executable))
         : "rax");
-    return pid;
+
+    if(pid < 0){
+        return std::make_expected_from_error<size_t, size_t>(-pid);
+    } else {
+        return std::make_expected<size_t>(pid);
+    }
+}
+
+std::expected<size_t> exec_and_wait(const char* executable){
+    auto result = exec(executable);
+
+    if(result.valid()){
+        await_termination(result.value());
+    }
+
+    return std::move(result);
 }
 
 void await_termination(size_t pid) {
@@ -30,17 +45,6 @@ void await_termination(size_t pid) {
         : //No outputs
         : "b" (pid)
         : "rax");
-}
-
-int64_t exec_and_wait(const char* executable){
-    int64_t pid = exec(executable);
-
-    if(pid < 0){
-        return pid;
-    } else {
-        await_termination(pid);
-        return 0;
-    }
 }
 
 void sleep_ms(size_t ms){

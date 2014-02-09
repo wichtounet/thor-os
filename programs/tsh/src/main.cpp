@@ -28,14 +28,16 @@ int main(){
             } else if(current_input == "long"){
                 //TODO Remove this function when exec system is complete
                 auto result = exec_and_wait("long");
-                if(result < 0){
+
+                if(!result.valid()){
                     print("error: ");
 
-                    if(result == -1){
+                    auto err = result.error();
+                    if(err == 1){
                         print_line("The file does not exist");
-                    } else if(result == -2){
+                    } else if(err == 2){
                         print_line("The file is not an executable");
-                    } else if(result == -3){
+                    } else if(err == 3){
                         print_line("Failed to execute the file");
                     }
                 }
