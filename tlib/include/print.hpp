@@ -11,10 +11,12 @@
 //TODO Rename in console
 
 #include <types.hpp>
+#include <string.hpp>
 
 void print(char c);
 void print(const char* s);
 void print(size_t v);
+void print(const std::string& s);
 void print_line();
 void print_line(const char* s);
 void print_line(size_t v);

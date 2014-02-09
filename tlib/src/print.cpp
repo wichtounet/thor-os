@@ -28,6 +28,10 @@ void print(size_t v){
         : "rax", "rbx");
 }
 
+void print(const std::string& s){
+    return print(s.c_str());
+}
+
 void print_line(){
     print('\n');
 }

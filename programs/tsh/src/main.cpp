@@ -10,6 +10,46 @@
 #include <string.hpp>
 #include <algorithms.hpp>
 
+namespace {
+
+void exit_command(const std::vector<std::string>& params);
+void echo_command(const std::vector<std::string>& params);
+void sleep_command(const std::vector<std::string>& params);
+
+struct command_definition {
+    const char* name;
+    void (*function)(const std::vector<std::string>&);
+};
+
+command_definition commands[3] = {
+    {"exit", exit_command},
+    {"echo", echo_command},
+    {"sleep", sleep_command},
+};
+
+void exit_command(const std::vector<std::string>&){
+    exit(0);
+}
+
+void echo_command(const std::vector<std::string>& params){
+    for(uint64_t i = 1; i < params.size(); ++i){
+        print(params[i]);
+        print(' ');
+    }
+    print_line();
+}
+
+void sleep_command(const std::vector<std::string>& params){
+    if(params.size() == 1){
+        print_line("sleep: missing operand");
+    } else {
+        size_t time = std::parse(params[1]);
+        sleep_ms(time * 1000);
+    }
+}
+
+} //end of anonymous namespace
+
 int main(){
     char input_buffer[64];
     std::string current_input;
@@ -26,16 +66,16 @@ int main(){
 
             auto params = std::split(current_input);;
 
-            if(params[0] == "exit"){
-                exit(0);
-            } else if(params[0] == "sleep"){
-                if(params.size() == 1){
-                    print_line("sleep: missing operand");
-                } else {
-                    size_t time = std::parse(params[1]);
-                    sleep_ms(time * 1000);
+            bool found = false;
+            for(auto& command : commands){
+                if(params[0] == command.name){
+                    command.function(params);
+                    found = true;
+                    break;
                 }
-            } else {
+            }
+
+            if(!found){
                 auto result = exec_and_wait(params[0].c_str());
 
                 if(!result.valid()){
@@ -59,4 +99,6 @@ int main(){
             current_input += input_buffer;
         }
     }
+
+    __builtin_unreachable();
 }
