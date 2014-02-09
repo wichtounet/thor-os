@@ -170,6 +170,33 @@ public:
         return *this;
     }
 
+    basic_string& operator+=(const basic_string& rhs){
+        if(!_data || _capacity <= _size + rhs.size()){
+            _capacity = _capacity ? _capacity * 2 : 1;
+
+            if(_capacity < _size + rhs.size()){
+                _capacity = _size + rhs.size() + 1;
+            }
+
+            auto new_data = new CharT[_capacity];
+
+            if(_data){
+                std::copy_n(new_data, _data, _size);
+                delete[] _data;
+            }
+
+            _data = new_data;
+        }
+
+        std::copy_n(_data + _size, rhs.c_str(), rhs.size());
+
+        _size += rhs.size();
+
+        _data[_size] = '\0';
+
+        return *this;
+    }
+
     //Accessors
 
     size_t size() const {
@@ -288,6 +315,22 @@ inline uint64_t parse(const string& str){
     return parse(str.begin(), str.end());
 }
 
+template<typename N>
+size_t digits(N number){
+    if(number < 10){
+        return 1;
+    }
+
+    size_t i = 0;
+
+    while(number != 0){
+        number /= 10;
+        ++i;
+    }
+
+    return i;
+}
+
 template<typename Char>
 std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s){
     std::vector<std::basic_string<Char>> parts;
@@ -308,6 +351,45 @@ std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s){
     }
 
     return std::move(parts);
+}
+
+template<typename T>
+std::string to_string(T value);
+
+template<>
+inline std::string to_string<uint64_t>(uint64_t value){
+    if(value == 0){
+        return "0";
+    }
+
+    std::string s;
+
+    char buffer[20];
+    int i = 0;
+
+    while(value != 0){
+        buffer[i++] = '0' + value % 10;
+        value /= 10;
+    }
+
+    --i;
+
+    for(; i >= 0; --i){
+        s += buffer[i];
+    }
+
+    return std::move(s);
+}
+
+template<>
+inline std::string to_string<int64_t>(int64_t value){
+    if(value < 0){
+        std::string s("-");
+        s += to_string(static_cast<uint64_t>(value));
+        return std::move(s);
+    } else {
+        return to_string(static_cast<uint64_t>(value));
+    }
 }
 
 } //end of namespace std

@@ -49,22 +49,6 @@ void print_char(size_t line, size_t column, char c){
 size_t current_line = 0;
 size_t current_column = 0;
 
-template<typename N>
-uint64_t digits(N number){
-    if(number < 10){
-        return 1;
-    }
-
-    uint64_t i = 0;
-
-    while(number != 0){
-        number /= 10;
-        ++i;
-    }
-
-    return i;
-}
-
 template<int B, typename D>
 void print_unsigned(D number){
     if(number == 0){
@@ -265,7 +249,7 @@ void k_printf(const char* fmt, ...){
                 auto arg = va_arg(va, int64_t);
 
                 if(min_digits > 0){
-                    size_t d = digits(arg);
+                    size_t d = std::digits(arg);
                     if(min_digits > d){
                         min_digits -= d;
 
@@ -290,7 +274,7 @@ void k_printf(const char* fmt, ...){
                 auto arg = va_arg(va, uint64_t);
 
                 if(min_digits > 0){
-                    size_t d = digits(arg);
+                    size_t d = std::digits(arg);
                     if(min_digits > d){
                         min_digits -= d;
                         while(min_digits > 0){

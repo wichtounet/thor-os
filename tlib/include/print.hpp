@@ -27,4 +27,7 @@ void clear();
 size_t get_columns();
 size_t get_rows();
 
+std::string sprintf(const std::string& format, ...);
+void printf(const std::string& format, ...);
+
 #endif
