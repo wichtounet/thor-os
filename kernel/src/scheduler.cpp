@@ -321,24 +321,6 @@ size_t select_next_process(){
     thor_unreachable("No process is READY");
 }
 
-std::optional<std::string> read_elf_file(const std::string& file){
-    auto content = disks::read_file(file);
-
-    if(content.empty()){
-        k_print_line("The file does not exist or is empty");
-
-        return {};
-    }
-
-    if(!elf::is_valid(content)){
-        k_print_line("This file is not an ELF file or not in ELF64 format");
-
-        return {};
-    }
-
-    return {std::move(content)};
-}
-
 bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t size, size_t& ref){
     //1. Calculate some stuff
     auto first_page = paging::page_align(address);
@@ -511,19 +493,27 @@ int64_t scheduler::exec(const std::string& file){
         //Unreachable
     }
 
-    auto content = read_elf_file(file);
+    auto content = disks::read_file(file);
 
-    if(!content){
+    if(content.empty()){
+        k_print_line("The file does not exist or is empty");
+
         return -1;
     }
 
-    auto buffer = content->c_str();
+    if(!elf::is_valid(content)){
+        k_print_line("This file is not an ELF file or not in ELF64 format");
+
+        return -2;
+    }
+
+    auto buffer = content.c_str();
 
     auto& process = new_process();
 
     if(!create_paging(buffer, process)){
         k_print_line("Impossible to initialize paging");
-        return -1;
+        return -3;
     }
 
     process.brk_start = program_break;
