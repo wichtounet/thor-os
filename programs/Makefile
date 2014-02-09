@@ -26,11 +26,14 @@ loop: force_look tlib/libtlib.a
 keyboard: force_look tlib/libtlib.a
 	cd keyboard; $(MAKE) a.out
 
+cpuid: force_look tlib/libtlib.a
+	cd cpuid; $(MAKE) cpuid
+
 tsh: force_look tlib/libtlib.a
 	cd tsh; $(MAKE) tsh
 
-dist: one hello long loop longone longtwo keyboard tsh
-	mkdir dist
+dist: one hello long loop longone longtwo keyboard tsh cpuid
+	mkdir -p dist
 	cp one/a.out dist/one
 	cp hello/a.out dist/hello
 	cp long/a.out dist/long
@@ -38,7 +41,8 @@ dist: one hello long loop longone longtwo keyboard tsh
 	cp longtwo/a.out dist/longtwo
 	cp loop/a.out dist/loop
 	cp keyboard/a.out dist/keyboard
-	cp tsh/tsh dist/tsh
+	cp cpuid/cpuid dist/
+	cp tsh/tsh dist/
 
 force_look:
 	true
@@ -52,4 +56,5 @@ clean:
 	cd longtwo; $(MAKE) clean
 	cd keyboard; $(MAKE) clean
 	cd tsh; $(MAKE) clean
+	cd cpuid; $(MAKE) clean
 	rm -rf dist

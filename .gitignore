@@ -6,5 +6,8 @@
 *.out
 commands
 mnt
-programs/tsh/tsh
 *.a
+programs/tsh/tsh
+programs/keyboard/keyboard
+programs/cpuid/cpuid
+programs/dist/
