@@ -37,9 +37,15 @@ void await_termination(size_t pid) {
         : "rax");
 }
 
-void exec_and_wait(const char* executable){
-    auto pid = exec(executable);
-    await_termination(pid);
+int64_t exec_and_wait(const char* executable){
+    int64_t pid = exec(executable);
+
+    if(pid < 0){
+        return pid;
+    } else {
+        await_termination(pid);
+        return 0;
+    }
 }
 
 void sleep_ms(size_t ms){

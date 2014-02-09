@@ -27,7 +27,18 @@ int main(){
                 exit(0);
             } else if(current_input == "long"){
                 //TODO Remove this function when exec system is complete
-                exec_and_wait("long");
+                auto result = exec_and_wait("long");
+                if(result < 0){
+                    print("error: ");
+
+                    if(result == -1){
+                        print_line("The file does not exist");
+                    } else if(result == -2){
+                        print_line("The file is not an executable");
+                    } else if(result == -3){
+                        print_line("Failed to execute the file");
+                    }
+                }
             } else if(current_input == "sleep"){
                 //TODO Once better infrastrucure, parse command line and sleep the
                 //correct number of milliseconds
