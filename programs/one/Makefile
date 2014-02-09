@@ -11,5 +11,5 @@ a.out: main.cpp.o
 	$(CC) -o a.out main.cpp.o $(PROGRAM_LINK_FLAGS)
 
 clean:
-	rm *.cpp.o
+	rm -f *.cpp.o
 	rm -rf a.out
