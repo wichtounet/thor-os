@@ -8,6 +8,7 @@
 #include <print.hpp>
 #include <system.hpp>
 #include <string.hpp>
+#include <algorithms.hpp>
 
 int main(){
     char input_buffer[64];
@@ -21,13 +22,21 @@ int main(){
         if(input_buffer[c-1] == '\n'){
             input_buffer[c-1] = '\0';
 
-            current_input = input_buffer;
+            current_input += input_buffer;
 
-            if(current_input == "exit"){
+            auto params = std::split(current_input);;
+
+            if(params[0] == "exit"){
                 exit(0);
-            } else if(current_input == "long"){
-                //TODO Remove this function when exec system is complete
-                auto result = exec_and_wait("long");
+            } else if(params[0] == "sleep"){
+                if(params.size() == 1){
+                    print_line("sleep: missing operand");
+                } else {
+                    size_t time = std::parse(params[1]);
+                    sleep_ms(time * 1000);
+                }
+            } else {
+                auto result = exec_and_wait(params[0].c_str());
 
                 if(!result.valid()){
                     print("error: ");
@@ -41,12 +50,6 @@ int main(){
                         print_line("Failed to execute the file");
                     }
                 }
-            } else if(current_input == "sleep"){
-                //TODO Once better infrastrucure, parse command line and sleep the
-                //correct number of milliseconds
-                sleep_ms(5000);
-            } else {
-                print_line("Unknown command");
             }
 
             current_input.clear();
