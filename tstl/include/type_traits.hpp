@@ -36,12 +36,12 @@ template<typename T, typename Enable = void>
 struct add_rvalue_reference;
 
 template<typename T>
-struct add_rvalue_reference<T, typename std::enable_if<std::is_reference<T>::value>::type> {
+struct add_rvalue_reference<T, typename std::enable_if_t<std::is_reference<T>::value>> {
     typedef T type;
 };
 
 template<typename T>
-struct add_rvalue_reference<T, typename std::enable_if<!std::is_reference<T>::value>::type> {
+struct add_rvalue_reference<T, typename std::disable_if_t<!std::is_reference<T>::value>> {
     typedef T&& type;
 };
 

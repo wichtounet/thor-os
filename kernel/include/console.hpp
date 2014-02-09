@@ -40,12 +40,12 @@ void k_print(int64_t number);
 void k_printf(const char* fmt, ...);
 
 template<typename... Arguments>
-typename std::enable_if<(sizeof...(Arguments) == 0), void>::type k_print_line(const Arguments&... args){
+typename std::enable_if_t<(sizeof...(Arguments) == 0)> k_print_line(const Arguments&... args){
     k_print('\n');
 }
 
 template<typename... Arguments>
-typename std::enable_if<(sizeof...(Arguments) > 0), void>::type k_print_line(const Arguments&... args){
+typename std::enable_if_t<(sizeof...(Arguments) > 0)> k_print_line(const Arguments&... args){
     k_print(args...);
     k_print('\n');
 }

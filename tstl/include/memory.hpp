@@ -36,13 +36,13 @@ struct has_overloaded_addressof {
 };
 
 template <typename T>
-constexpr typename std::disable_if<has_overloaded_addressof<T>::value, T*>::type
+constexpr typename std::disable_if_t<has_overloaded_addressof<T>::value, T*>
 static_addressof(T& ref){
   return &ref;
 }
 
 template <typename T>
-constexpr typename std::enable_if<has_overloaded_addressof<T>::value, T*>::type
+constexpr typename std::enable_if_t<has_overloaded_addressof<T>::value, T*>
 static_addressof(T& ref){
   return std::addressof(ref);
 }
