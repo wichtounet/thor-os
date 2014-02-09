@@ -14,6 +14,9 @@
 
 void init_console();
 
+size_t get_columns();
+size_t get_rows();
+
 void set_column(size_t column);
 size_t get_column();
 

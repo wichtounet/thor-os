@@ -12,19 +12,29 @@
 
 namespace {
 
+size_t columns = 0;
+size_t rows  = 0;
+
+void get_console_information(){
+    columns = get_columns();
+    rows = get_rows();
+}
+
 void exit_command(const std::vector<std::string>& params);
 void echo_command(const std::vector<std::string>& params);
 void sleep_command(const std::vector<std::string>& params);
+void clear_command(const std::vector<std::string>& params);
 
 struct command_definition {
     const char* name;
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[3] = {
+command_definition commands[4] = {
     {"exit", exit_command},
     {"echo", echo_command},
     {"sleep", sleep_command},
+    {"clear", clear_command},
 };
 
 void exit_command(const std::vector<std::string>&){
@@ -48,9 +58,15 @@ void sleep_command(const std::vector<std::string>& params){
     }
 }
 
+void clear_command(const std::vector<std::string>&){
+    clear();
+}
+
 } //end of anonymous namespace
 
 int main(){
+    get_console_information();
+
     char input_buffer[64];
     std::string current_input;
 

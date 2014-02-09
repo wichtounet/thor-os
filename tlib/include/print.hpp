@@ -22,4 +22,9 @@ void print_line(const char* s);
 void print_line(size_t v);
 size_t read_input(char* buffer, size_t max);
 
+void clear();
+
+size_t get_columns();
+size_t get_rows();
+
 #endif

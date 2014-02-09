@@ -22,22 +22,6 @@ text_console t_console;
 vesa_console v_console;
 bool text = true;
 
-size_t lines(){
-    if(text){
-        return t_console.lines();
-    } else {
-        return v_console.lines();
-    }
-}
-
-size_t columns(){
-    if(text){
-        return t_console.columns();
-    } else {
-        return v_console.columns();
-    }
-}
-
 void clear(){
     if(text){
         t_console.clear();
@@ -125,6 +109,22 @@ void init_console(){
     }
 }
 
+size_t get_rows(){
+    if(text){
+        return t_console.lines();
+    } else {
+        return v_console.lines();
+    }
+}
+
+size_t get_columns(){
+    if(text){
+        return t_console.columns();
+    } else {
+        return v_console.columns();
+    }
+}
+
 void set_column(size_t column){
     current_column = column;
 }
@@ -176,7 +176,7 @@ void k_print(int64_t number){
 void next_line(){
     ++current_line;
 
-    if(current_line == lines()){
+    if(current_line == get_rows()){
         scroll_up();
 
         --current_line;
@@ -199,7 +199,7 @@ void k_print(char key){
 
         ++current_column;
 
-        if(current_column == columns()){
+        if(current_column == get_columns()){
             next_line();
         }
     }

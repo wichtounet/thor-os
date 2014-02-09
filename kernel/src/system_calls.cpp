@@ -69,6 +69,18 @@ void sc_sbrk(interrupt::syscall_regs* regs){
     regs->rax = process.brk_end;
 }
 
+void sc_get_columns(interrupt::syscall_regs* regs){
+    regs->rax = get_columns();
+}
+
+void sc_get_rows(interrupt::syscall_regs* regs){
+    regs->rax = get_rows();
+}
+
+void sc_clear(interrupt::syscall_regs*){
+    wipeout();
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -113,6 +125,18 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 9:
             sc_sbrk(regs);
+            break;
+
+        case 100:
+            sc_clear(regs);
+            break;
+
+        case 101:
+            sc_get_columns(regs);
+            break;
+
+        case 102:
+            sc_get_rows(regs);
             break;
 
         case 0x666:

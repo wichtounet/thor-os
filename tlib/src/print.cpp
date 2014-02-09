@@ -54,3 +54,28 @@ size_t read_input(char* buffer, size_t max){
         : "rax");
     return value;
 }
+
+void  clear(){
+    asm volatile("mov rax, 100; int 50;"
+        : //No outputs
+        : //No inputs
+        : "rax");
+}
+
+size_t get_columns(){
+    size_t value;
+    asm volatile("mov rax, 101; int 50; mov %0, rax"
+        : "=m" (value)
+        : //No inputs
+        : "rax");
+    return value;
+}
+
+size_t get_rows(){
+    size_t value;
+    asm volatile("mov rax, 102; int 50; mov %0, rax"
+        : "=m" (value)
+        : //No inputs
+        : "rax");
+    return value;
+}
