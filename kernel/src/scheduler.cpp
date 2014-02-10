@@ -24,7 +24,7 @@
 #include "physical_pointer.hpp"
 #include "mutex.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = false;
+constexpr const bool DEBUG_SCHEDULER = true;
 
 //Provided by task_switch.s
 extern "C" {
@@ -349,9 +349,13 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
             (physical_memory / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
 
     //4. Map physical allocated memory to the necessary virtual memory
-    k_printf("fpage: %h, lp:%u, pages:%u\n", first_page, left_padding, pages);
+    if(!paging::user_map_pages(process, first_page, aligned_physical_memory, pages)){
+        if(DEBUG_SCHEDULER){
+            k_print_line("Impossible to map in user space");
+        }
 
-    paging::user_map_pages(process, first_page, aligned_physical_memory, pages);
+        return false;
+    }
 
     ref = physical_memory;
 
@@ -511,10 +515,18 @@ int64_t scheduler::exec(const std::string& file){
     auto content = disks::read_file(file);
 
     if(content.empty()){
+        if(DEBUG_SCHEDULER){
+            k_print_line("Not a file");
+        }
+
         return -1;
     }
 
     if(!elf::is_valid(content)){
+        if(DEBUG_SCHEDULER){
+            k_print_line("Not a valid file");
+        }
+
         return -2;
     }
 
@@ -523,6 +535,10 @@ int64_t scheduler::exec(const std::string& file){
     auto& process = new_process();
 
     if(!create_paging(buffer, process)){
+        if(DEBUG_SCHEDULER){
+            k_print_line("Impossible to create paging");
+        }
+
         return -3;
     }
 
