@@ -43,6 +43,7 @@ dist: one hello long loop longone longtwo keyboard tsh cpuid
 	cp keyboard/a.out dist/keyboard
 	cp cpuid/cpuid dist/
 	cp tsh/tsh dist/
+	strip dist/*
 
 force_look:
 	true
