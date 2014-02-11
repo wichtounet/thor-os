@@ -9,6 +9,8 @@
 #include <system.hpp>
 
 int main(int argc, char* argv[]){
-    print_line(argc);
+    for(size_t i = 0; i < argc; ++i){
+        print_line(argv[i]);
+    }
     exit(0);
 }

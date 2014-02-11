@@ -10,4 +10,5 @@ mnt
 programs/tsh/tsh
 programs/keyboard/keyboard
 programs/cpuid/cpuid
+programs/args/args
 programs/dist/
