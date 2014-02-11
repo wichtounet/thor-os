@@ -11,6 +11,7 @@
 #include "console.hpp"
 #include "kernel_utils.hpp"
 #include "gdt.hpp"
+#include "scheduler.hpp"
 
 #include "isrs.hpp"
 #include "irqs.hpp"
@@ -67,6 +68,12 @@ void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, id
 uint64_t get_cr2(){
     uint64_t value;
     __asm__ __volatile__("mov rax, cr2; mov %0, rax;" : "=m" (value));
+    return value;
+}
+
+uint64_t get_cr3(){
+    uint64_t value;
+    __asm__ __volatile__("mov rax, cr3; mov %0, rax;" : "=m" (value));
     return value;
 }
 
@@ -224,7 +231,9 @@ void _fault_handler(interrupt::fault_regs regs){
     k_printf("cs=%h\n", regs.cs);
     k_printf("rsp=%h\n", regs.rsp);
     k_printf("ss=%h\n", regs.ss);
+    k_printf("pid=%u\n", scheduler::get_pid());
     k_printf("cr2=%h\n", get_cr2());
+    k_printf("cr3=%h\n", get_cr3());
 
     //TODO Improve that with kind of blue screen
 
