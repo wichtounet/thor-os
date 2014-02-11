@@ -32,9 +32,6 @@
 #include "malloc.hpp"
 #include "e820.hpp"
 
-//Commands
-#include "sysinfo.hpp"
-
 namespace {
 
 #ifdef CONFIG_HISTORY
@@ -83,7 +80,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[28] = {
+command_definition commands[27] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -101,7 +98,6 @@ command_definition commands[28] = {
     {"free", free_command},
     {"cd", cd_command},
     {"pwd", pwd_command},
-    {"sysinfo", sysinfo_command},
     {"cat", cat_command},
     {"mkdir", mkdir_command},
     {"touch", touch_command},
