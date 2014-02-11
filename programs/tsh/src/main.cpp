@@ -9,6 +9,7 @@
 #include <system.hpp>
 #include <string.hpp>
 #include <algorithms.hpp>
+#include <errors.hpp>
 
 namespace {
 
@@ -99,15 +100,7 @@ int main(){
 
                     if(!result.valid()){
                         print("error: ");
-
-                        auto err = result.error();
-                        if(err == 1){
-                            print_line("The file does not exist");
-                        } else if(err == 2){
-                            print_line("The file is not an executable");
-                        } else if(err == 3){
-                            print_line("Failed to execute the file");
-                        }
+                        print_line(std::error_message(result.error()));
                     }
                 }
             }

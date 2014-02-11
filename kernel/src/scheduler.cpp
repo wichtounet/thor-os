@@ -10,6 +10,7 @@
 #include <optional.hpp>
 #include <string.hpp>
 #include <lock_guard.hpp>
+#include <errors.hpp>
 
 #include "scheduler.hpp"
 #include "paging.hpp"
@@ -532,7 +533,7 @@ int64_t scheduler::exec(const std::string& file){
             k_print_line("Not a file");
         }
 
-        return -1;
+        return -std::ERROR_NOT_EXISTS;
     }
 
     if(!elf::is_valid(content)){
@@ -540,7 +541,7 @@ int64_t scheduler::exec(const std::string& file){
             k_print_line("Not a valid file");
         }
 
-        return -2;
+        return -std::ERROR_NOT_EXECUTABLE;
     }
 
     auto buffer = content.c_str();
@@ -552,7 +553,7 @@ int64_t scheduler::exec(const std::string& file){
             k_print_line("Impossible to create paging");
         }
 
-        return -3;
+        return -std::ERROR_FAILED_EXECUTION;
     }
 
     process.brk_start = program_break;
