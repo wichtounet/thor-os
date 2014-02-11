@@ -72,7 +72,6 @@ void readelf_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 void shutdown_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
-void divzero_command(const std::vector<std::string>& params);
 void paginginfo_command(const std::vector<std::string>& params);
 
 struct command_definition {
@@ -80,7 +79,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[27] = {
+command_definition commands[26] = {
     {"reboot", reboot_command},
     {"help", help_command},
     {"uptime", uptime_command},
@@ -106,7 +105,6 @@ command_definition commands[27] = {
     {"exec", exec_command},
     {"shutdown", shutdown_command},
     {"vesainfo", vesainfo_command},
-    {"divzero", divzero_command},
     {"paginginfo", paginginfo_command},
 };
 
@@ -759,10 +757,6 @@ void shutdown_command(const std::vector<std::string>&){
     }
 
     acpi::shutdown();
-}
-
-void divzero_command(const std::vector<std::string>&){
-    asm volatile("xor ebx, ebx; div ebx;" : : : "memory");
 }
 
 } //end of anonymous namespace
