@@ -706,7 +706,8 @@ void readelf_command(const std::vector<std::string>& params){
 
 void exec_command(const std::vector<std::string>&){
     //Fake exec just to start() the scheduler
-    scheduler::exec("");
+    std::vector<std::string> params;
+    scheduler::exec("", params);
 }
 
 void vesainfo_command(const std::vector<std::string>&){

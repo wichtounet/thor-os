@@ -8,6 +8,7 @@
 #ifndef SCHEDULER_H
 #define SCHEDULER_H
 
+#include <vector.hpp>
 #include <string.hpp>
 
 #include "process.hpp"
@@ -24,7 +25,7 @@ void unblock_process(pid_t pid);
 
 void init();
 
-int64_t exec(const std::string& path);
+int64_t exec(const std::string& path, const std::vector<std::string>& params);
 
 void kill_current_process();
 void await_termination(pid_t pid);

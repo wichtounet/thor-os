@@ -141,8 +141,10 @@ void gc_task(){
 
 //TODO tsh should be configured somewhere
 void init_task(){
+    std::vector<std::string> params;
+
     while(true){
-        auto pid = scheduler::exec("tsh");
+        auto pid = scheduler::exec("tsh", params);
         scheduler::await_termination(pid);
 
         if(DEBUG_SCHEDULER){
@@ -464,25 +466,84 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     return true;
 }
 
-void init_context(scheduler::process_t& process, const char* buffer){
+void init_context(scheduler::process_t& process, const char* buffer, const std::string& file, const std::vector<std::string>& params){
     auto header = reinterpret_cast<const elf::elf_header*>(buffer);
 
     auto pages = scheduler::user_stack_size / paging::PAGE_SIZE;
 
     physical_pointer phys_ptr(process.physical_user_stack, pages);
 
-    auto rsp = phys_ptr.get() + scheduler::user_stack_size - 8;
-    rsp -= sizeof(interrupt::syscall_regs) * 8;
+    //1. Compute the size of the arguments on the stack
 
+    //One pointer for each args
+    size_t args_size = sizeof(size_t) * (1 + params.size());
+
+    //Add the size of the default argument (+ terminating char)
+    args_size += file.size() + 1;
+
+    //Add the size of all the other arguments (+ terminating char)
+    for(auto& param : params){
+        args_size += param.size() + 1;
+    }
+
+    //Align the size on 16 bytes
+    if(args_size % 16 != 0){
+        args_size = ((args_size / 16) + 1) * 16;
+    }
+
+    //2. Modify the stack to add the args
+
+    auto rsp = phys_ptr.get() + scheduler::user_stack_size - 8;
+    auto arrays_start = scheduler::user_rsp - sizeof(size_t) * (1 + params.size());
+
+    //Add pointer to each string
+    size_t acc = 0;
+    for(int64_t i = params.size() - 1; i >= 0; --i){
+        auto& param = params[i];
+
+        acc += param.size();
+
+        *(reinterpret_cast<size_t*>(rsp)) = arrays_start - acc;
+        rsp -= sizeof(size_t);
+
+        ++acc;
+    }
+
+    //Add pointer to the default argument string
+    *(reinterpret_cast<size_t*>(rsp)) = arrays_start - acc - file.size();
+    rsp -= sizeof(size_t);
+
+    //Add the strings of the arguments
+    for(int64_t i = params.size() - 1; i >= 0; --i){
+        auto& param = params[i];
+
+        *(reinterpret_cast<char*>(rsp--)) = '\0';
+        for(int64_t j = param.size() - 1; j >= 0; --j){
+            *(reinterpret_cast<char*>(rsp--)) = param[j];
+        }
+    }
+
+    //Add the the string of the default argument
+    *(reinterpret_cast<char*>(rsp--)) = '\0';
+    for(int64_t i = file.size() - 1; i >= 0; --i){
+        *(reinterpret_cast<char*>(rsp--)) = file[i];
+    }
+
+    //3. Modify the stack to configure the context
+
+    rsp = phys_ptr.get() + scheduler::user_stack_size - sizeof(interrupt::syscall_regs) - 8 - args_size;
     auto regs = reinterpret_cast<interrupt::syscall_regs*>(rsp);
 
-    regs->rsp = scheduler::user_rsp - sizeof(interrupt::syscall_regs) * 8; //Not sure about that
+    regs->rsp = scheduler::user_rsp - sizeof(interrupt::syscall_regs) - args_size; //Not sure about that
     regs->rip = header->e_entry;
     regs->cs = gdt::USER_CODE_SELECTOR + 3;
     regs->ds = gdt::USER_DATA_SELECTOR + 3;
     regs->rflags = 0x200;
 
-    process.context = reinterpret_cast<interrupt::syscall_regs*>(scheduler::user_rsp - sizeof(interrupt::syscall_regs) * 8);
+    regs->rdi = 1 + params.size(); //argc
+    regs->rsi = scheduler::user_rsp - params.size() * sizeof(size_t); //argv
+
+    process.context = reinterpret_cast<interrupt::syscall_regs*>(scheduler::user_rsp - sizeof(interrupt::syscall_regs) - args_size);
 }
 
 void start() __attribute__((noreturn));
@@ -519,7 +580,7 @@ void scheduler::init(){ //Create the idle task
     pcb[current_pid].state = scheduler::process_state::RUNNING;
 }
 
-int64_t scheduler::exec(const std::string& file){
+int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
     //TODO Once shell removed, start will be called in init()
     if(!started){
         start();
@@ -559,7 +620,7 @@ int64_t scheduler::exec(const std::string& file){
     process.brk_start = program_break;
     process.brk_end = program_break;
 
-    init_context(process, buffer);
+    init_context(process, buffer, file, params);
 
     queue_process(process.pid);
 

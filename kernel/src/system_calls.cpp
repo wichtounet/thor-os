@@ -42,7 +42,8 @@ void sc_sleep_ms(interrupt::syscall_regs* regs){
 void sc_exec(interrupt::syscall_regs* regs){
     auto file = reinterpret_cast<char*>(regs->rbx);
 
-    regs->rax = scheduler::exec(file);
+    std::vector<std::string> params;
+    regs->rax = scheduler::exec(file, params);
 }
 
 void sc_await_termination(interrupt::syscall_regs* regs){
