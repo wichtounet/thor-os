@@ -354,10 +354,10 @@ std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s){
 }
 
 template<typename T>
-std::string to_string(T value);
+std::string to_string(const T& value);
 
 template<>
-inline std::string to_string<uint64_t>(uint64_t value){
+inline std::string to_string<uint64_t>(const uint64_t& value){
     if(value == 0){
         return "0";
     }
@@ -366,10 +366,11 @@ inline std::string to_string<uint64_t>(uint64_t value){
 
     char buffer[20];
     int i = 0;
+    auto rem = value;
 
-    while(value != 0){
-        buffer[i++] = '0' + value % 10;
-        value /= 10;
+    while(rem != 0){
+        buffer[i++] = '0' + rem  % 10;
+        rem /= 10;
     }
 
     --i;
@@ -382,7 +383,7 @@ inline std::string to_string<uint64_t>(uint64_t value){
 }
 
 template<>
-inline std::string to_string<int64_t>(int64_t value){
+inline std::string to_string<int64_t>(const int64_t& value){
     if(value < 0){
         std::string s("-");
         s += to_string(static_cast<uint64_t>(value));
@@ -390,6 +391,11 @@ inline std::string to_string<int64_t>(int64_t value){
     } else {
         return to_string(static_cast<uint64_t>(value));
     }
+}
+
+template<>
+inline std::string to_string<unsigned int>(const unsigned int& value){
+    return to_string(static_cast<size_t>(value));
 }
 
 } //end of namespace std
