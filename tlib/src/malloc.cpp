@@ -204,8 +204,8 @@ void free(void* block){
 
 size_t brk_start(){
     size_t value;
-    asm volatile("mov rax, 7; int 50; mov %0, rax"
-        : "=m" (value)
+    asm volatile("mov rax, 7; int 50; mov %[brk_start], rax"
+        : [brk_start] "=m" (value)
         : //No inputs
         : "rax");
     return value;
@@ -213,8 +213,8 @@ size_t brk_start(){
 
 size_t brk_end(){
     size_t value;
-    asm volatile("mov rax, 8; int 50; mov %0, rax"
-        : "=m" (value)
+    asm volatile("mov rax, 8; int 50; mov %[brk_end], rax"
+        : [brk_end] "=m" (value)
         : //No inputs
         : "rax");
     return value;
@@ -222,10 +222,10 @@ size_t brk_end(){
 
 size_t sbrk(size_t inc){
     size_t value;
-    asm volatile("mov rax, 9; int 50; mov %0, rax"
-        : "=m" (value)
-        : "b" (inc)
-        : "rax");
+    asm volatile("mov rax, 9; mov rbx, %[brk_inc]; int 50; mov %[brk_end], rax"
+        : [brk_end] "=m" (value)
+        : [brk_inc] "g" (inc)
+        : "rax", "rbx");
     return value;
 }
 

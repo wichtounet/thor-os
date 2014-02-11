@@ -10,24 +10,58 @@
 #include "print.hpp"
 
 void print(char c){
-    asm volatile("mov rax, 0; mov rbx, %0; int 50"
+    asm volatile("mov rax, 0; mov rbx, %[c]; int 50"
         : //No outputs
-        : "r" (static_cast<size_t>(c))
+        : [c] "g" (static_cast<size_t>(c))
         : "rax", "rbx");
 }
 
 void print(const char* s){
-    asm volatile("mov rax, 1; mov rbx, %0; int 50"
+    asm volatile("mov rax, 1; mov rbx, %[s]; int 50"
         : //No outputs
-        : "r" (reinterpret_cast<size_t>(s))
+        : [s] "g" (reinterpret_cast<size_t>(s))
         : "rax", "rbx");
 }
 
 void print(size_t v){
-    asm volatile("mov rax, 2; mov rbx, %0; int 50"
+    asm volatile("mov rax, 2; mov rbx, %[v]; int 50"
         : //No outputs
-        : "r" (v)
+        : [v] "g" (v)
         : "rax", "rbx");
+}
+
+size_t read_input(char* buffer, size_t max){
+    size_t value;
+    asm volatile("mov rax, 3; mov rbx, %[buffer]; mov rcx, %[max]; int 50; mov %[read], rax"
+        : [read] "=m" (value)
+        : [buffer] "g" (buffer), [max] "g" (max)
+        : "rax", "rbx", "rcx");
+    return value;
+}
+
+void  clear(){
+    asm volatile("mov rax, 100; int 50;"
+        : //No outputs
+        : //No inputs
+        : "rax");
+}
+
+size_t get_columns(){
+    size_t value;
+    asm volatile("mov rax, 101; int 50; mov %[columns], rax"
+        : [columns] "=m" (value)
+        : //No inputs
+        : "rax");
+    return value;
+}
+
+size_t get_rows(){
+    size_t value;
+    asm volatile("mov rax, 102; int 50; mov %[rows], rax"
+        : [rows] "=m" (value)
+        : //No inputs
+        : "rax");
+    return value;
 }
 
 void print(const std::string& s){
@@ -46,40 +80,6 @@ void print_line(const char* s){
 void print_line(size_t v){
     print(v);
     print_line();
-}
-
-size_t read_input(char* buffer, size_t max){
-    size_t value;
-    asm volatile("mov rax, 3; int 50; mov %0, rax"
-        : "=m" (value)
-        : "b" (buffer), "c" (max)
-        : "rax");
-    return value;
-}
-
-void  clear(){
-    asm volatile("mov rax, 100; int 50;"
-        : //No outputs
-        : //No inputs
-        : "rax");
-}
-
-size_t get_columns(){
-    size_t value;
-    asm volatile("mov rax, 101; int 50; mov %0, rax"
-        : "=m" (value)
-        : //No inputs
-        : "rax");
-    return value;
-}
-
-size_t get_rows(){
-    size_t value;
-    asm volatile("mov rax, 102; int 50; mov %0, rax"
-        : "=m" (value)
-        : //No inputs
-        : "rax");
-    return value;
 }
 
 std::string vsprintf(const std::string& format, va_list va){
@@ -272,8 +272,7 @@ void printf(const std::string& format, ...){
     va_list va;
     va_start(va, format);
 
-    auto s = vsprintf(format, va);
-    print(s);
+    print(vsprintf(format, va));
 
     va_end(va);
 }
