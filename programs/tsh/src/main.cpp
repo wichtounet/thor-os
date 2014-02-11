@@ -76,34 +76,38 @@ int main(){
         auto c = read_input(input_buffer, 63);
 
         if(input_buffer[c-1] == '\n'){
-            input_buffer[c-1] = '\0';
+            if(c > 1){
+                input_buffer[c-1] = '\0';
 
-            current_input += input_buffer;
-
-            auto params = std::split(current_input);;
-
-            bool found = false;
-            for(auto& command : commands){
-                if(params[0] == command.name){
-                    command.function(params);
-                    found = true;
-                    break;
-                }
+                current_input += input_buffer;
             }
 
-            if(!found){
-                auto result = exec_and_wait(params[0].c_str());
+            if(current_input.size() > 0){
+                auto params = std::split(current_input);;
 
-                if(!result.valid()){
-                    print("error: ");
+                bool found = false;
+                for(auto& command : commands){
+                    if(params[0] == command.name){
+                        command.function(params);
+                        found = true;
+                        break;
+                    }
+                }
 
-                    auto err = result.error();
-                    if(err == 1){
-                        print_line("The file does not exist");
-                    } else if(err == 2){
-                        print_line("The file is not an executable");
-                    } else if(err == 3){
-                        print_line("Failed to execute the file");
+                if(!found){
+                    auto result = exec_and_wait(params[0].c_str());
+
+                    if(!result.valid()){
+                        print("error: ");
+
+                        auto err = result.error();
+                        if(err == 1){
+                            print_line("The file does not exist");
+                        } else if(err == 2){
+                            print_line("The file is not an executable");
+                        } else if(err == 3){
+                            print_line("Failed to execute the file");
+                        }
                     }
                 }
             }
