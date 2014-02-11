@@ -32,7 +32,13 @@ cpuid: force_look tlib/libtlib.a
 tsh: force_look tlib/libtlib.a
 	cd tsh; $(MAKE) tsh
 
-dist: one hello long loop longone longtwo keyboard tsh cpuid
+reboot: force_look tlib/libtlib.a
+	cd reboot; $(MAKE) reboot
+
+shutdown: force_look tlib/libtlib.a
+	cd shutdown; $(MAKE) shutdown
+
+dist: one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot
 	mkdir -p dist
 	cp one/a.out dist/one
 	cp hello/a.out dist/hello
@@ -43,6 +49,8 @@ dist: one hello long loop longone longtwo keyboard tsh cpuid
 	cp keyboard/a.out dist/keyboard
 	cp cpuid/cpuid dist/
 	cp tsh/tsh dist/
+	cp reboot/reboot dist/
+	cp shutdown/shutdown dist/
 	strip dist/*
 
 force_look:

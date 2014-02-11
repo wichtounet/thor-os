@@ -20,4 +20,7 @@ void await_termination(size_t pid);
 
 void sleep_ms(size_t ms);
 
+void reboot();
+void shutdown();
+
 #endif

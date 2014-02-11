@@ -47,7 +47,6 @@ bool shift = false;
 
 //Declarations of the different functions
 
-void reboot_command(const std::vector<std::string>& params);
 void help_command(const std::vector<std::string>& params);
 void uptime_command(const std::vector<std::string>& params);
 void clear_command(const std::vector<std::string>& params);
@@ -70,7 +69,6 @@ void rm_command(const std::vector<std::string>& params);
 void touch_command(const std::vector<std::string>& params);
 void readelf_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
-void shutdown_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
 void paginginfo_command(const std::vector<std::string>& params);
 
@@ -79,8 +77,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[26] = {
-    {"reboot", reboot_command},
+command_definition commands[24] = {
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
@@ -103,7 +100,6 @@ command_definition commands[26] = {
     {"rm", rm_command},
     {"readelf", readelf_command},
     {"exec", exec_command},
-    {"shutdown", shutdown_command},
     {"vesainfo", vesainfo_command},
     {"paginginfo", paginginfo_command},
 };
@@ -221,12 +217,6 @@ void exec_shell_command(){
 
 void clear_command(const std::vector<std::string>&){
     wipeout();
-}
-
-void __attribute__((noreturn)) reboot_command(const std::vector<std::string>&){
-    __asm__ __volatile__("mov al, 0x64; or al, 0xFE; out 0x64, al; mov al, 0xFE; out 0x64, al; " : : );
-
-    __builtin_unreachable();
 }
 
 void help_command(const std::vector<std::string>&){
@@ -749,14 +739,6 @@ void paginginfo_command(const std::vector<std::string>&){
     k_printf("Number of PT: %u\n", paging::pd_entries);
     k_printf("Virtual Start: %h\n", paging::virtual_paging_start);
     k_printf("Physical Size: %h\n", paging::physical_memory_pages * paging::PAGE_SIZE);
-}
-
-void shutdown_command(const std::vector<std::string>&){
-    if(!acpi::init()){
-        k_print_line("Unable to init ACPI");
-    }
-
-    acpi::shutdown();
 }
 
 } //end of anonymous namespace

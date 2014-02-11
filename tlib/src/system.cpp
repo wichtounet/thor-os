@@ -55,3 +55,21 @@ std::expected<size_t> exec_and_wait(const char* executable){
 
     return std::move(result);
 }
+
+void reboot(){
+    asm volatile("mov rax, 201; int 50"
+        : //No outputs
+        : //No inputs
+        : "rax");
+
+    __builtin_unreachable();
+}
+
+void shutdown(){
+    asm volatile("mov rax, 202; int 50"
+        : //No outputs
+        : //No inputs
+        : "rax");
+
+    __builtin_unreachable();
+}

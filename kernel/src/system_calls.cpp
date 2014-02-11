@@ -10,6 +10,7 @@
 #include "scheduler.hpp"
 #include "keyboard.hpp"
 #include "terminal.hpp"
+#include "acpi.hpp"
 
 namespace {
 
@@ -81,6 +82,21 @@ void sc_clear(interrupt::syscall_regs*){
     wipeout();
 }
 
+void sc_reboot(interrupt::syscall_regs*){
+    //TODO Reboot should be done more properly
+    asm volatile("mov al, 0x64; or al, 0xFE; out 0x64, al; mov al, 0xFE; out 0x64, al; " : : );
+
+    __builtin_unreachable();
+}
+
+void sc_shutdown(interrupt::syscall_regs*){
+    if(!acpi::init()){
+        k_print_line("Unable to init ACPI");
+    }
+
+    acpi::shutdown();
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -137,6 +153,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 102:
             sc_get_rows(regs);
+            break;
+
+        case 201:
+            sc_reboot(regs);
+            break;
+
+        case 202:
+            sc_shutdown(regs);
             break;
 
         case 0x666:
