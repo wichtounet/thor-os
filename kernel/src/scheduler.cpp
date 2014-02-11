@@ -348,6 +348,11 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
     auto aligned_physical_memory = paging::page_aligned(physical_memory) ? physical_memory :
             (physical_memory / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
 
+    if(DEBUG_SCHEDULER){
+        k_printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, first_page, aligned_physical_memory);
+    }
+
+
     //4. Map physical allocated memory to the necessary virtual memory
     if(!paging::user_map_pages(process, first_page, aligned_physical_memory, pages)){
         if(DEBUG_SCHEDULER){
@@ -375,6 +380,10 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     //Get memory for cr3
     process.physical_cr3 = physical_allocator::allocate(1);
     process.paging_size = paging::PAGE_SIZE;
+
+    if(DEBUG_SCHEDULER){
+        k_printf("Process %u cr3:%h\n", process.pid, process.physical_cr3);
+    }
 
     clear_physical_memory(process.physical_cr3, 1);
 
@@ -417,6 +426,10 @@ bool create_paging(char* buffer, scheduler::process_t& process){
             //Copy the code into memory
 
             physical_pointer phys_ptr(segment.physical, pages);
+
+            if(DEBUG_SCHEDULER){
+                k_printf("Copy to physical:%h\n", segment.physical);
+            }
 
             auto memory_start = phys_ptr.get() + left_padding;
 
@@ -567,8 +580,13 @@ void scheduler::sbrk(size_t inc){
 
     auto virtual_start = process.brk_start;
 
+    if(DEBUG_SCHEDULER){
+        k_printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, virtual_start, physical);
+    }
+
     //Map the memory inside the process memory space
     if(!paging::user_map_pages(process, virtual_start, physical, pages)){
+        k_print_line("impossible");
         physical_allocator::free(physical, pages);
         return;
     }
