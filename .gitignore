@@ -11,4 +11,6 @@ programs/tsh/tsh
 programs/keyboard/keyboard
 programs/cpuid/cpuid
 programs/args/args
+programs/shutdown/shutdown
+programs/reboot/reboot
 programs/dist/
