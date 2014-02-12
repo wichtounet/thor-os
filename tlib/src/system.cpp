@@ -16,14 +16,25 @@ void exit(size_t return_code) {
     __builtin_unreachable();
 }
 
-std::expected<size_t> exec(const char* executable){
+std::expected<size_t> exec(const char* executable, const std::vector<std::string>& params){
+    const char** args = nullptr;
+    if(!params.empty()){
+        args = new const char*[params.size()];
+
+        for(size_t i = 0; i < params.size(); ++i){
+            args[i] = params[i].c_str();
+        }
+    }
+
     int64_t pid;
-    //__asm__ __volatile__("xchg bx, bx");
-    asm volatile("mov rax, 5; mov rbx, %[path]; int 50; mov %[pid], rax"
+    asm volatile("mov rax, 5; mov rbx, %[path]; mov rcx, %[argc]; mov rdx, %[argv]; int 50; mov %[pid], rax"
         : [pid] "=m" (pid)
-        : [path] "g" (reinterpret_cast<size_t>(executable))
-        : "rax", "rbx");
-    //__asm__ __volatile__("xchg bx, bx");
+        : [path] "g" (reinterpret_cast<size_t>(executable)), [argc] "g" (params.size()), [argv] "g" (reinterpret_cast<size_t>(args))
+        : "rax", "rbx", "rcx", "rdx");
+
+    if(args){
+        delete[] args;
+    }
 
     if(pid < 0){
         return std::make_expected_from_error<size_t, size_t>(-pid);
@@ -46,8 +57,8 @@ void sleep_ms(size_t ms){
         : "rax", "rbx");
 }
 
-std::expected<size_t> exec_and_wait(const char* executable){
-    auto result = exec(executable);
+std::expected<size_t> exec_and_wait(const char* executable, const std::vector<std::string>& params){
+    auto result = exec(executable, params);
 
     if(result.valid()){
         await_termination(result.value());

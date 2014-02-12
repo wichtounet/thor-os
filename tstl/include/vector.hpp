@@ -10,6 +10,7 @@
 
 #include <types.hpp>
 #include <algorithms.hpp>
+#include <new.hpp>
 
 //TODO The vector does not call any destructor
 
@@ -102,6 +103,12 @@ public:
 
     //Modifiers
 
+    void reserve(size_t new_capacity){
+        if(new_capacity > capacity()){
+            ensure_capacity(new_capacity);
+        }
+    }
+
     void resize(size_t new_size){
         if(new_size > size()){
             ensure_capacity(new_size);
@@ -125,6 +132,13 @@ public:
         ensure_capacity(_size + 1);
 
         data[_size++] = element;
+    }
+
+    template<typename... Args>
+    void emplace_back(Args... args){
+        ensure_capacity(_size + 1);
+
+        new (&data[_size++]) T(std::forward<Args>(args)...);
     }
 
     void pop_back(){

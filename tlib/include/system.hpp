@@ -10,11 +10,13 @@
 
 #include <types.hpp>
 #include <expected.hpp>
+#include <vector.hpp>
+#include <string.hpp>
 
 void exit(size_t return_code) __attribute__((noreturn));
 
-std::expected<size_t> exec(const char* executable);
-std::expected<size_t> exec_and_wait(const char* executable);
+std::expected<size_t> exec(const char* executable, const std::vector<std::string>& params = {});
+std::expected<size_t> exec_and_wait(const char* executable, const std::vector<std::string>& params = {});
 
 void await_termination(size_t pid);
 

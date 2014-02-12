@@ -42,7 +42,15 @@ void sc_sleep_ms(interrupt::syscall_regs* regs){
 void sc_exec(interrupt::syscall_regs* regs){
     auto file = reinterpret_cast<char*>(regs->rbx);
 
+    auto argc = regs->rcx;
+    auto argv = reinterpret_cast<const char**>(regs->rdx);
+
     std::vector<std::string> params;
+
+    for(size_t i = 0; i < argc; ++i){
+        params.emplace_back(argv[i]);
+    }
+
     regs->rax = scheduler::exec(file, params);
 }
 
