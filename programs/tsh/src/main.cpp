@@ -96,7 +96,15 @@ int main(){
                 }
 
                 if(!found){
-                    auto result = exec_and_wait(params[0].c_str());
+                    std::vector<std::string> args;
+                    if(params.size() > 1){
+                        args.reserve(params.size() - 1);
+                        for(size_t i = 1; i < params.size(); ++i){
+                            args.push_back(params[i]);
+                        }
+                    }
+
+                    auto result = exec_and_wait(params[0].c_str(), args);
 
                     if(!result.valid()){
                         print("error: ");
