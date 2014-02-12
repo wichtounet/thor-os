@@ -16,6 +16,8 @@
 
 #include "disks.hpp"
 
+#include "console.hpp"
+
 int64_t vfs::open(const char* file_path){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         return -std::ERROR_NOTHING_MOUNTED;
@@ -45,7 +47,7 @@ int64_t vfs::open(const char* file_path){
     auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), parts);
 
     for(auto& f : files){
-        if(f.file_name == file){
+        if(f.file_name == last){
             if(f.directory){
                 return -std::ERROR_DIRECTORY;
             }
