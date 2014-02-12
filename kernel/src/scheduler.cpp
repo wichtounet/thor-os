@@ -103,14 +103,11 @@ void gc_task(){
                 }
                 desc.segments.clear();
 
-                //5. Release break space
-                //TODO Implement that once break space is done
-
-                //6. Release virtual kernel stack
+                //5. Release virtual kernel stack
                 virtual_allocator::free(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
                 paging::unmap_pages(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
 
-                //7. Remove process from run queue
+                //6. Remove process from run queue
                 size_t index = 0;
                 for(; index < run_queue(desc.priority).size(); ++index){
                     std::lock_guard<mutex> l(run_queue_lock(desc.priority));
@@ -121,7 +118,7 @@ void gc_task(){
                     }
                 }
 
-                //8. Clean process
+                //7. Clean process
                 desc.pid = 0;
                 desc.ppid = 0;
                 desc.system = false;
@@ -132,7 +129,7 @@ void gc_task(){
                 desc.context = nullptr;
                 desc.brk_start = desc.brk_end = 0;
 
-                //9. Release the PCB slot
+                //8. Release the PCB slot
                 process.state = scheduler::process_state::EMPTY;
             }
         }
