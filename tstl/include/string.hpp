@@ -341,6 +341,8 @@ std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s, cha
         if(c == sep && !current.empty()){
             parts.push_back(current);
             current.clear();
+        } else if(c == sep){
+            continue;
         } else {
             current += c;
         }
