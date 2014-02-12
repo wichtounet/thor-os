@@ -13,4 +13,5 @@ programs/cpuid/cpuid
 programs/args/args
 programs/shutdown/shutdown
 programs/reboot/reboot
+programs/stat/stat
 programs/dist/

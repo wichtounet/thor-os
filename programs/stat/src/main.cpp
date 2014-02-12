@@ -5,13 +5,19 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef USER_FILE_HPP
-#define USER_FILE_HPP
+#include <file.hpp>
+#include <system.hpp>
+#include <errors.hpp>
+#include <print.hpp>
 
-#include <types.hpp>
-#include <expected.hpp>
-#include <string.hpp>
+int main(){
+    auto fd = open("/stat");
 
-std::expected<size_t> open(const char* file);
+    if(fd.valid()){
+        printf("fd: %u\n", *fd);
+    } else {
+        printf("stat: error: %s\n", std::error_message(fd.error()));
+    }
 
-#endif
+    exit(0);
+}

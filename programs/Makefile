@@ -41,7 +41,10 @@ shutdown: force_look tlib/libtlib.a
 args: force_look tlib/libtlib.a
 	cd args; $(MAKE) args
 
-dist: one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot args
+stat: force_look tlib/libtlib.a
+	cd stat; $(MAKE) stat
+
+dist: one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat
 	mkdir -p dist
 	cp one/a.out dist/one
 	cp hello/a.out dist/hello
@@ -55,6 +58,7 @@ dist: one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot arg
 	cp reboot/reboot dist/
 	cp shutdown/shutdown dist/
 	cp args/args dist/
+	cp stat/stat dist/
 	strip dist/*
 
 force_look:
@@ -73,4 +77,5 @@ clean:
 	cd reboot; $(MAKE) clean
 	cd shutdown; $(MAKE) clean
 	cd args; $(MAKE) clean
+	cd stat; $(MAKE) clean
 	rm -rf dist
