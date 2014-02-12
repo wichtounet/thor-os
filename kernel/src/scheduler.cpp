@@ -40,6 +40,7 @@ struct process_control_t {
     scheduler::process_state state;
     size_t rounds;
     size_t sleep_timeout;
+    std::vector<std::string> handles;
 };
 
 //The Process Control Block
@@ -129,7 +130,11 @@ void gc_task(){
                 desc.context = nullptr;
                 desc.brk_start = desc.brk_end = 0;
 
-                //8. Release the PCB slot
+                //8 Clean file handles
+                //TODO If not empty, probably something should be done
+                process.handles.clear();
+
+                //9. Release the PCB slot
                 process.state = scheduler::process_state::EMPTY;
             }
         }
@@ -801,6 +806,12 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     pcb[pid].sleep_timeout = time;
 
     reschedule();
+}
+
+size_t scheduler::register_new_handle(const std::string& path){
+    pcb[current_pid].handles.push_back(path);
+
+    return pcb[current_pid].handles.size() - 1;
 }
 
 //Provided for task_switch.s

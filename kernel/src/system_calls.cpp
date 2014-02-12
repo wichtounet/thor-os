@@ -11,6 +11,7 @@
 #include "keyboard.hpp"
 #include "terminal.hpp"
 #include "acpi.hpp"
+#include "vfs.hpp"
 
 namespace {
 
@@ -102,6 +103,12 @@ void sc_shutdown(interrupt::syscall_regs*){
     acpi::shutdown();
 }
 
+void sc_open(interrupt::syscall_regs* regs){
+    auto file = reinterpret_cast<char*>(regs->rbx);
+
+    regs->rax = vfs::open(file);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -162,6 +169,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 202:
             sc_shutdown(regs);
+            break;
+
+        case 300:
+            sc_open(regs);
             break;
 
         case 0x666:

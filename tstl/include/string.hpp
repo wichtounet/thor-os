@@ -332,13 +332,13 @@ size_t digits(N number){
 }
 
 template<typename Char>
-std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s){
+std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s, char sep = ' '){
     std::vector<std::basic_string<Char>> parts;
 
     std::basic_string<Char> current(s.size());
 
     for(char c : s){
-        if(c == ' ' && !current.empty()){
+        if(c == sep && !current.empty()){
             parts.push_back(current);
             current.clear();
         } else {

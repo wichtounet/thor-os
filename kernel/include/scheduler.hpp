@@ -36,6 +36,8 @@ void reschedule();
 
 void sleep_ms(pid_t pid, size_t time);
 
+size_t register_new_handle(const std::string& path);
+
 } //end of namespace scheduler
 
 #endif
