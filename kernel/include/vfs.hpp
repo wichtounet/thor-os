@@ -8,11 +8,14 @@
 #ifndef VFS_H
 #define VFS_H
 
+#include <stat_info.hpp>
+
 //TODO Once userspace is done, integrate parts of disks.hpp here
 
 namespace vfs {
 
 int64_t open(const char* file);
+int64_t stat(size_t fd, stat_info& info);
 
 } //end of namespace vfs
 

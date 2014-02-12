@@ -20,3 +20,19 @@ std::expected<size_t> open(const char* file){
         return std::make_expected<size_t>(fd);
     }
 }
+
+std::expected<stat_info> stat(size_t fd){
+    stat_info info;
+
+    int64_t code;
+    asm volatile("mov rax, 301; mov rbx, %[fd]; mov rcx, %[buffer]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [fd] "g" (fd), [buffer] "g" (reinterpret_cast<size_t>(&info))
+        : "rax", "rbx", "rcx");
+
+    if(code < 0){
+        return std::make_expected_from_error<stat_info, size_t>(-code);
+    } else {
+        return std::make_expected<stat_info>(info);
+    }
+}

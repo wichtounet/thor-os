@@ -814,6 +814,14 @@ size_t scheduler::register_new_handle(const std::string& path){
     return pcb[current_pid].handles.size() - 1;
 }
 
+bool scheduler::has_handle(size_t fd){
+    return pcb[current_pid].handles.size() - 1 <= fd;
+}
+
+const std::string& scheduler::get_handle(size_t fd){
+    return pcb[current_pid].handles[fd];
+}
+
 //Provided for task_switch.s
 
 extern "C" {

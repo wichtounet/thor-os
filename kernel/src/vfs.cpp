@@ -48,11 +48,59 @@ int64_t vfs::open(const char* file_path){
 
     for(auto& f : files){
         if(f.file_name == last){
+            return scheduler::register_new_handle(file);
+        }
+    }
+
+    return -std::ERROR_NOT_EXISTS;
+}
+
+int64_t vfs::stat(size_t fd, stat_info& info){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        return -std::ERROR_NOTHING_MOUNTED;
+    }
+
+    if(!scheduler::has_handle(fd)){
+        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+    }
+
+    auto& path = scheduler::get_handle(fd);
+
+    auto parts = std::split(path, '/');
+
+    if(parts.empty()){
+        return -std::ERROR_INVALID_FILE_PATH;
+    }
+
+    auto last = parts.back();
+    parts.pop_back();
+
+    //TODO file search should be done entirely by the file system
+
+    auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), parts);
+
+    for(auto& f : files){
+        if(f.file_name == last){
+            info.size = f.size;
+            info.flags = 0;
+
             if(f.directory){
-                return -std::ERROR_DIRECTORY;
+                info.flags |= STAT_FLAG_DIRECTORY;
             }
 
-            return scheduler::register_new_handle(file);
+            if(f.system){
+                info.flags |= STAT_FLAG_SYSTEM;
+            }
+
+            if(f.hidden){
+                info.flags |= STAT_FLAG_HIDDEN;
+            }
+
+            info.created = f.created;
+            info.modified = f.modified;
+            info.accessed = f.accessed;
+
+            return 0;
         }
     }
 

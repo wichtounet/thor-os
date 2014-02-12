@@ -23,11 +23,36 @@ void print(const char* s){
         : "rax", "rbx");
 }
 
-void print(size_t v){
-    asm volatile("mov rax, 2; mov rbx, %[v]; int 50"
-        : //No outputs
-        : [v] "g" (v)
-        : "rax", "rbx");
+void print(uint8_t v){
+    print(std::to_string(v));
+}
+
+void print(uint16_t v){
+    print(std::to_string(v));
+}
+
+void print(uint32_t v){
+    print(std::to_string(v));
+}
+
+void print(uint64_t v){
+    print(std::to_string(v));
+}
+
+void print(int8_t v){
+    print(std::to_string(v));
+}
+
+void print(int16_t v){
+    print(std::to_string(v));
+}
+
+void print(int32_t v){
+    print(std::to_string(v));
+}
+
+void print(int64_t v){
+    print(std::to_string(v));
 }
 
 size_t read_input(char* buffer, size_t max){

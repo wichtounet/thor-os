@@ -396,8 +396,33 @@ inline std::string to_string<int64_t>(const int64_t& value){
 }
 
 template<>
-inline std::string to_string<unsigned int>(const unsigned int& value){
-    return to_string(static_cast<size_t>(value));
+inline std::string to_string<uint8_t>(const uint8_t& value){
+    return to_string(static_cast<uint64_t>(value));
+}
+
+template<>
+inline std::string to_string<uint16_t>(const uint16_t& value){
+    return to_string(static_cast<uint64_t>(value));
+}
+
+template<>
+inline std::string to_string<uint32_t>(const uint32_t& value){
+    return to_string(static_cast<uint64_t>(value));
+}
+
+template<>
+inline std::string to_string<int8_t>(const int8_t& value){
+    return to_string(static_cast<int64_t>(value));
+}
+
+template<>
+inline std::string to_string<int16_t>(const int16_t& value){
+    return to_string(static_cast<int64_t>(value));
+}
+
+template<>
+inline std::string to_string<int32_t>(const int32_t& value){
+    return to_string(static_cast<int64_t>(value));
 }
 
 } //end of namespace std

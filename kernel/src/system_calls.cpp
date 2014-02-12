@@ -109,6 +109,13 @@ void sc_open(interrupt::syscall_regs* regs){
     regs->rax = vfs::open(file);
 }
 
+void sc_stat(interrupt::syscall_regs* regs){
+    auto fd = regs->rbx;
+    auto info = reinterpret_cast<stat_info*>(regs->rcx);
+
+    regs->rax = vfs::stat(fd, *info);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -173,6 +180,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 300:
             sc_open(regs);
+            break;
+
+        case 301:
+            sc_stat(regs);
             break;
 
         case 0x666:

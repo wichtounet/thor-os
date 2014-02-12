@@ -15,11 +15,22 @@
 
 void print(char c);
 void print(const char* s);
-void print(size_t v);
 void print(const std::string& s);
+
+void print(uint8_t v);
+void print(uint16_t v);
+void print(uint32_t v);
+void print(uint64_t v);
+
+void print(int8_t v);
+void print(int16_t v);
+void print(int32_t v);
+void print(int64_t v);
+
 void print_line();
 void print_line(const char* s);
 void print_line(size_t v);
+
 size_t read_input(char* buffer, size_t max);
 
 void clear();

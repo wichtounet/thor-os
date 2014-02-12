@@ -5,15 +5,22 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef USER_FILE_HPP
-#define USER_FILE_HPP
+#ifndef USER_STAT_INFO_HPP
+#define USER_STAT_INFO_HPP
 
 #include <types.hpp>
-#include <expected.hpp>
-#include <string.hpp>
-#include <stat_info.hpp>
+#include <datetime.hpp>
 
-std::expected<size_t> open(const char* file);
-std::expected<stat_info> stat(size_t fd);
+constexpr const size_t STAT_FLAG_DIRECTORY = 0x1;
+constexpr const size_t STAT_FLAG_HIDDEN = 0x2;
+constexpr const size_t STAT_FLAG_SYSTEM = 0x2;
+
+struct stat_info {
+	size_t flags;
+    size_t size;
+    datetime created;
+    datetime modified;
+    datetime accessed;
+};
 
 #endif
