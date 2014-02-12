@@ -6,22 +6,22 @@
 //=======================================================================
 
 #include "thor.hpp"
-#include "malloc.hpp"
+#include "kalloc.hpp"
 
 void* operator new(uint64_t size){
-    return malloc::k_malloc(size);
+    return kalloc::k_malloc(size);
 }
 
 void operator delete(void* p){
-    malloc::k_free(p);
+    kalloc::k_free(p);
 }
 
 void* operator new[](uint64_t size){
-    return malloc::k_malloc(size);
+    return kalloc::k_malloc(size);
 }
 
 void operator delete[](void* p){
-    return malloc::k_free(p);
+    return kalloc::k_free(p);
 }
 
 extern "C" {

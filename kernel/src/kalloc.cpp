@@ -5,7 +5,7 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "malloc.hpp"
+#include "kalloc.hpp"
 #include "console.hpp"
 #include "physical_allocator.hpp"
 #include "paging.hpp"
@@ -308,7 +308,7 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
 
 } //end of anonymous namespace
 
-void malloc::init(){
+void kalloc::init(){
     //Init the fake head
     init_head();
 
@@ -316,7 +316,7 @@ void malloc::init(){
     expand_heap(malloc_head);
 }
 
-void* malloc::k_malloc(uint64_t bytes){
+void* kalloc::k_malloc(uint64_t bytes){
     auto current = malloc_head->next();
 
     //Try not to create too small blocks
@@ -400,7 +400,7 @@ void* malloc::k_malloc(uint64_t bytes){
     return reinterpret_cast<void*>(block_start);
 }
 
-void malloc::k_free(void* block){
+void kalloc::k_free(void* block){
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 
@@ -424,15 +424,15 @@ void malloc::k_free(void* block){
     debug_malloc<DEBUG_MALLOC>("after free");
 }
 
-size_t malloc::allocated_memory(){
+size_t kalloc::allocated_memory(){
     return _allocated_memory;
 }
 
-size_t malloc::used_memory(){
+size_t kalloc::used_memory(){
     return _used_memory;
 }
 
-size_t malloc::free_memory(){
+size_t kalloc::free_memory(){
     size_t memory_free = 0;
 
     auto it = malloc_head;
@@ -445,7 +445,7 @@ size_t malloc::free_memory(){
     return memory_free;
 }
 
-void malloc::debug(){
+void kalloc::debug(){
     size_t memory_free = 0;
     size_t non_free_blocks = 0;
     size_t inconsistent = 0;

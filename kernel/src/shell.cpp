@@ -29,7 +29,7 @@
 
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
-#include "malloc.hpp"
+#include "kalloc.hpp"
 #include "e820.hpp"
 
 namespace {
@@ -54,7 +54,7 @@ void date_command(const std::vector<std::string>& params);
 void echo_command(const std::vector<std::string>& params);
 void mmap_command(const std::vector<std::string>& params);
 void memory_command(const std::vector<std::string>& params);
-void mallocdebug_command(const std::vector<std::string>& params);
+void kallocdebug_command(const std::vector<std::string>& params);
 void disks_command(const std::vector<std::string>& params);
 void partitions_command(const std::vector<std::string>& params);
 void mount_command(const std::vector<std::string>& params);
@@ -85,7 +85,7 @@ command_definition commands[24] = {
     {"echo", echo_command},
     {"mmap", mmap_command},
     {"memory", memory_command},
-    {"mallocdebug", mallocdebug_command},
+    {"kallocdebug", kallocdebug_command},
     {"disks", disks_command},
     {"partitions", partitions_command},
     {"mount", mount_command},
@@ -270,13 +270,13 @@ void memory_command(const std::vector<std::string>&){
     k_printf("\tFree: %m (%h)\n", virtual_allocator::free(), virtual_allocator::free());
 
     k_print_line("Dynamic:");
-    k_printf("\tAllocated: %m (%h)\n", malloc::allocated_memory(), malloc::allocated_memory());
-    k_printf("\tUsed: %m (%h)\n", malloc::used_memory(), malloc::used_memory());
-    k_printf("\tFree: %m (%h)\n", malloc::free_memory(), malloc::free_memory());
+    k_printf("\tAllocated: %m (%h)\n", kalloc::allocated_memory(), kalloc::allocated_memory());
+    k_printf("\tUsed: %m (%h)\n", kalloc::used_memory(), kalloc::used_memory());
+    k_printf("\tFree: %m (%h)\n", kalloc::free_memory(), kalloc::free_memory());
 }
 
-void mallocdebug_command(const std::vector<std::string>&){
-    malloc::debug();
+void kallocdebug_command(const std::vector<std::string>&){
+    kalloc::debug();
 }
 
 void disks_command(const std::vector<std::string>& params){

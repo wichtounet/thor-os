@@ -9,7 +9,7 @@
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
-#include "malloc.hpp"
+#include "kalloc.hpp"
 #include "timer.hpp"
 #include "shell.hpp"
 #include "keyboard.hpp"
@@ -44,11 +44,11 @@ void  kernel_main(){
     //Init all the physical
     paging::init();
 
-    //Finalize physical allocator initialization for malloc
+    //Finalize physical allocator initialization for kalloc
     physical_allocator::init();
 
     //Init dynamic memory allocation
-    malloc::init();
+    kalloc::init();
 
     //Install drivers
     timer::install();

@@ -10,7 +10,7 @@
 
 #include <types.hpp>
 
-namespace malloc {
+namespace kalloc {
 
 void init();
 
