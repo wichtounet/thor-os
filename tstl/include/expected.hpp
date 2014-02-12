@@ -340,6 +340,11 @@ inline expected<T> make_expected(T&& v){
     return expected<T>(std::forward<T>(v));
 }
 
+template<typename T>
+inline expected<T> make_expected(const T& v){
+    return expected<T>(v);
+}
+
 template<typename T, typename U, typename E>
 inline expected<T, U> make_expected_from_error(E v){
     return expected<T, U>(exceptional<U>(v));
