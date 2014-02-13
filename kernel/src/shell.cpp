@@ -63,7 +63,6 @@ void ls_command(const std::vector<std::string>& params);
 void cd_command(const std::vector<std::string>& params);
 void pwd_command(const std::vector<std::string>& params);
 void free_command(const std::vector<std::string>& params);
-void cat_command(const std::vector<std::string>& params);
 void mkdir_command(const std::vector<std::string>& params);
 void rm_command(const std::vector<std::string>& params);
 void touch_command(const std::vector<std::string>& params);
@@ -77,7 +76,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[24] = {
+command_definition commands[23] = {
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
@@ -94,7 +93,6 @@ command_definition commands[24] = {
     {"free", free_command},
     {"cd", cd_command},
     {"pwd", pwd_command},
-    {"cat", cat_command},
     {"mkdir", mkdir_command},
     {"touch", touch_command},
     {"rm", rm_command},
@@ -527,33 +525,6 @@ void cd_command(const std::vector<std::string>& params){
                 k_print("cd: No such file or directory: ");
                 k_print_line(params[1]);
             }
-        }
-    }
-}
-
-void cat_command(const std::vector<std::string>& params){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    if(params.size() == 1){
-        k_print_line("No file provided");
-    } else {
-        auto file = find_file(params[1]);
-
-        if(file){
-            if(!file->directory){
-                auto content = disks::read_file(params[1]);
-                k_print(content);
-            } else {
-                k_print("cd: Not a file: ");
-                k_print_line(params[1]);
-            }
-        } else {
-            k_print("cd: No such file or directory: ");
-            k_print_line(params[1]);
         }
     }
 }
