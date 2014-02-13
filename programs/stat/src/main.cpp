@@ -87,6 +87,8 @@ int main(int argc, char* argv[]){
         } else {
             printf("stat: error: %s\n", std::error_message(info.error()));
         }
+
+        close(*fd);
     } else {
         printf("stat: error: %s\n", std::error_message(fd.error()));
     }

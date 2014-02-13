@@ -20,6 +20,12 @@ std::expected<size_t> open(const char* file){
         return std::make_expected<size_t>(fd);
     }
 }
+void close(size_t fd){
+    asm volatile("mov rax, 302; mov rbx, %[fd]; int 50;"
+        : /* No outputs */
+        : [fd] "g" (fd)
+        : "rax", "rbx");
+}
 
 std::expected<stat_info> stat(size_t fd){
     stat_info info;

@@ -38,6 +38,7 @@ void sleep_ms(pid_t pid, size_t time);
 
 size_t register_new_handle(const std::string& path);
 bool has_handle(size_t fd);
+void release_handle(size_t fd);
 const std::string& get_handle(size_t fd);
 
 } //end of namespace scheduler

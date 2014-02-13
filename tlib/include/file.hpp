@@ -14,6 +14,7 @@
 #include <stat_info.hpp>
 
 std::expected<size_t> open(const char* file);
+void close(size_t fd);
 std::expected<stat_info> stat(size_t fd);
 
 #endif

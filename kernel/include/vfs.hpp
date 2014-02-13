@@ -15,6 +15,7 @@
 namespace vfs {
 
 int64_t open(const char* file);
+void close(size_t fd);
 int64_t stat(size_t fd, stat_info& info);
 
 } //end of namespace vfs

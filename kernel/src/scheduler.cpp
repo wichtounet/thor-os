@@ -814,6 +814,10 @@ size_t scheduler::register_new_handle(const std::string& path){
     return pcb[current_pid].handles.size() - 1;
 }
 
+void scheduler::release_handle(size_t fd){
+    pcb[current_pid].handles[fd] = nullptr;
+}
+
 bool scheduler::has_handle(size_t fd){
     return pcb[current_pid].handles.size() - 1 <= fd;
 }

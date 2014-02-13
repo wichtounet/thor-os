@@ -109,6 +109,12 @@ void sc_open(interrupt::syscall_regs* regs){
     regs->rax = vfs::open(file);
 }
 
+void sc_close(interrupt::syscall_regs* regs){
+    auto fd = regs->rbx;
+
+    vfs::close(fd);
+}
+
 void sc_stat(interrupt::syscall_regs* regs){
     auto fd = regs->rbx;
     auto info = reinterpret_cast<stat_info*>(regs->rcx);
@@ -184,6 +190,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 301:
             sc_stat(regs);
+            break;
+
+        case 302:
+            sc_close(regs);
             break;
 
         case 0x666:

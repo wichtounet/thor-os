@@ -55,6 +55,12 @@ int64_t vfs::open(const char* file_path){
     return -std::ERROR_NOT_EXISTS;
 }
 
+void vfs::close(size_t fd){
+    if(scheduler::has_handle(fd)){
+        scheduler::release_handle(fd);
+    }
+}
+
 int64_t vfs::stat(size_t fd, stat_info& info){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         return -std::ERROR_NOTHING_MOUNTED;
