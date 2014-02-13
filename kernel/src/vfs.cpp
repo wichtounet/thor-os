@@ -112,3 +112,39 @@ int64_t vfs::stat(size_t fd, stat_info& info){
 
     return -std::ERROR_NOT_EXISTS;
 }
+
+int64_t vfs::read(size_t fd, char* buffer, size_t max){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        return -std::ERROR_NOTHING_MOUNTED;
+    }
+
+    if(!scheduler::has_handle(fd)){
+        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+    }
+
+    auto& path = scheduler::get_handle(fd);
+
+    auto parts = std::split(path, '/');
+
+    if(parts.empty()){
+        return -std::ERROR_INVALID_FILE_PATH;
+    }
+
+    auto last = parts.back();
+    parts.pop_back();
+
+    //TODO file search should be done entirely by the file system
+
+    auto content = fat32::read_file(*disks::mounted_disk(), *disks::mounted_partition(), parts, last);
+
+    if(content.empty()){
+        return 0;
+    }
+
+    size_t i = 0;
+    for(; i < content.size() && i < max; ++i){
+        buffer[i] = content[i];
+    }
+
+    return i;
+}

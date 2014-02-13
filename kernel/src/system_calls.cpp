@@ -122,6 +122,14 @@ void sc_stat(interrupt::syscall_regs* regs){
     regs->rax = vfs::stat(fd, *info);
 }
 
+void sc_read(interrupt::syscall_regs* regs){
+    auto fd = regs->rbx;
+    auto buffer = reinterpret_cast<char*>(regs->rcx);
+    auto max = regs->rdx;
+
+    regs->rax = vfs::read(fd, buffer, max);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -194,6 +202,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 302:
             sc_close(regs);
+            break;
+
+        case 303:
+            sc_read(regs);
             break;
 
         case 0x666:
