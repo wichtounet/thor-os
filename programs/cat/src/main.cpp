@@ -22,26 +22,30 @@ int main(int argc, char* argv[]){
         auto info = stat(*fd);
 
         if(info.valid()){
-            auto size = info->size;
-
-            auto buffer = new char[size];
-
-            auto content_result = read(*fd, buffer, size);
-
-            if(content_result.valid()){
-                print_line(*content_result);
-
-                if(*content_result != size){
-                    //TODO Read more
-                } else {
-                    for(size_t i = 0; i < size; ++i){
-                        print(buffer[i]);
-                    }
-
-                    print_line();
-                }
+            if(info->flags & STAT_FLAG_DIRECTORY){
+                print_line("cat: error: Is a directory");
             } else {
-                printf("cat: error: %s\n", std::error_message(content_result.error()));
+                auto size = info->size;
+
+                auto buffer = new char[size];
+
+                auto content_result = read(*fd, buffer, size);
+
+                if(content_result.valid()){
+                    print_line(*content_result);
+
+                    if(*content_result != size){
+                        //TODO Read more
+                    } else {
+                        for(size_t i = 0; i < size; ++i){
+                            print(buffer[i]);
+                        }
+
+                        print_line();
+                    }
+                } else {
+                    printf("cat: error: %s\n", std::error_message(content_result.error()));
+                }
             }
         } else {
             printf("cat: error: %s\n", std::error_message(info.error()));
