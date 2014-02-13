@@ -14,4 +14,5 @@ programs/args/args
 programs/shutdown/shutdown
 programs/reboot/reboot
 programs/stat/stat
+programs/cat/cat
 programs/dist/

@@ -24,15 +24,21 @@ int main(int argc, char* argv[]){
         if(info.valid()){
             auto size = info->size;
 
-            std::string content(size);
+            auto buffer = new char[size];
 
-            auto content_result = read(*fd, content.c_str(), size);
+            auto content_result = read(*fd, buffer, size);
 
             if(content_result.valid()){
+                print_line(*content_result);
+
                 if(*content_result != size){
-                    //TODO Read mode
+                    //TODO Read more
                 } else {
-                    print(content);
+                    for(size_t i = 0; i < size; ++i){
+                        print(buffer[i]);
+                    }
+
+                    print_line();
                 }
             } else {
                 printf("cat: error: %s\n", std::error_message(content_result.error()));

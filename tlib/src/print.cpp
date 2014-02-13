@@ -107,6 +107,11 @@ void print_line(size_t v){
     print_line();
 }
 
+void print_line(const std::string& s){
+    print(s);
+    print_line();
+}
+
 std::string vsprintf(const std::string& format, va_list va){
     std::string s(format.size());
 
