@@ -815,11 +815,15 @@ size_t scheduler::register_new_handle(const std::string& path){
 }
 
 void scheduler::release_handle(size_t fd){
-    pcb[current_pid].handles[fd] = nullptr;
+    pcb[current_pid].handles[fd].clear();
 }
 
 bool scheduler::has_handle(size_t fd){
-    return pcb[current_pid].handles.size() - 1 <= fd;
+    if(fd < pcb[current_pid].handles.size()){
+        return pcb[current_pid].handles[fd].empty();
+    }
+
+    return false;
 }
 
 const std::string& scheduler::get_handle(size_t fd){
