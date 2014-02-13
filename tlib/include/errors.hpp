@@ -37,7 +37,7 @@ inline const char* error_message(size_t error){
         case ERROR_DIRECTORY:
             return "The file is a directory";
         case ERROR_INVALID_FILE_DESCRIPTOR:
-            return "Invalid file descritor";
+            return "Invalid file descriptor";
         default:
             return "Unknonwn error";
     }
