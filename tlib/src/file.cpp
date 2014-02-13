@@ -42,3 +42,17 @@ std::expected<stat_info> stat(size_t fd){
         return std::make_expected<stat_info>(info);
     }
 }
+
+std::expected<size_t> read(size_t fd, char* buffer, size_t max){
+    int64_t code;
+    asm volatile("mov rax, 303; mov rbx, %[fd]; mov rcx, %[buffer]; mov rdx, %[max]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [fd] "g" (fd), [buffer] "g" (reinterpret_cast<size_t>(buffer)), [max] "g" (max)
+        : "rax", "rbx", "rcx", "rdx");
+
+    if(code < 0){
+        return std::make_expected_from_error<size_t, size_t>(-code);
+    } else {
+        return std::make_expected<size_t>(code);
+    }
+}
