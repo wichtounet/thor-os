@@ -28,6 +28,8 @@ public:
     typedef CharT*             iterator;
     typedef const CharT*       const_iterator;
 
+    static constexpr const size_t npos = -1;
+
 private:
     size_t _size;
     size_t _capacity;
@@ -225,6 +227,16 @@ public:
 
     const CharT& operator[](size_t i) const {
         return _data[i];
+    }
+
+    size_t find(char c) const {
+        for(size_t i = 0; i < size(); ++i){
+            if(_data[i] == c){
+                return i;
+            }
+        }
+
+        return npos;
     }
 
     //Operators
