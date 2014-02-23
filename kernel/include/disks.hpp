@@ -80,6 +80,7 @@ bool mkdir(const std::string& directory);
 bool touch(const std::string& file);
 bool rm(const std::string& file);
 std::string read_file(const std::string& file);
+std::string read_file(const std::string& file, const std::vector<std::string>& path);
 
 const disk_descriptor* mounted_disk();
 const partition_descriptor* mounted_partition();
