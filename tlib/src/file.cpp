@@ -68,3 +68,10 @@ std::string current_working_directory(){
 
     return {buffer};
 }
+
+void set_current_working_directory(const std::string& directory){
+    asm volatile("mov rax, 305; mov rbx, %[buffer]; int 50;"
+        : /* No outputs */
+        : [buffer] "g" (reinterpret_cast<size_t>(directory.c_str()))
+        : "rax", "rbx");
+}

@@ -1,6 +1,6 @@
 .PHONY: dist default clean force_look
 
-PROGRAMS=one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which pwd
+PROGRAMS=one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which pwd cd
 
 default: dist
 

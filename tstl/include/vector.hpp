@@ -50,15 +50,15 @@ public:
             data = nullptr;
         }
 
-        _size = rhs._size;
-        _capacity = rhs._capacity;
-
-        if(!rhs.empty()){
+        if(_capacity < rhs._capacity){
+            _capacity = rhs._capacity;
             data = new T[_capacity];
+        }
 
-            for(size_t i = 0; i < _size; ++i){
-                data[i] = rhs.data[i];
-            }
+        _size = rhs._size;
+
+        for(size_t i = 0; i < _size; ++i){
+            data[i] = rhs.data[i];
         }
 
         return *this;

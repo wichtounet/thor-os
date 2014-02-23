@@ -131,7 +131,7 @@ void sc_read(interrupt::syscall_regs* regs){
 }
 
 void sc_pwd(interrupt::syscall_regs* regs){
-    auto wd = scheduler::get_working_directory();
+    auto& wd = scheduler::get_working_directory();
 
     std::string path;
     path += '/';
@@ -151,6 +151,7 @@ void sc_pwd(interrupt::syscall_regs* regs){
 void sc_cwd(interrupt::syscall_regs* regs){
     auto p = reinterpret_cast<const char*>(regs->rbx);
     std::string path(p);
+
 
     auto cwd = std::split(path, '/');
     scheduler::set_working_directory(cwd);

@@ -19,5 +19,6 @@ void close(size_t fd);
 std::expected<stat_info> stat(size_t fd);
 
 std::string current_working_directory();
+void set_current_working_directory(const std::string& directory);
 
 #endif

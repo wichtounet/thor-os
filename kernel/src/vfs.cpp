@@ -29,22 +29,25 @@ int64_t vfs::open(const char* file_path){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
+    std::vector<std::string> path;
+
     if(file[0] != '/'){
-        return -std::ERROR_INVALID_FILE_PATH;
+        for(auto& part : scheduler::get_working_directory()){
+            path.push_back(part);
+        }
     }
 
     auto parts = std::split(file, '/');
-
-    if(parts.empty()){
-        return -std::ERROR_INVALID_FILE_PATH;
+    for(auto& part : parts){
+        path.push_back(part);
     }
 
-    auto last = parts.back();
-    parts.pop_back();
+    auto last = path.back();
+    path.pop_back();
 
     //TODO file search should be done entirely by the file system
 
-    auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), parts);
+    auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), path);
 
     for(auto& f : files){
         if(f.file_name == last){

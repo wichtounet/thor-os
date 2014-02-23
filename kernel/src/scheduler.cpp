@@ -25,7 +25,7 @@
 #include "physical_pointer.hpp"
 #include "mutex.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = true;
+constexpr const bool DEBUG_SCHEDULER = false;
 
 //Provided by task_switch.s
 extern "C" {
@@ -863,11 +863,23 @@ const std::string& scheduler::get_handle(size_t fd){
 }
 
 const std::vector<std::string>& scheduler::get_working_directory(){
+    k_print_line();
+    k_print_line("5");
+    k_print_line(pcb[current_pid].working_directory.size());
+    k_print_line();
     return pcb[current_pid].working_directory;
 }
 
 void scheduler::set_working_directory(const std::vector<std::string>& directory){
+    k_print_line();
+    k_print_line("3");
+    k_print_line(directory.size());
+    k_print_line();
     pcb[current_pid].working_directory = directory;
+    k_print_line();
+    k_print_line("4");
+    k_print_line(pcb[current_pid].working_directory.size());
+    k_print_line();
 }
 
 //Provided for task_switch.s
