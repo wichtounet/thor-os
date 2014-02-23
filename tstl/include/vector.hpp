@@ -34,9 +34,33 @@ public:
     vector() : data(nullptr), _size(0), _capacity(0) {}
     explicit vector(uint64_t c) : data(new T[c]), _size(0), _capacity(c) {}
 
-    // Disable copy for now
-    vector(const vector& rhs) = delete;
-    vector& operator=(const vector& rhs) = delete;
+    vector(const vector& rhs) : data(nullptr), _size(rhs._size), _capacity(rhs._capacity) {
+        if(!rhs.empty()){
+            data = new T[_capacity];
+
+            for(size_t i = 0; i < _size; ++i){
+                data[i] = rhs.data[i];
+            }
+        }
+    }
+
+    vector& operator=(const vector& rhs){
+        if(data && _capacity < rhs._capacity){
+            delete[] data;
+            data = nullptr;
+        }
+
+        _size = rhs._size;
+        _capacity = rhs._capacity;
+
+        if(!rhs.empty()){
+            data = new T[_capacity];
+
+            for(size_t i = 0; i < _size; ++i){
+                data[i] = rhs.data[i];
+            }
+        }
+    }
 
     //Move constructors
 
@@ -47,6 +71,10 @@ public:
     };
 
     vector& operator=(vector&& rhs){
+        if(data){
+            delete[] data;
+        }
+
         data = rhs.data;
         _size = rhs._size;
         _capacity = rhs._capacity;
