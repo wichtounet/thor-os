@@ -1,5 +1,7 @@
 .PHONY: default clean force_look
 
+PROGRAMS=one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which
+
 default: dist
 
 tlib/libtlib.a: force_look
@@ -47,7 +49,10 @@ stat: force_look tlib/libtlib.a
 cat: force_look tlib/libtlib.a
 	cd cat; $(MAKE) cat
 
-dist: one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat
+which: force_look tlib/libtlib.a
+	cd which; $(MAKE) which
+
+dist: $(PROGRAMS)
 	mkdir -p dist
 	cp one/a.out dist/one
 	cp hello/a.out dist/hello
@@ -63,6 +68,7 @@ dist: one hello long loop longone longtwo keyboard tsh cpuid shutdown reboot arg
 	cp args/args dist/
 	cp stat/stat dist/
 	cp cat/cat dist/
+	cp which/which dist/
 	strip dist/*
 
 force_look:
@@ -83,4 +89,5 @@ clean:
 	cd args; $(MAKE) clean
 	cd stat; $(MAKE) clean
 	cd cat; $(MAKE) clean
+	cd which; $(MAKE) clean
 	rm -rf dist
