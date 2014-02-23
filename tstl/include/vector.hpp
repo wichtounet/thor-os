@@ -60,6 +60,8 @@ public:
                 data[i] = rhs.data[i];
             }
         }
+
+        return *this;
     }
 
     //Move constructors
