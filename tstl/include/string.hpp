@@ -288,6 +288,30 @@ public:
     }
 };
 
+template<typename C>
+basic_string<C> operator+(const basic_string<C>& lhs, const basic_string<C>& rhs){
+    basic_string<C> result;
+    result += lhs;
+    result += rhs;
+    return std::move(result);
+}
+
+template<typename C>
+basic_string<C> operator+(const C* lhs, const basic_string<C>& rhs){
+    basic_string<C> result;
+    result += lhs;
+    result += rhs;
+    return std::move(result);
+}
+
+template<typename C>
+basic_string<C> operator+(const basic_string<C>& lhs, const C* rhs){
+    basic_string<C> result;
+    result += lhs;
+    result += rhs;
+    return std::move(result);
+}
+
 typedef basic_string<char> string;
 
 inline uint64_t parse(const char* it, const char* end){
