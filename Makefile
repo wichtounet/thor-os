@@ -28,8 +28,9 @@ thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin 
 	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
 	sudo /usr/sbin/mkdosfs -F32 /dev/loop0
 	sudo /bin/mount -t vfat /dev/loop0 mnt/fake/
+	sudo mkdir mnt/fake/bin/
 	sudo /bin/cp kernel/kernel.bin mnt/fake/
-	sudo /bin/cp programs/dist/* mnt/fake/
+	sudo /bin/cp programs/dist/* mnt/fake/bin/
 	sleep 0.1
 	sudo /bin/umount mnt/fake/
 	sudo /sbin/losetup -d /dev/loop0

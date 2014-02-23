@@ -104,7 +104,13 @@ int main(){
                         }
                     }
 
-                    auto result = exec_and_wait(params[0].c_str(), args);
+                    auto executable = params[0];
+
+                    if(executable[0] != '/'){
+                        executable = "/bin/" + executable;
+                    }
+
+                    auto result = exec_and_wait(executable.c_str(), args);
 
                     if(!result.valid()){
                         print("error: ");
