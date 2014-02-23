@@ -41,6 +41,9 @@ bool has_handle(size_t fd);
 void release_handle(size_t fd);
 const std::string& get_handle(size_t fd);
 
+const std::vector<std::string>& get_working_directory();
+void set_working_directory(const std::vector<std::string>& directory);
+
 } //end of namespace scheduler
 
 #endif

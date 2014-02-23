@@ -41,6 +41,7 @@ struct process_control_t {
     size_t rounds;
     size_t sleep_timeout;
     std::vector<std::string> handles;
+    std::vector<std::string> working_directory;
 };
 
 //The Process Control Block
@@ -859,6 +860,14 @@ bool scheduler::has_handle(size_t fd){
 
 const std::string& scheduler::get_handle(size_t fd){
     return pcb[current_pid].handles[fd];
+}
+
+const std::vector<std::string>& scheduler::get_working_directory(){
+    return pcb[current_pid].working_directory;
+}
+
+void scheduler::set_working_directory(const std::vector<std::string>& directory){
+    pcb[current_pid].working_directory = directory;
 }
 
 //Provided for task_switch.s

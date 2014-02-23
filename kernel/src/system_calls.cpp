@@ -130,6 +130,32 @@ void sc_read(interrupt::syscall_regs* regs){
     regs->rax = vfs::read(fd, buffer, max);
 }
 
+void sc_pwd(interrupt::syscall_regs* regs){
+    auto wd = scheduler::get_working_directory();
+
+    std::string path;
+    path += '/';
+
+    for(auto& part : wd){
+        path += part;
+        path += '/';
+    }
+
+    auto buffer = reinterpret_cast<char*>(regs->rbx);
+    for(int i = 0; i < path.size(); ++i){
+        buffer[i] = path[i];
+    }
+    buffer[path.size()] = '\0';
+}
+
+void sc_cwd(interrupt::syscall_regs* regs){
+    auto p = reinterpret_cast<const char*>(regs->rbx);
+    std::string path(p);
+
+    auto cwd = std::split(path, '/');
+    scheduler::set_working_directory(cwd);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -206,6 +232,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 303:
             sc_read(regs);
+            break;
+
+        case 304:
+            sc_pwd(regs);
+            break;
+
+        case 305:
+            sc_cwd(regs);
             break;
 
         case 0x666:
