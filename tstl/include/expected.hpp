@@ -330,6 +330,10 @@ expected& operator=(const expected& rhs){
         return contained_error();
     }
 
+    constexpr bool has_error(const error_type& e) const {
+        return contained_error() == e;
+    }
+
     constexpr exceptional<error_type> get_exceptional() const {
         return exceptional<error_type>(contained_error());
     }
