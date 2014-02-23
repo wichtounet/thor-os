@@ -56,3 +56,15 @@ std::expected<size_t> read(size_t fd, char* buffer, size_t max){
         return std::make_expected<size_t>(code);
     }
 }
+
+std::string current_working_directory(){
+    char buffer[128];
+    buffer[0] = '\0';
+
+    asm volatile("mov rax, 304; mov rbx, %[buffer]; int 50;"
+        : /* No outputs */
+        : [buffer] "g" (reinterpret_cast<size_t>(buffer))
+        : "rax", "rbx");
+
+    return {buffer};
+}

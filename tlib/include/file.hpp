@@ -18,4 +18,6 @@ std::expected<size_t> read(size_t fd, char* buffer, size_t max);
 void close(size_t fd);
 std::expected<stat_info> stat(size_t fd);
 
+std::string current_working_directory();
+
 #endif

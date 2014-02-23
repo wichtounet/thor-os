@@ -23,4 +23,5 @@ programs/loop/loop
 programs/keyboard/keyboard
 programs/longtwo/longtwo
 programs/longone/longone
+programs/pwd/pwd
 programs/dist/
