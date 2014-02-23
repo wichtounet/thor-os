@@ -1,15 +1,15 @@
 .PHONY: default clean
 
-default: a.out
+default: one
 
 include ../../cpp.mk
 
 %.cpp.o: src/%.cpp
 	$(CC) -c $< -o $@ $(PROGRAM_FLAGS)
 
-a.out: main.cpp.o
-	$(CC) -o a.out main.cpp.o $(PROGRAM_LINK_FLAGS)
+one: main.cpp.o
+	$(CC) -o one main.cpp.o $(PROGRAM_LINK_FLAGS)
 
 clean:
 	rm -f *.cpp.o
-	rm -rf a.out
+	rm -rf one
