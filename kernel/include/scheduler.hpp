@@ -36,10 +36,10 @@ void reschedule();
 
 void sleep_ms(pid_t pid, size_t time);
 
-size_t register_new_handle(const std::string& path);
+size_t register_new_handle(const std::vector<std::string>& path);
+const std::vector<std::string>& get_handle(size_t fd);
 bool has_handle(size_t fd);
 void release_handle(size_t fd);
-const std::string& get_handle(size_t fd);
 
 const std::vector<std::string>& get_working_directory();
 void set_working_directory(const std::vector<std::string>& directory);

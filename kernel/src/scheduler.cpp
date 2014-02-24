@@ -40,7 +40,7 @@ struct process_control_t {
     scheduler::process_state state;
     size_t rounds;
     size_t sleep_timeout;
-    std::vector<std::string> handles;
+    std::vector<std::vector<std::string>> handles;
     std::vector<std::string> working_directory;
 };
 
@@ -654,6 +654,11 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
 
     queue_process(process.pid);
 
+    pcb[process.pid].working_directory.clear();
+    for(auto& p : pcb[current_pid].working_directory){
+        pcb[process.pid].working_directory.push_back(p);
+    }
+
     return process.pid;
 }
 
@@ -678,7 +683,6 @@ void scheduler::sbrk(size_t inc){
 
     //Map the memory inside the process memory space
     if(!paging::user_map_pages(process, virtual_start, physical, pages)){
-        k_print_line("impossible");
         physical_allocator::free(physical, pages);
         return;
     }
@@ -836,7 +840,7 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     reschedule();
 }
 
-size_t scheduler::register_new_handle(const std::string& path){
+size_t scheduler::register_new_handle(const std::vector<std::string>& path){
     pcb[current_pid].handles.push_back(path);
 
     return pcb[current_pid].handles.size() - 1;
@@ -854,7 +858,7 @@ bool scheduler::has_handle(size_t fd){
     return false;
 }
 
-const std::string& scheduler::get_handle(size_t fd){
+const std::vector<std::string>& scheduler::get_handle(size_t fd){
     return pcb[current_pid].handles[fd];
 }
 

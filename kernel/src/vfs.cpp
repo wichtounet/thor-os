@@ -51,7 +51,8 @@ int64_t vfs::open(const char* file_path){
 
     for(auto& f : files){
         if(f.file_name == last){
-            return scheduler::register_new_handle(file);
+            path.push_back(last);
+            return scheduler::register_new_handle(path);
         }
     }
 
@@ -73,20 +74,21 @@ int64_t vfs::stat(size_t fd, stat_info& info){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto& path = scheduler::get_handle(fd);
+    if(scheduler::get_handle(fd).empty()){
+    }
 
-    auto parts = std::split(path, '/');
+    auto path = scheduler::get_handle(fd);
 
-    if(parts.empty()){
+    if(path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto last = parts.back();
-    parts.pop_back();
+    auto last = path.back();
+    path.pop_back();
 
     //TODO file search should be done entirely by the file system
 
-    auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), parts);
+    auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), path);
 
     for(auto& f : files){
         if(f.file_name == last){
@@ -125,20 +127,18 @@ int64_t vfs::read(size_t fd, char* buffer, size_t max){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto& path = scheduler::get_handle(fd);
+    auto path = scheduler::get_handle(fd);
 
-    auto parts = std::split(path, '/');
-
-    if(parts.empty()){
+    if(path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto last = parts.back();
-    parts.pop_back();
+    auto last = path.back();
+    path.pop_back();
 
     //TODO file search should be done entirely by the file system
 
-    auto content = fat32::read_file(*disks::mounted_disk(), *disks::mounted_partition(), parts, last);
+    auto content = fat32::read_file(*disks::mounted_disk(), *disks::mounted_partition(), path, last);
 
     if(content.empty()){
         return 0;

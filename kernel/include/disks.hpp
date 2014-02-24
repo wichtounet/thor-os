@@ -76,6 +76,10 @@ void unmount();
 std::vector<file> ls();
 uint64_t free_size();
 
+//TODO All the pathes should be absolute
+//TODO Only parameter should be used not one for path and one for file (same
+//foes for fat32)
+
 bool mkdir(const std::string& directory);
 bool touch(const std::string& file);
 bool rm(const std::string& file);

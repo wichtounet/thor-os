@@ -107,6 +107,8 @@ void sc_open(interrupt::syscall_regs* regs){
     auto file = reinterpret_cast<char*>(regs->rbx);
 
     regs->rax = vfs::open(file);
+
+    k_printf("rax=%d\n", static_cast<int64_t>(regs->rax));
 }
 
 void sc_close(interrupt::syscall_regs* regs){
