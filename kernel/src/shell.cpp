@@ -596,65 +596,6 @@ void rm_command(const std::vector<std::string>& params){
     }
 }
 
-void readelf_command(const std::vector<std::string>& params){
-    auto content = disks::read_file(params[1]);
-
-    if(!elf::is_valid(content)){
-        k_print_line("readelf: This file is not an ELF file or not in ELF64 format");
-
-        return;
-    }
-
-    auto buffer = content.c_str();
-    auto header = reinterpret_cast<elf::elf_header*>(buffer);
-
-    k_printf("Number of Program Headers: %u\n", static_cast<uint64_t>(header->e_phnum));
-    k_printf("Number of Section Headers: %u\n", static_cast<uint64_t>(header->e_shnum));
-
-    auto program_header_table = reinterpret_cast<elf::program_header*>(buffer + header->e_phoff);
-    auto section_header_table = reinterpret_cast<elf::section_header*>(buffer + header->e_shoff);
-
-    auto& string_table_header = section_header_table[header->e_shstrndx];
-    auto string_table = buffer + string_table_header.sh_offset;
-
-    for(size_t p = 0; p < header->e_phnum; ++p){
-        auto& p_header = program_header_table[p];
-
-        k_printf("Program header %u\n", p);
-        k_printf("\tVirtual Address: %h\n", p_header.p_paddr);
-        k_printf("\tMSize: %u\t", p_header.p_memsz);
-        k_printf("\tFSize: %u\t Offset: %u \n", p_header.p_filesize, p_header.p_offset);
-    }
-
-    for(size_t s = 0; s < header->e_shnum; ++s){
-        auto& s_header = section_header_table[s];
-
-        k_printf("Section \"%s\" (", &string_table[s_header.sh_name]);
-
-        if(s_header.sh_flags & 0x1){
-            k_print(" W");
-        }
-
-        if(s_header.sh_flags & 0x2){
-            k_print(" A");
-        }
-
-        if(s_header.sh_flags & 0x4){
-            k_print(" X");
-        }
-
-        if(s_header.sh_flags & 0x0F000000){
-            k_print(" OS");
-        }
-
-        if(s_header.sh_flags & 0xF0000000){
-            k_print(" CPU");
-        }
-        k_print_line(")");
-        k_printf("\tAddress: %h Size: %u Offset: %u\n", s_header.sh_addr, s_header.sh_size, s_header.sh_offset);
-    }
-}
-
 void exec_command(const std::vector<std::string>&){
     //Fake exec just to start() the scheduler
     std::vector<std::string> params;
