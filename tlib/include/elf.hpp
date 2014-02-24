@@ -54,8 +54,7 @@ struct section_header {
     uint64_t sh_entsize;
 }__attribute__((packed));
 
-inline bool is_valid(const std::string& content){
-    auto buffer = content.c_str();
+inline bool is_valid(const char* buffer){
     auto header = reinterpret_cast<const elf::elf_header*>(buffer);
 
     //Test if ELF file

@@ -13,15 +13,16 @@
 
 namespace {
 
-void readelf(std::string& content){
-    if(!elf::is_valid(content)){
+void readelf(char* buffer){
+    if(!elf::is_valid(buffer)){
         print_line("readelf: This file is not an ELF file or not in ELF64 format");
 
         return;
     }
 
-    auto buffer = content.c_str();
     auto header = reinterpret_cast<elf::elf_header*>(buffer);
+
+    printf("%h\n", reinterpret_cast<size_t>(buffer));
 
     printf("Number of Program Headers: %u\n", static_cast<uint64_t>(header->e_phnum));
     printf("Number of Section Headers: %u\n", static_cast<uint64_t>(header->e_shnum));
@@ -100,9 +101,7 @@ int main(int argc, char* argv[]){
                         if(*content_result != size){
                             //TODO Read more
                         } else {
-                            std::string content(buffer);
-
-                            readelf(content);
+                            readelf(buffer);
                         }
                     } else {
                         printf("readelf: error: %s\n", std::error_message(content_result.error()));

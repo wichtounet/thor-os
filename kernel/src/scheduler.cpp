@@ -627,15 +627,15 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
         return -std::ERROR_NOT_EXISTS;
     }
 
-    if(!elf::is_valid(content)){
+    auto buffer = content.c_str();
+
+    if(!elf::is_valid(buffer)){
         if(DEBUG_SCHEDULER){
             k_print_line("Not a valid file");
         }
 
         return -std::ERROR_NOT_EXECUTABLE;
     }
-
-    auto buffer = content.c_str();
 
     auto& process = new_process();
 

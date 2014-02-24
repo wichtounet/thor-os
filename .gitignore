@@ -25,5 +25,6 @@ programs/longtwo/longtwo
 programs/longone/longone
 programs/pwd/pwd
 programs/which/which
+programs/readelf/readelf
 programs/cd/cd
 programs/dist/
