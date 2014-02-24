@@ -66,7 +66,6 @@ void free_command(const std::vector<std::string>& params);
 void mkdir_command(const std::vector<std::string>& params);
 void rm_command(const std::vector<std::string>& params);
 void touch_command(const std::vector<std::string>& params);
-void readelf_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
 void paginginfo_command(const std::vector<std::string>& params);
@@ -96,7 +95,6 @@ command_definition commands[23] = {
     {"mkdir", mkdir_command},
     {"touch", touch_command},
     {"rm", rm_command},
-    {"readelf", readelf_command},
     {"exec", exec_command},
     {"vesainfo", vesainfo_command},
     {"paginginfo", paginginfo_command},
@@ -599,25 +597,7 @@ void rm_command(const std::vector<std::string>& params){
 }
 
 void readelf_command(const std::vector<std::string>& params){
-    if(params.size() < 2){
-        k_print_line("readelf: Need the name of the executable to read");
-
-        return;
-    }
-
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
     auto content = disks::read_file(params[1]);
-
-    if(content.empty()){
-        k_print_line("readelf: The file does not exist or is empty");
-
-        return;
-    }
 
     if(!elf::is_valid(content)){
         k_print_line("readelf: This file is not an ELF file or not in ELF64 format");
