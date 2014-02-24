@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include <print.hpp>
+#include <file.hpp>
 #include <system.hpp>
 #include <string.hpp>
 #include <algorithms.hpp>
@@ -25,17 +26,21 @@ void exit_command(const std::vector<std::string>& params);
 void echo_command(const std::vector<std::string>& params);
 void sleep_command(const std::vector<std::string>& params);
 void clear_command(const std::vector<std::string>& params);
+void cd_command(const std::vector<std::string>& params);
+void pwd_command(const std::vector<std::string>& params);
 
 struct command_definition {
     const char* name;
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[4] = {
+command_definition commands[6] = {
     {"exit", exit_command},
     {"echo", echo_command},
     {"sleep", sleep_command},
     {"clear", clear_command},
+    {"cd", cd_command},
+    {"pwd", pwd_command},
 };
 
 void exit_command(const std::vector<std::string>&){
@@ -61,6 +66,52 @@ void sleep_command(const std::vector<std::string>& params){
 
 void clear_command(const std::vector<std::string>&){
     clear();
+}
+
+void cd_command(const std::vector<std::string>& params){
+    if(params.size() == 1){
+        print_line("Usage: cd file_path");
+        return;
+    }
+
+    auto& path = params[1];
+
+    auto fd = open(path.c_str());
+
+    if(fd.valid()){
+        auto info = stat(*fd);
+
+        if(info.valid()){
+            if(!(info->flags & STAT_FLAG_DIRECTORY)){
+                print_line("cat: error: Is not a directory");
+            } else {
+                auto cwd = current_working_directory();
+
+                if(path[0] == '/'){
+                    cwd = "/";
+                }
+
+                auto parts = std::split(path, '/');
+                for(auto& part : parts){
+                    cwd += part;
+                    cwd += '/';
+                }
+
+                set_current_working_directory(cwd);
+            }
+        } else {
+            printf("cd: error: %s\n", std::error_message(info.error()));
+        }
+
+        close(*fd);
+    } else {
+        printf("cd: error: %s\n", std::error_message(fd.error()));
+    }
+}
+
+void pwd_command(const std::vector<std::string>&){
+    auto cwd = current_working_directory();
+    print_line(cwd);
 }
 
 } //end of anonymous namespace
