@@ -15,6 +15,7 @@
 
 std::expected<size_t> open(const char* file, size_t flags = 0);
 int64_t mkdir(const char* file);
+int64_t rm(const char* file);
 std::expected<size_t> read(size_t fd, char* buffer, size_t max);
 void close(size_t fd);
 std::expected<stat_info> stat(size_t fd);

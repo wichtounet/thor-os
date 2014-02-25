@@ -119,6 +119,30 @@ int64_t vfs::mkdir(const char* file_path){
     }
 }
 
+int64_t vfs::rm(const char* file_path){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        return -std::ERROR_NOTHING_MOUNTED;
+    }
+
+    std::string file(file_path);
+
+    if(file.empty()){
+        return -std::ERROR_INVALID_FILE_PATH;
+    }
+
+    auto path = get_path(file_path);
+
+    auto last = path.back();
+    path.pop_back();
+
+    bool success = fat32::rm(*disks::mounted_disk(), *disks::mounted_partition(), path, last);
+    if(!success){
+        return -std::ERROR_FAILED;
+    } else {
+        return 0;
+    }
+}
+
 int64_t vfs::stat(size_t fd, stat_info& info){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         return -std::ERROR_NOTHING_MOUNTED;

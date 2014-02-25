@@ -163,6 +163,12 @@ void sc_mkdir(interrupt::syscall_regs* regs){
     regs->rax = vfs::mkdir(file);
 }
 
+void sc_rm(interrupt::syscall_regs* regs){
+    auto file = reinterpret_cast<char*>(regs->rbx);
+
+    regs->rax = vfs::rm(file);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -251,6 +257,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 306:
             sc_mkdir(regs);
+            break;
+
+        case 307:
+            sc_rm(regs);
             break;
 
         case 0x666:

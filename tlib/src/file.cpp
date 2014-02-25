@@ -30,6 +30,15 @@ int64_t mkdir(const char* file){
     return result;
 }
 
+int64_t rm(const char* file){
+    int64_t result;
+    asm volatile("mov rax, 307; mov rbx, %[path]; int 50; mov %[result], rax"
+        : [result] "=m" (result)
+        : [path] "g" (reinterpret_cast<size_t>(file))
+        : "rax", "rbx");
+    return result;
+}
+
 void close(size_t fd){
     asm volatile("mov rax, 302; mov rbx, %[fd]; int 50;"
         : /* No outputs */
