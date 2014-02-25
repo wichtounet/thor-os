@@ -12,13 +12,22 @@ std::expected<size_t> open(const char* file, size_t flags){
     asm volatile("mov rax, 300; mov rbx, %[path]; mov rcx, %[flags]; int 50; mov %[fd], rax"
         : [fd] "=m" (fd)
         : [path] "g" (reinterpret_cast<size_t>(file)), [flags] "g" (flags)
-        : "rax", "rbx");
+        : "rax", "rbx", "rcx");
 
     if(fd < 0){
         return std::make_expected_from_error<size_t, size_t>(-fd);
     } else {
         return std::make_expected<size_t>(fd);
     }
+}
+
+int64_t mkdir(const char* file){
+    int64_t result;
+    asm volatile("mov rax, 306; mov rbx, %[path]; int 50; mov %[result], rax"
+        : [result] "=m" (result)
+        : [path] "g" (reinterpret_cast<size_t>(file))
+        : "rax", "rbx");
+    return result;
 }
 
 void close(size_t fd){
