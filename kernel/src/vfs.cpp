@@ -11,6 +11,7 @@
 
 #include "vfs.hpp"
 #include "scheduler.hpp"
+#include "flags.hpp"
 
 #include "fat32.hpp"
 
@@ -18,7 +19,9 @@
 
 #include "console.hpp"
 
-int64_t vfs::open(const char* file_path){
+//TODO Remove the direct accesses to fat32
+
+int64_t vfs::open(const char* file_path, size_t flags){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         return -std::ERROR_NOTHING_MOUNTED;
     }
@@ -45,18 +48,29 @@ int64_t vfs::open(const char* file_path){
     auto last = path.back();
     path.pop_back();
 
-    //TODO file search should be done entirely by the file system
+    if(flags & std::OPEN_CREATE){
+        bool success = fat32::touch(*disks::mounted_disk(), *disks::mounted_partition(), path, last);
 
-    auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), path);
-
-    for(auto& f : files){
-        if(f.file_name == last){
-            path.push_back(last);
+        if(success){
             return scheduler::register_new_handle(path);
+        } else {
+            //TODO Use better error directly from touch
+            return std::ERROR_FAILED;
         }
-    }
+    } else {
+        //TODO file search should be done entirely by the file system
 
-    return -std::ERROR_NOT_EXISTS;
+        auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), path);
+
+        for(auto& f : files){
+            if(f.file_name == last){
+                path.push_back(last);
+                return scheduler::register_new_handle(path);
+            }
+        }
+
+        return -std::ERROR_NOT_EXISTS;
+    }
 }
 
 void vfs::close(size_t fd){

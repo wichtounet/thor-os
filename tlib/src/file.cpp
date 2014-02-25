@@ -7,11 +7,11 @@
 
 #include <file.hpp>
 
-std::expected<size_t> open(const char* file){
+std::expected<size_t> open(const char* file, size_t flags){
     int64_t fd;
-    asm volatile("mov rax, 300; mov rbx, %[path]; int 50; mov %[fd], rax"
+    asm volatile("mov rax, 300; mov rbx, %[path]; mov rcx, %[flags]; int 50; mov %[fd], rax"
         : [fd] "=m" (fd)
-        : [path] "g" (reinterpret_cast<size_t>(file))
+        : [path] "g" (reinterpret_cast<size_t>(file)), [flags] "g" (flags)
         : "rax", "rbx");
 
     if(fd < 0){
@@ -20,6 +20,7 @@ std::expected<size_t> open(const char* file){
         return std::make_expected<size_t>(fd);
     }
 }
+
 void close(size_t fd){
     asm volatile("mov rax, 302; mov rbx, %[fd]; int 50;"
         : /* No outputs */

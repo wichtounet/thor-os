@@ -5,21 +5,16 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef VFS_H
-#define VFS_H
+#ifndef FLAGS_H
+#define FLAGS_H
 
-#include <stat_info.hpp>
+#include <types.hpp>
 
-//TODO Once userspace is done, integrate parts of disks.hpp here
+//TODO Rename this namespace
+namespace std {
 
-namespace vfs {
+constexpr const size_t OPEN_CREATE = 0x1;
 
-int64_t open(const char* file, size_t flags);
-void close(size_t fd);
-int64_t stat(size_t fd, stat_info& info);
-
-int64_t read(size_t fd, char* buffer, size_t max);
-
-} //end of namespace vfs
+}
 
 #endif

@@ -21,6 +21,7 @@ constexpr const size_t ERROR_NOTHING_MOUNTED = 4;
 constexpr const size_t ERROR_INVALID_FILE_PATH = 5;
 constexpr const size_t ERROR_DIRECTORY = 6;
 constexpr const size_t ERROR_INVALID_FILE_DESCRIPTOR= 7;
+constexpr const size_t ERROR_FAILED= 8;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -38,6 +39,8 @@ inline const char* error_message(size_t error){
             return "The file is a directory";
         case ERROR_INVALID_FILE_DESCRIPTOR:
             return "Invalid file descriptor";
+        case ERROR_FAILED:
+            return "Failed";
         default:
             return "Unknonwn error";
     }
