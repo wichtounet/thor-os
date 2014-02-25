@@ -26,5 +26,6 @@ programs/longone/longone
 programs/pwd/pwd
 programs/which/which
 programs/readelf/readelf
+programs/touch/touch
 programs/cd/cd
 programs/dist/
