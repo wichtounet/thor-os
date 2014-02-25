@@ -105,8 +105,9 @@ void sc_shutdown(interrupt::syscall_regs*){
 
 void sc_open(interrupt::syscall_regs* regs){
     auto file = reinterpret_cast<char*>(regs->rbx);
+    auto flags = regs->rcx;
 
-    regs->rax = vfs::open(file);
+    regs->rax = vfs::open(file, flags);
 }
 
 void sc_close(interrupt::syscall_regs* regs){
