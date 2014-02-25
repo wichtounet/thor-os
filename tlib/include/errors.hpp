@@ -22,6 +22,7 @@ constexpr const size_t ERROR_INVALID_FILE_PATH = 5;
 constexpr const size_t ERROR_DIRECTORY = 6;
 constexpr const size_t ERROR_INVALID_FILE_DESCRIPTOR= 7;
 constexpr const size_t ERROR_FAILED= 8;
+constexpr const size_t ERROR_EXISTS= 9;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -41,6 +42,8 @@ inline const char* error_message(size_t error){
             return "Invalid file descriptor";
         case ERROR_FAILED:
             return "Failed";
+        case ERROR_EXISTS:
+            return "The file exists";
         default:
             return "Unknonwn error";
     }

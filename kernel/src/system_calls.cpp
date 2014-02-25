@@ -153,9 +153,14 @@ void sc_cwd(interrupt::syscall_regs* regs){
     auto p = reinterpret_cast<const char*>(regs->rbx);
     std::string path(p);
 
-
     auto cwd = std::split(path, '/');
     scheduler::set_working_directory(cwd);
+}
+
+void sc_mkdir(interrupt::syscall_regs* regs){
+    auto file = reinterpret_cast<char*>(regs->rbx);
+
+    regs->rax = vfs::mkdir(file);
 }
 
 } //End of anonymous namespace
@@ -242,6 +247,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 305:
             sc_cwd(regs);
+            break;
+
+        case 306:
+            sc_mkdir(regs);
             break;
 
         case 0x666:

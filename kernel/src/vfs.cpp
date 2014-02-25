@@ -21,16 +21,8 @@
 
 //TODO Remove the direct accesses to fat32
 
-int64_t vfs::open(const char* file_path, size_t flags){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        return -std::ERROR_NOTHING_MOUNTED;
-    }
-
+std::vector<std::string> get_path(const char* file_path){
     std::string file(file_path);
-
-    if(file.empty()){
-        return -std::ERROR_INVALID_FILE_PATH;
-    }
 
     std::vector<std::string> path;
 
@@ -44,6 +36,22 @@ int64_t vfs::open(const char* file_path, size_t flags){
     for(auto& part : parts){
         path.push_back(part);
     }
+
+    return std::move(path);
+}
+
+int64_t vfs::open(const char* file_path, size_t flags){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        return -std::ERROR_NOTHING_MOUNTED;
+    }
+
+    std::string file(file_path);
+
+    if(file.empty()){
+        return -std::ERROR_INVALID_FILE_PATH;
+    }
+
+    auto path = get_path(file_path);
 
     auto last = path.back();
     path.pop_back();
@@ -76,6 +84,38 @@ int64_t vfs::open(const char* file_path, size_t flags){
 void vfs::close(size_t fd){
     if(scheduler::has_handle(fd)){
         scheduler::release_handle(fd);
+    }
+}
+
+int64_t vfs::mkdir(const char* file_path){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        return -std::ERROR_NOTHING_MOUNTED;
+    }
+
+    std::string file(file_path);
+
+    if(file.empty()){
+        return -std::ERROR_INVALID_FILE_PATH;
+    }
+
+    auto path = get_path(file_path);
+
+    auto last = path.back();
+    path.pop_back();
+
+    auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), path);
+
+    for(auto& f : files){
+        if(f.file_name == last){
+            return -std::ERROR_EXISTS;
+        }
+    }
+
+    bool success = fat32::mkdir(*disks::mounted_disk(), *disks::mounted_partition(), path, last);
+    if(!success){
+        return -std::ERROR_FAILED;
+    } else {
+        return 0;
     }
 }
 

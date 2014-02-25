@@ -15,10 +15,11 @@
 namespace vfs {
 
 int64_t open(const char* file, size_t flags);
-void close(size_t fd);
 int64_t stat(size_t fd, stat_info& info);
-
+int64_t mkdir(const char* file);
 int64_t read(size_t fd, char* buffer, size_t max);
+
+void close(size_t fd);
 
 } //end of namespace vfs
 
