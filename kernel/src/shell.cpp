@@ -60,12 +60,7 @@ void partitions_command(const std::vector<std::string>& params);
 void mount_command(const std::vector<std::string>& params);
 void unmount_command(const std::vector<std::string>& params);
 void ls_command(const std::vector<std::string>& params);
-void cd_command(const std::vector<std::string>& params);
-void pwd_command(const std::vector<std::string>& params);
 void free_command(const std::vector<std::string>& params);
-void mkdir_command(const std::vector<std::string>& params);
-void rm_command(const std::vector<std::string>& params);
-void touch_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
 void paginginfo_command(const std::vector<std::string>& params);
@@ -75,7 +70,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[23] = {
+command_definition commands[18] = {
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
@@ -90,11 +85,6 @@ command_definition commands[23] = {
     {"unmount", unmount_command},
     {"ls", ls_command},
     {"free", free_command},
-    {"cd", cd_command},
-    {"pwd", pwd_command},
-    {"mkdir", mkdir_command},
-    {"touch", touch_command},
-    {"rm", rm_command},
     {"exec", exec_command},
     {"vesainfo", vesainfo_command},
     {"paginginfo", paginginfo_command},
@@ -461,139 +451,6 @@ void free_command(const std::vector<std::string>&){
     }
 
     k_printf("Free size: %m\n", disks::free_size());
-}
-
-void pwd_command(const std::vector<std::string>&){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    auto& cd = disks::current_directory();
-
-    k_print('/');
-
-    for(auto& p : cd){
-        k_print(p);
-        k_print('/');
-    }
-
-    k_print_line();
-}
-
-std::optional<disks::file> find_file(const std::string& name){
-    auto files = disks::ls();
-
-    for(auto& file : files){
-        if(file.file_name == name){
-            return {file};
-        }
-    }
-
-    return {};
-}
-
-void cd_command(const std::vector<std::string>& params){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    //If there are no params, go to /
-    if(params.size() == 1){
-        disks::current_directory().clear();
-    } else {
-        if(params[1] == ".."){
-            if(disks::current_directory().size() > 0){
-                disks::current_directory().pop_back();
-            }
-        } else {
-            auto file = find_file(params[1]);
-
-            if(file){
-                if(file->directory){
-                    disks::current_directory().push_back(params[1]);
-                } else {
-                    k_print("cd: Not a directory: ");
-                    k_print_line(params[1]);
-                }
-            } else {
-                k_print("cd: No such file or directory: ");
-                k_print_line(params[1]);
-            }
-        }
-    }
-}
-
-void mkdir_command(const std::vector<std::string>& params){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    if(params.size() == 1){
-        k_print_line("No directory provided");
-    } else {
-        auto& directory_name = params[1];
-        auto directory = find_file(directory_name);
-
-        if(directory){
-            k_printf("mkdir: Cannot create directory '%s': File exists\n", directory_name.c_str());
-        } else {
-            if(!disks::mkdir(directory_name)){
-                k_print_line("Directory creation failed");
-            }
-        }
-    }
-}
-
-void touch_command(const std::vector<std::string>& params){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    if(params.size() == 1){
-        k_print_line("No file name provided");
-    } else {
-        auto& file_name = params[1];
-        auto file = find_file(file_name);
-
-        if(file){
-            k_printf("touch: Cannot create file '%s': File exists\n", file_name.c_str());
-        } else {
-            if(!disks::touch(file_name)){
-                k_print_line("File creation failed");
-            }
-        }
-    }
-}
-
-void rm_command(const std::vector<std::string>& params){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    if(params.size() == 1){
-        k_print_line("No file name provided");
-    } else {
-        auto& file_name = params[1];
-        auto file = find_file(file_name);
-
-        if(!file){
-            k_printf("rm: Cannot delete file '%s': No such file or directory\n", file_name.c_str());
-        } else {
-            if(!disks::rm(file_name)){
-                k_print_line("File removal failed");
-            }
-        }
-    }
 }
 
 void exec_command(const std::vector<std::string>&){
