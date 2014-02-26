@@ -362,7 +362,7 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
 
             file.created.day = entry.creation_date & 0x1F;
             file.created.month = (entry.creation_date >> 5) & 0xF;
-            file.created.year = entry.creation_date >> 9;
+            file.created.year = (entry.creation_date >> 9) + 1980;
 
             file.created.seconds = entry.creation_time & 0x1F;
             file.created.minutes = (entry.creation_time >> 5) & 0x3F;
@@ -735,8 +735,8 @@ cluster_entry* init_entry(cluster_entry* entry_ptr, const char* name, uint32_t c
     //Set the date and time of the entries
     entry.creation_time_seconds = 0;
 
-    entry.creation_time = datetime.second | datetime.minute << 5 | datetime.hour << 11;
-    entry.modification_time = datetime.second | datetime.minute << 5 | datetime.hour << 11;
+    entry.creation_time = datetime.seconds | datetime.minutes << 5 | datetime.hour << 11;
+    entry.modification_time = datetime.seconds | datetime.minutes << 5 | datetime.hour << 11;
 
     entry.creation_date = datetime.day | datetime.month << 5 | (datetime.year - 1980) << 9;
     entry.modification_date = datetime.day | datetime.month << 5 | (datetime.year - 1980) << 9;

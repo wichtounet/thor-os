@@ -49,7 +49,7 @@ int main(int argc, char* argv[]){
             print('.');
             print(info->created.month);
             print('.');
-            print(info->created.year + 1980);
+            print(info->created.year);
             print(' ');
 
             print(info->created.hour);
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
             print('.');
             print(info->modified.month);
             print('.');
-            print(1980+info->modified.year);
+            print(info->modified.year);
             print(' ');
 
             print(info->modified.hour);
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]){
             print('.');
             print(info->accessed.month);
             print('.');
-            print(1980+info->accessed.year);
+            print(info->accessed.year);
             print(' ');
 
             print(info->accessed.hour);

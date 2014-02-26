@@ -50,7 +50,6 @@ bool shift = false;
 void help_command(const std::vector<std::string>& params);
 void uptime_command(const std::vector<std::string>& params);
 void clear_command(const std::vector<std::string>& params);
-void date_command(const std::vector<std::string>& params);
 void echo_command(const std::vector<std::string>& params);
 void mmap_command(const std::vector<std::string>& params);
 void memory_command(const std::vector<std::string>& params);
@@ -70,11 +69,10 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[18] = {
+command_definition commands[17] = {
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
-    {"date", date_command},
     {"echo", echo_command},
     {"mmap", mmap_command},
     {"memory", memory_command},
@@ -216,12 +214,6 @@ void help_command(const std::vector<std::string>&){
 
 void uptime_command(const std::vector<std::string>&){
     k_printf("Uptime: %us\n", timer::seconds());
-}
-
-void date_command(const std::vector<std::string>&){
-    auto data = rtc::all_data();
-
-    k_printf("%u.%u.%u %u:%.2d:%.2d\n", data.day, data.month, data.year, data.hour, data.minute, data.second);
 }
 
 void echo_command(const std::vector<std::string>& params){
