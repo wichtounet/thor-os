@@ -57,6 +57,17 @@ void sleep_ms(size_t ms){
         : "rax", "rbx");
 }
 
+datetime local_date(){
+    datetime date_s;
+
+    asm volatile("mov rax, 400; mov rbx, %[buffer]; int 50; "
+        : /* No outputs */
+        : [buffer] "g" (reinterpret_cast<size_t>(&date_s))
+        : "rax", "rbx");
+
+    return date_s;
+}
+
 std::expected<size_t> exec_and_wait(const char* executable, const std::vector<std::string>& params){
     auto result = exec(executable, params);
 

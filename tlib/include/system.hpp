@@ -12,6 +12,7 @@
 #include <expected.hpp>
 #include <vector.hpp>
 #include <string.hpp>
+#include <datetime.hpp>
 
 void exit(size_t return_code) __attribute__((noreturn));
 
@@ -21,6 +22,8 @@ std::expected<size_t> exec_and_wait(const char* executable, const std::vector<st
 void await_termination(size_t pid);
 
 void sleep_ms(size_t ms);
+
+datetime local_date();
 
 void reboot();
 void shutdown();

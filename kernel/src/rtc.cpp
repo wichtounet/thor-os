@@ -100,5 +100,5 @@ datetime rtc::all_data(){
         full_year += 100;
     }
 
-    return {second, minute, hour, day, month, full_year};
+    return {full_year, month, day, hour, minute, second, 0, 0};
 }

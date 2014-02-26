@@ -12,6 +12,7 @@
 #include "terminal.hpp"
 #include "acpi.hpp"
 #include "vfs.hpp"
+#include "rtc.hpp"
 
 namespace {
 
@@ -169,6 +170,12 @@ void sc_rm(interrupt::syscall_regs* regs){
     regs->rax = vfs::rm(file);
 }
 
+void sc_datetime(interrupt::syscall_regs* regs){
+    auto date = reinterpret_cast<datetime*>(regs->rbx);
+
+    *date = rtc::all_data();
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -261,6 +268,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 307:
             sc_rm(regs);
+            break;
+
+        case 400:
+            sc_datetime(regs);
             break;
 
         case 0x666:

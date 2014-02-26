@@ -29,4 +29,5 @@ programs/readelf/readelf
 programs/touch/touch
 programs/mkdir/mkdir
 programs/rm/rm
+programs/date/date
 programs/dist/
