@@ -52,8 +52,14 @@ public:
 
     //Copy constructors
 
-    basic_string(const basic_string& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data(new CharT[_capacity]) {
-        std::copy_n(_data, rhs._data, _size + 1);
+    basic_string(const basic_string& rhs) : _size(rhs._size), _capacity(rhs._capacity) {
+        if(_capacity > 0){
+            _data = new CharT[_capacity];
+
+            std::copy_n(_data, rhs._data, _size + 1);
+        } else {
+            _data = nullptr;
+        }
     }
 
     basic_string& operator=(const basic_string& rhs){
