@@ -270,7 +270,8 @@ int64_t vfs::entries(size_t fd, char* buffer, size_t size){
         entry->length = file.file_name.size();
 
         if(i + 1 < files.size()){
-            entry->offset_next = file.file_name.size() + 1;
+            entry->offset_next = file.file_name.size() + 1 + 3 * 8;
+            position += entry->offset_next;
         } else {
             entry->offset_next = 0;
         }
