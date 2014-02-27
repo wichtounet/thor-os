@@ -230,7 +230,7 @@ int64_t vfs::read(size_t fd, char* buffer, size_t max){
     return i;
 }
 
-int64_t entries(size_t fd, char* buffer, size_t size){
+int64_t vfs::entries(size_t fd, char* buffer, size_t size){
     if(!disks::mounted_partition() || !disks::mounted_disk()){
         return -std::ERROR_NOTHING_MOUNTED;
     }

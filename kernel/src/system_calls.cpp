@@ -132,6 +132,14 @@ void sc_read(interrupt::syscall_regs* regs){
     regs->rax = vfs::read(fd, buffer, max);
 }
 
+void sc_entries(interrupt::syscall_regs* regs){
+    auto fd = regs->rbx;
+    auto buffer = reinterpret_cast<char*>(regs->rcx);
+    auto max = regs->rdx;
+
+    regs->rax = vfs::entries(fd, buffer, max);
+}
+
 void sc_pwd(interrupt::syscall_regs* regs){
     auto& wd = scheduler::get_working_directory();
 
@@ -144,7 +152,7 @@ void sc_pwd(interrupt::syscall_regs* regs){
     }
 
     auto buffer = reinterpret_cast<char*>(regs->rbx);
-    for(int i = 0; i < path.size(); ++i){
+    for(size_t i = 0; i < path.size(); ++i){
         buffer[i] = path[i];
     }
     buffer[path.size()] = '\0';
@@ -268,6 +276,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 307:
             sc_rm(regs);
+            break;
+
+        case 308:
+            sc_entries(regs);
             break;
 
         case 400:
