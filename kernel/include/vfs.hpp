@@ -9,6 +9,7 @@
 #define VFS_H
 
 #include <stat_info.hpp>
+#include <directory_entry.hpp>
 
 //TODO Once userspace is done, integrate parts of disks.hpp here
 
@@ -19,6 +20,7 @@ int64_t stat(size_t fd, stat_info& info);
 int64_t mkdir(const char* file);
 int64_t rm(const char* file);
 int64_t read(size_t fd, char* buffer, size_t max);
+int64_t entries(size_t fd, char* buffer, size_t size);
 
 void close(size_t fd);
 

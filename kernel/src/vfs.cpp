@@ -229,3 +229,56 @@ int64_t vfs::read(size_t fd, char* buffer, size_t max){
 
     return i;
 }
+
+int64_t entries(size_t fd, char* buffer, size_t size){
+    if(!disks::mounted_partition() || !disks::mounted_disk()){
+        return -std::ERROR_NOTHING_MOUNTED;
+    }
+
+    if(!scheduler::has_handle(fd)){
+        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+    }
+
+    auto path = scheduler::get_handle(fd);
+
+    if(path.empty()){
+        return -std::ERROR_INVALID_FILE_PATH;
+    }
+
+    //TODO file search should be done entirely by the file system
+
+    auto files = fat32::ls(*disks::mounted_disk(), *disks::mounted_partition(), path);
+
+    size_t total_size = 0;
+
+    for(auto& f : files){
+        total_size += sizeof(directory_entry) + f.file_name.size();
+    }
+
+    if(size < total_size){
+        return -std::ERROR_BUFFER_SMALL;
+    }
+
+    size_t position = 0;
+
+    for(size_t i = 0; i < files.size(); ++i){
+        auto& file = files[i];
+
+        auto entry = reinterpret_cast<directory_entry*>(buffer + position);
+
+        entry->type = 0; //TODO Fill that
+        entry->length = file.file_name.size();
+
+        if(i + 1 < files.size()){
+            entry->offset_next = file.file_name.size() + 1;
+        } else {
+            entry->offset_next = 0;
+        }
+
+        char* name_buffer = &(entry->name);
+        for(size_t j = 0; j < file.file_name.size(); ++j){
+            name_buffer[j] = file.file_name[j];
+        }
+        name_buffer[file.file_name.size()] = '\0';
+    }
+}
