@@ -173,7 +173,7 @@ uint32_t read_fat_value(fat32::dd disk, uint32_t cluster){
 
     std::unique_heap_array<uint32_t> fat_table(512 / sizeof(uint32_t));
     if(read_sectors(disk, fat_sector, 1, fat_table.get())){
-        uint64_t entry_offset = cluster % 512;
+        uint64_t entry_offset = cluster % (512 / sizeof(uint32_t));
         return fat_table[entry_offset] & 0x0FFFFFFF;
     } else {
         return 0;
