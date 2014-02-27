@@ -53,6 +53,11 @@ int64_t vfs::open(const char* file_path, size_t flags){
 
     auto path = get_path(file_path);
 
+    //Special handling for opening the root
+    if(path.empty()){
+        return scheduler::register_new_handle(path);
+    }
+
     auto last = path.back();
     path.pop_back();
 
@@ -157,8 +162,13 @@ int64_t vfs::stat(size_t fd, stat_info& info){
 
     auto path = scheduler::get_handle(fd);
 
+    //Special handling for root
     if(path.empty()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        //TODO Add file system support for stat of the root directory
+        info.size = 4096;
+        info.flags = STAT_FLAG_DIRECTORY;
+
+        return 0;
     }
 
     auto last = path.back();
@@ -240,10 +250,6 @@ int64_t vfs::entries(size_t fd, char* buffer, size_t size){
     }
 
     auto path = scheduler::get_handle(fd);
-
-    if(path.empty()){
-        return -std::ERROR_INVALID_FILE_PATH;
-    }
 
     //TODO file search should be done entirely by the file system
 

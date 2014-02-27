@@ -851,11 +851,7 @@ void scheduler::release_handle(size_t fd){
 }
 
 bool scheduler::has_handle(size_t fd){
-    if(fd < pcb[current_pid].handles.size()){
-        return !pcb[current_pid].handles[fd].empty();
-    }
-
-    return false;
+    return fd < pcb[current_pid].handles.size();
 }
 
 const std::vector<std::string>& scheduler::get_handle(size_t fd){
