@@ -281,4 +281,6 @@ int64_t vfs::entries(size_t fd, char* buffer, size_t size){
         }
         name_buffer[file.file_name.size()] = '\0';
     }
+
+    return total_size;
 }

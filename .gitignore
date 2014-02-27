@@ -30,4 +30,5 @@ programs/touch/touch
 programs/mkdir/mkdir
 programs/rm/rm
 programs/date/date
+programs/ls/ls
 programs/dist/
