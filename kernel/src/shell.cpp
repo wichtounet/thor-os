@@ -56,8 +56,6 @@ void memory_command(const std::vector<std::string>& params);
 void kallocdebug_command(const std::vector<std::string>& params);
 void disks_command(const std::vector<std::string>& params);
 void partitions_command(const std::vector<std::string>& params);
-void mount_command(const std::vector<std::string>& params);
-void unmount_command(const std::vector<std::string>& params);
 void free_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
@@ -68,7 +66,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[15] = {
+command_definition commands[13] = {
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
@@ -78,8 +76,6 @@ command_definition commands[15] = {
     {"kallocdebug", kallocdebug_command},
     {"disks", disks_command},
     {"partitions", partitions_command},
-    {"mount", mount_command},
-    {"unmount", unmount_command},
     {"free", free_command},
     {"exec", exec_command},
     {"vesainfo", vesainfo_command},
@@ -315,54 +311,6 @@ void partitions_command(const std::vector<std::string>& params){
     } else {
         k_printf("Disks %u does not exist\n", uuid);
     }
-}
-
-void mount_command(const std::vector<std::string>& params){
-    if(params.size() == 1){
-        auto md = disks::mounted_disk();
-        auto mp = disks::mounted_partition();
-
-        if(md && mp){
-            k_printf("%u:%u is mounted\n", md->uuid, mp->uuid);
-        } else {
-            k_print_line("Nothing is mounted");
-        }
-    } else {
-        if(params.size() != 3){
-            k_print_line("mount: Not enough params: mount disk partition");
-
-            return;
-        }
-
-        auto disk_uuid = parse(params[1]);
-        auto partition_uuid = parse(params[2]);
-
-        if(disks::disk_exists(disk_uuid)){
-            auto& disk = disks::disk_by_uuid(disk_uuid);
-
-            if(disk.type != disks::disk_type::ATA){
-                k_print_line("Only ATA disks are supported");
-            } else {
-                if(disks::partition_exists(disk, partition_uuid)){
-                    disks::mount(disk, partition_uuid);
-                } else {
-                    k_printf("Partition %u does not exist\n", partition_uuid);
-                }
-            }
-        } else {
-            k_printf("Disk %u does not exist\n", disk_uuid);
-        }
-    }
-}
-
-void unmount_command(const std::vector<std::string>& ){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    disks::unmount();
 }
 
 void free_command(const std::vector<std::string>&){

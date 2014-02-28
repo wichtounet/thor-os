@@ -204,16 +204,6 @@ void disks::mount(const disk_descriptor& disk, uint64_t uuid){
     }
 }
 
-void disks::unmount(){
-    _mounted_disk = nullptr;
-
-    if(_mounted_partition){
-        delete _mounted_partition;
-    }
-
-    _mounted_partition = nullptr;
-}
-
 const disks::disk_descriptor* disks::mounted_disk(){
     return _mounted_disk;
 }
