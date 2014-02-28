@@ -19,10 +19,33 @@
 
 #include "console.hpp"
 
+namespace {
+
+void mount_root(){
+    //TODO Get information about the root from a confgiuration file
+    mount(vfs::partition_type::FAT32, "/", "TODO");
+}
+
+} //end of anonymous namespace
+
 //TODO Remove the direct accesses to fat32
 
 void vfs::init(){
-    //TODO
+    mount_root();
+}
+
+int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){
+    //TODO In the future just delegates to the correct file system function
+    switch(type){
+        case vfs::partition_type::FAT32:
+            //TODO Generalize
+            disks::mount(disks::disk_by_uuid(0), 0);
+
+            return 0;
+
+        default:
+            return -1;
+    }
 }
 
 std::vector<std::string> get_path(const char* file_path){

@@ -23,6 +23,7 @@
 #include "gdt.hpp"
 #include "terminal.hpp"
 #include "scheduler.hpp"
+#include "vfs.hpp"
 
 extern "C" {
 
@@ -55,6 +56,9 @@ void  kernel_main(){
     //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();
+
+    //Init the virtual file system
+    vfs::init();
 
     //Try to init VESA
     if(vesa::vesa_enabled && !vesa::init()){

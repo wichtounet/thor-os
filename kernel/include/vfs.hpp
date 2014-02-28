@@ -29,6 +29,8 @@ int64_t rm(const char* file);
 int64_t read(size_t fd, char* buffer, size_t max);
 int64_t entries(size_t fd, char* buffer, size_t size);
 
+int64_t mount(partition_type type, const char* mount_point, const char* device);
+
 void close(size_t fd);
 
 } //end of namespace vfs
