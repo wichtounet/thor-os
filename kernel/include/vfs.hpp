@@ -15,6 +15,13 @@
 
 namespace vfs {
 
+enum class partition_type {
+    FAT32,
+    UNKNOWN
+};
+
+void init();
+
 int64_t open(const char* file, size_t flags);
 int64_t stat(size_t fd, stat_info& info);
 int64_t mkdir(const char* file);

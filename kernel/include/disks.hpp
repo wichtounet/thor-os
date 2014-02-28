@@ -14,6 +14,8 @@
 #include <vector.hpp>
 #include <string.hpp>
 
+#include "vfs.hpp"
+
 namespace disks {
 
 enum class disk_type {
@@ -27,14 +29,9 @@ struct disk_descriptor {
     void* descriptor;
 };
 
-enum class partition_type {
-    FAT32,
-    UNKNOWN
-};
-
 struct partition_descriptor {
     uint64_t uuid;
-    partition_type type;
+    vfs::partition_type type;
     uint64_t start;
     uint64_t sectors;
 };
@@ -64,7 +61,7 @@ const disk_descriptor& disk_by_index(uint64_t index);
 const disk_descriptor& disk_by_uuid(uint64_t uuid);
 
 const char* disk_type_to_string(disk_type type);
-const char* partition_type_to_string(partition_type type);
+const char* partition_type_to_string(vfs::partition_type type);
 
 bool read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);
 bool write_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);

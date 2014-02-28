@@ -21,6 +21,10 @@
 
 //TODO Remove the direct accesses to fat32
 
+void vfs::init(){
+    //TODO
+}
+
 std::vector<std::string> get_path(const char* file_path){
     std::string file(file_path);
 

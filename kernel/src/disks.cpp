@@ -103,11 +103,11 @@ const char* disks::disk_type_to_string(disk_type type){
     }
 }
 
-const char* disks::partition_type_to_string(partition_type type){
+const char* disks::partition_type_to_string(vfs::partition_type type){
     switch(type){
-        case partition_type::FAT32:
+        case vfs::partition_type::FAT32:
             return "FAT32";
-        case partition_type::UNKNOWN:
+        case vfs::partition_type::UNKNOWN:
             return "Unknown";
         default:
             return "Invalid Type";
@@ -160,11 +160,11 @@ std::unique_heap_array<disks::partition_descriptor> disks::partitions(const disk
 
         for(uint64_t i = 0; i < 4; ++i){
             if(boot_record->partitions[i].type_code > 0){
-                partition_type type;
+                vfs::partition_type type;
                 if(boot_record->partitions[i].type_code == 0x0B || boot_record->partitions[i].type_code == 0x0C){
-                    type = partition_type::FAT32;
+                    type = vfs::partition_type::FAT32;
                 } else {
-                    type = partition_type::UNKNOWN;
+                    type = vfs::partition_type::UNKNOWN;
                 }
 
                 partitions[p] = {p, type, boot_record->partitions[i].lba_begin, boot_record->partitions[i].sectors};
