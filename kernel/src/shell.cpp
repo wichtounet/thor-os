@@ -58,7 +58,6 @@ void disks_command(const std::vector<std::string>& params);
 void partitions_command(const std::vector<std::string>& params);
 void mount_command(const std::vector<std::string>& params);
 void unmount_command(const std::vector<std::string>& params);
-void ls_command(const std::vector<std::string>& params);
 void free_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
@@ -69,7 +68,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[17] = {
+command_definition commands[15] = {
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
@@ -81,7 +80,6 @@ command_definition commands[17] = {
     {"partitions", partitions_command},
     {"mount", mount_command},
     {"unmount", unmount_command},
-    {"ls", ls_command},
     {"free", free_command},
     {"exec", exec_command},
     {"vesainfo", vesainfo_command},
@@ -365,74 +363,6 @@ void unmount_command(const std::vector<std::string>& ){
     }
 
     disks::unmount();
-}
-
-void ls_command(const std::vector<std::string>& params){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    //By default hidden files are not shown
-    bool show_hidden_files = false;
-    bool list = false;
-
-    //Read options if any
-    if(params.size() > 1){
-        for(size_t i = 1; i < params.size(); ++i){
-            if(params[i] == "-a"){
-                show_hidden_files = true;
-            } else if(params[i] == "-l"){
-                list = true;
-            }
-        }
-    }
-
-    auto files = disks::ls();
-    size_t total = 0;
-
-    for(auto& file : files){
-        if(file.hidden && !show_hidden_files){
-            continue;
-        }
-
-        ++total;
-
-        if(list){
-            if(file.directory){
-                k_print(" d ");
-            } else {
-                k_print(" f ");
-            }
-
-            k_print(file.size);
-            k_print(' ');
-
-            k_print(file.created.day);
-            k_print('.');
-            k_print(file.created.month);
-            k_print('.');
-            k_print(1980+file.created.year);
-            k_print(' ');
-
-            k_print(file.created.hour);
-            k_print(':');
-            k_print(file.created.minutes);
-            k_print(' ');
-
-            k_print_line(file.file_name);
-        } else {
-            k_print(file.file_name);
-            k_print(' ');
-        }
-    }
-
-    if(!list){
-        k_print('\n');
-    }
-
-    k_printf("Total: %u\n", total);
 }
 
 void free_command(const std::vector<std::string>&){
