@@ -41,11 +41,12 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
             //TODO Generalize
             disks::mount(disks::disk_by_uuid(0), 0);
 
-            return 0;
-
+            break;
         default:
             return -1;
     }
+
+    //TODO Save the mount point in the mount point list structure
 }
 
 std::vector<std::string> get_path(const char* file_path){
