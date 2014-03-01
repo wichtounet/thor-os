@@ -16,6 +16,7 @@
 #include "vfs/file_system.hpp"
 
 #include "fs/fat32.hpp"
+#include "fs/sysfs.hpp"
 
 #include "scheduler.hpp"
 #include "flags.hpp"
@@ -45,6 +46,8 @@ std::string partition_type_to_string(vfs::partition_type type){
     switch(type){
         case vfs::partition_type::FAT32:
             return "FAT32";
+        case vfs::partition_type::SYSFS:
+            return "sysfs";
         case vfs::partition_type::UNKNOWN:
             return "Unknown";
         default:

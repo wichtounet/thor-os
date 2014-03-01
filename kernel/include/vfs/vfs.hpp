@@ -15,6 +15,7 @@ namespace vfs {
 
 enum class partition_type {
     FAT32,
+    SYSFS,
     UNKNOWN
 };
 

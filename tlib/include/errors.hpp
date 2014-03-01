@@ -25,6 +25,7 @@ constexpr const size_t ERROR_EXISTS= 9;
 constexpr const size_t ERROR_BUFFER_SMALL= 10;
 constexpr const size_t ERROR_INVALID_FILE_SYSTEM = 11;
 constexpr const size_t ERROR_DISK_FULL = 12;
+constexpr const size_t ERROR_PERMISSION_DENIED = 13;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -52,6 +53,8 @@ inline const char* error_message(size_t error){
             return "Unknown file system";
         case ERROR_DISK_FULL:
             return "The disk is full";
+        case ERROR_PERMISSION_DENIED:
+            return "Permission denied";
         default:
             return "Unknonwn error";
     }
