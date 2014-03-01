@@ -62,6 +62,22 @@ std::expected<stat_info> stat(size_t fd){
     }
 }
 
+std::expected<statfs_info> statfs(const char* file){
+    statfs_info info;
+
+    int64_t code;
+    asm volatile("mov rax, 310; mov rbx, %[path]; mov rcx, %[buffer]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [path] "g" (reinterpret_cast<size_t>(file)), [buffer] "g" (reinterpret_cast<size_t>(&info))
+        : "rax", "rbx", "rcx");
+
+    if(code < 0){
+        return std::make_expected_from_error<statfs_info, size_t>(-code);
+    } else {
+        return std::make_expected<statfs_info>(info);
+    }
+}
+
 std::expected<size_t> read(size_t fd, char* buffer, size_t max){
     int64_t code;
     asm volatile("mov rax, 303; mov rbx, %[fd]; mov rcx, %[buffer]; mov rdx, %[max]; int 50; mov %[code], rax"

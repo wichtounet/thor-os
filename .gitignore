@@ -32,4 +32,5 @@ programs/rm/rm
 programs/date/date
 programs/ls/ls
 programs/mount/mount
+programs/df/df
 programs/dist/
