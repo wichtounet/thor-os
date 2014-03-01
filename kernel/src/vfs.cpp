@@ -100,13 +100,9 @@ void vfs::init(){
 int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){
     file_system* fs = nullptr;
 
-    //TODO In the future just delegates to the correct file system function
     switch(type){
         case vfs::partition_type::FAT32:
             fs = new fat32::fat32_file_system(0, 0);
-
-            //TODO Remove that
-            disks::mount(disks::disk_by_uuid(0), 0);
 
             break;
         default:
@@ -280,6 +276,20 @@ int64_t vfs::read(size_t fd, char* buffer, size_t max){
     }
 
     return i;
+}
+
+int64_t vfs::direct_read(const std::string& file_path, std::string& content){
+    auto path = get_path(file_path.c_str());
+    auto& fs = get_fs(path);
+    auto fs_path = get_fs_path(path, fs);
+
+    auto result = fs.file_system->read(fs_path, content);
+
+    if(result > 0){
+        return -result;
+    }
+
+    return 0;
 }
 
 int64_t vfs::entries(size_t fd, char* buffer, size_t size){

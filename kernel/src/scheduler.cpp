@@ -25,7 +25,7 @@
 #include "physical_pointer.hpp"
 #include "mutex.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = false;
+constexpr const bool DEBUG_SCHEDULER = true;
 
 //Provided by task_switch.s
 extern "C" {
@@ -583,33 +583,6 @@ void scheduler::init(){ //Create the idle task
     pcb[current_pid].state = scheduler::process_state::RUNNING;
 }
 
-//This should be done at another level probably VFS
-std::string read_file(const std::string& file){
-    //If the path is absolute
-    if(file[0] == '/'){
-        auto path = std::split(file, '/');
-        auto last = path.back();
-        path.pop_back();
-
-        return disks::read_file(last, path);
-    } else {
-        if(file.find('/') == std::string::npos){
-            return disks::read_file(file);
-        } else {
-            auto path = std::split(file, '/');
-            auto last = path.back();
-            path.pop_back();
-
-            auto current = disks::current_directory();
-            for(auto& d : path){
-                current.push_back(d);
-            }
-
-            return disks::read_file(last, current);
-        }
-    }
-}
-
 int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
     //TODO Once shell removed, start will be called in init()
     if(!started){
@@ -617,7 +590,15 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
         //Unreachable
     }
 
-    auto content = read_file(file);
+    std::string content;
+    auto result = vfs::direct_read(file, content);
+    if(result < 0){
+        if(DEBUG_SCHEDULER){
+            k_print_line(std::error_message(-result));
+        }
+
+        return result;
+    }
 
     if(content.empty()){
         if(DEBUG_SCHEDULER){

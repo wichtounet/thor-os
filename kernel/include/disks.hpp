@@ -54,26 +54,6 @@ bool write_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, v
 std::unique_heap_array<partition_descriptor> partitions(const disk_descriptor& disk);
 bool partition_exists(const disk_descriptor& disk, uint64_t uuid);
 
-void mount(const disk_descriptor& disk, uint64_t uuid);
-std::vector<vfs::file> ls();
-uint64_t free_size();
-
-//TODO All the pathes should be absolute
-//TODO Only parameter should be used not one for path and one for file (same
-//foes for fat32)
-
-bool mkdir(const std::string& directory);
-bool touch(const std::string& file);
-bool rm(const std::string& file);
-std::string read_file(const std::string& file);
-std::string read_file(const std::string& file, const std::vector<std::string>& path);
-
-const disk_descriptor* mounted_disk();
-const partition_descriptor* mounted_partition();
-
-//TODO It is not a really good practice to directly expose the std::vector
-std::vector<std::string>& current_directory();
-
 }
 
 #endif

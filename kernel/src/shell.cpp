@@ -56,7 +56,6 @@ void memory_command(const std::vector<std::string>& params);
 void kallocdebug_command(const std::vector<std::string>& params);
 void disks_command(const std::vector<std::string>& params);
 void partitions_command(const std::vector<std::string>& params);
-void free_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 void vesainfo_command(const std::vector<std::string>& params);
 void paginginfo_command(const std::vector<std::string>& params);
@@ -66,7 +65,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[13] = {
+command_definition commands[12] = {
     {"help", help_command},
     {"uptime", uptime_command},
     {"clear", clear_command},
@@ -76,7 +75,6 @@ command_definition commands[13] = {
     {"kallocdebug", kallocdebug_command},
     {"disks", disks_command},
     {"partitions", partitions_command},
-    {"free", free_command},
     {"exec", exec_command},
     {"vesainfo", vesainfo_command},
     {"paginginfo", paginginfo_command},
@@ -311,16 +309,6 @@ void partitions_command(const std::vector<std::string>& params){
     } else {
         k_printf("Disks %u does not exist\n", uuid);
     }
-}
-
-void free_command(const std::vector<std::string>&){
-    if(!disks::mounted_partition() || !disks::mounted_disk()){
-        k_print_line("Nothing is mounted");
-
-        return;
-    }
-
-    k_printf("Free size: %m\n", disks::free_size());
 }
 
 void exec_command(const std::vector<std::string>&){
