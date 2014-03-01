@@ -109,6 +109,7 @@ public:
     fat32_file_system(size_t disk, size_t partition);
     ~fat32_file_system();
 
+    size_t statfs(statfs_info& file);
     size_t read(const std::vector<std::string>& file_path, std::string& content);
     size_t get_file(const std::vector<std::string>& file_path, vfs::file& file);
     size_t ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents);
@@ -134,8 +135,6 @@ private:
     uint32_t next_cluster(uint32_t cluster);
     uint32_t find_free_cluster();
 };
-
-uint64_t free_size(dd disk, const disks::partition_descriptor& partition);
 
 }
 

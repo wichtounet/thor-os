@@ -403,10 +403,11 @@ size_t fat32::fat32_file_system::rm(const std::vector<std::string>& file_path){
     }
 }
 
-//TODO This will be migrated to statfs
-uint64_t fat32::free_size(dd disk, const disks::partition_descriptor& partition){
+size_t fat32::fat32_file_system::statfs(statfs_info& file){
+    file.total_size = fat_bs->total_sectors_long * 512;
+    file.free_size = fat_is->free_clusters * fat_bs->sectors_per_cluster * 512;
+
     return 0;
-    //TODO return fat_is->free_clusters * fat_bs->sectors_per_cluster * 512;
 }
 
 /* Private methods implementation */
