@@ -10,6 +10,7 @@
 
 #include <vector.hpp>
 #include <string.hpp>
+#include <pair.hpp>
 
 #include "disks.hpp"
 #include "file_system.hpp"
@@ -62,6 +63,37 @@ struct fat_is_t {
 
 static_assert(sizeof(fat_bs_t) == 512, "FAT Boot Sector is exactly one disk sector");
 
+//An entry in the directory cluster
+struct cluster_entry {
+    char name[11];
+    uint8_t attrib;
+    uint8_t reserved;
+    uint8_t creation_time_seconds;
+    uint16_t creation_time;
+    uint16_t creation_date;
+    uint16_t accessed_date;
+    uint16_t cluster_high;
+    uint16_t modification_time;
+    uint16_t modification_date;
+    uint16_t cluster_low;
+    uint32_t file_size;
+} __attribute__ ((packed));
+
+//A long file name text entry in the directory cluster
+struct long_entry {
+    uint8_t sequence_number;
+    uint16_t name_first[5];
+    uint8_t attrib;
+    uint8_t reserved;
+    uint8_t alias_checksum;
+    uint16_t name_second[6];
+    uint16_t starting_cluster;
+    uint16_t name_third[2];
+} __attribute__ ((packed));
+
+static_assert(sizeof(cluster_entry) == 32, "A cluster entry is 32 bytes");
+static_assert(sizeof(long_entry) == 32, "A cluster entry is 32 bytes");
+
 typedef const disks::disk_descriptor& dd;
 
 struct fat32_file_system : vfs::file_system {
@@ -82,6 +114,24 @@ public:
     size_t touch(const std::vector<std::string>& file_path);
     size_t mkdir(const std::vector<std::string>& file_path);
     size_t rm(const std::vector<std::string>& file_path);
+
+private:
+    size_t rm_dir(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number);
+    size_t rm_file(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number);
+
+    cluster_entry* find_free_entry(std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number);
+    cluster_entry* extend_directory(std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number);
+
+    std::vector<vfs::file> files(const std::vector<std::string>& path, size_t last = 0);
+    std::pair<bool, uint32_t> find_cluster_number(const std::vector<std::string>& path, size_t last = 0);
+    std::vector<vfs::file> files(uint32_t cluster_number);
+
+    bool write_is();
+    uint64_t cluster_lba(uint64_t cluster);
+    uint32_t read_fat_value(uint32_t cluster);
+    bool write_fat_value(uint32_t cluster, uint32_t value);
+    uint32_t next_cluster(uint32_t cluster);
+    uint32_t find_free_cluster();
 };
 
 uint64_t free_size(dd disk, const disks::partition_descriptor& partition);
