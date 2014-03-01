@@ -91,8 +91,6 @@ std::vector<std::string> get_fs_path(const std::vector<std::string>& path, const
 
 } //end of anonymous namespace
 
-//TODO Remove the direct accesses to fat32
-
 void vfs::init(){
     mount_root();
 }
@@ -133,24 +131,13 @@ int64_t vfs::open(const char* file_path, size_t flags){
     if(flags & std::OPEN_CREATE){
         return fs.file_system->touch(fs_path);
     } else {
-        //TODO file search should be done entirely by the file system
-
-        auto last = path.back();
-        fs_path.pop_back();
-
-        std::vector<vfs::file> files;
-        auto result = fs.file_system->ls(fs_path, files);
+        vfs::file file;
+        auto result = fs.file_system->get_file(fs_path, file);
 
         if(result > 0){
             return -result;
         } else {
-            for(auto& f : files){
-                if(f.file_name == last){
-                    return scheduler::register_new_handle(path);
-                }
-            }
-
-            return -std::ERROR_NOT_EXISTS;
+            return scheduler::register_new_handle(path);
         }
     }
 }
@@ -208,44 +195,33 @@ int64_t vfs::stat(size_t fd, stat_info& info){
     auto& fs = get_fs(path);
     auto fs_path = get_fs_path(path, fs);
 
-    auto last = path.back();
-    fs_path.pop_back();
-
-    std::vector<vfs::file> files;
-    auto result = fs.file_system->ls(fs_path, files);
+    vfs::file f;
+    auto result = fs.file_system->get_file(fs_path, f);
 
     if(result > 0){
         return -result;
     }
 
-    //TODO file search should be done entirely by the file system
+    info.size = f.size;
+    info.flags = 0;
 
-    for(auto& f : files){
-        if(f.file_name == last){
-            info.size = f.size;
-            info.flags = 0;
-
-            if(f.directory){
-                info.flags |= STAT_FLAG_DIRECTORY;
-            }
-
-            if(f.system){
-                info.flags |= STAT_FLAG_SYSTEM;
-            }
-
-            if(f.hidden){
-                info.flags |= STAT_FLAG_HIDDEN;
-            }
-
-            info.created = f.created;
-            info.modified = f.modified;
-            info.accessed = f.accessed;
-
-            return 0;
-        }
+    if(f.directory){
+        info.flags |= STAT_FLAG_DIRECTORY;
     }
 
-    return -std::ERROR_NOT_EXISTS;
+    if(f.system){
+        info.flags |= STAT_FLAG_SYSTEM;
+    }
+
+    if(f.hidden){
+        info.flags |= STAT_FLAG_HIDDEN;
+    }
+
+    info.created = f.created;
+    info.modified = f.modified;
+    info.accessed = f.accessed;
+
+    return 0;
 }
 
 int64_t vfs::read(size_t fd, char* buffer, size_t max){
