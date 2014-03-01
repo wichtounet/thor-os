@@ -110,6 +110,7 @@ public:
     ~fat32_file_system();
 
     size_t read(const std::vector<std::string>& file_path, std::string& content);
+    size_t get_file(const std::vector<std::string>& file_path, vfs::file& file);
     size_t ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents);
     size_t touch(const std::vector<std::string>& file_path);
     size_t mkdir(const std::vector<std::string>& file_path);

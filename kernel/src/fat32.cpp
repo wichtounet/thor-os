@@ -210,26 +210,27 @@ fat32::fat32_file_system::~fat32_file_system(){
     delete fat_is;
 }
 
-size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path, std::string& content){
-    uint32_t cluster_number;
-
-    size_t file_size = 0;
-    auto found = false;
+size_t fat32::fat32_file_system::get_file(const std::vector<std::string>& file_path, vfs::file& file){
     auto all_files = files(file_path, 1);
     for(auto& f : all_files){
         if(f.file_name == file_path.back()){
-            found = true;
-            file_size = f.size;
-            cluster_number = f.location;
-            break;
+            file = f;
+            return 0;
         }
     }
 
-    //If the file is not found in the given directory, return empty content
-    if(!found){
-        content = "";
-        return std::ERROR_NOT_EXISTS;
+    return std::ERROR_NOT_EXISTS;
+}
+
+size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path, std::string& content){
+    vfs::file file;
+    auto result = get_file(file_path, file);
+    if(result > 0){
+        return result;
     }
+
+    uint32_t cluster_number = file.location;
+    size_t file_size = file.size;
 
     //No need to read the cluster if there are no content
     if(file_size == 0){
@@ -377,24 +378,15 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
 }
 
 size_t fat32::fat32_file_system::rm(const std::vector<std::string>& file_path){
-    uint32_t cluster_number;
-    size_t position;
-    bool is_file = false;
-
-    auto found = false;
-    for(auto& f : files(file_path, 1)){
-        if(f.file_name == file_path.back()){
-            found = true;
-            cluster_number = f.location;
-            position = f.position;
-            is_file = !f.directory;
-            break;
-        }
+    vfs::file file;
+    auto result = get_file(file_path, file);
+    if(result > 0){
+        return result;
     }
 
-    if(!found){
-        return false;
-    }
+    uint32_t cluster_number = file.location;
+    bool is_file = !file.directory;
+    size_t position = file.position;
 
     //Find the cluster number of the parent directory
     auto cluster_number_search = find_cluster_number(file_path, 1);
