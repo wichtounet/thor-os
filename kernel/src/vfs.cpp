@@ -9,12 +9,13 @@
 #include <string.hpp>
 #include <algorithms.hpp>
 
-#include "vfs.hpp"
-#include "scheduler.hpp"
-#include "flags.hpp"
-
 #include <directory_entry.hpp>
 #include <mount_point.hpp>
+
+#include "vfs.hpp"
+#include "scheduler.hpp"
+#include "file_system.hpp"
+#include "flags.hpp"
 
 #include "fat32.hpp"
 
