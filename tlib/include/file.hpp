@@ -20,6 +20,7 @@ std::expected<size_t> read(size_t fd, char* buffer, size_t max);
 std::expected<size_t> entries(size_t fd, char* buffer, size_t max);
 void close(size_t fd);
 std::expected<stat_info> stat(size_t fd);
+std::expected<size_t> mounts(char* buffer, size_t max);
 
 std::string current_working_directory();
 void set_current_working_directory(const std::string& directory);

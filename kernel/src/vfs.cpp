@@ -334,16 +334,16 @@ int64_t vfs::mounts(char* buffer, size_t size){
         char* name_buffer = &(entry->name);
         size_t str_pos = 0;
 
-        for(size_t j = 0; j < mp.mount_point.size(); ++j, ++str_pos){
-            name_buffer[str_pos] = mp.mount_point[j];
+        for(size_t j = 0; j < mp.mount_point.size(); ++j){
+            name_buffer[str_pos++] = mp.mount_point[j];
         }
         name_buffer[str_pos++] = '\0';
-        for(size_t j = 0; j < mp.device.size(); ++j, ++str_pos){
-            name_buffer[str_pos] = mp.device[j];
+        for(size_t j = 0; j < mp.device.size(); ++j){
+            name_buffer[str_pos++] = mp.device[j];
         }
         name_buffer[str_pos++] = '\0';
-        for(size_t j = 0; j < fs_type.size(); ++j, ++str_pos){
-            name_buffer[str_pos] = fs_type[j];
+        for(size_t j = 0; j < fs_type.size(); ++j){
+            name_buffer[str_pos++] = fs_type[j];
         }
         name_buffer[str_pos++] = '\0';
     }

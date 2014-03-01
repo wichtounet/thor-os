@@ -31,4 +31,5 @@ programs/mkdir/mkdir
 programs/rm/rm
 programs/date/date
 programs/ls/ls
+programs/mount/mount
 programs/dist/

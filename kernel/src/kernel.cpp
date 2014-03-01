@@ -51,6 +51,9 @@ void  kernel_main(){
     //Init dynamic memory allocation
     kalloc::init();
 
+    //Call global constructors
+    _init();
+
     //Install drivers
     timer::install();
     //acpi::init();
@@ -73,9 +76,6 @@ void  kernel_main(){
 
     //Only install system calls when everything else is ready
     install_system_calls();
-
-    //Call global constructors
-    _init();
 
     init_console();
 

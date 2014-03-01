@@ -90,6 +90,20 @@ std::expected<size_t> entries(size_t fd, char* buffer, size_t max){
     }
 }
 
+std::expected<size_t> mounts(char* buffer, size_t max){
+    int64_t code;
+    asm volatile("mov rax, 309; mov rbx, %[buffer]; mov rcx, %[max]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [buffer] "g" (reinterpret_cast<size_t>(buffer)), [max] "g" (max)
+        : "rax", "rbx", "rcx");
+
+    if(code < 0){
+        return std::make_expected_from_error<size_t, size_t>(-code);
+    } else {
+        return std::make_expected<size_t>(code);
+    }
+}
+
 std::string current_working_directory(){
     char buffer[128];
     buffer[0] = '\0';
