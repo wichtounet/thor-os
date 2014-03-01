@@ -12,14 +12,13 @@
 #include <directory_entry.hpp>
 #include <mount_point.hpp>
 
-#include "vfs.hpp"
+#include "vfs/vfs.hpp"
+#include "vfs/file_system.hpp"
+
+#include "fs/fat32.hpp"
+
 #include "scheduler.hpp"
-#include "file_system.hpp"
 #include "flags.hpp"
-
-#include "fat32.hpp"
-
-#include "disks.hpp"
 
 #include "console.hpp"
 

@@ -10,7 +10,8 @@
 #include <algorithms.hpp>
 #include <errors.hpp>
 
-#include "fat32.hpp"
+#include "fs/fat32.hpp"
+
 #include "console.hpp"
 #include "rtc.hpp"
 

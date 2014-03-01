@@ -11,8 +11,8 @@
 #include "keyboard.hpp"
 #include "terminal.hpp"
 #include "acpi.hpp"
-#include "vfs.hpp"
 #include "rtc.hpp"
+#include "vfs/vfs.hpp"
 
 namespace {
 

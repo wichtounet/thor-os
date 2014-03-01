@@ -14,8 +14,8 @@
 #include <vector.hpp>
 #include <string.hpp>
 
-#include "vfs.hpp"
-#include "file.hpp"
+#include "vfs/vfs.hpp"
+#include "vfs/file.hpp"
 
 namespace disks {
 

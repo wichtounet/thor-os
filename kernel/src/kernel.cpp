@@ -23,7 +23,7 @@
 #include "gdt.hpp"
 #include "terminal.hpp"
 #include "scheduler.hpp"
-#include "vfs.hpp"
+#include "vfs/vfs.hpp"
 
 extern "C" {
 

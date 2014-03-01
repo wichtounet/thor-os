@@ -13,8 +13,8 @@
 #include <pair.hpp>
 
 #include "disks.hpp"
-#include "file_system.hpp"
-#include "fat32_specs.hpp"
+#include "vfs/file_system.hpp"
+#include "fs/fat32_specs.hpp"
 
 namespace fat32 {
 

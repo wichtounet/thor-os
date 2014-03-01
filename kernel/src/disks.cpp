@@ -13,7 +13,7 @@
 #include "ata.hpp"
 #include "thor.hpp"
 #include "console.hpp"
-#include "fat32.hpp"
+#include "fs/fat32.hpp"
 
 namespace {
 
