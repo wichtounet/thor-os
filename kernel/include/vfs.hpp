@@ -9,8 +9,7 @@
 #define VFS_H
 
 #include <stat_info.hpp>
-
-//TODO Once userspace is done, integrate parts of disks.hpp here
+#include <statfs_info.hpp>
 
 namespace vfs {
 
@@ -22,6 +21,7 @@ enum class partition_type {
 void init();
 
 int64_t open(const char* file, size_t flags);
+int64_t statfs(const char* mount_point, statfs_info& info);
 int64_t stat(size_t fd, stat_info& info);
 int64_t mkdir(const char* file);
 int64_t rm(const char* file);

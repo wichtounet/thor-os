@@ -124,6 +124,13 @@ void sc_stat(interrupt::syscall_regs* regs){
     regs->rax = vfs::stat(fd, *info);
 }
 
+void sc_statfs(interrupt::syscall_regs* regs){
+    auto mount_point  = reinterpret_cast<char*>(regs->rbx);
+    auto info = reinterpret_cast<statfs_info*>(regs->rcx);
+
+    regs->rax = vfs::statfs(mount_point, *info);
+}
+
 void sc_read(interrupt::syscall_regs* regs){
     auto fd = regs->rbx;
     auto buffer = reinterpret_cast<char*>(regs->rcx);
@@ -291,6 +298,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 309:
             sc_mounts(regs);
+            break;
+
+        case 310:
+            sc_statfs(regs);
             break;
 
         case 400:

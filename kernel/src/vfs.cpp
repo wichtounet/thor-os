@@ -112,6 +112,17 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
     return 0;
 }
 
+int64_t vfs::statfs(const char* mount_point, statfs_info& info){
+    if(std::str_len(mount_point) == 0){
+        return -std::ERROR_INVALID_FILE_PATH;
+    }
+
+    auto path = get_path(mount_point);
+    auto& fs = get_fs(path);
+
+    return fs.file_system->statfs(info);
+}
+
 int64_t vfs::open(const char* file_path, size_t flags){
     std::string file(file_path);
 
