@@ -123,6 +123,10 @@ public:
         _data[--_size] = '\0';
     }
 
+    void reserve(size_t new_capacity){
+        ensure_capacity(new_capacity);
+    }
+
     basic_string operator+(CharT c) const {
         basic_string copy(*this);
 
@@ -132,17 +136,7 @@ public:
     }
 
     basic_string& operator+=(CharT c){
-        if(!_data || _capacity <= _size + 1){
-            _capacity = _capacity ? _capacity * 2 : 1;
-            auto new_data = new CharT[_capacity];
-
-            if(_data){
-                std::copy_n(new_data, _data, _size);
-                delete[] _data;
-            }
-
-            _data = new_data;
-        }
+        ensure_capacity(_size + 2);
 
         _data[_size] = c;
         _data[++_size] = '\0';
@@ -150,13 +144,12 @@ public:
         return *this;
     }
 
-    basic_string& operator+=(const char* rhs){
-        auto len = str_len(rhs);
-        if(!_data || _capacity <= _size + len){
+    void ensure_capacity(size_t new_capacity){
+        if(new_capacity > 0 && (!_data || _capacity < new_capacity)){
             _capacity = _capacity ? _capacity * 2 : 1;
 
-            if(_capacity < _size + len){
-                _capacity = _size + len + 1;
+            if(_capacity < new_capacity){
+                _capacity = new_capacity;
             }
 
             auto new_data = new CharT[_capacity];
@@ -168,6 +161,12 @@ public:
 
             _data = new_data;
         }
+    }
+
+    basic_string& operator+=(const char* rhs){
+        auto len = str_len(rhs);
+
+        ensure_capacity(_size + len + 1);
 
         std::copy_n(_data + _size, rhs, len);
 
@@ -179,22 +178,7 @@ public:
     }
 
     basic_string& operator+=(const basic_string& rhs){
-        if(!_data || _capacity <= _size + rhs.size()){
-            _capacity = _capacity ? _capacity * 2 : 1;
-
-            if(_capacity < _size + rhs.size()){
-                _capacity = _size + rhs.size() + 1;
-            }
-
-            auto new_data = new CharT[_capacity];
-
-            if(_data){
-                std::copy_n(new_data, _data, _size);
-                delete[] _data;
-            }
-
-            _data = new_data;
-        }
+        ensure_capacity(_size + rhs.size() + 1);
 
         std::copy_n(_data + _size, rhs.c_str(), rhs.size());
 
