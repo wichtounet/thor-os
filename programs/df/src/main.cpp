@@ -14,8 +14,16 @@
 
 static constexpr const size_t BUFFER_SIZE = 4096;
 
-int main(int, char*[]){
-    //TODO Add support to mount new directories
+int main(int argc, char* argv[]){
+    bool human = false;
+
+    for(size_t i = 1; i < argc; ++i){
+        std::string param(argv[i]);
+
+        if(param == "-h"){
+            human = true;
+        }
+    }
 
     auto buffer = new char[BUFFER_SIZE];
 
@@ -35,7 +43,12 @@ int main(int, char*[]){
 
             if(statfs_result.valid()){
                 auto& statfs = *statfs_result;
-                printf("%s %u %u %u\n", mount_point, statfs.total_size, statfs.total_size - statfs.free_size, statfs.free_size);
+
+                if(human){
+                    printf("%s %m %m %m\n", mount_point, statfs.total_size, statfs.total_size - statfs.free_size, statfs.free_size);
+                } else {
+                    printf("%s %u %u %u\n", mount_point, statfs.total_size, statfs.total_size - statfs.free_size, statfs.free_size);
+                }
             } else {
                 printf("df: error: %s\n", std::error_message(statfs_result.error()));
             }
