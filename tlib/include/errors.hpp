@@ -24,6 +24,7 @@ constexpr const size_t ERROR_FAILED= 8;
 constexpr const size_t ERROR_EXISTS= 9;
 constexpr const size_t ERROR_BUFFER_SMALL= 10;
 constexpr const size_t ERROR_INVALID_FILE_SYSTEM = 11;
+constexpr const size_t ERROR_DISK_FULL = 12;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -49,6 +50,8 @@ inline const char* error_message(size_t error){
             return "The buffer is too small";
         case ERROR_INVALID_FILE_SYSTEM:
             return "Unknown file system";
+        case ERROR_DISK_FULL:
+            return "The disk is full";
         default:
             return "Unknonwn error";
     }

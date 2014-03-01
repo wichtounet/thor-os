@@ -27,6 +27,10 @@
 
 extern "C" {
 
+void __cxa_pure_virtual(){
+    //TODO Print something
+}
+
 void _init();
 
 void  kernel_main(){
