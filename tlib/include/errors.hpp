@@ -13,7 +13,6 @@
 //TODO Rename this namespace
 namespace std {
 
-//TODO Use an enum
 constexpr const size_t ERROR_NOT_EXISTS = 1;
 constexpr const size_t ERROR_NOT_EXECUTABLE = 2;
 constexpr const size_t ERROR_FAILED_EXECUTION = 3;
@@ -24,6 +23,7 @@ constexpr const size_t ERROR_INVALID_FILE_DESCRIPTOR= 7;
 constexpr const size_t ERROR_FAILED= 8;
 constexpr const size_t ERROR_EXISTS= 9;
 constexpr const size_t ERROR_BUFFER_SMALL= 10;
+constexpr const size_t ERROR_INVALID_FILE_SYSTEM = 11;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -47,6 +47,8 @@ inline const char* error_message(size_t error){
             return "The file exists";
         case ERROR_BUFFER_SMALL:
             return "The buffer is too small";
+        case ERROR_INVALID_FILE_SYSTEM:
+            return "Unknown file system";
         default:
             return "Unknonwn error";
     }

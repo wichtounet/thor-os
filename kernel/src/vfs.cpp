@@ -13,6 +13,9 @@
 #include "scheduler.hpp"
 #include "flags.hpp"
 
+#include <directory_entry.hpp>
+#include <mount_point.hpp>
+
 #include "fat32.hpp"
 
 #include "disks.hpp"
@@ -20,6 +23,33 @@
 #include "console.hpp"
 
 namespace {
+
+struct mounted_fs {
+    vfs::partition_type fs_type;
+    std::string device;
+    std::string mount_point;
+
+    mounted_fs() = default;
+
+    mounted_fs(vfs::partition_type type, const char* dev, const char* mp) :
+        fs_type(type), device(dev), mount_point(mp)
+    {
+        //Nothing to init
+    }
+};
+
+std::string partition_type_to_string(vfs::partition_type type){
+    switch(type){
+        case vfs::partition_type::FAT32:
+            return "FAT32";
+        case vfs::partition_type::UNKNOWN:
+            return "Unknown";
+        default:
+            return "Invalid Type";
+    }
+}
+
+std::vector<mounted_fs> mount_point_list;
 
 void mount_root(){
     //TODO Get information about the root from a confgiuration file
@@ -43,10 +73,12 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
 
             break;
         default:
-            return -1;
+            return -std::ERROR_INVALID_FILE_SYSTEM;
     }
 
-    //TODO Save the mount point in the mount point list structure
+    mount_point_list.emplace_back(type, device, mount_point);
+
+    return 0;
 }
 
 std::vector<std::string> get_path(const char* file_path){
@@ -266,6 +298,57 @@ int64_t vfs::read(size_t fd, char* buffer, size_t max){
     }
 
     return i;
+}
+
+int64_t vfs::mounts(char* buffer, size_t size){
+    size_t total_size = 0;
+
+    for(auto& mp : mount_point_list){
+        total_size += 4 * sizeof(size_t) + 3 + mp.device.size() + mp.mount_point.size() + partition_type_to_string(mp.fs_type).size();
+    }
+
+    if(size < total_size){
+        return -std::ERROR_BUFFER_SMALL;
+    }
+
+    size_t position = 0;
+
+    for(size_t i = 0; i < mount_point_list.size(); ++i){
+        auto& mp = mount_point_list[i];
+
+        auto entry = reinterpret_cast<mount_point*>(buffer + position);
+
+        auto fs_type = partition_type_to_string(mp.fs_type);
+
+        entry->length_mp = mp.mount_point.size();
+        entry->length_dev = mp.device.size();
+        entry->length_type = fs_type.size();
+
+        if(i + 1 < mount_point_list.size()){
+            entry->offset_next = 4 * sizeof(size_t) + 3 + mp.device.size() + mp.mount_point.size() + fs_type.size();
+            position += entry->offset_next;
+        } else {
+            entry->offset_next = 0;
+        }
+
+        char* name_buffer = &(entry->name);
+        size_t str_pos = 0;
+
+        for(size_t j = 0; j < mp.mount_point.size(); ++j, ++str_pos){
+            name_buffer[str_pos] = mp.mount_point[j];
+        }
+        name_buffer[str_pos++] = '\0';
+        for(size_t j = 0; j < mp.device.size(); ++j, ++str_pos){
+            name_buffer[str_pos] = mp.device[j];
+        }
+        name_buffer[str_pos++] = '\0';
+        for(size_t j = 0; j < fs_type.size(); ++j, ++str_pos){
+            name_buffer[str_pos] = fs_type[j];
+        }
+        name_buffer[str_pos++] = '\0';
+    }
+
+    return total_size;
 }
 
 int64_t vfs::entries(size_t fd, char* buffer, size_t size){

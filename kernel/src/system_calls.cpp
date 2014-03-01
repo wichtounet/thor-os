@@ -140,6 +140,13 @@ void sc_entries(interrupt::syscall_regs* regs){
     regs->rax = vfs::entries(fd, buffer, max);
 }
 
+void sc_mounts(interrupt::syscall_regs* regs){
+    auto buffer = reinterpret_cast<char*>(regs->rbx);
+    auto max = regs->rcx;
+
+    regs->rax = vfs::mounts(buffer, max);
+}
+
 void sc_pwd(interrupt::syscall_regs* regs){
     auto& wd = scheduler::get_working_directory();
 
@@ -280,6 +287,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 308:
             sc_entries(regs);
+            break;
+
+        case 309:
+            sc_mounts(regs);
             break;
 
         case 400:
