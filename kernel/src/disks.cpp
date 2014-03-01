@@ -212,7 +212,7 @@ const disks::partition_descriptor* disks::mounted_partition(){
     return _mounted_partition;
 }
 
-std::vector<disks::file> disks::ls(){
+std::vector<vfs::file> disks::ls(){
     if(!_mounted_disk || !_mounted_partition){
         return {};
     }

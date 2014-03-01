@@ -263,8 +263,8 @@ inline bool is_long_name(const cluster_entry& entry){
 }
 
 //Return all the files of the given directory (denoted by its cluster number)
-std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
-    std::vector<disks::file> files;
+std::vector<vfs::file> files(fat32::dd disk, uint32_t cluster_number){
+    std::vector<vfs::file> files;
 
     bool end_reached = false;
 
@@ -334,7 +334,7 @@ std::vector<disks::file> files(fat32::dd disk, uint32_t cluster_number){
                 continue;
             }
 
-            disks::file file;
+            vfs::file file;
 
             if(long_name){
                 for(size_t s = 0; s < i; ++s){
@@ -462,7 +462,7 @@ std::pair<bool, uint32_t> find_cluster_number(fat32::dd disk, const std::vector<
 
 //Return all the files in the directory denoted by its path
 //No test is make to verify that the path denotes a directory
-std::vector<disks::file> files(fat32::dd disk, const std::vector<std::string>& path){
+std::vector<vfs::file> files(fat32::dd disk, const std::vector<std::string>& path){
     auto cluster_number_search = find_cluster_number(disk, path);
     if(!cluster_number_search.first){
         return {};
@@ -891,7 +891,7 @@ uint64_t fat32::free_size(dd disk, const disks::partition_descriptor& partition)
     return fat_is->free_clusters * fat_bs->sectors_per_cluster * 512;
 }
 
-std::vector<disks::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const std::vector<std::string>& path){
+std::vector<vfs::file> fat32::ls(dd disk, const disks::partition_descriptor& partition, const std::vector<std::string>& path){
     if(!cache_disk_partition(disk, partition)){
         return {};
     }

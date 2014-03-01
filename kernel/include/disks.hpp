@@ -15,6 +15,7 @@
 #include <string.hpp>
 
 #include "vfs.hpp"
+#include "file.hpp"
 
 namespace disks {
 
@@ -36,21 +37,6 @@ struct partition_descriptor {
     uint64_t sectors;
 };
 
-struct file {
-    std::string file_name;
-    bool directory;
-    bool hidden;
-    bool system;
-    uint64_t size;
-    datetime created;
-    datetime modified;
-    datetime accessed;
-
-    //File system specific
-    size_t location;
-    size_t position;
-};
-
 void detect_disks();
 
 uint64_t detected_disks();
@@ -69,7 +55,7 @@ std::unique_heap_array<partition_descriptor> partitions(const disk_descriptor& d
 bool partition_exists(const disk_descriptor& disk, uint64_t uuid);
 
 void mount(const disk_descriptor& disk, uint64_t uuid);
-std::vector<file> ls();
+std::vector<vfs::file> ls();
 uint64_t free_size();
 
 //TODO All the pathes should be absolute
