@@ -35,6 +35,7 @@ public:
 
 void set_value(const std::string& mount_point, const std::string& path, const std::string& value);
 void delete_value(const std::string& mount_point, const std::string& path);
+void delete_folder(const std::string& mount_point, const std::string& path);
 
 }
 
