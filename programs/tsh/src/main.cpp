@@ -166,6 +166,9 @@ int main(){
                     if(!result.valid()){
                         print("error: ");
                         print_line(std::error_message(result.error()));
+                        print("command: \"");
+                        print(current_input);
+                        print_line("\"");
                     }
                 }
             }
