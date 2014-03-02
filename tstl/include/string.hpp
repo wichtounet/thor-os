@@ -245,6 +245,10 @@ public:
         return true;
     }
 
+    bool operator!=(const CharT* s) const {
+        return !(*this == s);
+    }
+
     bool operator==(const basic_string& rhs) const {
         if(size() != rhs.size()){
             return false;
@@ -257,6 +261,10 @@ public:
         }
 
         return true;
+    }
+
+    bool operator!=(const basic_string& rhs) const {
+        return !(*this == rhs);
     }
 
     //Iterators
