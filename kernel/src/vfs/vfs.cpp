@@ -62,6 +62,10 @@ void mount_root(){
     mount(vfs::partition_type::FAT32, "/", "TODO");
 }
 
+void mount_sys(){
+    mount(vfs::partition_type::SYSFS, "/sys/", "none");
+}
+
 std::vector<std::string> get_path(const char* file_path){
     std::string file(file_path);
 
@@ -82,19 +86,44 @@ std::vector<std::string> get_path(const char* file_path){
 }
 
 mounted_fs& get_fs(const std::vector<std::string>& path){
-    //TODO Implement that
-    return mount_point_list.front();
+    size_t best = 0;
+    size_t best_match = 0;
+
+    for(size_t i = 0; i < mount_point_list.size(); ++i){
+        auto& mp = mount_point_list[i];
+
+        bool match = true;
+        for(size_t j = 0; j < mp.mp_vec.size() && j < path.size() ; ++j){
+            if(mp.mp_vec[j] != path[j]){
+                match = false;
+                break;
+            }
+        }
+
+        if(match && mp.mp_vec.size() > best){
+            best = mp.mp_vec.size();
+            best_match = i;
+        }
+    }
+
+    return mount_point_list[best_match];;
 }
 
 std::vector<std::string> get_fs_path(const std::vector<std::string>& path, const mounted_fs& fs){
-    //TODO Implement that
-    return path;
+    std::vector<std::string> fs_path;
+
+    for(size_t i = fs.mp_vec.size(); i < path.size(); ++i){
+        fs_path.push_back(path[i]);
+    }
+
+    return std::move(fs_path);
 }
 
 } //end of anonymous namespace
 
 void vfs::init(){
     mount_root();
+    mount_sys();
 }
 
 int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){
@@ -105,6 +134,12 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
             fs = new fat32::fat32_file_system(0, 0);
 
             break;
+
+        case vfs::partition_type::SYSFS:
+            fs = new sysfs::sysfs_file_system(mount_point);
+
+            break;
+
         default:
             return -std::ERROR_INVALID_FILE_SYSTEM;
     }
