@@ -24,6 +24,7 @@
 #include "terminal.hpp"
 #include "scheduler.hpp"
 #include "vfs/vfs.hpp"
+#include "fs/sysfs.hpp"
 
 extern "C" {
 
@@ -82,6 +83,9 @@ void  kernel_main(){
     install_system_calls();
 
     init_console();
+
+    sysfs::set_value("/sys/", "version", "0.1");
+    sysfs::set_value("/sys/", "author", "Baptiste Wicht");
 
     scheduler::init();
 
