@@ -10,6 +10,8 @@
 
 #include "drivers/pit.hpp"
 
+#include "fs/sysfs.hpp"
+
 namespace {
 
 uint64_t _timer_ticks = 0;
@@ -21,6 +23,8 @@ volatile uint64_t _timer_countdown = 0;
 
 void timer::install(){
     pit::install();
+
+    sysfs::set_value("/sys/", "uptime", "0");
 }
 
 void timer::tick(){
@@ -34,6 +38,8 @@ void timer::tick(){
 
     if(_timer_ticks % 1000 == 0){
         ++_timer_seconds;
+
+        sysfs::set_value("/sys/", "uptime", std::to_string(_timer_seconds));
     }
 }
 
