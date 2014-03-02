@@ -25,7 +25,7 @@
 #include "physical_pointer.hpp"
 #include "mutex.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = true;
+constexpr const bool DEBUG_SCHEDULER = false;
 
 //Provided by task_switch.s
 extern "C" {
