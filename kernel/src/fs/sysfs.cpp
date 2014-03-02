@@ -91,6 +91,75 @@ bool exists_folder(sys_folder& root, const std::vector<std::string>& path, size_
     return false;
 }
 
+size_t get_file(const sys_folder& folder, const std::vector<std::string>& file_path, vfs::file& f){
+    for(auto& file : folder.folders){
+        if(file.name == file_path.back()){
+            f.file_name = file.name;
+            f.directory = true;
+            f.hidden = false;
+            f.system = false;
+            f.size = 0;
+
+            return 0;
+        }
+    }
+
+    for(auto& file : folder.values){
+        if(file.name == file_path.back()){
+            f.file_name = file.name;
+            f.directory = false;
+            f.hidden = false;
+            f.system = false;
+            f.size = 0;
+
+            return 0;
+        }
+    }
+
+    return std::ERROR_NOT_EXISTS;
+}
+
+size_t ls(const sys_folder& folder, std::vector<vfs::file>& contents){
+    for(auto& file : folder.folders){
+        vfs::file f;
+        f.file_name = file.name;
+        f.directory = true;
+        f.hidden = false;
+        f.system = false;
+        f.size = 0;
+        contents.push_back(f);
+    }
+
+    for(auto& file : folder.values){
+        vfs::file f;
+        f.file_name = file.name;
+        f.directory = false;
+        f.hidden = false;
+        f.system = false;
+        f.size = 0;
+        contents.push_back(f);
+    }
+
+    return 0;
+}
+
+size_t read(const sys_folder& folder, const std::vector<std::string>& file_path, std::string& content){
+    for(auto& file : folder.values){
+        if(file.name == file_path.back()){
+            content = file.value;
+            return 0;
+        }
+    }
+
+    for(auto& file : folder.folders){
+        if(file.name == file_path.back()){
+            return std::ERROR_DIRECTORY;
+        }
+    }
+
+    return std::ERROR_NOT_EXISTS;
+}
+
 } //end of anonymous namespace
 
 sysfs::sysfs_file_system::sysfs_file_system(std::string mp) : mount_point(mp) {
@@ -104,88 +173,57 @@ sysfs::sysfs_file_system::~sysfs_file_system(){
 size_t sysfs::sysfs_file_system::get_file(const std::vector<std::string>& file_path, vfs::file& f){
     auto& root_folder = find_root_folder(mount_point);
 
-    if(exists_folder(root_folder, file_path, 0, file_path.size() - 1)){
-        auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
+    if(file_path.empty()){
+        f.file_name = "/";
+        f.directory = true;
+        f.hidden = false;
+        f.system = false;
+        f.size = 0;
 
-        for(auto& file : folder.folders){
-            if(file.name == file_path.back()){
-                f.file_name = file.name;
-                f.directory = true;
-                f.hidden = false;
-                f.system = false;
-                f.size = 0;
+        return 0;
+    } else if(file_path.size() == 1){
+        return ::get_file(root_folder, file_path, f);
+    } else {
+        if(exists_folder(root_folder, file_path, 0, file_path.size() - 1)){
+            auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
 
-                return 0;
-            }
+            return ::get_file(folder, file_path, f);
         }
 
-        for(auto& file : folder.values){
-            if(file.name == file_path.back()){
-                f.file_name = file.name;
-                f.directory = false;
-                f.hidden = false;
-                f.system = false;
-                f.size = 0;
-
-                return 0;
-            }
-        }
+        return std::ERROR_NOT_EXISTS;
     }
-
-    return std::ERROR_NOT_EXISTS;
 }
 
 size_t sysfs::sysfs_file_system::read(const std::vector<std::string>& file_path, std::string& content){
     auto& root_folder = find_root_folder(mount_point);
 
-    if(exists_folder(root_folder, file_path, 0, file_path.size() - 1)){
-        auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
+    if(file_path.empty()){
+        return std::ERROR_DIRECTORY;
+    } else if(file_path.size() == 1){
+        return ::read(root_folder, file_path, content);
+    } else {
+        if(exists_folder(root_folder, file_path, 0, file_path.size() - 1)){
+            auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
 
-        for(auto& file : folder.values){
-            if(file.name == file_path.back()){
-                content = file.value;
-                return 0;
-            }
+            return ::read(folder, file_path, content);
         }
 
-        for(auto& file : folder.folders){
-            if(file.name == file_path.back()){
-                return std::ERROR_DIRECTORY;
-            }
-        }
+        return std::ERROR_NOT_EXISTS;
     }
-
-    return std::ERROR_NOT_EXISTS;
 }
 
 size_t sysfs::sysfs_file_system::ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents){
     auto& root_folder = find_root_folder(mount_point);
 
-    if(exists_folder(root_folder, file_path, 0, file_path.size() - 1)){
-        auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
-
-        for(auto& file : folder.folders){
-            vfs::file f;
-            f.file_name = file.name;
-            f.directory = true;
-            f.hidden = false;
-            f.system = false;
-            f.size = 0;
-            contents.push_back(f);
-        }
-
-        for(auto& file : folder.values){
-            vfs::file f;
-            f.file_name = file.name;
-            f.directory = false;
-            f.hidden = false;
-            f.system = false;
-            f.size = 0;
-            contents.push_back(f);
-        }
-
-        return 0;
+    if(file_path.empty()){
+        return ::ls(root_folder, contents);
     } else {
+        if(exists_folder(root_folder, file_path, 0, file_path.size())){
+            auto& folder = find_folder(root_folder, file_path, 0, file_path.size());
+
+            return ::ls(folder, contents);
+        }
+
         return std::ERROR_NOT_EXISTS;
     }
 }
