@@ -110,7 +110,7 @@ size_t get_file(const sys_folder& folder, const std::vector<std::string>& file_p
             f.directory = false;
             f.hidden = false;
             f.system = false;
-            f.size = 0;
+            f.size = file.value.size();
 
             return 0;
         }
@@ -136,7 +136,7 @@ size_t ls(const sys_folder& folder, std::vector<vfs::file>& contents){
         f.directory = false;
         f.hidden = false;
         f.system = false;
-        f.size = 0;
+        f.size = file.value.size();
         contents.push_back(f);
     }
 
@@ -158,6 +158,39 @@ size_t read(const sys_folder& folder, const std::vector<std::string>& file_path,
     }
 
     return std::ERROR_NOT_EXISTS;
+}
+
+void set_value(sys_folder& folder, const std::string& name, const std::string& value){
+    for(auto& v : folder.values){
+        if(v.name == name){
+            v.value = value;
+            return;
+        }
+    }
+
+    folder.values.emplace_back(name, value);
+}
+
+void delete_value(sys_folder& folder, const std::string& name){
+    for(size_t i = 0; i < folder.values.size(); ++i){
+        auto& v = folder.values[i];
+
+        if(v.name == name){
+            folder.values.erase(i);
+            break;
+        }
+    }
+}
+
+void delete_folder(sys_folder& folder, const std::string& name){
+    for(size_t i = 0; i < folder.folders.size(); ++i){
+        auto& v = folder.folders[i];
+
+        if(v.name == name){
+            folder.folders.erase(i);
+            break;
+        }
+    }
 }
 
 } //end of anonymous namespace
@@ -247,59 +280,43 @@ size_t sysfs::sysfs_file_system::statfs(statfs_info& file){
     return 0;
 }
 
-void set_value(const std::string& mount_point, const std::string& path, const std::string& value){
+void sysfs::set_value(const std::string& mount_point, const std::string& path, const std::string& value){
     auto& root_folder = find_root_folder(mount_point);
 
     auto file_path = std::split(path, '/');
-    auto last = file_path.back();
-    file_path.pop_back();
 
-    auto& folder = find_folder(root_folder, file_path, 0, file_path.size());
-
-    for(auto& v : folder.values){
-        if(v.name == last){
-            v.value = value;
-            return;
-        }
-    }
-
-    folder.values.emplace_back(last, value);
-}
-
-void delete_value(const std::string& mount_point, const std::string& path){
-    auto& root_folder = find_root_folder(mount_point);
-
-    auto file_path = std::split(path, '/');
-    auto last = file_path.back();
-    file_path.pop_back();
-
-    auto& folder = find_folder(root_folder, file_path, 0, file_path.size());
-
-    for(size_t i = 0; i < folder.values.size(); ++i){
-        auto& v = folder.values[i];
-
-        if(v.name == last){
-            folder.values.erase(i);
-            break;
-        }
+    if(file_path.size() == 1){
+        ::set_value(root_folder, file_path.back(), value);
+    } else {
+        auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
+        ::set_value(folder, file_path.back(), value);
     }
 }
 
-void delete_folder(const std::string& mount_point, const std::string& path){
+void sysfs::delete_value(const std::string& mount_point, const std::string& path){
     auto& root_folder = find_root_folder(mount_point);
 
     auto file_path = std::split(path, '/');
-    auto last = file_path.back();
-    file_path.pop_back();
 
-    auto& folder = find_folder(root_folder, file_path, 0, file_path.size());
+    if(file_path.size() == 1){
+        ::delete_value(root_folder, file_path.back());
+    } else {
+        auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
 
-    for(size_t i = 0; i < folder.folders.size(); ++i){
-        auto& v = folder.folders[i];
+        ::delete_value(folder, file_path.back());
+    }
+}
 
-        if(v.name == last){
-            folder.folders.erase(i);
-            break;
-        }
+void sysfs::delete_folder(const std::string& mount_point, const std::string& path){
+    auto& root_folder = find_root_folder(mount_point);
+
+    auto file_path = std::split(path, '/');
+
+    if(file_path.size() == 1){
+        ::delete_folder(root_folder, file_path.back());
+    } else {
+        auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
+
+        ::delete_folder(folder, file_path.back());
     }
 }
