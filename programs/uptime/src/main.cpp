@@ -32,15 +32,14 @@ int main(int, char*[]){
 
             printf("Uptime: %u:%u:%u\n", value / 3600, (value % 3600) / 60, value % 60);
         } else {
-             printf("cat: error: %s\n", std::error_message(content_result.error()));
+             printf("uptime: error: %s\n", std::error_message(content_result.error()));
         }
 
         delete[] buffer;
 
         close(*fd);
     } else {
-        printf("cat: error: %s\n", std::error_message(fd.error()));
+        printf("uptime: error: %s\n", std::error_message(fd.error()));
     }
 
     exit(0);
-}
