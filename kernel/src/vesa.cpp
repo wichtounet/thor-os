@@ -14,6 +14,8 @@
 #include "console.hpp"
 #include "kernel.hpp"
 
+#include "fs/sysfs.hpp"
+
 /**
  * VESA Drawing implementation.
  *
@@ -74,6 +76,10 @@ bool vesa::init(){
     green_shift = block.linear_green_mask_position;
 
     screen = reinterpret_cast<uint32_t*>(virt);
+
+    sysfs::set_value("/sys/", "/vesa/enabled", "true");
+    sysfs::set_value("/sys/", "/vesa/resolution/width", std::to_string(block.width));
+    sysfs::set_value("/sys/", "/vesa/resolution/height", std::to_string(block.height));
 
     return true;
 }
