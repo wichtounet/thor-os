@@ -32,8 +32,6 @@ int main(int argc, char* argv[]){
                 auto content_result = read(*fd, buffer, size);
 
                 if(content_result.valid()){
-                    print_line(*content_result);
-
                     if(*content_result != size){
                         //TODO Read more
                     } else {
