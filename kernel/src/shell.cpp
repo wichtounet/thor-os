@@ -23,7 +23,6 @@
 #include "elf.hpp"
 #include "paging.hpp"
 #include "gdt.hpp"
-#include "vesa.hpp"
 #include "process.hpp"
 #include "scheduler.hpp"
 
@@ -48,16 +47,11 @@ bool shift = false;
 //Declarations of the different functions
 
 void help_command(const std::vector<std::string>& params);
-void uptime_command(const std::vector<std::string>& params);
 void clear_command(const std::vector<std::string>& params);
-void echo_command(const std::vector<std::string>& params);
-void mmap_command(const std::vector<std::string>& params);
 void memory_command(const std::vector<std::string>& params);
-void kallocdebug_command(const std::vector<std::string>& params);
 void disks_command(const std::vector<std::string>& params);
 void partitions_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
-void vesainfo_command(const std::vector<std::string>& params);
 void paginginfo_command(const std::vector<std::string>& params);
 
 struct command_definition {
@@ -65,18 +59,13 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[12] = {
+command_definition commands[7] = {
     {"help", help_command},
-    {"uptime", uptime_command},
     {"clear", clear_command},
-    {"echo", echo_command},
-    {"mmap", mmap_command},
     {"memory", memory_command},
-    {"kallocdebug", kallocdebug_command},
     {"disks", disks_command},
     {"partitions", partitions_command},
     {"exec", exec_command},
-    {"vesainfo", vesainfo_command},
     {"paginginfo", paginginfo_command},
 };
 
@@ -204,30 +193,6 @@ void help_command(const std::vector<std::string>&){
     }
 }
 
-void uptime_command(const std::vector<std::string>&){
-    k_printf("Uptime: %us\n", timer::seconds());
-}
-
-void echo_command(const std::vector<std::string>& params){
-    for(uint64_t i = 1; i < params.size(); ++i){
-        k_print(params[i]);
-        k_print(' ');
-    }
-    k_print_line();
-}
-
-void mmap_command(const std::vector<std::string>&){
-    k_printf("There are %u mmap entry\n", e820::mmap_entry_count());
-
-    k_print_line("Base         End          Size                  Type");
-    for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
-        auto& entry = e820::mmap_entry(i);
-
-        k_printf("%.10h %.10h %.10h %8m %s\n",
-            entry.base, entry.base + entry.size, entry.size, entry.size, e820::str_e820_type(entry.type));
-    }
-}
-
 void memory_command(const std::vector<std::string>&){
     k_print_line("Physical:");
     k_printf("\tAvailable: %m (%h)\n", physical_allocator::available(), physical_allocator::available());
@@ -243,10 +208,6 @@ void memory_command(const std::vector<std::string>&){
     k_printf("\tAllocated: %m (%h)\n", kalloc::allocated_memory(), kalloc::allocated_memory());
     k_printf("\tUsed: %m (%h)\n", kalloc::used_memory(), kalloc::used_memory());
     k_printf("\tFree: %m (%h)\n", kalloc::free_memory(), kalloc::free_memory());
-}
-
-void kallocdebug_command(const std::vector<std::string>&){
-    kalloc::debug();
 }
 
 void disks_command(const std::vector<std::string>& params){
@@ -315,29 +276,6 @@ void exec_command(const std::vector<std::string>&){
     //Fake exec just to start() the scheduler
     std::vector<std::string> params;
     scheduler::exec("", params);
-}
-
-void vesainfo_command(const std::vector<std::string>&){
-    if(vesa::vesa_enabled){
-        auto& block = vesa::mode_info_block;
-
-        k_print_line("VESA Enabled");
-        k_printf("Resolution: %ux%u\n", static_cast<size_t>(block.width), static_cast<size_t>(block.height));
-        k_printf("Depth: %u\n", static_cast<size_t>(block.bpp));
-        k_printf("Pitch: %u\n", static_cast<size_t>(block.pitch));
-        k_printf("LFB Address: %h\n", static_cast<size_t>(block.linear_video_buffer));
-        k_printf("Offscreen Memory Size: %h\n", static_cast<size_t>(block.offscreen_memory_size));
-        k_printf("Maximum Pixel Clock: %h\n", static_cast<size_t>(block.maximum_pixel_clock));
-
-        k_printf("Red Mask Size: %u\n", static_cast<size_t>(block.linear_red_mask_size));
-        k_printf("Red Mask Position: %u\n", static_cast<size_t>(block.linear_red_mask_position));
-        k_printf("Green Mask Size: %u\n", static_cast<size_t>(block.linear_green_mask_size));
-        k_printf("Green Mask Position: %u\n", static_cast<size_t>(block.linear_green_mask_position));
-        k_printf("Blue Mask Size: %u\n", static_cast<size_t>(block.linear_blue_mask_size));
-        k_printf("Blue Mask Position: %u\n", static_cast<size_t>(block.linear_blue_mask_position));
-    } else {
-        k_print_line("VESA Disabled");
-    }
 }
 
 void paginginfo_command(const std::vector<std::string>&){
