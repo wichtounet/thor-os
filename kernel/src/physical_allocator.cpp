@@ -11,6 +11,8 @@
 #include "buddy_allocator.hpp"
 #include "assert.hpp"
 
+#include "fs/sysfs.hpp"
+
 //For problems during boot
 #include "kernel.hpp"
 #include "console.hpp"
@@ -48,6 +50,18 @@ uint64_t* create_array(size_t managed_space, size_t block){
     thor_assert(paging::map_pages(virtual_address, physical_address, pages), "Impossible to map pages for the physical allocator");
 
     return reinterpret_cast<uint64_t*>(virtual_address);
+}
+
+std::string sysfs_free(){
+    return std::to_string(physical_allocator::free());
+}
+
+std::string sysfs_available(){
+    return std::to_string(physical_allocator::available());
+}
+
+std::string sysfs_allocated(){
+    return std::to_string(physical_allocator::allocated());
 }
 
 } //End of anonymous namespace
@@ -130,6 +144,12 @@ void physical_allocator::init(){
     //buddy system.
     //A two pass computation of the arrays size could probably
     //solve this
+}
+
+void physical_allocator::finalize(){
+    sysfs::set_dynamic_value("/sys/", "/memory/physical/available", &sysfs_available);
+    sysfs::set_dynamic_value("/sys/", "/memory/physical/free", &sysfs_free);
+    sysfs::set_dynamic_value("/sys/", "/memory/physical/allocated", &sysfs_allocated);
 }
 
 size_t physical_allocator::allocate(size_t blocks){

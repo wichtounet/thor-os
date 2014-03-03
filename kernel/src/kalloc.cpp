@@ -11,6 +11,8 @@
 #include "paging.hpp"
 #include "e820.hpp"
 
+#include "fs/sysfs.hpp"
+
 namespace {
 
 //Used to compile with malloc operations in the console
@@ -306,6 +308,18 @@ malloc_header_chunk* coalesce(malloc_header_chunk* b){
     return b;
 }
 
+std::string sysfs_free(){
+    return std::to_string(kalloc::free_memory());
+}
+
+std::string sysfs_allocated(){
+    return std::to_string(kalloc::allocated_memory());
+}
+
+std::string sysfs_used(){
+    return std::to_string(kalloc::used_memory());
+}
+
 } //end of anonymous namespace
 
 void kalloc::init(){
@@ -314,6 +328,12 @@ void kalloc::init(){
 
     //Allocate a first block
     expand_heap(malloc_head);
+}
+
+void kalloc::finalize(){
+    sysfs::set_dynamic_value("/sys/", "/memory/dynamic/free", &sysfs_free);
+    sysfs::set_dynamic_value("/sys/", "/memory/dynamic/used", &sysfs_used);
+    sysfs::set_dynamic_value("/sys/", "/memory/dynamic/allocated", &sysfs_allocated);
 }
 
 void* kalloc::k_malloc(uint64_t bytes){

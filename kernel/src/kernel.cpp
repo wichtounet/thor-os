@@ -59,6 +59,11 @@ void  kernel_main(){
     //Call global constructors
     _init();
 
+    //Finalize memory operations
+    physical_allocator::finalize();
+    virtual_allocator::finalize();
+    kalloc::finalize();
+
     //Install drivers
     timer::install();
     //acpi::init();

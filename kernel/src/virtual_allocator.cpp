@@ -12,6 +12,8 @@
 #include "buddy_allocator.hpp"
 #include "assert.hpp"
 
+#include "fs/sysfs.hpp"
+
 //For problems during boot
 #include "kernel.hpp"
 #include "console.hpp"
@@ -42,6 +44,18 @@ std::array<uint64_t, array_size(128)> data_bitmap_128;
 typedef buddy_allocator<8, unit> buddy_type;
 buddy_type allocator;
 
+std::string sysfs_free(){
+    return std::to_string(virtual_allocator::free());
+}
+
+std::string sysfs_available(){
+    return std::to_string(virtual_allocator::available());
+}
+
+std::string sysfs_allocated(){
+    return std::to_string(virtual_allocator::allocated());
+}
+
 } //end of anonymous namespace
 
 void virtual_allocator::init(){
@@ -58,6 +72,12 @@ void virtual_allocator::init(){
     allocator.init<7>(array_size(128), data_bitmap_128.data());
 
     allocator.init();
+}
+
+void virtual_allocator::finalize(){
+    sysfs::set_dynamic_value("/sys/", "/memory/virtual/available", &sysfs_available);
+    sysfs::set_dynamic_value("/sys/", "/memory/virtual/free", &sysfs_free);
+    sysfs::set_dynamic_value("/sys/", "/memory/virtual/allocated", &sysfs_allocated);
 }
 
 size_t virtual_allocator::allocate(size_t pages){

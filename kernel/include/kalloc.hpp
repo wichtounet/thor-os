@@ -13,6 +13,7 @@
 namespace kalloc {
 
 void init();
+void finalize();
 
 void* k_malloc(uint64_t bytes);
 void k_free(void* block);

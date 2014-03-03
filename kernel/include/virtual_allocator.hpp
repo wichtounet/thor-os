@@ -17,6 +17,7 @@ namespace virtual_allocator {
 constexpr const size_t kernel_virtual_size = 1_GiB;
 
 void init();
+void finalize();
 
 size_t allocate(size_t pages);
 void free(size_t address, size_t pages);

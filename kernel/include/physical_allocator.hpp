@@ -17,6 +17,7 @@ void early_init();
 size_t early_allocate(size_t pages);
 
 void init();
+void finalize();
 
 size_t allocate(size_t pages);
 void free(size_t address, size_t pages);
