@@ -15,6 +15,7 @@
 #include "assert.hpp"
 #include "process.hpp"
 #include "physical_pointer.hpp"
+#include "fs/sysfs.hpp"
 
 namespace {
 
@@ -188,6 +189,14 @@ void paging::init(){
     //7. Use the new structure as the new paging structure (in CR3)
 
     asm volatile("mov rax, %0; mov cr3, rax" : : "m"(physical_pml4t_start) : "memory", "rax");
+}
+
+void paging::finalize(){
+    sysfs::set_constant_value("/sys/", "/paging/page_size", std::to_string(paging::PAGE_SIZE));
+    sysfs::set_constant_value("/sys/", "/paging/pdpt", std::to_string(paging::pml4_entries));
+    sysfs::set_constant_value("/sys/", "/paging/pd", std::to_string(paging::pdpt_entries));
+    sysfs::set_constant_value("/sys/", "/paging/pt", std::to_string(paging::pd_entries));
+    sysfs::set_constant_value("/sys/", "/paging/physical_size", std::to_string(paging::physical_memory_pages * paging::PAGE_SIZE));
 }
 
 //TODO Update to support offsets at the end of virt

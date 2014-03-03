@@ -60,6 +60,7 @@ void  kernel_main(){
     _init();
 
     //Finalize memory operations
+    paging::finalize();
     physical_allocator::finalize();
     virtual_allocator::finalize();
     kalloc::finalize();

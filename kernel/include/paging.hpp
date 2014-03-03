@@ -85,6 +85,7 @@ constexpr size_t page_align(size_t addr){
 }
 
 void init();
+void finalize();
 
 size_t physical_address(size_t virt);
 bool page_present(size_t virt);
