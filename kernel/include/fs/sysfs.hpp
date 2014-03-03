@@ -33,7 +33,11 @@ public:
     size_t rm(const std::vector<std::string>& file_path);
 };
 
-void set_value(const std::string& mount_point, const std::string& path, const std::string& value);
+typedef std::string (*dynamic_fun_t)();
+
+void set_constant_value(const std::string& mount_point, const std::string& path, const std::string& value);
+void set_dynamic_value(const std::string& mount_point, const std::string& path, dynamic_fun_t fun);
+
 void delete_value(const std::string& mount_point, const std::string& path);
 void delete_folder(const std::string& mount_point, const std::string& path);
 

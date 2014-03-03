@@ -19,12 +19,16 @@ uint64_t _timer_seconds = 0;
 
 volatile uint64_t _timer_countdown = 0;
 
+std::string sysfs_uptime(){
+    return std::to_string(timer::seconds());
+}
+
 } //End of anonymous namespace
 
 void timer::install(){
     pit::install();
 
-    sysfs::set_value("/sys/", "uptime", "0");
+    sysfs::set_dynamic_value("/sys/", "uptime", &sysfs_uptime);
 }
 
 void timer::tick(){
@@ -38,8 +42,6 @@ void timer::tick(){
 
     if(_timer_ticks % 1000 == 0){
         ++_timer_seconds;
-
-        sysfs::set_value("/sys/", "uptime", std::to_string(_timer_seconds));
     }
 }
 

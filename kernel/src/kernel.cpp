@@ -84,8 +84,8 @@ void  kernel_main(){
 
     init_console();
 
-    sysfs::set_value("/sys/", "version", "0.1");
-    sysfs::set_value("/sys/", "author", "Baptiste Wicht");
+    sysfs::set_constant_value("/sys/", "version", "0.1");
+    sysfs::set_constant_value("/sys/", "author", "Baptiste Wicht");
 
     scheduler::init();
 

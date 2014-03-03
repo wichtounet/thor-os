@@ -19,11 +19,24 @@ namespace {
 
 struct sys_value {
     std::string name;
-    std::string value;
+    std::string _value;
+    sysfs::dynamic_fun_t fun = nullptr;
 
     sys_value(){}
-    sys_value(std::string name, std::string value) : name(name), value(value){
+    sys_value(std::string name, std::string value) : name(name), _value(value){
         //Nothing else to init
+    }
+
+    sys_value(std::string name, sysfs::dynamic_fun_t fun) : name(name), fun(fun){
+        //Nothing else to init
+    }
+
+    std::string value() const {
+        if(fun){
+            return fun();
+        } else {
+            return _value;
+        }
     }
 };
 
@@ -110,7 +123,7 @@ size_t get_file(const sys_folder& folder, const std::vector<std::string>& file_p
             f.directory = false;
             f.hidden = false;
             f.system = false;
-            f.size = file.value.size();
+            f.size = file.value().size();
 
             return 0;
         }
@@ -136,7 +149,7 @@ size_t ls(const sys_folder& folder, std::vector<vfs::file>& contents){
         f.directory = false;
         f.hidden = false;
         f.system = false;
-        f.size = file.value.size();
+        f.size = file.value().size();
         contents.push_back(f);
     }
 
@@ -146,7 +159,7 @@ size_t ls(const sys_folder& folder, std::vector<vfs::file>& contents){
 size_t read(const sys_folder& folder, const std::vector<std::string>& file_path, std::string& content){
     for(auto& file : folder.values){
         if(file.name == file_path.back()){
-            content = file.value;
+            content = file.value();
             return 0;
         }
     }
@@ -163,12 +176,23 @@ size_t read(const sys_folder& folder, const std::vector<std::string>& file_path,
 void set_value(sys_folder& folder, const std::string& name, const std::string& value){
     for(auto& v : folder.values){
         if(v.name == name){
-            v.value = value;
+            v._value = value;
             return;
         }
     }
 
     folder.values.emplace_back(name, value);
+}
+
+void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_t fun){
+    for(auto& v : folder.values){
+        if(v.name == name){
+            v.fun = fun;
+            return;
+        }
+    }
+
+    folder.values.emplace_back(name, fun);
 }
 
 void delete_value(sys_folder& folder, const std::string& name){
@@ -280,7 +304,7 @@ size_t sysfs::sysfs_file_system::statfs(statfs_info& file){
     return 0;
 }
 
-void sysfs::set_value(const std::string& mount_point, const std::string& path, const std::string& value){
+void sysfs::set_constant_value(const std::string& mount_point, const std::string& path, const std::string& value){
     auto& root_folder = find_root_folder(mount_point);
 
     auto file_path = std::split(path, '/');
@@ -290,6 +314,19 @@ void sysfs::set_value(const std::string& mount_point, const std::string& path, c
     } else {
         auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
         ::set_value(folder, file_path.back(), value);
+    }
+}
+
+void sysfs::set_dynamic_value(const std::string& mount_point, const std::string& path, dynamic_fun_t fun){
+    auto& root_folder = find_root_folder(mount_point);
+
+    auto file_path = std::split(path, '/');
+
+    if(file_path.size() == 1){
+        ::set_value(root_folder, file_path.back(), fun);
+    } else {
+        auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
+        ::set_value(folder, file_path.back(), fun);
     }
 }
 
