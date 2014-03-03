@@ -114,6 +114,10 @@ public:
 
     //Modifiers
 
+    void adjust_size(size_t size){
+        _size = size;
+    }
+
     void clear(){
         _size = 0;
         _data[0] = '\0';

@@ -223,7 +223,7 @@ size_t fat32::fat32_file_system::get_file(const std::vector<std::string>& file_p
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path, std::string& content){
+size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read){
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
@@ -233,30 +233,53 @@ size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path,
     uint32_t cluster_number = file.location;
     size_t file_size = file.size;
 
+    //Check the offset parameter
+    if(offset > file_size){
+        return std::ERROR_INVALID_OFFSET;
+    }
+
     //No need to read the cluster if there are no content
-    if(file_size == 0){
-        content = "";
+    if(file_size == 0 || count == 0){
+        read = 0;
         return 0;
     }
 
-    content.reserve(file_size + 1);
+    size_t first = offset;
+    size_t last = std::min(offset + count, file_size);
 
     size_t read_bytes = 0;
+    size_t position = 0;
+    size_t cluster = 0;
 
-    while(read_bytes < file_size){
-        size_t cluster_size = 512 * fat_bs->sectors_per_cluster;
-        std::unique_heap_array<char> cluster(cluster_size);
+    size_t cluster_size = 512 * fat_bs->sectors_per_cluster;
 
-        if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
-            for(size_t i = 0; i < cluster_size && read_bytes < file_size; ++i,++read_bytes){
-                content += cluster[i];
+    while(read_bytes < last){
+        auto cluster_last = (cluster + 1) * cluster_size;
+
+        if(first < cluster_last){
+            std::unique_heap_array<char> cluster(cluster_size);
+
+            if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+                size_t i = 0;
+
+                if(position == 0){
+                    i = first % cluster_size;
+                }
+
+                for(; i < cluster_size && read_bytes < last; ++i, ++read_bytes){
+                    buffer[position++] = cluster[i];
+                }
+            } else {
+                return std::ERROR_FAILED;
             }
         } else {
-            break;
+            read_bytes += cluster_size;
         }
 
+        ++cluster;
+
         //If the file is not read completely, get the next cluster
-        if(read_bytes < file_size){
+        if(read_bytes < last){
             cluster_number = next_cluster(cluster_number);
 
             //It may be possible that either the file size or the FAT entry is wrong
@@ -270,6 +293,8 @@ size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path,
             }
         }
     }
+
+    read = last - first;
 
     return 0;
 }

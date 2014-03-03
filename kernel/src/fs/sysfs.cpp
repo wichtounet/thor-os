@@ -156,10 +156,18 @@ size_t ls(const sys_folder& folder, std::vector<vfs::file>& contents){
     return 0;
 }
 
-size_t read(const sys_folder& folder, const std::vector<std::string>& file_path, std::string& content){
+size_t read(const sys_folder& folder, const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read){
     for(auto& file : folder.values){
         if(file.name == file_path.back()){
-            content = file.value();
+            auto value = file.value();
+
+            if(offset > value.size()){
+                return std::ERROR_INVALID_OFFSET;
+            }
+
+            read = std::min(count, value.size() - offset);
+            std::copy_n(buffer, value.c_str() + offset, read);
+
             return 0;
         }
     }
@@ -251,18 +259,18 @@ size_t sysfs::sysfs_file_system::get_file(const std::vector<std::string>& file_p
     }
 }
 
-size_t sysfs::sysfs_file_system::read(const std::vector<std::string>& file_path, std::string& content){
+size_t sysfs::sysfs_file_system::read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read){
     auto& root_folder = find_root_folder(mount_point);
 
     if(file_path.empty()){
         return std::ERROR_DIRECTORY;
     } else if(file_path.size() == 1){
-        return ::read(root_folder, file_path, content);
+        return ::read(root_folder, file_path, buffer, count, offset, read);
     } else {
         if(exists_folder(root_folder, file_path, 0, file_path.size() - 1)){
             auto& folder = find_folder(root_folder, file_path, 0, file_path.size() - 1);
 
-            return ::read(folder, file_path, content);
+            return ::read(folder, file_path, buffer, count, offset, read);
         }
 
         return std::ERROR_NOT_EXISTS;

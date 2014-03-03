@@ -286,20 +286,14 @@ int64_t vfs::read(size_t fd, char* buffer, size_t max){
     auto& fs = get_fs(path);
     auto fs_path = get_fs_path(path, fs);
 
-    //TODO Avoid this double copy
-    std::string content;
-    auto result = fs.file_system->read(fs_path, content);
+    size_t read = 0;
+    auto result = fs.file_system->read(fs_path, buffer, max, 0, read);
 
     if(result > 0){
         return -result;
     }
 
-    size_t i = 0;
-    for(; i < content.size() && i < max; ++i){
-        buffer[i] = content[i];
-    }
-
-    return i;
+    return read;
 }
 
 int64_t vfs::direct_read(const std::string& file_path, std::string& content){
@@ -307,13 +301,26 @@ int64_t vfs::direct_read(const std::string& file_path, std::string& content){
     auto& fs = get_fs(path);
     auto fs_path = get_fs_path(path, fs);
 
-    auto result = fs.file_system->read(fs_path, content);
+    vfs::file f;
+    auto result = fs.file_system->get_file(fs_path, f);
 
     if(result > 0){
         return -result;
     }
 
-    return 0;
+    content.reserve(f.size + 1);
+
+    size_t read = 0;
+    result = fs.file_system->read(fs_path, content.c_str(), f.size, 0, read);
+
+    if(result > 0){
+        return -result;
+    }
+
+    content[read] = '\0';
+    content.adjust_size(read);
+
+    return read;
 }
 
 int64_t vfs::entries(size_t fd, char* buffer, size_t size){
