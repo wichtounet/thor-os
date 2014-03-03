@@ -46,13 +46,7 @@ void stdio::virtual_terminal::send_input(char key){
                     print('\b');
                 }
 
-                if(!input_buffer.empty()){
-                    input_buffer.pop();
-                }
-
-                if(!canonical_buffer.empty()){
-                    canonical_buffer.pop();
-                }
+                input_buffer.push('\b');
             } else {
                 auto qwertz_key =
                     shift
@@ -85,17 +79,29 @@ size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
 
             canonical_buffer.push(c);
 
-            ++read;
+            if(c == '\b'){
+                if(read > 0){
+                    --read;
+                }
+            } else {
+                ++read;
 
-            if(c == '\n'){
-                break;
+                if(c == '\n'){
+                    break;
+                }
             }
         }
 
         if(read > 0 && (c == '\n' || read == max)){
             read = 0;
             while(!canonical_buffer.empty()){
-                buffer[read++] = canonical_buffer.pop();
+                auto value = canonical_buffer.pop();
+
+                if(value == '\b'){
+                    --read;
+                } else {
+                    buffer[read++] = value;
+                }
             }
 
             return read;
