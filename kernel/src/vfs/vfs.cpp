@@ -272,7 +272,7 @@ int64_t vfs::stat(size_t fd, stat_info& info){
     return 0;
 }
 
-int64_t vfs::read(size_t fd, char* buffer, size_t max){
+int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
@@ -287,7 +287,7 @@ int64_t vfs::read(size_t fd, char* buffer, size_t max){
     auto fs_path = get_fs_path(path, fs);
 
     size_t read = 0;
-    auto result = fs.file_system->read(fs_path, buffer, max, 0, read);
+    auto result = fs.file_system->read(fs_path, buffer, count, offset, read);
 
     if(result > 0){
         return -result;

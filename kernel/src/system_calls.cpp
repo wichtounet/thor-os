@@ -135,8 +135,9 @@ void sc_read(interrupt::syscall_regs* regs){
     auto fd = regs->rbx;
     auto buffer = reinterpret_cast<char*>(regs->rcx);
     auto max = regs->rdx;
+    auto offset = regs->rsi;
 
-    regs->rax = vfs::read(fd, buffer, max);
+    regs->rax = vfs::read(fd, buffer, max, offset);
 }
 
 void sc_entries(interrupt::syscall_regs* regs){

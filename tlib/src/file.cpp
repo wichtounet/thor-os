@@ -78,12 +78,12 @@ std::expected<statfs_info> statfs(const char* file){
     }
 }
 
-std::expected<size_t> read(size_t fd, char* buffer, size_t max){
+std::expected<size_t> read(size_t fd, char* buffer, size_t max, size_t offset){
     int64_t code;
-    asm volatile("mov rax, 303; mov rbx, %[fd]; mov rcx, %[buffer]; mov rdx, %[max]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 303; mov rbx, %[fd]; mov rcx, %[buffer]; mov rdx, %[max]; mov rsi, %[offset]; int 50; mov %[code], rax"
         : [code] "=m" (code)
-        : [fd] "g" (fd), [buffer] "g" (reinterpret_cast<size_t>(buffer)), [max] "g" (max)
-        : "rax", "rbx", "rcx", "rdx");
+        : [fd] "g" (fd), [buffer] "g" (reinterpret_cast<size_t>(buffer)), [max] "g" (max), [offset] "g" (offset)
+        : "rax", "rbx", "rcx", "rdx", "rsi");
 
     if(code < 0){
         return std::make_expected_from_error<size_t, size_t>(-code);
