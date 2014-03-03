@@ -46,27 +46,19 @@ bool shift = false;
 
 //Declarations of the different functions
 
-void help_command(const std::vector<std::string>& params);
-void clear_command(const std::vector<std::string>& params);
-void memory_command(const std::vector<std::string>& params);
 void disks_command(const std::vector<std::string>& params);
 void partitions_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
-void paginginfo_command(const std::vector<std::string>& params);
 
 struct command_definition {
     const char* name;
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[7] = {
-    {"help", help_command},
-    {"clear", clear_command},
-    {"memory", memory_command},
+command_definition commands[3] = {
     {"disks", disks_command},
     {"partitions", partitions_command},
     {"exec", exec_command},
-    {"paginginfo", paginginfo_command},
 };
 
 std::string current_input(16);
@@ -180,36 +172,6 @@ void exec_shell_command(){
     k_printf("The command \"%s\" does not exist\n", current_input.c_str());
 }
 
-void clear_command(const std::vector<std::string>&){
-    wipeout();
-}
-
-void help_command(const std::vector<std::string>&){
-    k_print("Available commands:\n");
-
-    for(auto& command : commands){
-        k_print('\t');
-        k_print_line(command.name);
-    }
-}
-
-void memory_command(const std::vector<std::string>&){
-    k_print_line("Physical:");
-    k_printf("\tAvailable: %m (%h)\n", physical_allocator::available(), physical_allocator::available());
-    k_printf("\tAllocated: %m (%h)\n", physical_allocator::allocated(), physical_allocator::allocated());
-    k_printf("\tFree: %m (%h)\n", physical_allocator::free(), physical_allocator::free());
-
-    k_print_line("Virtual:");
-    k_printf("\tAvailable: %m (%h)\n", virtual_allocator::available(), virtual_allocator::available());
-    k_printf("\tAllocated: %m (%h)\n", virtual_allocator::allocated(), virtual_allocator::allocated());
-    k_printf("\tFree: %m (%h)\n", virtual_allocator::free(), virtual_allocator::free());
-
-    k_print_line("Dynamic:");
-    k_printf("\tAllocated: %m (%h)\n", kalloc::allocated_memory(), kalloc::allocated_memory());
-    k_printf("\tUsed: %m (%h)\n", kalloc::used_memory(), kalloc::used_memory());
-    k_printf("\tFree: %m (%h)\n", kalloc::free_memory(), kalloc::free_memory());
-}
-
 void disks_command(const std::vector<std::string>& params){
     bool verbose = false;
 
@@ -276,15 +238,6 @@ void exec_command(const std::vector<std::string>&){
     //Fake exec just to start() the scheduler
     std::vector<std::string> params;
     scheduler::exec("", params);
-}
-
-void paginginfo_command(const std::vector<std::string>&){
-    k_printf("Page Size: %u\n", paging::PAGE_SIZE);
-    k_printf("Number of PDPT: %u\n", paging::pml4_entries);
-    k_printf("Number of PD: %u\n", paging::pdpt_entries);
-    k_printf("Number of PT: %u\n", paging::pd_entries);
-    k_printf("Virtual Start: %h\n", paging::virtual_paging_start);
-    k_printf("Physical Size: %h\n", paging::physical_memory_pages * paging::PAGE_SIZE);
 }
 
 } //end of anonymous namespace
