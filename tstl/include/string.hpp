@@ -23,6 +23,42 @@ inline uint64_t str_len(const char* a){
     return length;
 }
 
+static constexpr const size_t SSO_SIZE = 16;
+
+template<typename CharT>
+struct base_small {
+    CharT data[SSO_SIZE];
+};
+
+template<typename CharT>
+struct base_big {
+    size_t capacity;
+    unique_ptr<CharT[]> data;
+
+    base_big(size_t capacity, CharT* array) : capacity(capacity), data(array){
+        //Nothing to do
+    }
+};
+
+template<typename CharT>
+union base_storage {
+    base_small<CharT> small;
+    base_big<CharT> big;
+
+    base_storage(){
+        //Default construction: Nothing to do
+    }
+
+    base_storage(size_t capacity, CharT* array) : big(capacity, array) {
+        //Default construction: Nothing to do
+    }
+
+    ~base_storage() {}
+};
+
+static_assert(SSO_SIZE == sizeof(base_small<char>), "base_small must be the correct SSO size");
+static_assert(SSO_SIZE == sizeof(base_big<char>), "base_big must be the correct SSO size");
+
 template<typename CharT>
 struct basic_string {
 public:
@@ -33,18 +69,30 @@ public:
 
 private:
     size_t _size;
-    size_t _capacity;
-    unique_ptr<CharT[]> _data;
+
+    base_storage<CharT> storage;
+
+    bool is_small() const {
+        return _size < 16;
+    }
 
 public:
     //Constructors
 
-    basic_string() : _size(0), _capacity(1), _data(new CharT[1]) {
-        _data[0] = '\0';
+    basic_string() : _size(0){
+        storage.small.data[0] = '\0';
     }
 
-    basic_string(const CharT* s) : _size(str_len(s)), _capacity(_size + 1), _data(new CharT[_capacity]) {
-        std::copy_n(_data.get(), s, _capacity);
+    basic_string(const CharT* s) : _size(str_len(s)) {
+        auto capacity = _size + 1;
+
+        if(is_small()){
+            std::copy_n(&storage.small.data[0], s, capacity);
+        } else {
+            storage.big.capacity = capacity;
+            storage.big.data.reset(new CharT[capacity]);
+            std::copy_n(storage.big.data.get(), s, capacity);
+        }
     }
 
     explicit basic_string(size_t __capacity) : _size(0), _capacity(__capacity), _data(new CharT[_capacity]) {
@@ -97,7 +145,11 @@ public:
 
     //Destructors
 
-    ~basic_string() = default;
+    ~basic_string(){
+        if(!is_small()){
+            storage.big.~base_big();
+        }
+    }
 
     //Modifiers
 
@@ -295,6 +347,8 @@ basic_string<C> operator+(const basic_string<C>& lhs, const C* rhs){
 }
 
 typedef basic_string<char> string;
+
+static_assert(sizeof(string) == 24, "The size of a string must always be 24 bytes");
 
 inline uint64_t parse(const char* it, const char* end){
     int i = end - it - 1;
