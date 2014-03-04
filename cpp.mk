@@ -14,8 +14,10 @@ CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mno-sse -mno-sse2 -mno-sse3 -mno-sse4 -mno-sse
 
 COMMON_LINK_FLAGS=-lgcc
 
-LIB_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC
-LIB_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC
+KERNEL_LINK_FLAGS=$(COMMON_LINK_FLAGS) -T linker.ld
+
+LIB_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -ffunction-sections -fdata-sections
+LIB_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -Wl,-gc-sections
 
 PROGRAM_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -static -L../../tlib/ -ltlib -mcmodel=small -fPIC
-PROGRAM_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld
+PROGRAM_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld -Wl,-gc-sections

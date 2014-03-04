@@ -4,8 +4,6 @@ include ../cpp.mk
 
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
-KERNEL_LINK_FLAGS=$(COMMON_LINK_FLAGS) -T linker.ld
-
 KERNEL_CPP_FILES=$(wildcard src/*.cpp)
 KERNEL_CPP_DRIVERS_FILES=$(wildcard src/drivers/*.cpp)
 KERNEL_CPP_FS_FILES=$(wildcard src/fs/*.cpp)
