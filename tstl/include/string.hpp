@@ -11,6 +11,7 @@
 #include <types.hpp>
 #include <algorithms.hpp>
 #include <vector.hpp>
+#include <unique_ptr.hpp>
 
 namespace std {
 
@@ -22,6 +23,42 @@ inline uint64_t str_len(const char* a){
     return length;
 }
 
+static constexpr const size_t SSO_SIZE = 16;
+
+template<typename CharT>
+struct base_small {
+    CharT data[SSO_SIZE];
+};
+
+template<typename CharT>
+struct base_big {
+    size_t capacity;
+    unique_ptr<CharT[]> data;
+
+    base_big(size_t capacity, CharT* array) : capacity(capacity), data(array){
+        //Nothing to do
+    }
+};
+
+template<typename CharT>
+union base_storage {
+    base_small<CharT> small;
+    base_big<CharT> big;
+
+    base_storage(){
+        //Default construction: Nothing to do
+    }
+
+    base_storage(size_t capacity, CharT* array) : big(capacity, array) {
+        //Default construction: Nothing to do
+    }
+
+    ~base_storage() {}
+};
+
+static_assert(SSO_SIZE == sizeof(base_small<char>), "base_small must be the correct SSO size");
+static_assert(SSO_SIZE == sizeof(base_big<char>), "base_big must be the correct SSO size");
+
 template<typename CharT>
 struct basic_string {
 public:
@@ -32,18 +69,30 @@ public:
 
 private:
     size_t _size;
-    size_t _capacity;
-    CharT* _data;
+
+    base_storage<CharT> storage;
+
+    bool is_small() const {
+        return _size < 16;
+    }
 
 public:
     //Constructors
 
-    basic_string() : _size(0), _capacity(1), _data(new CharT[1]) {
-        _data[0] = '\0';
+    basic_string() : _size(0){
+        storage.small.data[0] = '\0';
     }
 
-    basic_string(const CharT* s) : _size(str_len(s)), _capacity(_size + 1), _data(new CharT[_capacity]) {
-        std::copy_n(_data, s, _capacity);
+    basic_string(const CharT* s) : _size(str_len(s)) {
+        auto capacity = _size + 1;
+
+        if(is_small()){
+            std::copy_n(&storage.small.data[0], s, capacity);
+        } else {
+            storage.big.capacity = capacity;
+            storage.big.data.reset(new CharT[capacity]);
+            std::copy_n(storage.big.data.get(), s, capacity);
+        }
     }
 
     explicit basic_string(size_t __capacity) : _size(0), _capacity(__capacity), _data(new CharT[_capacity]) {
@@ -52,29 +101,23 @@ public:
 
     //Copy constructors
 
-    basic_string(const basic_string& rhs) : _size(rhs._size), _capacity(rhs._capacity) {
+    basic_string(const basic_string& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data() {
         if(_capacity > 0){
-            _data = new CharT[_capacity];
+            _data.reset(new CharT[_capacity]);
 
-            std::copy_n(_data, rhs._data, _size + 1);
-        } else {
-            _data = nullptr;
+            std::copy_n(_data.get(), rhs._data.get(), _size + 1);
         }
     }
 
     basic_string& operator=(const basic_string& rhs){
         if(this != &rhs){
             if(_capacity < rhs._capacity || !_data){
-                if(_data){
-                    delete[] _data;
-                }
-
                 _capacity = rhs._capacity;
-                _data = new CharT[_capacity];
+                _data.reset(new CharT[_capacity]);
             }
 
             _size = rhs._size;
-            std::copy_n(_data, rhs._data, _size + 1);
+            std::copy_n(_data.get(), rhs._data.get(), _size + 1);
         }
 
         return *this;
@@ -82,24 +125,20 @@ public:
 
     //Move constructors
 
-    basic_string(basic_string&& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data(rhs._data) {
+    basic_string(basic_string&& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data(std::move(rhs._data)) {
         rhs._size = 0;
         rhs._capacity = 0;
-        rhs._data = nullptr;
+        //rhs._data = nullptr;
     }
 
     basic_string& operator=(basic_string&& rhs){
-        if(_data){
-            delete[] _data;
-        }
-
         _size = rhs._size;
         _capacity = rhs._capacity;
-        _data = rhs._data;
+        _data = std::move(rhs._data);
 
         rhs._size = 0;
         rhs._capacity = 0;
-        rhs._data = nullptr;
+        //rhs._data = nullptr;
 
         return *this;
     }
@@ -107,8 +146,8 @@ public:
     //Destructors
 
     ~basic_string(){
-        if(_data){
-            delete[] _data;
+        if(!is_small()){
+            storage.big.~base_big();
         }
     }
 
@@ -158,12 +197,9 @@ public:
 
             auto new_data = new CharT[_capacity];
 
-            if(_data){
-                std::copy_n(new_data, _data, _size);
-                delete[] _data;
-            }
+            std::copy_n(new_data, _data.get(), _size);
 
-            _data = new_data;
+            _data.reset(new_data);
         }
     }
 
@@ -172,7 +208,7 @@ public:
 
         ensure_capacity(_size + len + 1);
 
-        std::copy_n(_data + _size, rhs, len);
+        std::copy_n(_data.get() + _size, rhs, len);
 
         _size += len;
 
@@ -184,7 +220,7 @@ public:
     basic_string& operator+=(const basic_string& rhs){
         ensure_capacity(_size + rhs.size() + 1);
 
-        std::copy_n(_data + _size, rhs.c_str(), rhs.size());
+        std::copy_n(_data.get() + _size, rhs.c_str(), rhs.size());
 
         _size += rhs.size();
 
@@ -208,11 +244,11 @@ public:
     }
 
     CharT* c_str(){
-        return _data;
+        return _data.get();
     }
 
     const CharT* c_str() const {
-        return _data;
+        return _data.get();
     }
 
     CharT& operator[](size_t i){
@@ -315,6 +351,8 @@ basic_string<C> operator+(const basic_string<C>& lhs, const C* rhs){
 }
 
 typedef basic_string<char> string;
+
+static_assert(sizeof(string) == 24, "The size of a string must always be 24 bytes");
 
 inline uint64_t parse(const char* it, const char* end){
     int i = end - it - 1;
