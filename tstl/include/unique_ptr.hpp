@@ -8,6 +8,8 @@
 #ifndef UNIQUE_PTR_H
 #define UNIQUE_PTR_H
 
+#include <tuple.hpp>
+
 #include "thor.hpp"
 
 namespace std {
@@ -33,15 +35,19 @@ public:
     typedef D deleter_type;
 
 private:
-    pointer_type pointer;
-    deleter_type deleter;
+    typedef tuple<pointer_type, deleter_type> data_impl;
+
+    data_impl _data;
+
+    //pointer_type pointer;
+    //deleter_type deleter;
 
 public:
-    unique_ptr() : pointer(pointer_type()), deleter(deleter_type()) {}
+    unique_ptr() : _data(make_tuple(pointer_type(), deleter_type())) {}
 
-    explicit unique_ptr(pointer_type p) : pointer(p), deleter(deleter_type()) {}
+    explicit unique_ptr(pointer_type p) : _data(make_tuple(p, deleter_type())) {}
 
-    unique_ptr(unique_ptr&& u) : pointer(u.release()), deleter(u.get_deleter()) {}
+    unique_ptr(unique_ptr&& u) : _data(make_tuple(u.release(), u.get_deleter())) {}
     unique_ptr& operator=(unique_ptr&& u){
         reset(u.release());
         return *this;
@@ -64,11 +70,11 @@ public:
     }
 
     pointer_type get() const {
-        return pointer;
+        return std::get<0>(_data);
     }
 
     deleter_type get_deleter() const {
-        return deleter;
+        return std::get<1>(_data);
     }
 
     operator bool() const {
@@ -76,18 +82,20 @@ public:
     }
 
     pointer_type release(){
-        pointer_type p = pointer;
-        pointer = nullptr;
+        pointer_type p = get();
+        std::get<0>(_data) = nullptr;
         return p;
     }
 
     void reset(pointer_type p = pointer_type()){
-        if(pointer != p){
-            get_deleter()(pointer);
-            pointer = nullptr;
+        if(get() != p){
+            get_deleter()(get());
+            std::get<0>(_data) = nullptr;
         }
     }
 };
+
+static_assert(sizeof(unique_ptr<long>) == sizeof(long), "unique_ptr must have zero overhead with default deleter");
 
 } //end of namespace std
 
