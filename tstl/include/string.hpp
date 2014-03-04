@@ -11,6 +11,7 @@
 #include <types.hpp>
 #include <algorithms.hpp>
 #include <vector.hpp>
+#include <unique_ptr.hpp>
 
 namespace std {
 
@@ -33,7 +34,7 @@ public:
 private:
     size_t _size;
     size_t _capacity;
-    CharT* _data;
+    unique_ptr<CharT[]> _data;
 
 public:
     //Constructors
@@ -43,7 +44,7 @@ public:
     }
 
     basic_string(const CharT* s) : _size(str_len(s)), _capacity(_size + 1), _data(new CharT[_capacity]) {
-        std::copy_n(_data, s, _capacity);
+        std::copy_n(_data.get(), s, _capacity);
     }
 
     explicit basic_string(size_t __capacity) : _size(0), _capacity(__capacity), _data(new CharT[_capacity]) {
@@ -52,29 +53,23 @@ public:
 
     //Copy constructors
 
-    basic_string(const basic_string& rhs) : _size(rhs._size), _capacity(rhs._capacity) {
+    basic_string(const basic_string& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data() {
         if(_capacity > 0){
-            _data = new CharT[_capacity];
+            _data.reset(new CharT[_capacity]);
 
-            std::copy_n(_data, rhs._data, _size + 1);
-        } else {
-            _data = nullptr;
+            std::copy_n(_data.get(), rhs._data.get(), _size + 1);
         }
     }
 
     basic_string& operator=(const basic_string& rhs){
         if(this != &rhs){
             if(_capacity < rhs._capacity || !_data){
-                if(_data){
-                    delete[] _data;
-                }
-
                 _capacity = rhs._capacity;
-                _data = new CharT[_capacity];
+                _data.reset(new CharT[_capacity]);
             }
 
             _size = rhs._size;
-            std::copy_n(_data, rhs._data, _size + 1);
+            std::copy_n(_data.get(), rhs._data.get(), _size + 1);
         }
 
         return *this;
@@ -82,35 +77,27 @@ public:
 
     //Move constructors
 
-    basic_string(basic_string&& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data(rhs._data) {
+    basic_string(basic_string&& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data(std::move(rhs._data)) {
         rhs._size = 0;
         rhs._capacity = 0;
-        rhs._data = nullptr;
+        //rhs._data = nullptr;
     }
 
     basic_string& operator=(basic_string&& rhs){
-        if(_data){
-            delete[] _data;
-        }
-
         _size = rhs._size;
         _capacity = rhs._capacity;
-        _data = rhs._data;
+        _data = std::move(rhs._data);
 
         rhs._size = 0;
         rhs._capacity = 0;
-        rhs._data = nullptr;
+        //rhs._data = nullptr;
 
         return *this;
     }
 
     //Destructors
 
-    ~basic_string(){
-        if(_data){
-            delete[] _data;
-        }
-    }
+    ~basic_string() = default;
 
     //Modifiers
 
@@ -154,12 +141,9 @@ public:
 
             auto new_data = new CharT[_capacity];
 
-            if(_data){
-                std::copy_n(new_data, _data, _size);
-                delete[] _data;
-            }
+            std::copy_n(new_data, _data.get(), _size);
 
-            _data = new_data;
+            _data.reset(new_data);
         }
     }
 
@@ -168,7 +152,7 @@ public:
 
         ensure_capacity(_size + len + 1);
 
-        std::copy_n(_data + _size, rhs, len);
+        std::copy_n(_data.get() + _size, rhs, len);
 
         _size += len;
 
@@ -180,7 +164,7 @@ public:
     basic_string& operator+=(const basic_string& rhs){
         ensure_capacity(_size + rhs.size() + 1);
 
-        std::copy_n(_data + _size, rhs.c_str(), rhs.size());
+        std::copy_n(_data.get() + _size, rhs.c_str(), rhs.size());
 
         _size += rhs.size();
 
@@ -204,11 +188,11 @@ public:
     }
 
     CharT* c_str(){
-        return _data;
+        return _data.get();
     }
 
     const CharT* c_str() const {
-        return _data;
+        return _data.get();
     }
 
     CharT& operator[](size_t i){
