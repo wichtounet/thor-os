@@ -187,11 +187,11 @@ public:
     }
 
     void reset(pointer_type p){
-        if(get() != pointer_type()){
-            get_deleter()(get());
-        }
-
+        auto tmp = get();
         std::get<0>(_data) = p;
+        if(tmp){
+            get_deleter()(tmp);
+        }
     }
 };
 
