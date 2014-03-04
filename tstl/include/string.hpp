@@ -1,5 +1,4 @@
-//=======================================================================
-// Copyright Baptiste Wicht 2013-2014.
+//=======================================================================// Copyright Baptiste Wicht 2013-2014.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -13,6 +12,8 @@
 #include <vector.hpp>
 #include <unique_ptr.hpp>
 
+void k_print(const char* s);
+
 namespace std {
 
 inline uint64_t str_len(const char* a){
@@ -23,41 +24,66 @@ inline uint64_t str_len(const char* a){
     return length;
 }
 
-static constexpr const size_t SSO_SIZE = 16;
-
 template<typename CharT>
-struct base_small {
-    CharT data[SSO_SIZE];
-};
-
-template<typename CharT>
-struct base_big {
+struct base_long {
     size_t capacity;
     unique_ptr<CharT[]> data;
 
-    base_big(size_t capacity, CharT* array) : capacity(capacity), data(array){
-        //Nothing to do
-    }
+    base_long() = default;
+
+    base_long(size_t capacity, CharT* array) : capacity(capacity), data(array) {}
+
+    base_long(base_long&) = delete;
+    base_long& operator=(base_long&) = delete;
+
+    base_long(base_long&&) = default;
+    base_long& operator=(base_long&&) = default;
+};
+
+static constexpr const size_t min_capacity = 16;
+static constexpr const size_t words = min_capacity / sizeof(size_t);
+
+template<typename CharT>
+struct base_short {
+    CharT data[min_capacity];
+
+    base_short() = default;
+
+    base_short(base_short&) = delete;
+    base_short& operator=(base_short&) = delete;
+
+    base_short(base_short&&) = default;
+    base_short& operator=(base_short&&) = default;
+};
+
+struct base_raw {
+    size_t data[words];
+
+    base_raw() = delete;
+
+    base_raw(base_raw&) = delete;
+    base_raw& operator=(base_raw&) = delete;
+
+    base_raw(base_raw&&) = delete;
+    base_raw& operator=(base_raw&&) = delete;
 };
 
 template<typename CharT>
 union base_storage {
-    base_small<CharT> small;
-    base_big<CharT> big;
+    base_short<CharT> small;
+    base_long<CharT> big;
+    base_raw raw;
 
     base_storage(){
-        //Default construction: Nothing to do
-    }
-
-    base_storage(size_t capacity, CharT* array) : big(capacity, array) {
         //Default construction: Nothing to do
     }
 
     ~base_storage() {}
 };
 
-static_assert(SSO_SIZE == sizeof(base_small<char>), "base_small must be the correct SSO size");
-static_assert(SSO_SIZE == sizeof(base_big<char>), "base_big must be the correct SSO size");
+static_assert(min_capacity == sizeof(base_short<char>), "base_short must be the correct SSO size");
+static_assert(min_capacity == sizeof(base_long<char>), "base_long must be the correct SSO size");
+static_assert(min_capacity == sizeof(base_raw), "base_raw must be the correct SSO size");
 
 template<typename CharT>
 struct basic_string {
@@ -72,73 +98,144 @@ private:
 
     base_storage<CharT> storage;
 
+    void set_long(bool small){
+        if(small){
+            _size |= (1UL << 63);
+        } else {
+            _size &= ~(1UL << 63);
+        }
+    }
+
+    void set_small(bool small){
+        set_long(!small);
+    }
+
+    void set_size(size_t size){
+        if(is_long()){
+            _size = size | (1UL << 63);
+        } else {
+            _size = size;
+        }
+    }
+
+    bool is_long() const {
+        return _size & (1UL << 63);
+    }
+
     bool is_small() const {
-        return _size < 16;
+        return !is_long();
+    }
+
+    void zero(){
+        for(size_t i = 0; i < words; ++i){
+            storage.raw.data[i] = 0;
+        }
     }
 
 public:
     //Constructors
 
     basic_string() : _size(0){
-        storage.small.data[0] = '\0';
+        k_print("basic_string  ");
+        set_small(true);
+
+        (*this)[0] = '\0';
     }
 
     basic_string(const CharT* s) : _size(str_len(s)) {
-        auto capacity = _size + 1;
+        k_print("basic_string(raw)  ");
+        auto capacity = size() + 1;
 
-        if(is_small()){
-            std::copy_n(&storage.small.data[0], s, capacity);
-        } else {
-            storage.big.capacity = capacity;
-            storage.big.data.reset(new CharT[capacity]);
-            std::copy_n(storage.big.data.get(), s, capacity);
+        set_small(capacity <= 16);
+
+        if(!is_small()){
+            new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
         }
+
+        std::copy_n(begin(), s, capacity);
     }
 
-    explicit basic_string(size_t __capacity) : _size(0), _capacity(__capacity), _data(new CharT[_capacity]) {
-        _data[0] = '\0';
+    explicit basic_string(size_t __capacity) : _size(0) {
+        k_print("basic_string(cap)  ");
+        set_small(__capacity <= 16);
+
+        if(!is_small()){
+            new (&storage.big) base_long<CharT>(__capacity, new CharT[__capacity]);
+        }
+
+        (*this)[0] = '\0';
     }
 
-    //Copy constructors
+    //Copy
 
-    basic_string(const basic_string& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data() {
-        if(_capacity > 0){
-            _data.reset(new CharT[_capacity]);
-
-            std::copy_n(_data.get(), rhs._data.get(), _size + 1);
+    basic_string(const basic_string& rhs) : _size(rhs._size) {
+        k_print("basic_string(&)  ");
+        if(!is_small()){
+            new (&storage.big) base_long<CharT>(size() + 1, new CharT[size() + 1]);
         }
+
+        std::copy_n(begin(), rhs.begin(), size() + 1);
     }
 
     basic_string& operator=(const basic_string& rhs){
+        k_print("operator=(&)  ");
         if(this != &rhs){
-            if(_capacity < rhs._capacity || !_data){
-                _capacity = rhs._capacity;
-                _data.reset(new CharT[_capacity]);
+            set_size(rhs.size());
+
+            if(capacity() < rhs.capacity()){
+                auto capacity = rhs.capacity();
+
+                if(is_small()){
+                    new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
+
+                    set_small(false);
+                } else {
+                    storage.big.capacity = capacity;
+                    storage.big.data.reset(new CharT[capacity]);
+                }
             }
 
-            _size = rhs._size;
-            std::copy_n(_data.get(), rhs._data.get(), _size + 1);
+            std::copy_n(begin(), rhs.begin(), size() + 1);
         }
 
         return *this;
     }
 
-    //Move constructors
+    //Move
 
-    basic_string(basic_string&& rhs) : _size(rhs._size), _capacity(rhs._capacity), _data(std::move(rhs._data)) {
+    basic_string(basic_string&& rhs) : _size(rhs._size) {
+        k_print("basic_string(&&)  ");
+        if(is_small()){
+            new (&storage.small) base_short<CharT>(std::move(rhs.storage.small));
+        } else {
+            new (&storage.big) base_long<CharT>(std::move(rhs.storage.big));
+        }
+
         rhs._size = 0;
-        rhs._capacity = 0;
-        //rhs._data = nullptr;
+        rhs.zero();
     }
 
     basic_string& operator=(basic_string&& rhs){
+        k_print("operator=(&&)  ");
+
+        if(!rhs.data_ptr()){
+        k_print("KABOOM  ");
+        }
+        bool was_small = is_small();
         _size = rhs._size;
-        _capacity = rhs._capacity;
-        _data = std::move(rhs._data);
+
+        if(is_small()){
+            storage.small = std::move(rhs.storage.small);
+        } else {
+            if(was_small){
+                new (&storage.big) base_long<CharT>(std::move(rhs.storage.big));
+            } else {
+                storage.big = std::move(rhs.storage.big);
+            }
+        }
 
         rhs._size = 0;
-        rhs._capacity = 0;
-        //rhs._data = nullptr;
+        rhs.zero();
 
         return *this;
     }
@@ -146,24 +243,27 @@ public:
     //Destructors
 
     ~basic_string(){
-        if(!is_small()){
-            storage.big.~base_big();
+        k_print("~BS_S  ");
+        if(is_long()){
+            storage.big.~base_long();
         }
+        k_print("~BS_E  ");
     }
 
     //Modifiers
 
     void adjust_size(size_t size){
-        _size = size;
+        set_size(size);
     }
 
     void clear(){
-        _size = 0;
-        _data[0] = '\0';
+        set_size(0);
+        (*this)[0] = '\0';
     }
 
     void pop_back(){
-        _data[--_size] = '\0';
+        set_size(size() - 1);
+        (*this)[size()] = '\0';
     }
 
     void reserve(size_t new_capacity){
@@ -179,52 +279,58 @@ public:
     }
 
     basic_string& operator+=(CharT c){
-        ensure_capacity(_size + 2);
+        ensure_capacity(size() + 2);
 
-        _data[_size] = c;
-        _data[++_size] = '\0';
+        (*this)[size()] = c;
+        (*this)[size() + 1] = '\0';
+
+        set_size(size() + 1);
 
         return *this;
     }
 
     void ensure_capacity(size_t new_capacity){
-        if(new_capacity > 0 && (!_data || _capacity < new_capacity)){
-            _capacity = _capacity ? _capacity * 2 : 1;
+        if(new_capacity > 0 && (capacity() < new_capacity)){
+        k_print("grow  ");
+            auto new_cap = capacity() * 2;
 
-            if(_capacity < new_capacity){
-                _capacity = new_capacity;
+            auto new_data = new CharT[new_cap];
+
+            std::copy_n(new_data, begin(), size());
+
+            if(is_small()){
+                new (&storage.big) base_long<CharT>(new_cap, new_data);
+
+                set_small(false);
+            } else {
+                storage.big.data.reset(new_data);
+                storage.big.capacity = new_cap;
             }
-
-            auto new_data = new CharT[_capacity];
-
-            std::copy_n(new_data, _data.get(), _size);
-
-            _data.reset(new_data);
         }
     }
 
     basic_string& operator+=(const char* rhs){
         auto len = str_len(rhs);
 
-        ensure_capacity(_size + len + 1);
+        ensure_capacity(size() + len + 1);
 
-        std::copy_n(_data.get() + _size, rhs, len);
+        std::copy_n(begin() + size(), rhs, len);
 
-        _size += len;
+        set_size(size() + len);
 
-        _data[_size] = '\0';
+        (*this)[size()] = '\0';
 
         return *this;
     }
 
     basic_string& operator+=(const basic_string& rhs){
-        ensure_capacity(_size + rhs.size() + 1);
+        ensure_capacity(size() + rhs.size() + 1);
 
-        std::copy_n(_data.get() + _size, rhs.c_str(), rhs.size());
+        std::copy_n(begin() + size(), rhs.begin(), rhs.size());
 
-        _size += rhs.size();
+        set_size(size() + rhs.size());
 
-        _data[_size] = '\0';
+        (*this)[size()] = '\0';
 
         return *this;
     }
@@ -232,36 +338,56 @@ public:
     //Accessors
 
     size_t size() const {
-        return _size;
+        return _size & ~(1UL << 63);
     }
 
     size_t capacity() const {
-        return _capacity;
+        if(is_small()){
+            return 16;
+        } else {
+            return storage.big.capacity;
+        }
     }
 
     bool empty() const {
-        return !_size;
+        return size() == 0;
+    }
+
+    CharT* data_ptr(){
+        if(is_small()){
+            return &storage.small.data[0];
+        } else {
+            return storage.big.data.get();
+        }
+    }
+
+    const CharT* data_ptr() const {
+        if(is_small()){
+            return &storage.small.data[0];
+        } else {
+            return storage.big.data.get();
+        }
     }
 
     CharT* c_str(){
-        return _data.get();
+        return data_ptr();
     }
 
     const CharT* c_str() const {
-        return _data.get();
+        return data_ptr();
     }
 
     CharT& operator[](size_t i){
-        return _data[i];
+        return *(data_ptr() + i);
     }
 
     const CharT& operator[](size_t i) const {
-        return _data[i];
+        return *(data_ptr() + i);
     }
 
     size_t find(char c) const {
         for(size_t i = 0; i < size(); ++i){
-            if(_data[i] == c){
+            if((*this)[i] == c){
                 return i;
             }
         }
@@ -277,7 +403,7 @@ public:
         }
 
         for(size_t i = 0; i < size(); ++i){
-            if(_data[i] != s[i]){
+            if((*this)[i] != s[i]){
                 return false;
             }
         }
@@ -295,7 +421,7 @@ public:
         }
 
         for(size_t i = 0; i < size(); ++i){
-            if(_data[i] != rhs._data[i]){
+            if((*this)[i] != rhs[i]){
                 return false;
             }
         }
@@ -310,19 +436,19 @@ public:
     //Iterators
 
     iterator begin(){
-        return iterator(&_data[0]);
+        return iterator(data_ptr());
     }
 
     iterator end(){
-        return iterator(&_data[_size]);
+        return iterator(data_ptr() + size());
     }
 
     const_iterator begin() const {
-        return const_iterator(&_data[0]);
+        return const_iterator(data_ptr());
     }
 
     const_iterator end() const {
-        return const_iterator(&_data[_size]);
+        return const_iterator(data_ptr() + size());
     }
 };
 
