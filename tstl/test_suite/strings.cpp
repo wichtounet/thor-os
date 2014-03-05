@@ -210,6 +210,31 @@ void test_large(){
     check(strcmp(s.c_str(), large_buffer) == 0, "Invalid content");
 }
 
+void test_reserve(){
+    std::string s1("asdf");
+
+    check(!s1.empty(), "String mustn't be empty");
+    check_equals(s1.size(), 4, "Invalid size");
+    check_equals(s1.capacity(), 16, "Invalid capacity");
+    check(strcmp(s1.c_str(), "asdf") == 0, "Invalid content");
+
+    s1.reserve(1000);
+
+    check(!s1.empty(), "String mustn't be empty");
+    check_equals(s1.size(), 4, "Invalid size");
+    check(s1.capacity() >= 1000, "Invalid capacity");
+    check(strcmp(s1.c_str(), "asdf") == 0, "Invalid content");
+
+    std::string s2("123456789012345678");
+
+    s2.reserve(1000);
+
+    check(!s2.empty(), "String mustn't be empty");
+    check_equals(s2.size(), 18, "Invalid size");
+    check(s2.capacity() >= 1000, "Invalid capacity");
+    check(strcmp(s2.c_str(), "123456789012345678") == 0, "Invalid content");
+}
+
 } //end of anonymous namespace
 
 void string_tests(){
@@ -220,4 +245,5 @@ void string_tests(){
     test_concat();
     test_move();
     test_large();
+    test_reserve();
 }
