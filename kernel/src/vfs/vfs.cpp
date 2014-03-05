@@ -89,6 +89,14 @@ mounted_fs& get_fs(const std::vector<std::string>& path){
     size_t best = 0;
     size_t best_match = 0;
 
+    if(path.empty()){
+        for(auto& mp : mount_point_list){
+            if(mp.mp_vec.empty()){
+                return mp;
+            }
+        }
+    }
+
     for(size_t i = 0; i < mount_point_list.size(); ++i){
         auto& mp = mount_point_list[i];
 
