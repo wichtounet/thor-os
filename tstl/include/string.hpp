@@ -41,6 +41,8 @@ struct base_long {
 static constexpr const size_t min_capacity = 16;
 static constexpr const size_t words = min_capacity / sizeof(size_t);
 
+//TODO Store size into base and use only one unsigned char for base_short
+
 template<typename CharT>
 struct base_short {
     CharT data[min_capacity];
