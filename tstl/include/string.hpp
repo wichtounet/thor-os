@@ -12,8 +12,6 @@
 #include <vector.hpp>
 #include <unique_ptr.hpp>
 
-void k_print(const char* s);
-
 namespace std {
 
 inline uint64_t str_len(const char* a){
@@ -136,14 +134,12 @@ public:
     //Constructors
 
     basic_string() : _size(0){
-        k_print("basic_string  ");
         set_small(true);
 
         (*this)[0] = '\0';
     }
 
     basic_string(const CharT* s) : _size(str_len(s)) {
-        k_print("basic_string(raw)  ");
         auto capacity = size() + 1;
 
         set_small(capacity <= 16);
@@ -156,7 +152,6 @@ public:
     }
 
     explicit basic_string(size_t __capacity) : _size(0) {
-        k_print("basic_string(cap)  ");
         set_small(__capacity <= 16);
 
         if(!is_small()){
@@ -169,7 +164,6 @@ public:
     //Copy
 
     basic_string(const basic_string& rhs) : _size(rhs._size) {
-        k_print("basic_string(&)  ");
         if(!is_small()){
             new (&storage.big) base_long<CharT>(size() + 1, new CharT[size() + 1]);
         }
@@ -178,7 +172,6 @@ public:
     }
 
     basic_string& operator=(const basic_string& rhs){
-        k_print("operator=(&)  ");
         if(this != &rhs){
             set_size(rhs.size());
 
@@ -204,7 +197,6 @@ public:
     //Move
 
     basic_string(basic_string&& rhs) : _size(rhs._size) {
-        k_print("basic_string(&&)  ");
         if(is_small()){
             new (&storage.small) base_short<CharT>(std::move(rhs.storage.small));
         } else {
@@ -216,22 +208,26 @@ public:
     }
 
     basic_string& operator=(basic_string&& rhs){
-        k_print("operator=(&&)  ");
+        auto was_small = is_small();
+        auto was_long = !was_small;
 
-        if(!rhs.data_ptr()){
-        k_print("KABOOM  ");
-        }
-        bool was_small = is_small();
-        _size = rhs._size;
+        auto small = rhs.is_small();
+        auto lng = !small;
 
-        if(is_small()){
+        set_size(rhs.size());
+
+        if(was_small && small){
             storage.small = std::move(rhs.storage.small);
-        } else {
-            if(was_small){
-                new (&storage.big) base_long<CharT>(std::move(rhs.storage.big));
-            } else {
-                storage.big = std::move(rhs.storage.big);
-            }
+        } else if(was_long && lng){
+            storage.big = std::move(rhs.storage.big);
+        } else if(was_small && lng){
+            new (&storage.big) base_long<CharT>(std::move(rhs.storage.big));
+
+            set_small(false);
+        } else if(was_long && small){
+            ensure_capacity(rhs.size() + 1);
+
+            std::copy_n(begin(), rhs.begin(), size() + 1);
         }
 
         rhs._size = 0;
@@ -243,11 +239,9 @@ public:
     //Destructors
 
     ~basic_string(){
-        k_print("~BS_S  ");
         if(is_long()){
             storage.big.~base_long();
         }
-        k_print("~BS_E  ");
     }
 
     //Modifiers
@@ -291,12 +285,15 @@ public:
 
     void ensure_capacity(size_t new_capacity){
         if(new_capacity > 0 && (capacity() < new_capacity)){
-        k_print("grow  ");
             auto new_cap = capacity() * 2;
+
+            if(new_cap < new_capacity){
+                new_cap = new_capacity;
+            }
 
             auto new_data = new CharT[new_cap];
 
-            std::copy_n(new_data, begin(), size());
+            std::copy_n(new_data, begin(), size() + 1);
 
             if(is_small()){
                 new (&storage.big) base_long<CharT>(new_cap, new_data);
