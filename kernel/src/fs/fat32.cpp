@@ -381,6 +381,93 @@ size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path
     return 0;
 }
 
+size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_path, size_t file_size){
+    vfs::file file;
+    auto result = get_file(file_path, file);
+    if(result > 0){
+        return result;
+    }
+
+    uint32_t cluster_number = file.location;
+    size_t position = file.position;
+
+    //Find the cluster number of the parent directory
+    auto cluster_number_search = find_cluster_number(file_path, 1);
+    if(!cluster_number_search.first){
+        return std::ERROR_NOT_EXISTS;
+    }
+
+    auto parent_cluster_number = cluster_number_search.second;
+
+    auto cluster_size = 512 * fat_bs->sectors_per_cluster;
+    auto clusters = file_size % cluster_size == 0 ? file_size / cluster_size : (file_size / cluster_size) + 1;
+
+    size_t capacity = 0;
+    auto last_cluster = cluster_number;
+
+    if(last_cluster >= 2){
+        ++capacity;
+
+        while(true){
+            auto next = next_cluster(last_cluster);
+
+            if(!next || next == CLUSTER_CORRUPTED){
+                break;
+            }
+
+            last_cluster = next;
+            ++capacity;
+        }
+    }
+
+    if(capacity == 0){
+        auto cluster = find_free_cluster();
+        if(!cluster){
+            return std::ERROR_DISK_FULL;
+        }
+
+        --fat_is->free_clusters;
+
+        cluster_number = cluster;
+        last_cluster = cluster;
+
+        ++capacity;
+
+        set_cluster_number(parent_cluster_number, position, file_size);
+    }
+
+    //Extend the clusters if necessary
+    for(auto i = capacity; i < clusters; ++i){
+        auto cluster = find_free_cluster();
+        if(!cluster){
+            return std::ERROR_DISK_FULL;
+        }
+
+        --fat_is->free_clusters;
+
+        //Update the cluster chain
+        if(!write_fat_value(last_cluster, cluster)){
+            return std::ERROR_FAILED;
+        }
+
+        last_cluster = cluster;
+    }
+
+    //Update the cluster chain
+    if(!write_fat_value(last_cluster, CLUSTER_END)){
+        return std::ERROR_FAILED;
+    }
+
+    if(!write_is()){
+        return std::ERROR_FAILED;
+    }
+
+    //Set the new file size in the directory entry
+    set_file_size(parent_cluster_number, position, file_size);
+
+    return 0;
+}
+
 size_t fat32::fat32_file_system::ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents){
     //TODO Better handling of error inside files()
     contents = files(file_path);
@@ -627,6 +714,110 @@ size_t fat32::fat32_file_system::rm_dir(uint32_t parent_cluster_number, size_t p
     //Once the sub entries have been removed, a directory can be removed
     //as a file
     return rm_file(parent_cluster_number, position, cluster_number);
+}
+
+size_t fat32::fat32_file_system::set_file_size(uint32_t parent_cluster_number, size_t position, uint32_t file_size){
+    std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
+    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+        return std::ERROR_FAILED;
+    }
+
+    //1. Mark the entries in directory as unused
+
+    bool found = false;
+    size_t cluster_position = 0;
+    while(!found){
+        bool end_reached = false;
+
+        //Verify if is the correct cluster
+        if(position >= cluster_position * directory_cluster.size() && position < (cluster_position + 1) * directory_cluster.size()){
+            found = true;
+
+            auto j = position % directory_cluster.size();
+            directory_cluster[j].file_size = file_size;
+
+            if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+                return std::ERROR_FAILED;
+            }
+        }
+
+        //Jump to next cluser
+        if(!found && !end_reached){
+            parent_cluster_number = next_cluster(parent_cluster_number);
+
+            if(!parent_cluster_number){
+                break;
+            }
+
+            //The block is corrupted
+            if(parent_cluster_number == CLUSTER_CORRUPTED){
+                break;
+            }
+
+            if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+                break;
+            }
+        }
+    }
+
+    if(!found){
+        return std::ERROR_NOT_EXISTS;
+    }
+
+    return 0;
+}
+
+size_t fat32::fat32_file_system::set_cluster_number(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number){
+    std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
+    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+        return std::ERROR_FAILED;
+    }
+
+    //1. Mark the entries in directory as unused
+
+    bool found = false;
+    size_t cluster_position = 0;
+    while(!found){
+        bool end_reached = false;
+
+        //Verify if is the correct cluster
+        if(position >= cluster_position * directory_cluster.size() && position < (cluster_position + 1) * directory_cluster.size()){
+            found = true;
+
+            auto j = position % directory_cluster.size();
+
+            directory_cluster[j].cluster_low = cluster_number;
+            directory_cluster[j].cluster_high = cluster_number >> 16;
+
+            if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+                return std::ERROR_FAILED;
+            }
+        }
+
+        //Jump to next cluser
+        if(!found && !end_reached){
+            parent_cluster_number = next_cluster(parent_cluster_number);
+
+            if(!parent_cluster_number){
+                break;
+            }
+
+            //The block is corrupted
+            if(parent_cluster_number == CLUSTER_CORRUPTED){
+                break;
+            }
+
+            if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+                break;
+            }
+        }
+    }
+
+    if(!found){
+        return std::ERROR_NOT_EXISTS;
+    }
+
+    return 0;
 }
 
 //Finds "entries" consecutive free entries in the given directory cluster

@@ -36,6 +36,7 @@ public:
     size_t statfs(statfs_info& file);
     size_t read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read);
     size_t write(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& written);
+    size_t truncate(const std::vector<std::string>& file_path, size_t size);
     size_t get_file(const std::vector<std::string>& file_path, vfs::file& file);
     size_t ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents);
     size_t touch(const std::vector<std::string>& file_path);
@@ -45,6 +46,9 @@ public:
 private:
     size_t rm_dir(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number);
     size_t rm_file(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number);
+
+    size_t set_file_size(uint32_t parent_cluster_number, size_t position, uint32_t file_size);
+    size_t set_cluster_number(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number);
 
     cluster_entry* find_free_entry(std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number);
     cluster_entry* extend_directory(std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number);

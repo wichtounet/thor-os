@@ -22,6 +22,7 @@ struct file_system {
     virtual size_t statfs(statfs_info& file) = 0;
     virtual size_t read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read) = 0;
     virtual size_t write(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& written) = 0;
+    virtual size_t truncate(const std::vector<std::string>& file_path, size_t size) = 0;
     virtual size_t get_file(const std::vector<std::string>& file_path, vfs::file& file) = 0;
     virtual size_t ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents) = 0;
     virtual size_t touch(const std::vector<std::string>& file_path) = 0;
