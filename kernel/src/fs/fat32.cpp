@@ -299,6 +299,88 @@ size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path,
     return 0;
 }
 
+size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& written){
+    vfs::file file;
+    auto result = get_file(file_path, file);
+    if(result > 0){
+        return result;
+    }
+
+    uint32_t cluster_number = file.location;
+    size_t file_size = file.size;
+
+    //Check the offset parameter
+    if(offset + count > file_size){
+        return std::ERROR_INVALID_OFFSET;
+    }
+
+    //No need to write the cluster if there are no content to write
+    if(count == 0){
+        written = 0;
+        return 0;
+    }
+
+    size_t first = offset;
+    size_t last = offset + count;
+
+    size_t read_bytes = 0;
+    size_t position = 0;
+    size_t cluster = 0;
+
+    size_t cluster_size = 512 * fat_bs->sectors_per_cluster;
+
+    while(read_bytes < last){
+        auto cluster_last = (cluster + 1) * cluster_size;
+
+        if(first < cluster_last){
+
+            std::unique_heap_array<char> cluster(cluster_size);
+
+            if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+                size_t i = 0;
+
+                if(position == 0){
+                    i = first % cluster_size;
+                }
+
+                for(; i < cluster_size && read_bytes < last; ++i, ++read_bytes){
+                    cluster[i] = buffer[position++];
+                }
+
+                if(!write_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+                    return std::ERROR_FAILED;
+                }
+            } else {
+                return std::ERROR_FAILED;
+            }
+
+        } else {
+            read_bytes += cluster_size;
+        }
+
+        ++cluster;
+
+        //If the file is not read completely, get the next cluster
+        if(read_bytes < last){
+            cluster_number = next_cluster(cluster_number);
+
+            //It may be possible that either the file size or the FAT entry is wrong
+            if(!cluster_number){
+                break;
+            }
+
+            //The block is corrupted
+            if(cluster_number == 0x0FFFFFF7){
+                break;
+            }
+        }
+    }
+
+    written = last - first;
+
+    return 0;
+}
+
 size_t fat32::fat32_file_system::ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents){
     //TODO Better handling of error inside files()
     contents = files(file_path);

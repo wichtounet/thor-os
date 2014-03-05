@@ -277,6 +277,10 @@ size_t sysfs::sysfs_file_system::read(const std::vector<std::string>& file_path,
     }
 }
 
+size_t sysfs::sysfs_file_system::write(const std::vector<std::string>&, char*, size_t, size_t, size_t&){
+    return std::ERROR_PERMISSION_DENIED;
+}
+
 size_t sysfs::sysfs_file_system::ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents){
     auto& root_folder = find_root_folder(mount_point);
 
