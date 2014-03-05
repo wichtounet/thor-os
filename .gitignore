@@ -35,3 +35,4 @@ programs/mount/mount
 programs/uptime/uptime
 programs/df/df
 programs/dist/
+tstl/tester
