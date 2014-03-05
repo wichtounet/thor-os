@@ -140,6 +140,22 @@ void sc_read(interrupt::syscall_regs* regs){
     regs->rax = vfs::read(fd, buffer, max, offset);
 }
 
+void sc_write(interrupt::syscall_regs* regs){
+    auto fd = regs->rbx;
+    auto buffer = reinterpret_cast<char*>(regs->rcx);
+    auto max = regs->rdx;
+    auto offset = regs->rsi;
+
+    regs->rax = vfs::write(fd, buffer, max, offset);
+}
+
+void sc_truncate(interrupt::syscall_regs* regs){
+    auto fd = regs->rbx;
+    auto size = regs->rcx;
+
+    regs->rax = vfs::truncate(fd, size);
+}
+
 void sc_entries(interrupt::syscall_regs* regs){
     auto fd = regs->rbx;
     auto buffer = reinterpret_cast<char*>(regs->rcx);
@@ -303,6 +319,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 310:
             sc_statfs(regs);
+            break;
+
+        case 311:
+            sc_write(regs);
+            break;
+
+        case 312:
+            sc_truncate(regs);
             break;
 
         case 400:
