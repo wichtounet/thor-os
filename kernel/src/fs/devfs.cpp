@@ -92,6 +92,10 @@ size_t devfs::devfs_file_system::read(const std::vector<std::string>& file_path,
         if(device_list.name == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.back()){
+                    if(!device.driver){
+                        return std::ERROR_UNSUPPORTED;
+                    }
+
                     return device.driver->read(device.data, buffer, count, offset, read);
                 }
             }
@@ -111,6 +115,10 @@ size_t devfs::devfs_file_system::write(const std::vector<std::string>& file_path
         if(device_list.name == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.back()){
+                    if(!device.driver){
+                        return std::ERROR_UNSUPPORTED;
+                    }
+
                     return device.driver->write(device.data, buffer, count, offset, written);
                 }
             }

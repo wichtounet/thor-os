@@ -30,6 +30,7 @@ thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin 
 	sudo /bin/mount -t vfat /dev/loop0 mnt/fake/
 	sudo mkdir mnt/fake/bin/
 	sudo mkdir mnt/fake/sys/
+	sudo mkdir mnt/fake/dev/
 	sudo /bin/cp kernel/kernel.bin mnt/fake/
 	sudo /bin/cp programs/dist/* mnt/fake/bin/
 	sleep 0.1

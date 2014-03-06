@@ -47,7 +47,6 @@ bool shift = false;
 //Declarations of the different functions
 
 void disks_command(const std::vector<std::string>& params);
-void partitions_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 
 struct command_definition {
@@ -55,9 +54,8 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[3] = {
+command_definition commands[2] = {
     {"disks", disks_command},
-    {"partitions", partitions_command},
     {"exec", exec_command},
 };
 
@@ -205,32 +203,6 @@ void disks_command(const std::vector<std::string>& params){
         } else {
             k_printf("%10d %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type));
         }
-    }
-}
-
-void partitions_command(const std::vector<std::string>& params){
-    auto uuid = parse(params[1]);
-
-    if(disks::disk_exists(uuid)){
-        auto& disk = disks::disk_by_uuid(uuid);
-
-        if(disk.type != disks::disk_type::ATA){
-            k_print_line("Only ATA disks are supported");
-        } else {
-            auto partitions = disks::partitions(disk);
-
-            if(partitions.size() > 0){
-                k_print_line("UUID       Type         Start      Sectors");
-
-                for(auto& partition : partitions){
-                    k_printf("%10d %12s %10d %u\n", partition.uuid,
-                        disks::partition_type_to_string(partition.type),
-                        partition.start, partition.sectors);
-                }
-            }
-        }
-    } else {
-        k_printf("Disks %u does not exist\n", uuid);
     }
 }
 

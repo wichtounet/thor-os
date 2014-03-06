@@ -27,6 +27,7 @@ constexpr const size_t ERROR_INVALID_FILE_SYSTEM = 11;
 constexpr const size_t ERROR_DISK_FULL = 12;
 constexpr const size_t ERROR_PERMISSION_DENIED = 13;
 constexpr const size_t ERROR_INVALID_OFFSET = 14;
+constexpr const size_t ERROR_UNSUPPORTED = 15;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -58,6 +59,8 @@ inline const char* error_message(size_t error){
             return "Permission denied";
         case ERROR_INVALID_OFFSET:
             return "The offset is not valid";
+        case ERROR_UNSUPPORTED:
+            return "Unsupported operation: May not be implemented yet";
         default:
             return "Unknonwn error";
     }

@@ -171,7 +171,7 @@ void init_file_entry(fat32::cluster_entry* entry_ptr, const char* name, uint32_t
 } //end of anonymous namespace
 
 fat32::fat32_file_system::fat32_file_system(size_t disk_uuid, size_t partition_uuid) : disk(disks::disk_by_uuid(disk_uuid)) {
-    for(auto& p : partitions(disk)){
+    for(auto& p : partitions(disks::disk_by_uuid(disk_uuid))){
         if(p.uuid == partition_uuid){
             partition = p;
             break;

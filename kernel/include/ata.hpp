@@ -11,6 +11,8 @@
 #include <types.hpp>
 #include <string.hpp>
 
+#include "fs/devfs.hpp"
+
 namespace ata {
 
 struct drive_descriptor {
@@ -30,6 +32,16 @@ drive_descriptor& drive(uint8_t disk);
 
 bool read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination);
 bool write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* source);
+
+struct ata_driver : devfs::dev_driver {
+    size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read);
+    size_t write(void* data, const char* buffer, size_t count, size_t offset, size_t& written);
+};
+
+struct ata_part_driver : devfs::dev_driver {
+    size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read);
+    size_t write(void* data, const char* buffer, size_t count, size_t offset, size_t& written);
+};
 
 }
 

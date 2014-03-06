@@ -281,7 +281,7 @@ size_t sysfs::sysfs_file_system::write(const std::vector<std::string>&, const ch
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t sysfs::sysfs_file_system::truncate(const std::vector<std::string>& file_path, size_t size){
+size_t sysfs::sysfs_file_system::truncate(const std::vector<std::string>&, size_t){
     return std::ERROR_PERMISSION_DENIED;
 }
 

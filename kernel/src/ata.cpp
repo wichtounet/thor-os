@@ -351,6 +351,22 @@ ata::drive_descriptor& ata::drive(uint8_t disk){
     return drives[disk];
 }
 
+size_t ata::ata_driver::read(void* data, char* buffer, size_t count, size_t offset, size_t& read){
+    //TODO
+}
+
+size_t ata::ata_driver::write(void* data, const char* buffer, size_t count, size_t offset, size_t& written){
+    //TODO
+}
+
+size_t ata::ata_part_driver::read(void* data, char* buffer, size_t count, size_t offset, size_t& read){
+    //TODO
+}
+
+size_t ata::ata_part_driver::write(void* data, const char* buffer, size_t count, size_t offset, size_t& written){
+    //TODO
+}
+
 bool ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination){
     auto buffer = reinterpret_cast<uint8_t*>(destination);
 
