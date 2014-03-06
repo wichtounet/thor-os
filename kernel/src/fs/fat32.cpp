@@ -501,7 +501,7 @@ size_t fat32::fat32_file_system::touch(const std::vector<std::string>& file_path
         return std::ERROR_FAILED;
     }
 
-    return true;
+    return 0;
 }
 
 size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path){
