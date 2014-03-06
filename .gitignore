@@ -16,9 +16,7 @@ programs/reboot/reboot
 programs/stat/stat
 programs/cat/cat
 programs/which/which
-programs/one/one
 programs/long/long
-programs/hello/hello
 programs/loop/loop
 programs/keyboard/keyboard
 programs/longtwo/longtwo
