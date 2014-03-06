@@ -92,6 +92,34 @@ std::expected<size_t> read(size_t fd, char* buffer, size_t max, size_t offset){
     }
 }
 
+std::expected<size_t> write(size_t fd, char* buffer, size_t max, size_t offset){
+    int64_t code;
+    asm volatile("mov rax, 311; mov rbx, %[fd]; mov rcx, %[buffer]; mov rdx, %[max]; mov rsi, %[offset]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [fd] "g" (fd), [buffer] "g" (reinterpret_cast<size_t>(buffer)), [max] "g" (max), [offset] "g" (offset)
+        : "rax", "rbx", "rcx", "rdx", "rsi");
+
+    if(code < 0){
+        return std::make_expected_from_error<size_t, size_t>(-code);
+    } else {
+        return std::make_expected<size_t>(code);
+    }
+}
+
+std::expected<size_t> truncate(size_t fd, size_t size){
+    int64_t code;
+    asm volatile("mov rax, 312; mov rbx, %[fd]; mov rcx, %[size]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [fd] "g" (fd), [size] "g" (size)
+        : "rax", "rbx", "rcx");
+
+    if(code < 0){
+        return std::make_expected_from_error<size_t, size_t>(-code);
+    } else {
+        return std::make_expected<size_t>(code);
+    }
+}
+
 std::expected<size_t> entries(size_t fd, char* buffer, size_t max){
     int64_t code;
     asm volatile("mov rax, 308; mov rbx, %[fd]; mov rcx, %[buffer]; mov rdx, %[max]; int 50; mov %[code], rax"
