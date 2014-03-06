@@ -46,7 +46,6 @@ bool shift = false;
 
 //Declarations of the different functions
 
-void disks_command(const std::vector<std::string>& params);
 void exec_command(const std::vector<std::string>& params);
 
 struct command_definition {
@@ -54,8 +53,7 @@ struct command_definition {
     void (*function)(const std::vector<std::string>&);
 };
 
-command_definition commands[2] = {
-    {"disks", disks_command},
+command_definition commands[1] = {
     {"exec", exec_command},
 };
 
@@ -168,42 +166,6 @@ void exec_shell_command(){
     }
 
     k_printf("The command \"%s\" does not exist\n", current_input.c_str());
-}
-
-void disks_command(const std::vector<std::string>& params){
-    bool verbose = false;
-
-    //Read options if any
-    if(params.size() > 1){
-        for(size_t i = 1; i < params.size(); ++i){
-            if(params[i] == "-v"){
-                verbose = true;
-            }
-        }
-    }
-
-    if(verbose){
-        k_print_line("UUID       Type  Model                Serial          Firmware");
-    } else {
-        k_print_line("UUID       Type");
-    }
-
-    for(uint64_t i = 0; i < disks::detected_disks(); ++i){
-        auto& descriptor = disks::disk_by_index(i);
-
-        if(verbose){
-            if(descriptor.type == disks::disk_type::ATA || descriptor.type == disks::disk_type::ATAPI){
-                auto sub = static_cast<ata::drive_descriptor*>(descriptor.descriptor);
-
-                k_printf("%10d %5s %20s %15s %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type),
-                    sub->model.c_str(), sub->serial.c_str(), sub->firmware.c_str());
-            } else {
-                k_printf("%10d %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type));
-            }
-        } else {
-            k_printf("%10d %s\n", descriptor.uuid, disks::disk_type_to_string(descriptor.type));
-        }
-    }
 }
 
 void exec_command(const std::vector<std::string>&){

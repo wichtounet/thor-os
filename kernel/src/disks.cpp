@@ -90,10 +90,6 @@ void disks::detect_disks(){
     }
 }
 
-uint64_t disks::detected_disks(){
-    return number_of_disks;
-}
-
 disks::disk_descriptor& disks::disk_by_index(uint64_t index){
     return _disks[index];
 }
@@ -106,38 +102,6 @@ disks::disk_descriptor& disks::disk_by_uuid(uint64_t uuid){
     }
 
     __builtin_unreachable();
-}
-
-bool disks::disk_exists(uint64_t uuid){
-    for(uint64_t i = 0; i < number_of_disks; ++i){
-        if(_disks[i].uuid == uuid){
-            return true;
-        }
-    }
-
-    return false;
-}
-
-const char* disks::disk_type_to_string(disk_type type){
-    switch(type){
-        case disk_type::ATA:
-            return "ATA";
-        case disk_type::ATAPI:
-            return "ATAPI";
-        default:
-            return "Invalid Type";
-    }
-}
-
-const char* disks::partition_type_to_string(vfs::partition_type type){
-    switch(type){
-        case vfs::partition_type::FAT32:
-            return "FAT32";
-        case vfs::partition_type::UNKNOWN:
-            return "Unknown";
-        default:
-            return "Invalid Type";
-    }
 }
 
 bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination){
