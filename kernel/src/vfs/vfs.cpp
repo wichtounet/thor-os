@@ -184,17 +184,18 @@ int64_t vfs::open(const char* file_path, size_t flags){
         return scheduler::register_new_handle(path);
     }
 
+    int64_t sub_result;
     if(flags & std::OPEN_CREATE){
-        return fs.file_system->touch(fs_path);
+        sub_result = fs.file_system->touch(fs_path);
     } else {
         vfs::file file;
-        auto result = fs.file_system->get_file(fs_path, file);
+        sub_result = fs.file_system->get_file(fs_path, file);
+    }
 
-        if(result > 0){
-            return -result;
-        } else {
-            return scheduler::register_new_handle(path);
-        }
+    if(sub_result > 0){
+        return -sub_result;
+    } else {
+        return scheduler::register_new_handle(path);
     }
 }
 
