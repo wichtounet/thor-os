@@ -17,6 +17,7 @@
 
 #include "fs/fat32.hpp"
 #include "fs/sysfs.hpp"
+#include "fs/devfs.hpp"
 
 #include "scheduler.hpp"
 #include "flags.hpp"
@@ -48,6 +49,8 @@ std::string partition_type_to_string(vfs::partition_type type){
             return "FAT32";
         case vfs::partition_type::SYSFS:
             return "sysfs";
+        case vfs::partition_type::DEVFS:
+            return "devfs";
         case vfs::partition_type::UNKNOWN:
             return "Unknown";
         default:
@@ -64,6 +67,10 @@ void mount_root(){
 
 void mount_sys(){
     mount(vfs::partition_type::SYSFS, "/sys/", "none");
+}
+
+void mount_dev(){
+    mount(vfs::partition_type::DEVFS, "/dev/", "none");
 }
 
 std::vector<std::string> get_path(const char* file_path){
@@ -132,6 +139,7 @@ std::vector<std::string> get_fs_path(const std::vector<std::string>& path, const
 void vfs::init(){
     mount_root();
     mount_sys();
+    mount_dev();
 }
 
 int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){
@@ -145,6 +153,11 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
 
         case vfs::partition_type::SYSFS:
             fs = new sysfs::sysfs_file_system(mount_point);
+
+            break;
+
+        case vfs::partition_type::DEVFS:
+            fs = new devfs::devfs_file_system(mount_point);
 
             break;
 
