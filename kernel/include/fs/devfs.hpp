@@ -16,6 +16,15 @@
 
 namespace devfs {
 
+enum class device_type {
+    BLOCK_DEVICE
+};
+
+struct dev_driver {
+    virtual size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read) = 0;
+    virtual size_t write(void* data, const char* buffer, size_t count, size_t offset, size_t& written) = 0;
+};
+
 struct devfs_file_system : vfs::file_system {
 private:
     std::string mount_point;
@@ -34,6 +43,9 @@ public:
     size_t mkdir(const std::vector<std::string>& file_path);
     size_t rm(const std::vector<std::string>& file_path);
 };
+
+void register_device(const std::string& mp, const std::string& name, device_type type, dev_driver* driver, void* data);
+void deregister_device(const std::string& mp, const std::string& name);
 
 }
 
