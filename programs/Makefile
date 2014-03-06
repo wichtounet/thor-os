@@ -1,6 +1,6 @@
 .PHONY: dist default clean force_look
 
-PROGRAMS=long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which readelf touch mkdir rm date ls mount df uptime
+PROGRAMS=long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which readelf touch mkdir rm date ls mount df uptime writer
 
 default: dist
 
