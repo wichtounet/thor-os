@@ -299,7 +299,7 @@ size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path,
     return 0;
 }
 
-size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& written){
+size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){

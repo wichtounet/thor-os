@@ -277,7 +277,7 @@ size_t sysfs::sysfs_file_system::read(const std::vector<std::string>& file_path,
     }
 }
 
-size_t sysfs::sysfs_file_system::write(const std::vector<std::string>&, char*, size_t, size_t, size_t&){
+size_t sysfs::sysfs_file_system::write(const std::vector<std::string>&, const char*, size_t, size_t, size_t&){
     return std::ERROR_PERMISSION_DENIED;
 }
 

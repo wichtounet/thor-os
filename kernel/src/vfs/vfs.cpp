@@ -305,7 +305,7 @@ int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
     return read;
 }
 
-int64_t vfs::write(size_t fd, char* buffer, size_t count, size_t offset){
+int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }

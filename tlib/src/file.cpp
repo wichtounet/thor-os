@@ -92,7 +92,7 @@ std::expected<size_t> read(size_t fd, char* buffer, size_t max, size_t offset){
     }
 }
 
-std::expected<size_t> write(size_t fd, char* buffer, size_t max, size_t offset){
+std::expected<size_t> write(size_t fd, const char* buffer, size_t max, size_t offset){
     int64_t code;
     asm volatile("mov rax, 311; mov rbx, %[fd]; mov rcx, %[buffer]; mov rdx, %[max]; mov rsi, %[offset]; int 50; mov %[code], rax"
         : [code] "=m" (code)
