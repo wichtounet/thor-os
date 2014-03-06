@@ -320,6 +320,8 @@ size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path
         return 0;
     }
 
+    //TODO Change the date of the file
+
     size_t first = offset;
     size_t last = offset + count;
 
@@ -396,6 +398,8 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
     if(!cluster_number_search.first){
         return std::ERROR_NOT_EXISTS;
     }
+
+    //TODO Change the date of the file
 
     auto parent_cluster_number = cluster_number_search.second;
 
