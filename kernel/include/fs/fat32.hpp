@@ -22,6 +22,8 @@ typedef const disks::disk_descriptor& dd;
 
 struct fat32_file_system : vfs::file_system {
 private:
+    std::string mount_point;
+    std::string device;
     dd disk;
     disks::partition_descriptor partition;
 
@@ -30,7 +32,7 @@ private:
     uint64_t partition_start = 0;
 
 public:
-    fat32_file_system(size_t disk, size_t partition);
+    fat32_file_system(std::string mount_point, std::string device, size_t disk, size_t partition);
     ~fat32_file_system();
 
     size_t statfs(statfs_info& file);
