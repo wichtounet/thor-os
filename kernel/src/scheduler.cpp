@@ -549,19 +549,6 @@ void init_context(scheduler::process_t& process, const char* buffer, const std::
     process.context = reinterpret_cast<interrupt::syscall_regs*>(scheduler::user_rsp - sizeof(interrupt::syscall_regs) - args_size);
 }
 
-void start() __attribute__((noreturn));
-void start(){
-    started = true;
-
-    for(auto& process : pcb){
-        if(process.state != scheduler::process_state::EMPTY){
-            k_printf("pid: %u ppid: %u\n", process.process.pid, process.process.ppid);
-        }
-    }
-
-    init_task_switch(current_pid);
-}
-
 } //end of anonymous namespace
 
 void scheduler::init(){ //Create the idle task
@@ -583,13 +570,13 @@ void scheduler::init(){ //Create the idle task
     pcb[current_pid].state = scheduler::process_state::RUNNING;
 }
 
-int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
-    //TODO Once shell removed, start will be called in init()
-    if(!started){
-        start();
-        //Unreachable
-    }
+void scheduler::start(){
+    started = true;
 
+    init_task_switch(current_pid);
+}
+
+int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
     std::string content;
     auto result = vfs::direct_read(file, content);
     if(result < 0){

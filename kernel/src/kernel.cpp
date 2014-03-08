@@ -94,11 +94,7 @@ void  kernel_main(){
     sysfs::set_constant_value("/sys/", "author", "Baptiste Wicht");
 
     scheduler::init();
-
-    //Launch the shell
-    init_shell();
-
-    return;
+    scheduler::start();
 }
 
 }

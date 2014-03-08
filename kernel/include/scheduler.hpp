@@ -24,6 +24,7 @@ void block_process(pid_t pid);
 void unblock_process(pid_t pid);
 
 void init();
+void start() __attribute__((noreturn));
 
 int64_t exec(const std::string& path, const std::vector<std::string>& params);
 
