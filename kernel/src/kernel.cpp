@@ -34,6 +34,9 @@ void __cxa_pure_virtual(){
 void _init();
 
 void  kernel_main(){
+    //Make sure stack is aligned to 16 byte boundary
+    asm volatile("and rsp, -16");
+
     arch::enable_sse();
 
     gdt::flush_tss();
