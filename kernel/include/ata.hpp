@@ -30,8 +30,8 @@ void detect_disks();
 uint8_t number_of_disks();
 drive_descriptor& drive(uint8_t disk);
 
-bool read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination);
-bool write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* source);
+size_t read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination, size_t& read);
+size_t write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, const void* source, size_t& written);
 
 struct ata_driver : devfs::dev_driver {
     size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read);

@@ -372,18 +372,7 @@ size_t ata::ata_driver::read(void* data, char* destination, size_t count, size_t
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
 
-    auto buffer = reinterpret_cast<uint8_t*>(destination);
-
-    for(size_t i = 0; i < sectors; ++i){
-        if(!read_write_sector(*disk, start + i, buffer, true)){
-            return std::ERROR_FAILED;
-        }
-
-        buffer += BLOCK_SIZE;
-        read += BLOCK_SIZE;
-    }
-
-    return 0;
+    return ata::read_sectors(*disk, start, sectors, destination, read);
 }
 
 size_t ata::ata_driver::write(void* data, const char* source, size_t count, size_t offset, size_t& written){
@@ -403,18 +392,7 @@ size_t ata::ata_driver::write(void* data, const char* source, size_t count, size
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
 
-    auto buffer = reinterpret_cast<uint8_t*>(const_cast<char*>(source));
-
-    for(size_t i = 0; i < sectors; ++i){
-        if(!read_write_sector(*disk, start + i, buffer, false)){
-            return std::ERROR_FAILED;
-        }
-
-        buffer += BLOCK_SIZE;
-        written += BLOCK_SIZE;
-    }
-
-    return 0;
+    return ata::write_sectors(*disk, start, sectors, source, written);
 }
 
 size_t ata::ata_part_driver::read(void* data, char* destination, size_t count, size_t offset, size_t& read){
@@ -437,18 +415,7 @@ size_t ata::ata_part_driver::read(void* data, char* destination, size_t count, s
 
     start += part_descriptor->start;
 
-    auto buffer = reinterpret_cast<uint8_t*>(destination);
-
-    for(size_t i = 0; i < sectors; ++i){
-        if(!read_write_sector(*disk, start + i, buffer, true)){
-            return std::ERROR_FAILED;
-        }
-
-        buffer += BLOCK_SIZE;
-        read += BLOCK_SIZE;
-    }
-
-    return 0;
+    return ata::read_sectors(*disk, start, sectors, destination, read);
 }
 
 size_t ata::ata_part_driver::write(void* data, const char* source, size_t count, size_t offset, size_t& written){
@@ -471,10 +438,29 @@ size_t ata::ata_part_driver::write(void* data, const char* source, size_t count,
 
     start += part_descriptor->start;
 
-    auto buffer = reinterpret_cast<uint8_t*>(const_cast<char*>(source));
+    return ata::write_sectors(*disk, start, sectors, source, written);
+}
 
-    for(size_t i = 0; i < sectors; ++i){
-        if(!read_write_sector(*disk, start + i, buffer, false)){
+size_t ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination, size_t& read){
+    auto buffer = reinterpret_cast<uint8_t*>(destination);
+
+    for(size_t i = 0; i < count; ++i){
+        if(!read_write_sector(drive, start + i, buffer, true)){
+            return std::ERROR_FAILED;
+        }
+
+        buffer += BLOCK_SIZE;
+        read += BLOCK_SIZE;
+    }
+
+    return 0;
+}
+
+size_t ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, const void* source, size_t& written){
+    auto buffer = reinterpret_cast<uint8_t*>(const_cast<void*>(source));
+
+    for(size_t i = 0; i < count; ++i){
+        if(!read_write_sector(drive, start + i, buffer, false)){
             return std::ERROR_FAILED;
         }
 
@@ -483,32 +469,4 @@ size_t ata::ata_part_driver::write(void* data, const char* source, size_t count,
     }
 
     return 0;
-}
-
-bool ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination){
-    auto buffer = reinterpret_cast<uint8_t*>(destination);
-
-    for(size_t i = 0; i < count; ++i){
-        if(!read_write_sector(drive, start + i, buffer, true)){
-            return false;
-        }
-
-        buffer += BLOCK_SIZE;;
-    }
-
-    return true;
-}
-
-bool ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* source){
-    auto buffer = reinterpret_cast<uint8_t*>(source);
-
-    for(size_t i = 0; i < count; ++i){
-        if(!read_write_sector(drive, start + i, buffer, false)){
-            return false;
-        }
-
-        buffer += BLOCK_SIZE;
-    }
-
-    return true;
 }

@@ -104,30 +104,11 @@ disks::disk_descriptor& disks::disk_by_uuid(uint64_t uuid){
     __builtin_unreachable();
 }
 
-/*bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination){
-    switch(disk.type){
-        case disk_type::ATA:
-            return ata::read_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), start, count, destination);
-
-        default:
-            return false;
-    }
-}
-
-bool disks::write_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination){
-    switch(disk.type){
-        case disk_type::ATA:
-            return ata::write_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), start, count, destination);
-
-        default:
-            return false;
-    }
-}*/
-
 std::unique_heap_array<disks::partition_descriptor> disks::partitions(disk_descriptor& disk){
     std::unique_ptr<boot_record_t> boot_record(new boot_record_t());
 
-    if(!ata::read_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), 0, 1, boot_record.get())){
+    size_t read;
+    if(ata::read_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), 0, 1, boot_record.get(), read) > 0){
         k_print_line("Read Boot Record failed");
 
         return {};
