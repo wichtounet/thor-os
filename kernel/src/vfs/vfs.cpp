@@ -318,6 +318,21 @@ int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
     return read;
 }
 
+int64_t vfs::direct_read(const char* file, char* buffer, size_t count, size_t offset){
+    auto path = get_path(file);
+    auto& fs = get_fs(path);
+    auto fs_path = get_fs_path(path, fs);
+
+    size_t read = 0;
+    auto result = fs.file_system->read(fs_path, buffer, count, offset, read);
+
+    if(result > 0){
+        return -result;
+    }
+
+    return read;
+}
+
 int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
@@ -329,6 +344,21 @@ int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
+    auto& fs = get_fs(path);
+    auto fs_path = get_fs_path(path, fs);
+
+    size_t written = 0;
+    auto result = fs.file_system->write(fs_path, buffer, count, offset, written);
+
+    if(result > 0){
+        return -result;
+    }
+
+    return written;
+}
+
+int64_t vfs::direct_write(const char* file, const char* buffer, size_t count, size_t offset){
+    auto path = get_path(file);
     auto& fs = get_fs(path);
     auto fs_path = get_fs_path(path, fs);
 

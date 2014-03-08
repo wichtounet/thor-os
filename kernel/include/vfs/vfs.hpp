@@ -40,6 +40,10 @@ int64_t mount(partition_type type, const char* mount_point, const char* device);
 //Used only inside kernel as a easy way to read a complete file
 int64_t direct_read(const std::string& file, std::string& content);
 
+//Use only inside the kernel for FS to access devices
+int64_t direct_read(const char* file, char* buffer, size_t count, size_t offset = 0);
+int64_t direct_write(const char* file, const char* buffer, size_t count, size_t offset = 0);
+
 } //end of namespace vfs
 
 #endif

@@ -65,15 +65,6 @@ void  kernel_main(){
     virtual_allocator::finalize();
     kalloc::finalize();
 
-    //Install drivers
-    timer::install();
-    //acpi::init();
-    keyboard::install_driver();
-    disks::detect_disks();
-
-    //Init the virtual file system
-    vfs::init();
-
     //Try to init VESA
     if(vesa::vesa_enabled && !vesa::init()){
         vesa::vesa_enabled = false;
@@ -82,6 +73,15 @@ void  kernel_main(){
         //to text mode for now
         suspend_boot();
     }
+
+    //Install drivers
+    timer::install();
+    //acpi::init();
+    keyboard::install_driver();
+    disks::detect_disks();
+
+    //Init the virtual file system
+    vfs::init();
 
     stdio::init_terminals();
 

@@ -178,11 +178,9 @@ fat32::fat32_file_system::fat32_file_system(std::string mount_point, std::string
         }
     }
 
-    partition_start = partition.start;
-
     std::unique_ptr<fat_bs_t> fat_bs_tmp(new fat_bs_t());
 
-    if(read_sectors(disk, partition.start, 1, fat_bs_tmp.get())){
+    if(read_sectors(0, 1, fat_bs_tmp.get())){
         fat_bs = fat_bs_tmp.release();
 
         //TODO fat_bs->signature should be 0xAA55
@@ -191,11 +189,11 @@ fat32::fat32_file_system::fat32_file_system(std::string mount_point, std::string
         fat_bs = nullptr;
     }
 
-    auto fs_information_sector = partition.start + static_cast<uint64_t>(fat_bs->fs_information_sector);
+    auto fs_information_sector =  static_cast<uint64_t>(fat_bs->fs_information_sector);
 
     std::unique_ptr<fat_is_t> fat_is_tmp(new fat_is_t());
 
-    if(read_sectors(disk, fs_information_sector, 1, fat_is_tmp.get())){
+    if(read_sectors(fs_information_sector, 1, fat_is_tmp.get())){
         fat_is = fat_is_tmp.release();
 
         //TODO fat_is->signature_start should be 0x52 0x52 0x61 0x41
@@ -259,7 +257,7 @@ size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path,
         if(first < cluster_last){
             std::unique_heap_array<char> cluster(cluster_size);
 
-            if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+            if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
                 size_t i = 0;
 
                 if(position == 0){
@@ -338,7 +336,7 @@ size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path
 
             std::unique_heap_array<char> cluster(cluster_size);
 
-            if(read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+            if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
                 size_t i = 0;
 
                 if(position == 0){
@@ -349,7 +347,7 @@ size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path
                     cluster[i] = buffer[position++];
                 }
 
-                if(!write_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+                if(!write_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
                     return std::ERROR_FAILED;
                 }
             } else {
@@ -489,7 +487,7 @@ size_t fat32::fat32_file_system::touch(const std::vector<std::string>& file_path
     auto parent_cluster_number = cluster_number.second;
 
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -501,7 +499,7 @@ size_t fat32::fat32_file_system::touch(const std::vector<std::string>& file_path
     init_file_entry<true>(new_directory_entry, file.c_str(), 0);
 
     //Write back the parent directory cluster
-    if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -524,7 +522,7 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
     }
 
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -536,7 +534,7 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
     init_directory_entry<true>(new_directory_entry, directory.c_str(), cluster);
 
     //Write back the parent directory cluster
-    if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -569,7 +567,7 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
     new_directory_cluster[new_directory_cluster.size() - 1].name[0] = 0x0;
 
     //Write the directory entries to the disk
-    if(!write_sectors(disk, cluster_lba(cluster), fat_bs->sectors_per_cluster, new_directory_cluster.get())){
+    if(!write_sectors(cluster_lba(cluster), fat_bs->sectors_per_cluster, new_directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -613,7 +611,7 @@ size_t fat32::fat32_file_system::statfs(statfs_info& file){
 
 size_t fat32::fat32_file_system::rm_file(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number){
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -639,7 +637,7 @@ size_t fat32::fat32_file_system::rm_file(uint32_t parent_cluster_number, size_t 
                 }
             }
 
-            if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
                 return std::ERROR_FAILED;
             }
         }
@@ -657,7 +655,7 @@ size_t fat32::fat32_file_system::rm_file(uint32_t parent_cluster_number, size_t 
                 break;
             }
 
-            if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
                 break;
             }
         }
@@ -722,7 +720,7 @@ size_t fat32::fat32_file_system::rm_dir(uint32_t parent_cluster_number, size_t p
 
 size_t fat32::fat32_file_system::set_file_size(uint32_t parent_cluster_number, size_t position, uint32_t file_size){
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -740,7 +738,7 @@ size_t fat32::fat32_file_system::set_file_size(uint32_t parent_cluster_number, s
             auto j = position % directory_cluster.size();
             directory_cluster[j].file_size = file_size;
 
-            if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
                 return std::ERROR_FAILED;
             }
         }
@@ -758,7 +756,7 @@ size_t fat32::fat32_file_system::set_file_size(uint32_t parent_cluster_number, s
                 break;
             }
 
-            if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
                 break;
             }
         }
@@ -773,7 +771,7 @@ size_t fat32::fat32_file_system::set_file_size(uint32_t parent_cluster_number, s
 
 size_t fat32::fat32_file_system::set_cluster_number(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number){
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -793,7 +791,7 @@ size_t fat32::fat32_file_system::set_cluster_number(uint32_t parent_cluster_numb
             directory_cluster[j].cluster_low = cluster_number;
             directory_cluster[j].cluster_high = cluster_number >> 16;
 
-            if(!write_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
                 return std::ERROR_FAILED;
             }
         }
@@ -811,7 +809,7 @@ size_t fat32::fat32_file_system::set_cluster_number(uint32_t parent_cluster_numb
                 break;
             }
 
-            if(!read_sectors(disk, cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
                 break;
             }
         }
@@ -915,7 +913,7 @@ fat32::cluster_entry* fat32::fat32_file_system::find_free_entry(std::unique_heap
             }
 
             //Write back the cluster
-            if(!write_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+            if(!write_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
                 return nullptr;
             }
         }
@@ -938,7 +936,7 @@ fat32::cluster_entry* fat32::fat32_file_system::find_free_entry(std::unique_heap
         cluster_number = next;
 
         //Read the next sector
-        if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+        if(!read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
             return nullptr;
         }
     }
@@ -978,7 +976,7 @@ fat32::cluster_entry* fat32::fat32_file_system::extend_directory(std::unique_hea
     }
 
     //Write back the previous cluster
-    if(!write_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!write_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return nullptr;
     }
 
@@ -1010,7 +1008,7 @@ std::vector<vfs::file> fat32::fat32_file_system::files(uint32_t cluster_number){
     std::unique_heap_array<fat32::cluster_entry> cluster(16 * fat_bs->sectors_per_cluster);
 
     while(!end_reached){
-        if(!read_sectors(disk, cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+        if(!read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
             return std::move(files);
         }
 
@@ -1204,14 +1202,14 @@ std::vector<vfs::file> fat32::fat32_file_system::files(const std::vector<std::st
 }
 //Write information sector to the disk
 bool fat32::fat32_file_system::write_is(){
-    auto fs_information_sector = partition_start + static_cast<uint64_t>(fat_bs->fs_information_sector);
+    auto fs_information_sector = static_cast<uint64_t>(fat_bs->fs_information_sector);
 
-    return write_sectors(disk, fs_information_sector, 1, fat_is);
+    return write_sectors(fs_information_sector, 1, fat_is);
 }
 
 //Return the absolute sector where the cluster resides
 uint64_t fat32::fat32_file_system::cluster_lba(uint64_t cluster){
-    uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
+    uint64_t fat_begin = fat_bs->reserved_sectors;
     uint64_t cluster_begin = fat_begin + (fat_bs->number_of_fat * fat_bs->sectors_per_fat_long);
 
     return cluster_begin + (cluster - 2 ) * fat_bs->sectors_per_cluster;
@@ -1220,11 +1218,11 @@ uint64_t fat32::fat32_file_system::cluster_lba(uint64_t cluster){
 //Return the value of the fat for the given cluster
 //Return 0 if an error occurs
 uint32_t fat32::fat32_file_system::read_fat_value(uint32_t cluster){
-    uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
+    uint64_t fat_begin = fat_bs->reserved_sectors;
     uint64_t fat_sector = fat_begin + (cluster * sizeof(uint32_t)) / 512;
 
     std::unique_heap_array<uint32_t> fat_table(512 / sizeof(uint32_t));
-    if(read_sectors(disk, fat_sector, 1, fat_table.get())){
+    if(read_sectors(fat_sector, 1, fat_table.get())){
         uint64_t entry_offset = cluster % (512 / sizeof(uint32_t));
         return fat_table[entry_offset] & 0x0FFFFFFF;
     } else {
@@ -1234,12 +1232,12 @@ uint32_t fat32::fat32_file_system::read_fat_value(uint32_t cluster){
 
 //Write a value to the FAT for the given cluster
 bool fat32::fat32_file_system::write_fat_value(uint32_t cluster, uint32_t value){
-    uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
+    uint64_t fat_begin = fat_bs->reserved_sectors;
     uint64_t fat_sector = fat_begin + (cluster * sizeof(uint32_t)) / 512;
 
     //Read the cluster we need to alter
     std::unique_heap_array<uint32_t> fat_table(512 / sizeof(uint32_t));
-    if(!read_sectors(disk, fat_sector, 1, fat_table.get())){
+    if(!read_sectors(fat_sector, 1, fat_table.get())){
         return false;
     }
 
@@ -1248,7 +1246,7 @@ bool fat32::fat32_file_system::write_fat_value(uint32_t cluster, uint32_t value)
     fat_table[entry_offset] = value;
 
     //Write back the cluster
-    return write_sectors(disk, fat_sector, 1, fat_table.get());
+    return write_sectors(fat_sector, 1, fat_table.get());
 }
 
 //Return the next cluster in the chain for the give cluster
@@ -1265,7 +1263,7 @@ uint32_t fat32::fat32_file_system::next_cluster(uint32_t cluster){
 //Find a free cluster in the disk
 //0 indicates failure or disk full
 uint32_t fat32::fat32_file_system::find_free_cluster(){
-    uint64_t fat_begin = partition_start + fat_bs->reserved_sectors;
+    uint64_t fat_begin = fat_bs->reserved_sectors;
 
     auto entries_per_sector = 512 / sizeof(uint32_t);
 
@@ -1276,7 +1274,7 @@ uint32_t fat32::fat32_file_system::find_free_cluster(){
     for(size_t j = 0; j < fat_size; ++j){
         uint64_t fat_sector = fat_begin + j * fat_bs->sectors_per_cluster;
 
-        if(!read_sectors(disk, fat_sector, 1, fat_table.get())){
+        if(!read_sectors(fat_sector, 1, fat_table.get())){
             return 0; //0 is not a valid cluster number, indicates failure
         }
 
@@ -1294,4 +1292,14 @@ uint32_t fat32::fat32_file_system::find_free_cluster(){
     }
 
     return 0; //0 is not a valid cluster number, indicates failure
+}
+
+bool fat32::fat32_file_system::read_sectors(uint64_t start, uint8_t count, void* destination){
+    auto result = vfs::direct_read(device.c_str(), reinterpret_cast<char*>(destination), start * 512, count * 512);
+    return result > 0 && result == count;
+}
+
+bool fat32::fat32_file_system::write_sectors(uint64_t start, uint8_t count, void* source){
+    auto result = vfs::direct_write(device.c_str(), reinterpret_cast<const char*>(source), start * 512, count * 512);
+    return result > 0 && result == count;
 }

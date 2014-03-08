@@ -29,7 +29,6 @@ private:
 
     fat_bs_t* fat_bs = nullptr;
     fat_is_t* fat_is = nullptr;
-    uint64_t partition_start = 0;
 
 public:
     fat32_file_system(std::string mount_point, std::string device, size_t disk, size_t partition);
@@ -65,6 +64,9 @@ private:
     bool write_fat_value(uint32_t cluster, uint32_t value);
     uint32_t next_cluster(uint32_t cluster);
     uint32_t find_free_cluster();
+
+    bool read_sectors(uint64_t start, uint8_t count, void* destination);
+    bool write_sectors(uint64_t start, uint8_t count, void* source);
 };
 
 }

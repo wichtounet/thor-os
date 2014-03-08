@@ -43,8 +43,8 @@ void detect_disks();
 disk_descriptor& disk_by_index(uint64_t index);
 disk_descriptor& disk_by_uuid(uint64_t uuid);
 
-bool read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);
-bool write_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);
+//bool read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);
+//bool write_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination);
 
 std::unique_heap_array<partition_descriptor> partitions(disk_descriptor& disk);
 
