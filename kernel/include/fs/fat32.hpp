@@ -24,14 +24,12 @@ struct fat32_file_system : vfs::file_system {
 private:
     std::string mount_point;
     std::string device;
-    dd disk;
-    disks::partition_descriptor partition;
 
     fat_bs_t* fat_bs = nullptr;
     fat_is_t* fat_is = nullptr;
 
 public:
-    fat32_file_system(std::string mount_point, std::string device, size_t disk, size_t partition);
+    fat32_file_system(std::string mount_point, std::string device);
     ~fat32_file_system();
 
     void init();

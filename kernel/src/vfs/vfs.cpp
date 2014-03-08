@@ -152,7 +152,7 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
 
     switch(type){
         case vfs::partition_type::FAT32:
-            fs = new fat32::fat32_file_system(mount_point, device, 0, 0);
+            fs = new fat32::fat32_file_system(mount_point, device);
 
             break;
 
