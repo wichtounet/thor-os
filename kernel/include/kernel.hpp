@@ -10,7 +10,7 @@
 
 extern "C" {
 
-void kernel_main();
+void kernel_main() __attribute__((noreturn));
 
 }
 
