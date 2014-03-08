@@ -67,14 +67,14 @@ void disks::detect_disks(){
                 std::string name = "cd";
                 name += cdrom++;
 
-                devfs::register_device("/dev/", name, devfs::device_type::BLOCK_DEVICE, atapi_driver, &descriptor);
+                devfs::register_device("/dev/", name, devfs::device_type::BLOCK_DEVICE, atapi_driver, &_disks[number_of_disks]);
             } else {
                 _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATA, &descriptor};
 
                 std::string name = "hd";
                 name += disk++;
 
-                devfs::register_device("/dev/", name, devfs::device_type::BLOCK_DEVICE, ata_driver, &descriptor);
+                devfs::register_device("/dev/", name, devfs::device_type::BLOCK_DEVICE, ata_driver, &_disks[number_of_disks]);
 
                 char part = '1';
 

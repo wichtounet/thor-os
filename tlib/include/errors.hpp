@@ -28,6 +28,7 @@ constexpr const size_t ERROR_DISK_FULL = 12;
 constexpr const size_t ERROR_PERMISSION_DENIED = 13;
 constexpr const size_t ERROR_INVALID_OFFSET = 14;
 constexpr const size_t ERROR_UNSUPPORTED = 15;
+constexpr const size_t ERROR_INVALID_COUNT = 16;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -61,6 +62,8 @@ inline const char* error_message(size_t error){
             return "The offset is not valid";
         case ERROR_UNSUPPORTED:
             return "Unsupported operation: May not be implemented yet";
+        case ERROR_INVALID_COUNT:
+            return "The count is not valid";
         default:
             return "Unknonwn error";
     }

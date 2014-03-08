@@ -61,8 +61,8 @@ std::string partition_type_to_string(vfs::partition_type type){
 std::vector<mounted_fs> mount_point_list;
 
 void mount_root(){
-    //TODO Get information about the root from a confgiuration file
-    mount(vfs::partition_type::FAT32, "/", "TODO");
+    //TODO Get information about the root from a configuration file
+    mount(vfs::partition_type::FAT32, "/", "/dev/hda1");
 }
 
 void mount_sys(){
