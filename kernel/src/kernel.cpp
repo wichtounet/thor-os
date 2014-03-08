@@ -11,7 +11,6 @@
 #include "paging.hpp"
 #include "kalloc.hpp"
 #include "timer.hpp"
-#include "shell.hpp"
 #include "keyboard.hpp"
 #include "disks.hpp"
 #include "acpi.hpp"
