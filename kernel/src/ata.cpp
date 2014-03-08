@@ -366,8 +366,8 @@ size_t ata::ata_driver::read(void* data, char* destination, size_t count, size_t
 
     read = 0;
 
-    auto sectors = count % BLOCK_SIZE;
-    auto start = offset % BLOCK_SIZE;
+    auto sectors = count / BLOCK_SIZE;
+    auto start = offset / BLOCK_SIZE;
 
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
@@ -397,8 +397,8 @@ size_t ata::ata_driver::write(void* data, const char* source, size_t count, size
 
     written = 0;
 
-    auto sectors = count % BLOCK_SIZE;
-    auto start = offset % BLOCK_SIZE;
+    auto sectors = count / BLOCK_SIZE;
+    auto start = offset / BLOCK_SIZE;
 
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
@@ -428,8 +428,8 @@ size_t ata::ata_part_driver::read(void* data, char* destination, size_t count, s
 
     read = 0;
 
-    auto sectors = count % BLOCK_SIZE;
-    auto start = offset % BLOCK_SIZE;
+    auto sectors = count / BLOCK_SIZE;
+    auto start = offset / BLOCK_SIZE;
 
     auto part_descriptor = reinterpret_cast<disks::partition_descriptor*>(data);
     auto descriptor = part_descriptor->disk;
@@ -462,8 +462,8 @@ size_t ata::ata_part_driver::write(void* data, const char* source, size_t count,
 
     written = 0;
 
-    auto sectors = count % BLOCK_SIZE;
-    auto start = offset % BLOCK_SIZE;
+    auto sectors = count / BLOCK_SIZE;
+    auto start = offset / BLOCK_SIZE;
 
     auto part_descriptor = reinterpret_cast<disks::partition_descriptor*>(data);
     auto descriptor = part_descriptor->disk;

@@ -140,6 +140,11 @@ void vfs::init(){
     mount_root();
     mount_sys();
     mount_dev();
+
+    //Finish initilization of the file systems
+    for(auto& mp : mount_point_list){
+        mp.file_system->init();
+    }
 }
 
 int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){

@@ -19,6 +19,8 @@ namespace vfs {
 struct file_system {
     virtual ~file_system(){};
 
+    virtual void init(){}
+
     virtual size_t statfs(statfs_info& file) = 0;
     virtual size_t read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read) = 0;
     virtual size_t write(const std::vector<std::string>& file_path, const char* buffer, size_t count, size_t offset, size_t& written) = 0;

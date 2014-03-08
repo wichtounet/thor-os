@@ -65,15 +65,6 @@ void  kernel_main(){
     virtual_allocator::finalize();
     kalloc::finalize();
 
-    //Try to init VESA
-    if(vesa::vesa_enabled && !vesa::init()){
-        vesa::vesa_enabled = false;
-
-        //Unfortunately, we are in long mode, we cannot go back
-        //to text mode for now
-        suspend_boot();
-    }
-
     //Install drivers
     timer::install();
     //acpi::init();
@@ -82,6 +73,15 @@ void  kernel_main(){
 
     //Init the virtual file system
     vfs::init();
+
+    //Try to init VESA
+    if(vesa::vesa_enabled && !vesa::init()){
+        vesa::vesa_enabled = false;
+
+        //Unfortunately, we are in long mode, we cannot go back
+        //to text mode for now
+        suspend_boot();
+    }
 
     stdio::init_terminals();
 

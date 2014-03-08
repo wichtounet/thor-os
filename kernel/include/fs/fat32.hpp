@@ -34,6 +34,8 @@ public:
     fat32_file_system(std::string mount_point, std::string device, size_t disk, size_t partition);
     ~fat32_file_system();
 
+    void init();
+
     size_t statfs(statfs_info& file);
     size_t read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read);
     size_t write(const std::vector<std::string>& file_path, const char* buffer, size_t count, size_t offset, size_t& written);

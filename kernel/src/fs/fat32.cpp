@@ -171,13 +171,15 @@ void init_file_entry(fat32::cluster_entry* entry_ptr, const char* name, uint32_t
 } //end of anonymous namespace
 
 fat32::fat32_file_system::fat32_file_system(std::string mount_point, std::string device, size_t disk_uuid, size_t partition_uuid) : mount_point(mount_point), device(device), disk(disks::disk_by_uuid(disk_uuid)) {
-    for(auto& p : partitions(disks::disk_by_uuid(disk_uuid))){
-        if(p.uuid == partition_uuid){
-            partition = p;
-            break;
-        }
-    }
+    //Nothing else to init
+}
 
+fat32::fat32_file_system::~fat32_file_system(){
+    delete fat_bs;
+    delete fat_is;
+}
+
+void fat32::fat32_file_system::init(){
     std::unique_ptr<fat_bs_t> fat_bs_tmp(new fat_bs_t());
 
     if(read_sectors(0, 1, fat_bs_tmp.get())){
@@ -202,11 +204,6 @@ fat32::fat32_file_system::fat32_file_system(std::string mount_point, std::string
     } else {
         fat_is = nullptr;
     }
-}
-
-fat32::fat32_file_system::~fat32_file_system(){
-    delete fat_bs;
-    delete fat_is;
 }
 
 size_t fat32::fat32_file_system::get_file(const std::vector<std::string>& file_path, vfs::file& file){
@@ -1295,11 +1292,11 @@ uint32_t fat32::fat32_file_system::find_free_cluster(){
 }
 
 bool fat32::fat32_file_system::read_sectors(uint64_t start, uint8_t count, void* destination){
-    auto result = vfs::direct_read(device.c_str(), reinterpret_cast<char*>(destination), start * 512, count * 512);
-    return result > 0 && result == count;
+    auto result = vfs::direct_read(device.c_str(), reinterpret_cast<char*>(destination), count * 512, start * 512);
+    return result > 0 && result == count * 512;
 }
 
 bool fat32::fat32_file_system::write_sectors(uint64_t start, uint8_t count, void* source){
-    auto result = vfs::direct_write(device.c_str(), reinterpret_cast<const char*>(source), start * 512, count * 512);
-    return result > 0 && result == count;
+    auto result = vfs::direct_write(device.c_str(), reinterpret_cast<const char*>(source), count * 512, start * 512);
+    return result > 0 && result == count * 512;
 }
