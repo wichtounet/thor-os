@@ -24,6 +24,7 @@
 #include "virtual_allocator.hpp"
 #include "physical_pointer.hpp"
 #include "mutex.hpp"
+#include "kernel_utils.hpp"
 
 constexpr const bool DEBUG_SCHEDULER = false;
 
@@ -62,6 +63,8 @@ mutex& run_queue_lock(size_t priority){
 bool started = false;
 
 constexpr const size_t TURNOVER = 10;
+
+constexpr const size_t STACK_ALIGNMENT = 16;
 
 constexpr const size_t QUANTUM_SIZE = 1000;
 size_t current_ticks = 0;
@@ -208,18 +211,22 @@ scheduler::process_t& create_kernel_task(char* user_stack, char* kernel_stack, v
     process.physical_user_stack = 0;
     process.physical_kernel_stack = 0;
 
-    auto rsp = &user_stack[scheduler::user_stack_size - 1];
+    auto rsp = &user_stack[scheduler::user_stack_size - STACK_ALIGNMENT];
     rsp -= sizeof(interrupt::syscall_regs);
 
     process.context = reinterpret_cast<interrupt::syscall_regs*>(rsp);
 
     process.context->rflags = 0x200;
     process.context->rip = reinterpret_cast<size_t>(fun);
-    process.context->rsp = reinterpret_cast<size_t>(&user_stack[scheduler::user_stack_size - 1] - sizeof(interrupt::syscall_regs) * 8);
+    process.context->rsp = reinterpret_cast<size_t>(rsp);
     process.context->cs = gdt::LONG_SELECTOR;
     process.context->ds = gdt::DATA_SELECTOR;
 
-    process.kernel_rsp = reinterpret_cast<size_t>(&kernel_stack[scheduler::kernel_stack_size - 1]);
+    process.kernel_rsp = reinterpret_cast<size_t>(&kernel_stack[scheduler::kernel_stack_size - STACK_ALIGNMENT]);
+
+    thor_assert((reinterpret_cast<size_t>(process.context) - sizeof(interrupt::syscall_regs)) % STACK_ALIGNMENT == 0, "Process context must be correctly aligned");
+    thor_assert((process.context->rsp - sizeof(interrupt::syscall_regs)) % STACK_ALIGNMENT == 0, "Process user stack must be correctly aligned");
+    thor_assert(process.kernel_rsp % STACK_ALIGNMENT == 0, "Process kernel stack must be correctly aligned");
 
     return process;
 }
@@ -551,6 +558,20 @@ void init_context(scheduler::process_t& process, const char* buffer, const std::
 
 } //end of anonymous namespace
 
+//Provided for task_switch.s
+
+extern "C" {
+
+uint64_t get_context_address(size_t pid){
+    return reinterpret_cast<size_t>(&pcb[pid].process.context);
+}
+
+uint64_t get_process_cr3(size_t pid){
+    return reinterpret_cast<uint64_t>(pcb[pid].process.physical_cr3);
+}
+
+} //end of extern "C"
+
 void scheduler::init(){ //Create the idle task
     //Init all the semaphores
     for(auto& lock : run_queue_locks){
@@ -833,17 +854,3 @@ const std::vector<std::string>& scheduler::get_working_directory(){
 void scheduler::set_working_directory(const std::vector<std::string>& directory){
     pcb[current_pid].working_directory = directory;
 }
-
-//Provided for task_switch.s
-
-extern "C" {
-
-uint64_t get_context_address(size_t pid){
-    return reinterpret_cast<uint64_t>(&pcb[pid].process.context);
-}
-
-uint64_t get_process_cr3(size_t pid){
-    return reinterpret_cast<uint64_t>(pcb[pid].process.physical_cr3);
-}
-
-} //end of extern "C"
