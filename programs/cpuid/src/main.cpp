@@ -348,7 +348,7 @@ int main(){
     get_brand_string();
     get_features();
     get_cache_info();
-    //get_deterministic_cache_parameters();
+    get_deterministic_cache_parameters();
 
     exit(0);
 }
