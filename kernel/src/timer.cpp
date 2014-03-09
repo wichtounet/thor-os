@@ -7,6 +7,7 @@
 
 #include "timer.hpp"
 #include "scheduler.hpp"
+#include "kernel_utils.hpp"
 
 #include "drivers/pit.hpp"
 

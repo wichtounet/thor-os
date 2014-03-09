@@ -10,11 +10,6 @@
 #include "kernel_utils.hpp"
 #include "terminal.hpp"
 
-//TODO Remove that later
-#include "semaphore.hpp"
-#include "spinlock.hpp"
-#include "sleep_queue.hpp"
-
 namespace {
 
 char qwertz[128] = {

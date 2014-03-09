@@ -37,11 +37,9 @@
     push rcx
     push rbx
     push rax
-    push rax
 .endm
 
 .macro restore_context
-    pop rax
     pop rax
     pop rbx
     pop rcx

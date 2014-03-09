@@ -10,7 +10,6 @@
 #include "timer.hpp"
 #include "interrupts.hpp"
 #include "scheduler.hpp"
-
 #include "kernel_utils.hpp"
 
 namespace {

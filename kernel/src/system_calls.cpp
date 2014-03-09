@@ -12,6 +12,7 @@
 #include "terminal.hpp"
 #include "acpi.hpp"
 #include "rtc.hpp"
+#include "kernel_utils.hpp"
 #include "vfs/vfs.hpp"
 
 namespace {

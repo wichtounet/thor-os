@@ -15,6 +15,8 @@
 #include "assert.hpp"
 #include "process.hpp"
 #include "physical_pointer.hpp"
+#include "kernel_utils.hpp"
+
 #include "fs/sysfs.hpp"
 
 namespace {
