@@ -16,4 +16,7 @@ void out_byte(uint16_t _port, uint8_t _data);
 uint16_t in_word(uint16_t _port);
 void out_word(uint16_t _port, uint16_t _data);
 
+void print_stack(const char* msg, size_t check);
+#define SHOW_STACK(M) { size_t check = 0; asm volatile("mov %0, rsp;" : "=r" (check)); print_stack(((M)), check); }
+
 #endif
