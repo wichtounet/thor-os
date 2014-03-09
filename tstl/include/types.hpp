@@ -21,6 +21,8 @@ typedef int int64_t __attribute__ ((__mode__ (__DI__)));
 typedef uint64_t uintptr_t;
 typedef uint64_t size_t;
 
+typedef double sse_128 __attribute__((vector_size(16)));
+
 static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
 static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
 static_assert(sizeof(uint32_t) == 4, "uint32_t must be 4 bytes long");
@@ -32,6 +34,8 @@ static_assert(sizeof(int32_t) == 4, "int32_t must be 4 bytes long");
 static_assert(sizeof(int64_t) == 8, "int64_t must be 8 bytes long");
 
 static_assert(sizeof(size_t) == 8, "size_t must be 8 bytes long");
+
+static_assert(sizeof(sse_128) == 16, "xmm registers are 16 bytes long");
 
 #ifndef CODE_32
 #ifndef CODE_16
