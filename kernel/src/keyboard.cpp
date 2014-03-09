@@ -90,52 +90,16 @@ char shifted_qwertz[128] = {
     0,	/* All other keys are undefined */
 };
 
-const uint8_t BUFFER_SIZE = 64;
-
-//TODO Encapsulate the buffer
-char input_buffer[BUFFER_SIZE];
-volatile uint8_t start;
-volatile uint8_t count;
-
 void keyboard_handler(interrupt::syscall_regs*){
     auto key = static_cast<char>(in_byte(0x60));
 
     stdio::get_active_terminal().send_input(key);
-
-    if(count == BUFFER_SIZE){
-        //The buffer is full, we loose the characters
-    } else {
-        auto end = (start + count) % BUFFER_SIZE;
-        input_buffer[end] = key;
-        ++count;
-    }
 }
 
 } //end of anonymous namespace
 
 void keyboard::install_driver(){
     interrupt::register_irq_handler(1, keyboard_handler);
-
-    start = 0;
-    count = 0;
-}
-
-//TODO Once shell is user mode, can be removed
-char keyboard::get_char(){
-    //Wait for the buffer to contains something
-    while(count == 0){
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-    }
-
-    auto key = input_buffer[start];
-    start = (start + 1) % BUFFER_SIZE;
-    --count;
-
-    return key;
 }
 
 char keyboard::key_to_ascii(uint8_t key){
