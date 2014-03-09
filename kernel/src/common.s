@@ -37,9 +37,29 @@
     push rcx
     push rbx
     push rax
+    sub rsp, 512
+    //fxsave [rsp]
+
 .endm
 
 .macro restore_context
+    //fxrstor [rsp]
+    add rsp, 512
+    pop rax
+    pop rbx
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    pop r8
+    pop r9
+    pop r10
+    pop r11
+    pop r12
+.endm
+
+.macro restore_context_light
+    add rsp, 512
     pop rax
     pop rbx
     pop rcx

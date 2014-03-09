@@ -26,6 +26,7 @@ struct fault_regs {
 } __attribute__((packed));
 
 struct syscall_regs {
+    char sse_region[512];
     uint64_t rax;
     uint64_t rbx;
     uint64_t rcx;

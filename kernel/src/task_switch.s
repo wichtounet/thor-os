@@ -27,7 +27,7 @@ init_task_switch:
     pop rdi
     mov rsp, [rax]
 
-    restore_context
+    restore_context_light
 
     //Was pushed by the base handler code
     add rsp, 8
