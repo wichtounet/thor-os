@@ -28,7 +28,8 @@
 extern "C" {
 
 void __cxa_pure_virtual(){
-    //TODO Print something
+    k_print_line("A pure virtual function has been called");
+    suspend_kernel();
 }
 
 void _init();
@@ -103,11 +104,10 @@ void  kernel_main(){
 
 void suspend_boot(){
     k_print_line("Impossible to continue boot...");
-    asm volatile("hlt");
-    __builtin_unreachable();
+    suspend_kernel();
 }
 
 void suspend_kernel(){
-    asm volatile("hlt");
+    asm volatile("cli; hlt");
     __builtin_unreachable();
 }
