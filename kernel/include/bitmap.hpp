@@ -8,6 +8,8 @@
 #ifndef BITMAP_H
 #define BITMAP_H
 
+#include "assert.hpp"
+
 struct static_bitmap {
     typedef uint64_t data_type;
 
@@ -62,8 +64,7 @@ struct static_bitmap {
             }
         }
 
-        //TODO Use an assert here
-        return 0;
+        thor_unreachable("static_bitmap has not free bit");
     }
 
     size_t free_word() const {
@@ -73,8 +74,7 @@ struct static_bitmap {
             }
         }
 
-        //TODO Use an assert here
-        return 0;
+        thor_unreachable("static_bitmap has no free word");
     }
 
     bool is_set(size_t bit) const {
