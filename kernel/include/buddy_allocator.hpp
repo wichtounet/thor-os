@@ -64,8 +64,7 @@ public:
                 auto index = bitmaps[l].free_word();
                 auto address = block_start(l, index);
 
-                //TODO check also address + size
-                if(address >= last_address){
+                if(address + level_size(pages) >= last_address){
                     return 0;
                 }
 
@@ -81,8 +80,7 @@ public:
             auto index = bitmaps[l].free_bit();
             auto address = block_start(l, index);
 
-            //TODO check also address + size
-            if(address >= last_address){
+            if(address + level_size(pages) >= last_address){
                 return 0;
             }
 
