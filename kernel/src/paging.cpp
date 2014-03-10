@@ -21,7 +21,11 @@
 
 namespace {
 
-using namespace paging;
+typedef uint64_t* page_entry;
+typedef page_entry* pt_t;
+typedef pt_t* pd_t;
+typedef pd_t* pdpt_t;
+typedef pdpt_t* pml4t_t;
 
 //The physical offsets of the structures
 size_t physical_pml4t_start;

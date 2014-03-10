@@ -20,14 +20,6 @@ struct process_t;
 
 namespace paging {
 
-//TODO Probably some of it could be moved in the source file
-
-typedef uint64_t* page_entry;
-typedef page_entry* pt_t;
-typedef pt_t* pd_t;
-typedef pd_t* pdpt_t;
-typedef pdpt_t* pml4t_t;
-
 //The size of page in memory
 constexpr const size_t PAGE_SIZE = 4096;
 
