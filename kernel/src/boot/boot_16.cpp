@@ -13,9 +13,13 @@
 #include "gdt.hpp"
 #include "e820.hpp" //Just for the address of the e820 map
 #include "vesa.hpp"
+#include "early_logging.hpp"
 
 //The Task State Segment
 gdt::task_state_segment_t gdt::tss;
+
+uint32_t early::early_logs_count = 0;
+uint32_t early::early_logs[early::MAX_EARLY_LOGGING];
 
 e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
 int16_t e820::bios_e820_entry_count = 0;
@@ -26,17 +30,25 @@ bool vesa::vesa_enabled = false;
 
 namespace {
 
+/* Early Logging  */
+
+void early_log(const char* s){
+    early::early_logs[early::early_logs_count++] = reinterpret_cast<uint32_t>(s);
+}
+
+/* VESA */
+
 constexpr const uint16_t DEFAULT_WIDTH = 1280;
 constexpr const uint16_t DEFAULT_HEIGHT = 1024;
 constexpr const uint16_t DEFAULT_BPP = 32;
 
 void out_byte(uint8_t value, uint16_t port){
-    __asm__ __volatile__("out %1, %0" : : "a" (value), "dN" (port));
+    asm volatile("out %1, %0" : : "a" (value), "dN" (port));
 }
 
 uint8_t in_byte(uint16_t port){
     uint8_t value;
-    __asm__ __volatile__("in %0,%1" : "=a" (value) : "dN" (port));
+    asm volatile("in %0,%1" : "=a" (value) : "dN" (port));
     return value;
 }
 
@@ -74,8 +86,11 @@ int detect_memory_e820(){
             : "a"(0xE820), "b"(contID), "c"(24), "d"(0x534D4150), "D"(&buf));
 
         if (signature != 0x534D4150){
+            early_log("e820 failed");
             return -1;
         }
+
+        early_log("Found e820 entry");
 
         if (bytes > 20 && (smap->acpi & 0x0001) == 0){
             // ignore this entry
@@ -199,7 +214,7 @@ void setup_vesa(){
 }
 
 void disable_interrupts(){
-    __asm__ __volatile__ ("cli");
+    asm volatile ("cli");
 }
 
 void enable_a20_gate(){
@@ -400,14 +415,14 @@ void  __attribute__ ((noreturn)) rm_main(){
     //Make sure segments are clean
     reset_segments();
 
+    //Enable VESA
+    setup_vesa();
+
     //Analyze memory
     detect_memory();
 
     //Make sure a20 gate is enabled
     enable_a20_gate();
-
-    //Enable VESA
-    setup_vesa();
 
     //Disable interrupts
     disable_interrupts();
