@@ -88,7 +88,6 @@ unsigned int *get_rsd_ptr(void){
       }
    }
 
-   //TODO Check unsigned
    // at address 0x40:0x0E is the RM segment of the ebda
    unsigned int ebda = *(reinterpret_cast<short *>(0x40E));   // get pointer
    ebda = ebda * 0x10 & 0x000FFFFF;   // transform segment into linear address
