@@ -22,6 +22,7 @@
 #include "gdt.hpp"
 #include "terminal.hpp"
 #include "scheduler.hpp"
+#include "logging.hpp"
 #include "vfs/vfs.hpp"
 #include "fs/sysfs.hpp"
 
@@ -62,7 +63,21 @@ void  kernel_main(){
     //Call global constructors
     _init();
 
-    //Finalize memory operations
+    //Try to init VESA
+    if(vesa::vesa_enabled && !vesa::init()){
+        vesa::vesa_enabled = false;
+
+        //Unfortunately, we are in long mode, we cannot go back
+        //to text mode for now
+        suspend_boot();
+    }
+
+    init_console();
+
+    //Starting from here, the logging system can use the console
+    logging::finalize();
+
+    //Finalize memory operations (register sysfs values)
     paging::finalize();
     physical_allocator::finalize();
     virtual_allocator::finalize();
@@ -77,21 +92,13 @@ void  kernel_main(){
     //Init the virtual file system
     vfs::init();
 
-    //Try to init VESA
-    if(vesa::vesa_enabled && !vesa::init()){
-        vesa::vesa_enabled = false;
-
-        //Unfortunately, we are in long mode, we cannot go back
-        //to text mode for now
-        suspend_boot();
-    }
+    //Starting from here, the logging system can output logs to file
+    logging::to_file();
 
     stdio::init_terminals();
 
     //Only install system calls when everything else is ready
     install_system_calls();
-
-    init_console();
 
     sysfs::set_constant_value("/sys/", "version", "0.1");
     sysfs::set_constant_value("/sys/", "author", "Baptiste Wicht");
