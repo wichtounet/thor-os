@@ -10,8 +10,13 @@
 #include "boot/boot_32.hpp"
 #include "kernel.hpp"
 #include "paging.hpp"
+#include "early_logging.hpp"
 
 namespace {
+
+void early_log(const char* s){
+    early::early_logs[early::early_logs_count++] = reinterpret_cast<uint32_t>(s);
+}
 
 typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
 typedef unsigned int uint16_t __attribute__ ((__mode__ (__HI__)));
@@ -37,6 +42,8 @@ void set_segments(){
 
 void activate_pae(){
     asm volatile("mov eax, cr4; or eax, 1 << 5; mov cr4, eax");
+
+    early_log("PAE Activated");
 }
 
 inline void clear_tables(uint32_t page){
@@ -74,6 +81,8 @@ void setup_paging(){
         //A page entry is 64 bit in size
         page_table_ptr += 2;
     }
+
+    early_log("Paging configured");
 }
 
 void enable_long_mode(){
@@ -82,12 +91,16 @@ void enable_long_mode(){
         "rdmsr \t\n"
         "or eax, 0b100000000 \t\n"
         "wrmsr \t\n");
+
+    early_log("Long mode enabled");
 }
 
 void set_pml4t(){
     asm volatile(
         "mov eax, 0x70000 \t\n"  // Bass address of PML4
         "mov cr3, eax \t\n");    // load page-map level-4 base
+
+    early_log("PML4T set");
 }
 
 void enable_paging(){
@@ -95,6 +108,8 @@ void enable_paging(){
         "mov eax, cr0 \t\n"
         "or eax, 0b10000000000000000000000000000000 \t\n"
         "mov cr0, eax \t\n");
+
+    early_log("Paging enabled");
 }
 
 void __attribute__((noreturn)) lm_jump(){

@@ -32,6 +32,8 @@ namespace {
 
 /* Early Logging  */
 
+//TODO Check out why only very few early log are possible and it seems only
+//at some position...
 void early_log(const char* s){
     early::early_logs[early::early_logs_count++] = reinterpret_cast<uint32_t>(s);
 }
@@ -89,8 +91,6 @@ int detect_memory_e820(){
             early_log("e820 failed");
             return -1;
         }
-
-        early_log("Found e820 entry");
 
         if (bytes > 20 && (smap->acpi & 0x0001) == 0){
             // ignore this entry
@@ -215,9 +215,13 @@ void setup_vesa(){
 
 void disable_interrupts(){
     asm volatile ("cli");
+
+    early_log("Interrupts disabled");
 }
 
 void enable_a20_gate(){
+    early_log("A20 gate enabled");
+
     //TODO This should really be improved:
     // 1. Test if a20 already enabled
     // 2- Use several methods of enabling if necessary until one succeeds
@@ -227,6 +231,7 @@ void enable_a20_gate(){
     port_a |=  0x02;
     port_a &= ~0x01;
     out_byte(port_a, 0x92);
+
 }
 
 void setup_idt(){
