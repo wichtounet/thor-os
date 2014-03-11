@@ -73,6 +73,7 @@ void  kernel_main(){
     }
 
     init_console();
+    stdio::init_terminals();
 
     //Starting from here, the logging system can use the console
     logging::finalize();
@@ -94,8 +95,6 @@ void  kernel_main(){
 
     //Starting from here, the logging system can output logs to file
     logging::to_file();
-
-    stdio::init_terminals();
 
     //Only install system calls when everything else is ready
     install_system_calls();
