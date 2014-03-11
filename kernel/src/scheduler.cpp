@@ -25,6 +25,7 @@
 #include "physical_pointer.hpp"
 #include "mutex.hpp"
 #include "kernel_utils.hpp"
+#include "logging.hpp"
 
 constexpr const bool DEBUG_SCHEDULER = false;
 
@@ -594,6 +595,8 @@ void scheduler::init(){ //Create the idle task
 void scheduler::start(){
     started = true;
 
+    logging::log("Start multiprocessing");
+
     init_task_switch(current_pid);
 }
 
@@ -647,6 +650,8 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     for(auto& p : pcb[current_pid].working_directory){
         pcb[process.pid].working_directory.push_back(p);
     }
+
+    logging::logf("Exec process pid=%u, ppid=%u", process.pid, process.ppid);
 
     return process.pid;
 }

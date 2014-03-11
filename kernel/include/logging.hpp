@@ -19,6 +19,7 @@ void finalize();
 void to_file();
 
 void log(const char* s);
+void logf(const char* s, ...);
 void log(const std::string& s);
 
 } //end of namespace logging
