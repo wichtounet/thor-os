@@ -41,5 +41,5 @@ void out_word(uint16_t _port, uint16_t _data){
 }
 
 void print_stack(const char* s, size_t check){
-    k_printf("%s stack: %u (16B-a:%u) \n", s, check, static_cast<size_t>(check % 16));
+    printf("%s stack: %u (16B-a:%u) \n", s, check, static_cast<size_t>(check % 16));
 }

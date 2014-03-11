@@ -224,16 +224,16 @@ const char* exceptions_title[32] {
 extern "C" {
 
 void _fault_handler(interrupt::fault_regs regs){
-    k_printf("Exception %u (%s) occured\n", regs.error_no, exceptions_title[regs.error_no]);
-    k_printf("error_code=%u\n", regs.error_code);
-    k_printf("rip=%h\n", regs.rip);
-    k_printf("rflags=%h\n", regs.rflags);
-    k_printf("cs=%h\n", regs.cs);
-    k_printf("rsp=%h\n", regs.rsp);
-    k_printf("ss=%h\n", regs.ss);
-    k_printf("pid=%u\n", scheduler::get_pid());
-    k_printf("cr2=%h\n", get_cr2());
-    k_printf("cr3=%h\n", get_cr3());
+    printf("Exception %u (%s) occured\n", regs.error_no, exceptions_title[regs.error_no]);
+    printf("error_code=%u\n", regs.error_code);
+    printf("rip=%h\n", regs.rip);
+    printf("rflags=%h\n", regs.rflags);
+    printf("cs=%h\n", regs.cs);
+    printf("rsp=%h\n", regs.rsp);
+    printf("ss=%h\n", regs.ss);
+    printf("pid=%u\n", scheduler::get_pid());
+    printf("cr2=%h\n", get_cr2());
+    printf("cr3=%h\n", get_cr3());
 
     //TODO Improve that with kind of blue screen
 

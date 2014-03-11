@@ -151,21 +151,21 @@ void debug_malloc(const char* point = nullptr){
 
         k_print(" next: ");
         do {
-            k_printf("%u%h -> ", static_cast<size_t>(it->is_free()), reinterpret_cast<uint64_t>(it));
+            printf("%u%h -> ", static_cast<size_t>(it->is_free()), reinterpret_cast<uint64_t>(it));
             it = it->next();
         } while(it != malloc_head);
 
-        k_printf("%h\n", malloc_head);
+        printf("%h\n", malloc_head);
 
         it = malloc_head;
 
         k_print("prev: ");
         do {
-            k_printf("%h <- ", reinterpret_cast<uint64_t>(it));
+            printf("%h <- ", reinterpret_cast<uint64_t>(it));
             it = it->prev();
         } while(it != malloc_head);
 
-        k_printf("%h\n", malloc_head);
+        printf("%h\n", malloc_head);
     }
 }
 
@@ -414,7 +414,7 @@ void* kalloc::k_malloc(uint64_t bytes){
     auto block_start = reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk);
 
     if(TRACE_MALLOC){
-        k_printf("m %u(%u) %h ", bytes, current->size(), block_start);
+        printf("m %u(%u) %h ", bytes, current->size(), block_start);
     }
 
     return reinterpret_cast<void*>(block_start);
@@ -429,7 +429,7 @@ void kalloc::k_free(void* block){
     }
 
     if(TRACE_MALLOC){
-        k_printf("f %u %h ", free_header->size(), reinterpret_cast<uint64_t>(block));
+        printf("f %u %h ", free_header->size(), reinterpret_cast<uint64_t>(block));
     }
 
     //Less memory is used
@@ -472,7 +472,7 @@ void kalloc::debug(){
 
     auto it = malloc_head;
 
-    k_printf("malloc overhead: %u\n", META_SIZE);
+    printf("malloc overhead: %u\n", META_SIZE);
     k_print("Free blocks:");
     do {
         if(!it->is_free()){
@@ -484,14 +484,14 @@ void kalloc::debug(){
             ++inconsistent;
         }
 
-        k_printf("b(%u) ", it->size());
+        printf("b(%u) ", it->size());
         memory_free += it->size();
 
         it = it->next();
     } while(it != malloc_head);
 
     k_print_line();
-    k_printf("memory free in malloc chain: %m (%u)\n", memory_free, memory_free);
-    k_printf("There are %u non free blocks in the free list\n", non_free_blocks);
-    k_printf("There are %u inconsistent sized blocks in the free list\n", inconsistent);
+    printf("memory free in malloc chain: %m (%u)\n", memory_free, memory_free);
+    printf("There are %u non free blocks in the free list\n", non_free_blocks);
+    printf("There are %u inconsistent sized blocks in the free list\n", inconsistent);
 }

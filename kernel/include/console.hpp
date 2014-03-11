@@ -8,6 +8,8 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
+#include <stdarg.h>
+
 #include <types.hpp>
 #include <enable_if.hpp>
 #include <string.hpp>
@@ -40,8 +42,6 @@ void k_print(int16_t number);
 void k_print(int32_t number);
 void k_print(int64_t number);
 
-void k_printf(const char* fmt, ...);
-
 template<typename... Arguments>
 typename std::enable_if_t<(sizeof...(Arguments) == 0)> k_print_line(const Arguments&... args){
     k_print('\n');
@@ -52,5 +52,7 @@ typename std::enable_if_t<(sizeof...(Arguments) > 0)> k_print_line(const Argumen
     k_print(args...);
     k_print('\n');
 }
+
+#include "printf_dec.hpp"
 
 #endif

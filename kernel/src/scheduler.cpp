@@ -93,7 +93,7 @@ void gc_task(){
                 auto& desc = process.process;
 
                 if(DEBUG_SCHEDULER){
-                    k_printf("Clean process %u\n", desc.pid);
+                    printf("Clean process %u\n", desc.pid);
                 }
 
                 //1. Release physical memory of PML4T
@@ -266,7 +266,7 @@ void switch_to_process(size_t pid){
     current_pid = pid;
 
     if(DEBUG_SCHEDULER){
-        k_printf("Switch to %u\n", current_pid);
+        printf("Switch to %u\n", current_pid);
     }
 
     auto& process = pcb[current_pid];
@@ -363,7 +363,7 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
             (physical_memory / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
 
     if(DEBUG_SCHEDULER){
-        k_printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, first_page, aligned_physical_memory);
+        printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, first_page, aligned_physical_memory);
     }
 
 
@@ -396,7 +396,7 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     process.paging_size = paging::PAGE_SIZE;
 
     if(DEBUG_SCHEDULER){
-        k_printf("Process %u cr3:%h\n", process.pid, process.physical_cr3);
+        printf("Process %u cr3:%h\n", process.pid, process.physical_cr3);
     }
 
     clear_physical_memory(process.physical_cr3, 1);
@@ -442,7 +442,7 @@ bool create_paging(char* buffer, scheduler::process_t& process){
             physical_pointer phys_ptr(segment.physical, pages);
 
             if(DEBUG_SCHEDULER){
-                k_printf("Copy to physical:%h\n", segment.physical);
+                printf("Copy to physical:%h\n", segment.physical);
             }
 
             auto memory_start = phys_ptr.get() + left_padding;
@@ -672,7 +672,7 @@ void scheduler::sbrk(size_t inc){
     auto virtual_start = process.brk_start;
 
     if(DEBUG_SCHEDULER){
-        k_printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, virtual_start, physical);
+        printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, virtual_start, physical);
     }
 
     //Map the memory inside the process memory space
@@ -710,7 +710,7 @@ void scheduler::await_termination(pid_t pid){
 
 void scheduler::kill_current_process(){
     if(DEBUG_SCHEDULER){
-        k_printf("Kill %u\n", current_pid);
+        printf("Kill %u\n", current_pid);
     }
 
     //Notify parent if waiting
@@ -801,7 +801,7 @@ void scheduler::block_process(pid_t pid){
     thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
 
     if(DEBUG_SCHEDULER){
-        k_printf("Block process %u\n", pid);
+        printf("Block process %u\n", pid);
     }
 
     pcb[pid].state = process_state::BLOCKED;
@@ -814,7 +814,7 @@ void scheduler::unblock_process(pid_t pid){
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
     if(DEBUG_SCHEDULER){
-        k_printf("Unblock process %u\n", pid);
+        printf("Unblock process %u\n", pid);
     }
 
     pcb[pid].state = process_state::READY;
@@ -825,7 +825,7 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
     if(DEBUG_SCHEDULER){
-        k_printf("Put %u to sleep\n", pid);
+        printf("Put %u to sleep\n", pid);
     }
 
     pcb[pid].state = process_state::SLEEPING;

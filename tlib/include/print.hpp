@@ -10,6 +10,8 @@
 
 //TODO Rename in console
 
+#include <stdarg.h>
+
 #include <types.hpp>
 #include <string.hpp>
 
@@ -39,7 +41,6 @@ void clear();
 size_t get_columns();
 size_t get_rows();
 
-std::string sprintf(const std::string& format, ...);
-void printf(const std::string& format, ...);
+#include "printf_dec.hpp"
 
 #endif
