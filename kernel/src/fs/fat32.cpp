@@ -1179,7 +1179,7 @@ std::pair<bool, uint32_t> fat32::fat32_file_system::find_cluster_number(const st
         }
 
         if(!found){
-            k_print_line(1);
+            k_print_line(99);
             return std::make_pair(false, 0);
         }
     }

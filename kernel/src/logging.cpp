@@ -7,6 +7,7 @@
 
 #include "logging.hpp"
 #include "assert.hpp"
+#include "console.hpp"
 #include "vfs/vfs.hpp"
 
 #include <flags.hpp>
@@ -58,6 +59,8 @@ void logging::finalize(){
 void logging::to_file(){
     //Starting from there, the messages will be sent to the log file
     file = true;
+
+    //TODO Append all early messages
 }
 
 void logging::log(const char* s){
@@ -74,8 +77,20 @@ void logging::log(const char* s){
     }
 }
 
-void logging::logf(const char* s, ...){
-    //TODO
+void logging::logf(const char* format, ...){
+    thor_assert(!is_early(), "log(string) in only valid in normal mode");
+    thor_assert(is_file(), "log(string) in only valid file mode");
+
+    //TODO Display the string in the kernel terminal
+
+    va_list va;
+    va_start(va, format);
+
+    auto s = vsprintf(format, va);
+
+    va_end(va);
+
+    append_to_file(s.c_str(), s.size());
 }
 
 void logging::log(const std::string& s){
