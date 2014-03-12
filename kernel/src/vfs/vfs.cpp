@@ -204,7 +204,12 @@ int64_t vfs::open(const char* file_path, size_t flags){
 
     int64_t sub_result;
     if(flags & std::OPEN_CREATE){
-        sub_result = fs.file_system->touch(fs_path);
+        vfs::file file;
+        sub_result = fs.file_system->get_file(fs_path, file);
+
+        if(sub_result == std::ERROR_NOT_EXISTS){
+            sub_result = fs.file_system->touch(fs_path);
+        }
     } else {
         vfs::file file;
         sub_result = fs.file_system->get_file(fs_path, file);
