@@ -330,7 +330,6 @@ size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path
         auto cluster_last = (cluster + 1) * cluster_size;
 
         if(first < cluster_last){
-
             std::unique_heap_array<char> cluster(cluster_size);
 
             if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
@@ -385,24 +384,21 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
         return result;
     }
 
-    uint32_t cluster_number = file.location;
     size_t position = file.position;
 
     //Find the cluster number of the parent directory
-    auto cluster_number_search = find_cluster_number(file_path, 1);
-    if(!cluster_number_search.first){
+    auto parent_cluster_number_search = find_cluster_number(file_path, 1);
+    if(!parent_cluster_number_search.first){
         return std::ERROR_NOT_EXISTS;
     }
 
     //TODO Change the date of the file
 
-    auto parent_cluster_number = cluster_number_search.second;
-
     auto cluster_size = 512 * fat_bs->sectors_per_cluster;
     auto clusters = file_size % cluster_size == 0 ? file_size / cluster_size : (file_size / cluster_size) + 1;
 
     size_t capacity = 0;
-    auto last_cluster = cluster_number;
+    auto last_cluster = file.location;
 
     if(last_cluster >= 2){
         ++capacity;
@@ -427,12 +423,11 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
 
         --fat_is->free_clusters;
 
-        cluster_number = cluster;
         last_cluster = cluster;
 
         ++capacity;
 
-        set_cluster_number(parent_cluster_number, position, file_size);
+        set_cluster_number(parent_cluster_number_search.second, position, cluster);
     }
 
     //Extend the clusters if necessary
@@ -462,7 +457,7 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
     }
 
     //Set the new file size in the directory entry
-    set_file_size(parent_cluster_number, position, file_size);
+    set_file_size(parent_cluster_number_search.second, position, file_size);
 
     return 0;
 }
@@ -1179,7 +1174,6 @@ std::pair<bool, uint32_t> fat32::fat32_file_system::find_cluster_number(const st
         }
 
         if(!found){
-            k_print_line(99);
             return std::make_pair(false, 0);
         }
     }
@@ -1221,7 +1215,8 @@ uint32_t fat32::fat32_file_system::read_fat_value(uint32_t cluster){
     std::unique_heap_array<uint32_t> fat_table(512 / sizeof(uint32_t));
     if(read_sectors(fat_sector, 1, fat_table.get())){
         uint64_t entry_offset = cluster % (512 / sizeof(uint32_t));
-        return fat_table[entry_offset] & 0x0FFFFFFF;
+        auto v = fat_table[entry_offset] & 0x0FFFFFFF;
+        return v;
     } else {
         return 0;
     }
@@ -1239,7 +1234,7 @@ bool fat32::fat32_file_system::write_fat_value(uint32_t cluster, uint32_t value)
     }
 
     //Set the entry to the given value
-    uint64_t entry_offset = cluster % 512;
+    uint64_t entry_offset = cluster % (512 / sizeof(uint32_t));
     fat_table[entry_offset] = value;
 
     //Write back the cluster
