@@ -427,7 +427,11 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
 
         ++capacity;
 
-        set_cluster_number(parent_cluster_number_search.second, position, cluster);
+        change_directory_entry(parent_cluster_number_search.second, position,
+            [cluster](cluster_entry& entry){
+                entry.cluster_low = cluster;
+                entry.cluster_high = cluster >> 16;
+            });
     }
 
     //Extend the clusters if necessary
@@ -457,7 +461,8 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
     }
 
     //Set the new file size in the directory entry
-    set_file_size(parent_cluster_number_search.second, position, file_size);
+    change_directory_entry(parent_cluster_number_search.second, position,
+        [file_size](cluster_entry& entry){ entry.file_size = file_size; });
 
     return 0;
 }
@@ -710,58 +715,7 @@ size_t fat32::fat32_file_system::rm_dir(uint32_t parent_cluster_number, size_t p
     return rm_file(parent_cluster_number, position, cluster_number);
 }
 
-size_t fat32::fat32_file_system::set_file_size(uint32_t parent_cluster_number, size_t position, uint32_t file_size){
-    std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
-        return std::ERROR_FAILED;
-    }
-
-    //1. Mark the entries in directory as unused
-
-    bool found = false;
-    size_t cluster_position = 0;
-    while(!found){
-        bool end_reached = false;
-
-        //Verify if is the correct cluster
-        if(position >= cluster_position * directory_cluster.size() && position < (cluster_position + 1) * directory_cluster.size()){
-            found = true;
-
-            auto j = position % directory_cluster.size();
-            directory_cluster[j].file_size = file_size;
-
-            if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
-                return std::ERROR_FAILED;
-            }
-        }
-
-        //Jump to next cluser
-        if(!found && !end_reached){
-            parent_cluster_number = next_cluster(parent_cluster_number);
-
-            if(!parent_cluster_number){
-                break;
-            }
-
-            //The block is corrupted
-            if(parent_cluster_number == CLUSTER_CORRUPTED){
-                break;
-            }
-
-            if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
-                break;
-            }
-        }
-    }
-
-    if(!found){
-        return std::ERROR_NOT_EXISTS;
-    }
-
-    return 0;
-}
-
-size_t fat32::fat32_file_system::set_cluster_number(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number){
+size_t fat32::fat32_file_system::change_directory_entry(uint32_t parent_cluster_number, size_t position, const std::function<void(cluster_entry&)>& functor){
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
     if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
@@ -780,8 +734,7 @@ size_t fat32::fat32_file_system::set_cluster_number(uint32_t parent_cluster_numb
 
             auto j = position % directory_cluster.size();
 
-            directory_cluster[j].cluster_low = cluster_number;
-            directory_cluster[j].cluster_high = cluster_number >> 16;
+            functor(directory_cluster[j]);
 
             if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
                 return std::ERROR_FAILED;

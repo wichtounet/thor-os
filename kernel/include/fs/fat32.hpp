@@ -11,6 +11,7 @@
 #include <vector.hpp>
 #include <string.hpp>
 #include <pair.hpp>
+#include <function.hpp>
 
 #include "disks.hpp"
 #include "vfs/file_system.hpp"
@@ -48,8 +49,7 @@ private:
     size_t rm_dir(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number);
     size_t rm_file(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number);
 
-    size_t set_file_size(uint32_t parent_cluster_number, size_t position, uint32_t file_size);
-    size_t set_cluster_number(uint32_t parent_cluster_number, size_t position, uint32_t cluster_number);
+    size_t change_directory_entry(uint32_t parent_cluster_number, size_t position, const std::function<void(cluster_entry&)>& functor);
 
     cluster_entry* find_free_entry(std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number);
     cluster_entry* extend_directory(std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number);
