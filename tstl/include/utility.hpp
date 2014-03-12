@@ -12,6 +12,21 @@
 
 namespace std {
 
+template<typename T>
+constexpr typename remove_reference<T>::type&& move(T&& t){
+    return static_cast<typename remove_reference<T>::type&&>(t);
+}
+
+template<typename T>
+constexpr T&& forward(typename remove_reference<T>::type& t ){
+    return static_cast<T&&>(t);
+}
+
+template<typename T>
+constexpr T&& forward(typename remove_reference<T>::type&& t ){
+    return static_cast<T&&>(t);
+}
+
 template <typename T>
 void swap (T& a, T& b){
     T c(std::move(a));
