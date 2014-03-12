@@ -148,6 +148,8 @@ void gc_task(){
 
 //TODO tsh should be configured somewhere
 void init_task(){
+    logging::log("init_task started");
+
     std::vector<std::string> params;
 
     while(true){
@@ -594,8 +596,6 @@ void scheduler::init(){ //Create the idle task
 
 void scheduler::start(){
     started = true;
-
-    logging::log("Start multiprocessing");
 
     init_task_switch(current_pid);
 }
