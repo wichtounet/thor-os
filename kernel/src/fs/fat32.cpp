@@ -1098,6 +1098,7 @@ std::vector<vfs::file> fat32::fat32_file_system::files(uint32_t cluster_number){
     return std::move(files);
 }
 
+//TODO use expected here
 //Find the cluster for the given path
 std::pair<bool, uint32_t> fat32::fat32_file_system::find_cluster_number(const std::vector<std::string>& path, size_t last){
     auto cluster_number = fat_bs->root_directory_cluster_start;
