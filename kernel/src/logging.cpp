@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include "logging.hpp"
+#include "early_logging.hpp"
 #include "assert.hpp"
 #include "console.hpp"
 #include "vfs/vfs.hpp"
@@ -15,7 +16,7 @@
 
 namespace {
 
-bool early = true;
+bool early_mode = true;
 bool file = false;
 
 constexpr const size_t MAX_EARLY = 128;
@@ -44,7 +45,7 @@ void append_to_file(const char* s, size_t length){
 } //end of anonymous namespace
 
 bool logging::is_early(){
-    return early;
+    return early_mode;
 }
 
 bool logging::is_file(){
@@ -53,14 +54,20 @@ bool logging::is_file(){
 
 void logging::finalize(){
     //Starting from there, the messages will be sent to the terminal
-    early = false;
+    early_mode = false;
 }
 
 void logging::to_file(){
     //Starting from there, the messages will be sent to the log file
     file = true;
 
-    //TODO Append all early messages
+    for(size_t i = 0; i < early::early_logs_count; ++i){
+        auto early_log = early::early_logs[i];
+
+        auto early_log_str = reinterpret_cast<const char*>(static_cast<size_t>(early_log));
+
+        append_to_file(early_log_str, std::str_len(early_log_str));
+    }
 }
 
 void logging::log(const char* s){
