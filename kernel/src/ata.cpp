@@ -72,11 +72,11 @@ void secondary_controller_handler(interrupt::syscall_regs*){
 
 void ata_wait_irq_primary(){
     while(!primary_invoked){
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
+        asm volatile ("nop");
+        asm volatile ("nop");
+        asm volatile ("nop");
+        asm volatile ("nop");
+        asm volatile ("nop");
     }
 
     primary_invoked = false;
@@ -84,11 +84,11 @@ void ata_wait_irq_primary(){
 
 void ata_wait_irq_secondary(){
     while(!secondary_invoked){
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
+        asm volatile ("nop");
+        asm volatile ("nop");
+        asm volatile ("nop");
+        asm volatile ("nop");
+        asm volatile ("nop");
     }
 
     secondary_invoked = false;
