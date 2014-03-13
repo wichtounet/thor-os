@@ -384,7 +384,9 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
         return result;
     }
 
-    size_t position = file.position;
+    if(file.size == file_size){
+        return 0;
+    }
 
     //Find the cluster number of the parent directory
     auto parent_cluster_number_search = find_cluster_number(file_path, 1);
@@ -394,74 +396,79 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
 
     //TODO Change the date of the file
 
-    auto cluster_size = 512 * fat_bs->sectors_per_cluster;
-    auto clusters = file_size % cluster_size == 0 ? file_size / cluster_size : (file_size / cluster_size) + 1;
+    //If we need to increase the size
+    if(file.size < file_size){
+        auto cluster_size = 512 * fat_bs->sectors_per_cluster;
+        auto clusters = file_size % cluster_size == 0 ? file_size / cluster_size : (file_size / cluster_size) + 1;
 
-    size_t capacity = 0;
-    auto last_cluster = file.location;
+        size_t capacity = 0;
+        auto last_cluster = file.location;
 
-    if(last_cluster >= 2){
-        ++capacity;
+        if(last_cluster >= 2){
+            ++capacity;
 
-        while(true){
-            auto next = next_cluster(last_cluster);
+            while(true){
+                auto next = next_cluster(last_cluster);
 
-            if(!next || next == CLUSTER_CORRUPTED){
-                break;
+                if(!next || next == CLUSTER_CORRUPTED){
+                    break;
+                }
+
+                last_cluster = next;
+                ++capacity;
+            }
+        }
+
+        if(capacity < clusters){
+            if(capacity == 0){
+                auto cluster = find_free_cluster();
+                if(!cluster){
+                    return std::ERROR_DISK_FULL;
+                }
+
+                --fat_is->free_clusters;
+
+                last_cluster = cluster;
+
+                ++capacity;
+
+                change_directory_entry(parent_cluster_number_search.second, file.position,
+                    [cluster](cluster_entry& entry){
+                    entry.cluster_low = cluster;
+                    entry.cluster_high = cluster >> 16;
+                    });
             }
 
-            last_cluster = next;
-            ++capacity;
+            //Extend the clusters if necessary
+            for(auto i = capacity; i < clusters; ++i){
+                auto cluster = find_free_cluster();
+                if(!cluster){
+                    return std::ERROR_DISK_FULL;
+                }
+
+                --fat_is->free_clusters;
+
+                //Update the cluster chain
+                if(!write_fat_value(last_cluster, cluster)){
+                    return std::ERROR_FAILED;
+                }
+
+                last_cluster = cluster;
+            }
+
+            //Update the cluster chain
+            if(!write_fat_value(last_cluster, CLUSTER_END)){
+                return std::ERROR_FAILED;
+            }
+
+            if(!write_is()){
+                return std::ERROR_FAILED;
+            }
         }
-    }
-
-    if(capacity == 0){
-        auto cluster = find_free_cluster();
-        if(!cluster){
-            return std::ERROR_DISK_FULL;
-        }
-
-        --fat_is->free_clusters;
-
-        last_cluster = cluster;
-
-        ++capacity;
-
-        change_directory_entry(parent_cluster_number_search.second, position,
-            [cluster](cluster_entry& entry){
-                entry.cluster_low = cluster;
-                entry.cluster_high = cluster >> 16;
-            });
-    }
-
-    //Extend the clusters if necessary
-    for(auto i = capacity; i < clusters; ++i){
-        auto cluster = find_free_cluster();
-        if(!cluster){
-            return std::ERROR_DISK_FULL;
-        }
-
-        --fat_is->free_clusters;
-
-        //Update the cluster chain
-        if(!write_fat_value(last_cluster, cluster)){
-            return std::ERROR_FAILED;
-        }
-
-        last_cluster = cluster;
-    }
-
-    //Update the cluster chain
-    if(!write_fat_value(last_cluster, CLUSTER_END)){
-        return std::ERROR_FAILED;
-    }
-
-    if(!write_is()){
-        return std::ERROR_FAILED;
     }
 
     //Set the new file size in the directory entry
-    change_directory_entry(parent_cluster_number_search.second, position,
+    change_directory_entry(parent_cluster_number_search.second, file.position,
         [file_size](cluster_entry& entry){ entry.file_size = file_size; });
 
     return 0;
