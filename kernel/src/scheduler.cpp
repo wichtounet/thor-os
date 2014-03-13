@@ -63,11 +63,11 @@ mutex& run_queue_lock(size_t priority){
 
 bool started = false;
 
-constexpr const size_t TURNOVER = 10;
-
 constexpr const size_t STACK_ALIGNMENT = 16;
 
+constexpr const size_t TURNOVER = 10;
 constexpr const size_t QUANTUM_SIZE = 1000;
+
 size_t current_ticks = 0;
 
 size_t current_pid;
@@ -590,7 +590,6 @@ void scheduler::init(){ //Create the idle task
 
     //Run the init queue by default
     current_pid = 1;
-    pcb[current_pid].rounds = TURNOVER;
     pcb[current_pid].state = scheduler::process_state::RUNNING;
 }
 
