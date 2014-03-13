@@ -26,6 +26,8 @@ const char* early_logs[MAX_EARLY];
 
 const char* new_line = "\n";
 
+std::string buffer;
+
 void append_to_file(const char* s, size_t length){
     auto fd = vfs::open("/messages", std::OPEN_CREATE);
 
@@ -33,8 +35,10 @@ void append_to_file(const char* s, size_t length){
         stat_info info;
         if(vfs::stat(fd, info) == 0){
             if(vfs::truncate(fd, info.size + length + 1) == 0){
-                vfs::write(fd, s, length, info.size);
-                vfs::write(fd, new_line, 1, info.size + length);
+                buffer = s;
+                buffer += '\n';
+
+                vfs::write(fd, buffer.c_str(), buffer.size(), info.size);
             }
         }
 
