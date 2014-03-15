@@ -14,6 +14,8 @@
 #include "console.hpp"
 #include "errors.hpp"
 #include "disks.hpp"
+#include "mutex.hpp"
+#include "semaphore.hpp"
 
 namespace {
 
@@ -56,42 +58,28 @@ static constexpr const size_t BLOCK_SIZE = 512;
 
 ata::drive_descriptor* drives;
 
-volatile bool primary_invoked = false;
-volatile bool secondary_invoked = false;
+mutex controller_lock;
+
+semaphore primary_sem;
+semaphore secondary_sem;
 
 //TODO In the future, the wait for IRQs, could
 //be done with a semaphore
 
 void primary_controller_handler(interrupt::syscall_regs*){
-    primary_invoked = true;
+    primary_sem.signal();
 }
 
 void secondary_controller_handler(interrupt::syscall_regs*){
-    secondary_invoked = true;
+    secondary_sem.signal();
 }
 
 void ata_wait_irq_primary(){
-    while(!primary_invoked){
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-    }
-
-    primary_invoked = false;
+    primary_sem.wait();
 }
 
 void ata_wait_irq_secondary(){
-    while(!secondary_invoked){
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-    }
-
-    secondary_invoked = false;
+    secondary_sem.wait();
 }
 
 static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
@@ -324,6 +312,11 @@ void identify(ata::drive_descriptor& drive){
 } //end of anonymous namespace
 
 void ata::detect_disks(){
+    controller_lock.init();
+
+    primary_sem.init(0);
+    secondary_sem.init(0);
+
     drives = new drive_descriptor[4];
 
     drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, false, "", "", ""};
