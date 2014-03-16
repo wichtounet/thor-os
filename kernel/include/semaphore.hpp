@@ -17,7 +17,7 @@
 struct semaphore {
 private:
     spinlock lock;
-    size_t value;
+    volatile size_t value;
     std::queue<scheduler::pid_t> queue;
 
 public:
@@ -26,29 +26,31 @@ public:
     }
 
     void wait(){
-        std::lock_guard<spinlock> l(lock);
+        lock.acquire();
 
-        if(value > 0){
-            --value;
-        } else {
+        if(!value){
             queue.push(scheduler::get_pid());
-            scheduler::block_process(scheduler::get_pid());
+            scheduler::set_current_state(scheduler::process_state::BLOCKED);
+            lock.release();
+            scheduler::reschedule();
+            lock.acquire();
         }
+
+        --value;
+
+        lock.release();
     }
 
     void signal(){
         std::lock_guard<spinlock> l(lock);
 
-        if(queue.empty()){
-            ++value;
-        } else {
-            auto pid = queue.top();
-            scheduler::unblock_process(pid);
+        ++value;
 
+        if(!queue.empty()){
+            auto pid = queue.top();
             queue.pop();
 
-            //No need to increment value, the process won't
-            //decrement it
+            scheduler::unblock_process(pid);
         }
     }
 };
