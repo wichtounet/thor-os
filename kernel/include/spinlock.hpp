@@ -14,7 +14,9 @@ private:
 
 public:
     void acquire(){
-        while(!__sync_bool_compare_and_swap(&lock, 0, 1));
+        while(!__sync_lock_test_and_set(&lock, 1)){
+            //Do nothing while waiting for the lock
+        }
     }
 
     void release(){
