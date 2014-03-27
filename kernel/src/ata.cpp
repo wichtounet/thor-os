@@ -63,9 +63,6 @@ mutex controller_lock;
 semaphore primary_sem;
 semaphore secondary_sem;
 
-//TODO In the future, the wait for IRQs, could
-//be done with a semaphore
-
 void primary_controller_handler(interrupt::syscall_regs*){
     primary_sem.signal();
 }
@@ -82,11 +79,24 @@ void ata_wait_irq_secondary(){
     secondary_sem.wait();
 }
 
+//TODO Perhaps not correct
+//TODO Should choose the controller more safely
+static void ata_delay(){
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+}
+
 static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
     uint8_t status;
     do {
         status = in_byte(controller + ATA_STATUS);
-        timer::sleep_ms(1);
+        ata_delay();
     } while ((status & mask) != value && --timeout);
 
     return timeout;
@@ -105,7 +115,7 @@ bool select_device(ata::drive_descriptor& drive){
     out_byte(controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
 
     //Sleep at least 400ns before reading the status register
-    timer::sleep_ms(1);
+    ata_delay();
 
     if(!wait_for_controller(controller, wait_mask, 0, 10000)){
         return false;
@@ -115,6 +125,8 @@ bool select_device(ata::drive_descriptor& drive){
 }
 
 bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data, bool read){
+    std::lock_guard<mutex> l(controller_lock);
+
     //Select the device
     if(!select_device(drive)){
         return false;
@@ -138,7 +150,7 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
     out_byte(controller + ATA_COMMAND, command);
 
     //Wait at least 400ns before reading status register
-    timer::sleep_ms(1);
+    ata_delay();
 
     //Wait at most 30 seconds for BSY flag to be cleared
     if(!wait_for_controller(controller, ATA_STATUS_BSY, 0, 30000)){
