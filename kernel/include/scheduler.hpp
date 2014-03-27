@@ -15,7 +15,16 @@
 
 namespace scheduler {
 
-constexpr const size_t MAX_PROCESS = 128;
+enum class process_state {
+    EMPTY = 0,
+    NEW = 1,
+    READY = 2,
+    RUNNING = 3,
+    BLOCKED = 4,
+    SLEEPING= 5,
+    WAITING = 6,
+    KILLED = 7
+};
 
 pid_t get_pid();
 scheduler::process_t& get_process(pid_t pid);
@@ -31,6 +40,8 @@ int64_t exec(const std::string& path, const std::vector<std::string>& params);
 void kill_current_process();
 void await_termination(pid_t pid);
 void sbrk(size_t inc);
+
+void set_current_state(process_state state);
 
 void tick();
 void reschedule();

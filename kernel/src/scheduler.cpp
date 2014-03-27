@@ -27,8 +27,6 @@
 #include "kernel_utils.hpp"
 #include "logging.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = false;
-
 //Provided by task_switch.s
 extern "C" {
 extern void task_switch(size_t current, size_t next);
@@ -36,6 +34,26 @@ extern void init_task_switch(size_t current) __attribute__((noreturn));
 }
 
 namespace {
+
+constexpr const bool DEBUG_SCHEDULER = false;
+
+constexpr const size_t MAX_PROCESS = 128;
+
+constexpr const size_t STACK_ALIGNMENT = 16;
+
+constexpr const size_t TURNOVER = 10;
+constexpr const size_t QUANTUM_SIZE = 1000;
+
+bool started = false;
+
+size_t current_ticks = 0;
+
+size_t current_pid;
+size_t next_pid = 0;
+
+size_t gc_pid = 0;
+size_t init_pid = 0;
+size_t idle_pid = 0;
 
 struct process_control_t {
     scheduler::process_t process;
@@ -47,7 +65,7 @@ struct process_control_t {
 };
 
 //The Process Control Block
-std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
+std::array<process_control_t, MAX_PROCESS> pcb;
 
 //Define one run queue for each priority level
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
@@ -60,20 +78,6 @@ std::vector<scheduler::pid_t>& run_queue(size_t priority){
 mutex& run_queue_lock(size_t priority){
     return run_queue_locks[priority - scheduler::MIN_PRIORITY];
 }
-
-bool started = false;
-
-constexpr const size_t STACK_ALIGNMENT = 16;
-
-constexpr const size_t TURNOVER = 10;
-constexpr const size_t QUANTUM_SIZE = 1000;
-
-size_t current_ticks = 0;
-
-size_t current_pid;
-size_t next_pid = 0;
-
-size_t gc_pid = 0;
 
 void idle_task(){
     while(true){
@@ -146,8 +150,32 @@ void gc_task(){
     }
 }
 
+const char* state_to_string(scheduler::process_state state){
+    switch(state){
+        case scheduler::process_state::EMPTY:
+            return "EMPTY";
+        case scheduler::process_state::NEW:
+            return "NEW";
+        case scheduler::process_state::READY:
+            return "READY";
+        case scheduler::process_state::RUNNING:
+            return "RUNNING";
+        case scheduler::process_state::BLOCKED:
+            return "BLOCKED";
+        case scheduler::process_state::SLEEPING:
+            return "SLEEPING";
+        case scheduler::process_state::WAITING:
+            return "WAITING";
+        case scheduler::process_state::KILLED:
+            return "KILLED";
+    }
+}
+
 //TODO tsh should be configured somewhere
 void init_task(){
+    //Starting from here, the logging system can output logs to file
+    //logging::to_file();
+
     logging::log("init_task started");
 
     std::vector<std::string> params;
@@ -191,7 +219,7 @@ scheduler::process_t& new_process(){
 }
 
 void queue_process(scheduler::pid_t pid){
-    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+    thor_assert(pid < MAX_PROCESS, "pid out of bounds");
 
     auto& process = pcb[pid];
 
@@ -241,6 +269,8 @@ void create_idle_task(){
     idle_process.priority = scheduler::MIN_PRIORITY;
 
     queue_process(idle_process.pid);
+
+    idle_pid = idle_process.pid;
 }
 
 void create_init_task(){
@@ -250,6 +280,8 @@ void create_init_task(){
     init_process.priority = scheduler::MIN_PRIORITY + 1;
 
     queue_process(init_process.pid);
+
+    init_pid = init_process.pid;
 }
 
 void create_gc_task(){
@@ -367,7 +399,6 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
     if(DEBUG_SCHEDULER){
         printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, first_page, aligned_physical_memory);
     }
-
 
     //4. Map physical allocated memory to the necessary virtual memory
     if(!paging::user_map_pages(process, first_page, aligned_physical_memory, pages)){
@@ -589,7 +620,8 @@ void scheduler::init(){ //Create the idle task
     current_ticks = 0;
 
     //Run the init queue by default
-    current_pid = 1;
+    current_pid = init_pid;
+    pcb[current_pid].rounds = TURNOVER;
     pcb[current_pid].state = scheduler::process_state::RUNNING;
 }
 
@@ -690,7 +722,7 @@ void scheduler::await_termination(pid_t pid){
         bool found = false;
         for(auto& process : pcb){
             if(process.process.ppid == current_pid && process.process.pid == pid){
-                if(process.state == process_state::KILLED){
+                if(process.state == scheduler::process_state::KILLED){
                     return;
                 }
 
@@ -702,7 +734,7 @@ void scheduler::await_termination(pid_t pid){
             return;
         }
 
-        pcb[current_pid].state = process_state::WAITING;
+        pcb[current_pid].state = scheduler::process_state::WAITING;
         reschedule();
     }
 }
@@ -715,7 +747,7 @@ void scheduler::kill_current_process(){
     //Notify parent if waiting
     auto ppid = pcb[current_pid].process.ppid;
     for(auto& process : pcb){
-        if(process.process.pid == ppid && process.state == process_state::WAITING){
+        if(process.process.pid == ppid && process.state == scheduler::process_state::WAITING){
             unblock_process(process.process.pid);
         }
     }
@@ -737,11 +769,11 @@ void scheduler::tick(){
     ++current_ticks;
 
     for(auto& process : pcb){
-        if(process.state == process_state::SLEEPING){
+        if(process.state == scheduler::process_state::SLEEPING){
             --process.sleep_timeout;
 
             if(process.sleep_timeout == 0){
-                process.state = process_state::READY;
+                process.state = scheduler::process_state::READY;
             }
         }
     }
@@ -752,7 +784,7 @@ void scheduler::tick(){
         if(process.rounds  == TURNOVER){
             process.rounds = 0;
 
-            process.state = process_state::READY;
+            process.state = scheduler::process_state::READY;
 
             auto pid = select_next_process();
 
@@ -776,7 +808,7 @@ void scheduler::reschedule(){
     auto& process = pcb[current_pid];
 
     //The process just got blocked or put to sleep, choose another one
-    if(process.state != process_state::RUNNING){
+    if(process.state != scheduler::process_state::RUNNING){
         auto index = select_next_process();
 
         switch_to_process(index);
@@ -790,44 +822,48 @@ scheduler::pid_t scheduler::get_pid(){
 }
 
 scheduler::process_t& scheduler::get_process(pid_t pid){
-    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+    thor_assert(pid < MAX_PROCESS, "pid out of bounds");
 
     return pcb[pid].process;
 }
 
+void scheduler::set_current_state(process_state state){
+    pcb[current_pid].state = state;
+}
+
 void scheduler::block_process(pid_t pid){
-    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
-    thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
+    thor_assert(pid < MAX_PROCESS, "pid out of bounds");
+    thor_assert(pcb[pid].state == scheduler::process_state::RUNNING, "Can only block RUNNING processes");
 
     if(DEBUG_SCHEDULER){
         printf("Block process %u\n", pid);
     }
 
-    pcb[pid].state = process_state::BLOCKED;
+    pcb[pid].state = scheduler::process_state::BLOCKED;
 
     reschedule();
 }
 
 void scheduler::unblock_process(pid_t pid){
-    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
-    thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
+    thor_assert(pid < MAX_PROCESS, "pid out of bounds");
+    thor_assert(pcb[pid].state == scheduler::process_state::BLOCKED || pcb[pid].state == scheduler::process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
     if(DEBUG_SCHEDULER){
         printf("Unblock process %u\n", pid);
     }
 
-    pcb[pid].state = process_state::READY;
+    pcb[pid].state = scheduler::process_state::READY;
 }
 
 void scheduler::sleep_ms(pid_t pid, size_t time){
-    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
-    thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
+    thor_assert(pid < MAX_PROCESS, "pid out of bounds");
+    thor_assert(pcb[pid].state == scheduler::process_state::RUNNING, "Only RUNNING processes can sleep");
 
     if(DEBUG_SCHEDULER){
         printf("Put %u to sleep\n", pid);
     }
 
-    pcb[pid].state = process_state::SLEEPING;
+    pcb[pid].state = scheduler::process_state::SLEEPING;
     pcb[pid].sleep_timeout = time;
 
     reschedule();

@@ -23,17 +23,6 @@ constexpr const size_t DEFAULT_PRIORITY = 3;
 
 typedef size_t pid_t;
 
-enum class process_state : char {
-    EMPTY = 0,
-    NEW = 1,
-    READY = 2,
-    RUNNING = 3,
-    BLOCKED = 4,
-    SLEEPING= 5,
-    WAITING = 6,
-    KILLED = 7
-};
-
 struct segment_t {
     size_t physical;
     size_t size;
