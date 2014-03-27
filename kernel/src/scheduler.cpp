@@ -41,8 +41,8 @@ constexpr const size_t MAX_PROCESS = 128;
 
 constexpr const size_t STACK_ALIGNMENT = 16;
 
-constexpr const size_t TURNOVER = 10;
-constexpr const size_t QUANTUM_SIZE = 1000;
+constexpr const size_t TURNOVER = 5;
+constexpr const size_t QUANTUM_SIZE = 100;
 
 bool started = false;
 
