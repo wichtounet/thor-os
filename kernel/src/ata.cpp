@@ -14,6 +14,8 @@
 #include "console.hpp"
 #include "errors.hpp"
 #include "disks.hpp"
+#include "mutex.hpp"
+#include "lock_guard.hpp"
 
 namespace {
 
@@ -55,6 +57,8 @@ static constexpr const size_t BLOCK_SIZE = 512;
 #define SLAVE_BIT 1
 
 ata::drive_descriptor* drives;
+
+mutex controller_lock;
 
 volatile bool primary_invoked = false;
 volatile bool secondary_invoked = false;
@@ -324,6 +328,8 @@ void identify(ata::drive_descriptor& drive){
 } //end of anonymous namespace
 
 void ata::detect_disks(){
+    controller_lock.init();
+
     drives = new drive_descriptor[4];
 
     drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, false, "", "", ""};
@@ -442,6 +448,8 @@ size_t ata::ata_part_driver::write(void* data, const char* source, size_t count,
 }
 
 size_t ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination, size_t& read){
+    std::lock_guard<mutex> l(controller_lock);
+
     auto buffer = reinterpret_cast<uint8_t*>(destination);
 
     for(size_t i = 0; i < count; ++i){
@@ -457,6 +465,8 @@ size_t ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count,
 }
 
 size_t ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, const void* source, size_t& written){
+    std::lock_guard<mutex> l(controller_lock);
+
     auto buffer = reinterpret_cast<uint8_t*>(const_cast<void*>(source));
 
     for(size_t i = 0; i < count; ++i){
