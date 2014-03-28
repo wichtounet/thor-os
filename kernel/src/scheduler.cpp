@@ -148,6 +148,9 @@ void gc_task(){
 
 //TODO tsh should be configured somewhere
 void init_task(){
+    //Starting from here, the logging system can output logs to file
+    logging::to_file();
+
     logging::log("init_task started");
 
     std::vector<std::string> params;
