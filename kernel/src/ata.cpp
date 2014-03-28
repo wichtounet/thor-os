@@ -14,7 +14,9 @@
 #include "console.hpp"
 #include "errors.hpp"
 #include "disks.hpp"
+
 #include "mutex.hpp"
+#include "semaphore.hpp"
 #include "lock_guard.hpp"
 
 namespace {
@@ -60,6 +62,9 @@ ata::drive_descriptor* drives;
 
 mutex controller_lock;
 
+semaphore primary_sem;
+semaphore secondary_sem;
+
 volatile bool primary_invoked = false;
 volatile bool secondary_invoked = false;
 
@@ -67,15 +72,18 @@ volatile bool secondary_invoked = false;
 //be done with a semaphore
 
 void primary_controller_handler(interrupt::syscall_regs*){
-    primary_invoked = true;
+    //primary_invoked = true;
+    primary_sem.signal();
 }
 
 void secondary_controller_handler(interrupt::syscall_regs*){
-    secondary_invoked = true;
+    //secondary_invoked = true;
+    secondary_sem.signal();
 }
 
 void ata_wait_irq_primary(){
-    while(!primary_invoked){
+    primary_sem.wait();
+    /*while(!primary_invoked){
         asm volatile ("nop");
         asm volatile ("nop");
         asm volatile ("nop");
@@ -83,11 +91,12 @@ void ata_wait_irq_primary(){
         asm volatile ("nop");
     }
 
-    primary_invoked = false;
+    primary_invoked = false;*/
 }
 
 void ata_wait_irq_secondary(){
-    while(!secondary_invoked){
+    secondary_sem.wait();
+    /*while(!secondary_invoked){
         asm volatile ("nop");
         asm volatile ("nop");
         asm volatile ("nop");
@@ -95,7 +104,7 @@ void ata_wait_irq_secondary(){
         asm volatile ("nop");
     }
 
-    secondary_invoked = false;
+    secondary_invoked = false;*/
 }
 
 static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
@@ -329,6 +338,9 @@ void identify(ata::drive_descriptor& drive){
 
 void ata::detect_disks(){
     controller_lock.init();
+
+    primary_sem.init(0);
+    secondary_sem.init(0);
 
     drives = new drive_descriptor[4];
 
