@@ -63,7 +63,7 @@ mutex& run_queue_lock(size_t priority){
 
 bool started = false;
 
-constexpr const size_t QUANTUM_SIZE = 100;
+constexpr const size_t QUANTUM_SIZE = 1;
 constexpr const size_t TURNOVER = 10;
 constexpr const size_t STACK_ALIGNMENT = 16;
 
