@@ -88,10 +88,6 @@ void  kernel_main(){
     timer::install();
     //acpi::init();
     keyboard::install_driver();
-    disks::detect_disks();
-
-    //Init the virtual file system
-    vfs::init();
 
     //Only install system calls when everything else is ready
     install_system_calls();

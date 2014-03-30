@@ -17,11 +17,39 @@ namespace scheduler {
 
 constexpr const size_t MAX_PROCESS = 128;
 
+struct sleep_queue_ptr {
+    sleep_queue_ptr* next;
+    sleep_queue_ptr* prev;
+    pid_t pid;
+};
+
+struct tasklet {
+    void (*fun)(size_t,size_t);
+    size_t d1;
+    size_t d2;
+};
+
+bool is_started();
+
 pid_t get_pid();
 scheduler::process_t& get_process(pid_t pid);
 
 void block_process(pid_t pid);
 void unblock_process(pid_t pid);
+
+scheduler::sleep_queue_ptr* queue_ptr(scheduler::pid_t pid);
+
+
+
+//TODO Probably should be pruned
+void soft_block(pid_t pid);
+void soft_unblock(pid_t pid);
+void soft_reschedule(pid_t pid);
+
+
+void irq_register_tasklet(const tasklet& task, size_t priority);
+
+
 
 void init();
 void start() __attribute__((noreturn));

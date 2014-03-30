@@ -26,6 +26,7 @@
 #include "mutex.hpp"
 #include "kernel_utils.hpp"
 #include "logging.hpp"
+#include "circular_buffer.hpp"
 
 constexpr const bool DEBUG_SCHEDULER = false;
 
@@ -39,11 +40,12 @@ namespace {
 
 struct process_control_t {
     scheduler::process_t process;
-    scheduler::process_state state;
+    volatile scheduler::process_state state;
     size_t rounds;
     size_t sleep_timeout;
     std::vector<std::vector<std::string>> handles;
     std::vector<std::string> working_directory;
+    scheduler::sleep_queue_ptr queue_ptr;
 };
 
 //The Process Control Block
@@ -53,27 +55,70 @@ std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
 std::array<mutex, scheduler::PRIORITY_LEVELS> run_queue_locks;
 
+std::array<circular_buffer<scheduler::tasklet, 32>, scheduler::PRIORITY_LEVELS> tasklets;
+
+constexpr size_t priority_to_index(size_t priority){
+    return priority - scheduler::MIN_PRIORITY;
+}
+
 std::vector<scheduler::pid_t>& run_queue(size_t priority){
-    return run_queues[priority - scheduler::MIN_PRIORITY];
+    return run_queues[priority_to_index(priority)];
 }
 
 mutex& run_queue_lock(size_t priority){
-    return run_queue_locks[priority - scheduler::MIN_PRIORITY];
+    return run_queue_locks[priority_to_index(priority)];
 }
-
-bool started = false;
 
 constexpr const size_t STACK_ALIGNMENT = 16;
 
 constexpr const size_t TURNOVER = 10;
-constexpr const size_t QUANTUM_SIZE = 1000;
+constexpr const size_t QUANTUM_SIZE = 100;
 
-size_t current_ticks = 0;
+volatile bool started = false;
 
-size_t current_pid;
-size_t next_pid = 0;
+volatile size_t current_ticks = 0;
 
-size_t gc_pid = 0;
+volatile size_t current_pid = 0;
+volatile size_t next_pid = 0;
+
+scheduler::pid_t init_pid = 0;
+scheduler::pid_t idle_pid = 0;
+scheduler::pid_t gc_pid = 0;
+
+std::array<scheduler::pid_t, scheduler::PRIORITY_LEVELS> tasklets_executors_pids;
+
+size_t select_next_process();
+void switch_to_process(size_t pid);
+
+template<size_t priority>
+void tasklet_executor_task() {
+    auto index = priority_to_index(priority);
+
+    while(true){
+
+        while(!tasklets[index].empty()){
+            auto task = tasklets[index].pop();
+            task.fun(task.d1, task.d2);
+        }
+        
+        k_print_line("executor");
+
+        //Wait until there is something to do
+        //scheduler::block_process(current_pid);
+
+        asm volatile ("cli");
+
+        pcb[current_pid].state = scheduler::process_state::BLOCKED;
+
+        switch_to_process(select_next_process());
+
+        asm volatile ("sti");
+        
+        k_print_line(current_pid);
+        
+        k_print_line("executorafter");
+    }
+}
 
 void idle_task(){
     while(true){
@@ -84,7 +129,7 @@ void idle_task(){
 void gc_task(){
     while(true){
         //Wait until there is something to do
-        scheduler::block_process(scheduler::get_pid());
+        scheduler::block_process(current_pid);
 
         //2. Clean up each killed process
 
@@ -114,15 +159,17 @@ void gc_task(){
                 paging::unmap_pages(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
 
                 //6. Remove process from run queue
+                asm volatile("cli");
                 size_t index = 0;
                 for(; index < run_queue(desc.priority).size(); ++index){
-                    std::lock_guard<mutex> l(run_queue_lock(desc.priority));
+                    //std::lock_guard<mutex> l(run_queue_lock(desc.priority));
 
                     if(run_queue(desc.priority)[index] == desc.pid){
                         run_queue(desc.priority).erase(index);
                         break;
                     }
                 }
+                asm volatile("sti");
 
                 //7. Clean process
                 desc.pid = 0;
@@ -148,10 +195,16 @@ void gc_task(){
 
 //TODO tsh should be configured somewhere
 void init_task(){
-    //Starting from here, the logging system can output logs to file
-    logging::to_file();
+    //Detect disks
+    disks::detect_disks();
 
-    logging::log("init_task started");
+    //Init the virtual file system
+    vfs::init();
+
+    //Starting from here, the logging system can output logs to file
+    //logging::to_file();
+
+    //logging::log("init_task started");
 
     std::vector<std::string> params;
 
@@ -173,6 +226,9 @@ char init_kernel_stack[scheduler::kernel_stack_size];
 
 char gc_stack[scheduler::user_stack_size];
 char gc_kernel_stack[scheduler::kernel_stack_size];
+
+std::array<char[scheduler::user_stack_size], scheduler::PRIORITY_LEVELS> tasklet_executor_stacks;
+std::array<char[scheduler::kernel_stack_size], scheduler::PRIORITY_LEVELS> tasklet_executor_kernel_stacks;
 
 scheduler::process_t& new_process(){
     //TODO use get_free_pid() that searchs through the PCB
@@ -203,8 +259,9 @@ void queue_process(scheduler::pid_t pid){
 
     process.state = scheduler::process_state::READY;
 
-    std::lock_guard<mutex> l(run_queue_lock(process.process.priority));
+    asm volatile("cli");
     run_queue(process.process.priority).push_back(pid);
+    asm volatile("sti");
 }
 
 scheduler::process_t& create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)()){
@@ -244,6 +301,8 @@ void create_idle_task(){
     idle_process.priority = scheduler::MIN_PRIORITY;
 
     queue_process(idle_process.pid);
+
+    idle_pid = idle_process.pid;
 }
 
 void create_init_task(){
@@ -253,6 +312,8 @@ void create_init_task(){
     init_process.priority = scheduler::MIN_PRIORITY + 1;
 
     queue_process(init_process.pid);
+
+    init_pid = init_process.pid;
 }
 
 void create_gc_task(){
@@ -264,6 +325,36 @@ void create_gc_task(){
     queue_process(gc_process.pid);
 
     gc_pid = gc_process.pid;
+}
+
+template<size_t priority>
+std::enable_if_t<(priority > scheduler::MAX_PRIORITY)> create_tasklet_executor(){
+    //Break recursion
+}
+
+template<size_t priority>
+std::enable_if_t<(priority <= scheduler::MAX_PRIORITY)> create_tasklet_executor(){
+    auto index = priority_to_index(priority);
+
+    auto& process = create_kernel_task(
+        tasklet_executor_stacks[index], 
+        tasklet_executor_kernel_stacks[index], 
+        &tasklet_executor_task<priority>);
+
+    process.ppid = 1;
+    process.priority = priority;
+
+    queue_process(process.pid);
+    
+    pcb[process.pid].state = scheduler::process_state::BLOCKED;
+
+    tasklets_executors_pids[index] = process.pid;
+
+    create_tasklet_executor<priority+1>();
+}
+
+void create_tasklet_executors(){
+    create_tasklet_executor<scheduler::MIN_PRIORITY>();
 }
 
 void switch_to_process(size_t pid){
@@ -289,7 +380,7 @@ size_t select_next_process(){
 
     //1. Run a process of higher priority, if any
     for(size_t p = scheduler::MAX_PRIORITY; p > current_priority; --p){
-        std::lock_guard<mutex> l(run_queue_lock(p));
+        //std::lock_guard<mutex> l(run_queue_lock(p));
 
         for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
@@ -301,7 +392,7 @@ size_t select_next_process(){
     //2. Run the next process of the same priority
 
     {
-        std::lock_guard<mutex> l(run_queue_lock(current_priority));
+        //std::lock_guard<mutex> l(run_queue_lock(current_priority));
 
         auto& current_run_queue = run_queue(current_priority);
 
@@ -323,12 +414,10 @@ size_t select_next_process(){
         }
     }
 
-    thor_assert(current_priority > 0, "The idle task should always be ready");
-
     //3. Run a process of lower priority
 
     for(size_t p = current_priority - 1; p >= scheduler::MIN_PRIORITY; --p){
-        std::lock_guard<mutex> l(run_queue_lock(p));
+        //std::lock_guard<mutex> l(run_queue_lock(p));
 
         for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
@@ -336,6 +425,8 @@ size_t select_next_process(){
             }
         }
     }
+
+    thor_assert(pcb[idle_pid].state == scheduler::process_state::READY, "The idle task should always be ready");
 
     thor_unreachable("No process is READY");
 }
@@ -588,6 +679,7 @@ void scheduler::init(){ //Create the idle task
     create_idle_task();
     create_init_task();
     create_gc_task();
+    create_tasklet_executors();
 
     current_ticks = 0;
 
@@ -602,7 +694,33 @@ void scheduler::start(){
     init_task_switch(current_pid);
 }
 
+bool scheduler::is_started(){
+    return started;
+}
+
+void scheduler::irq_register_tasklet(const tasklet& task, size_t priority){
+    thor_assert(started, "The scheduler must be started before irq_register_tasklet is called");
+
+    tasklets[priority_to_index(priority)].push(task);
+
+    auto pid = tasklets_executors_pids[priority_to_index(priority)];
+
+    thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::RUNNING || pcb[pid].state == process_state::READY, "Invalid state for tasklet executor");
+
+    /*k_print_line("irq_register");
+    k_print_line(current_pid);
+    k_print_line(pid);
+    k_print_line(priority);
+    k_print_line(static_cast<size_t>(pcb[pid].state));*/
+
+    if(pcb[pid].state == process_state::BLOCKED){
+        pcb[pid].state = process_state::READY;
+    }
+}
+
 int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
+    thor_assert(started, "The scheduler must be started before exec is called");
+
     std::string content;
     auto result = vfs::direct_read(file, content);
     if(result < 0){
@@ -653,12 +771,14 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
         pcb[process.pid].working_directory.push_back(p);
     }
 
-    logging::logf("Exec process pid=%u, ppid=%u", process.pid, process.ppid);
+    //logging::logf("Exec process pid=%u, ppid=%u", process.pid, process.ppid);
 
     return process.pid;
 }
 
 void scheduler::sbrk(size_t inc){
+    thor_assert(started, "The scheduler must be started before sbrk is called");
+
     auto& process = pcb[current_pid].process;
 
     size_t size = (inc + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
@@ -689,6 +809,8 @@ void scheduler::sbrk(size_t inc){
 }
 
 void scheduler::await_termination(pid_t pid){
+    thor_assert(started, "The scheduler must be started before await_termination is called");
+
     while(true){
         bool found = false;
         for(auto& process : pcb){
@@ -705,12 +827,16 @@ void scheduler::await_termination(pid_t pid){
             return;
         }
 
+    asm volatile("cli");
         pcb[current_pid].state = process_state::WAITING;
         reschedule();
+    asm volatile("sti");
     }
 }
 
 void scheduler::kill_current_process(){
+    thor_assert(started, "The scheduler must be started before kill_current_process is called");
+
     if(DEBUG_SCHEDULER){
         printf("Kill %u\n", current_pid);
     }
@@ -752,11 +878,11 @@ void scheduler::tick(){
     if(current_ticks % QUANTUM_SIZE == 0){
         auto& process = pcb[current_pid];
 
-        if(process.rounds  == TURNOVER){
+        if(process.rounds == TURNOVER){
             process.rounds = 0;
 
             process.state = process_state::READY;
-
+            
             auto pid = select_next_process();
 
             //If it is the same, no need to go to the switching process
@@ -776,29 +902,39 @@ void scheduler::tick(){
 void scheduler::reschedule(){
     thor_assert(started, "No interest in rescheduling before start");
 
+    //asm volatile ("cli");
+
     auto& process = pcb[current_pid];
 
     //The process just got blocked or put to sleep, choose another one
     if(process.state != process_state::RUNNING){
-        auto index = select_next_process();
+        auto pid = select_next_process();
 
-        switch_to_process(index);
+        switch_to_process(pid);
     }
+    
+    //asm volatile ("sti");
 
     //At this point we just have to return to the current process
 }
 
 scheduler::pid_t scheduler::get_pid(){
+    thor_assert(started, "The scheduler must be started before get_pid is called");
+
     return current_pid;
 }
 
 scheduler::process_t& scheduler::get_process(pid_t pid){
+    thor_assert(started, "The scheduler must be started before get_process is called");
+
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
     return pcb[pid].process;
 }
 
 void scheduler::block_process(pid_t pid){
+    thor_assert(started, "The scheduler must be started before block_process is called");
+    thor_assert(pid != idle_pid, "Cannot block the idle task");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
 
@@ -806,12 +942,16 @@ void scheduler::block_process(pid_t pid){
         printf("Block process %u\n", pid);
     }
 
+    asm volatile("cli");
     pcb[pid].state = process_state::BLOCKED;
 
     reschedule();
+    asm volatile("sti");
 }
 
 void scheduler::unblock_process(pid_t pid){
+    thor_assert(started, "The scheduler must be started before unblock_process is called");
+
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
@@ -819,10 +959,48 @@ void scheduler::unblock_process(pid_t pid){
         printf("Unblock process %u\n", pid);
     }
 
+    asm volatile("cli");
     pcb[pid].state = process_state::READY;
+    asm volatile("sti");
+}
+
+scheduler::sleep_queue_ptr* scheduler::queue_ptr(scheduler::pid_t pid){
+    return &pcb[pid].queue_ptr;
+}
+
+void scheduler::soft_block(pid_t pid){
+    thor_assert(started, "The scheduler must be started before soft_block is called");
+    thor_assert(pid != idle_pid, "Cannot soft block the idle task");
+
+
+    asm volatile("cli");
+    pcb[pid].state = process_state::BLOCKED;
+    asm volatile("sti");
+}
+
+void scheduler::soft_unblock(pid_t pid){
+    thor_assert(started, "The scheduler must be started before soft_unblock is called");
+
+    asm volatile("cli");
+    pcb[pid].state = process_state::READY;
+    asm volatile("sti");
+}
+
+void scheduler::soft_reschedule(pid_t pid){
+    thor_assert(started, "The scheduler must be started before soft_reschedule is called");
+
+    asm volatile("cli");
+    if(pcb[pid].state == process_state::READY){
+        pcb[pid].state = process_state::RUNNING;
+    } else {
+        reschedule();
+    }
+    asm volatile("sti");
 }
 
 void scheduler::sleep_ms(pid_t pid, size_t time){
+    thor_assert(started, "The scheduler must be started before sleep_ms is called");
+
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
@@ -837,27 +1015,39 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
 }
 
 size_t scheduler::register_new_handle(const std::vector<std::string>& path){
+    thor_assert(started, "The scheduler must be started before new_handle is called");
+
     pcb[current_pid].handles.push_back(path);
 
     return pcb[current_pid].handles.size() - 1;
 }
 
 void scheduler::release_handle(size_t fd){
+    thor_assert(started, "The scheduler must be started before release_handle is called");
+
     pcb[current_pid].handles[fd].clear();
 }
 
 bool scheduler::has_handle(size_t fd){
+    thor_assert(started, "The scheduler must be started before has_handle is called");
+
     return fd < pcb[current_pid].handles.size();
 }
 
 const std::vector<std::string>& scheduler::get_handle(size_t fd){
+    thor_assert(started, "The scheduler must be started before get_handle is called");
+
     return pcb[current_pid].handles[fd];
 }
 
 const std::vector<std::string>& scheduler::get_working_directory(){
+    thor_assert(started, "The scheduler must be started before get_working_directory is called");
+
     return pcb[current_pid].working_directory;
 }
 
 void scheduler::set_working_directory(const std::vector<std::string>& directory){
+    thor_assert(started, "The scheduler must be started before set_working_directory is called");
+
     pcb[current_pid].working_directory = directory;
 }

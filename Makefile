@@ -45,6 +45,9 @@ bochs: default
 	bochs -qf tools/bochsrc.txt -rc commands
 	rm commands
 
+bochs_simple: default
+	bochs -qf tools/bochsrc.txt
+
 debug: default
 	echo "c" > commands
 	bochs -qf tools/debug_bochsrc.txt -rc commands

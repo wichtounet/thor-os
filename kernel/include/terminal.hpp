@@ -12,6 +12,7 @@
 #include <circular_buffer.hpp>
 
 #include "sleep_queue.hpp"
+#include "spinlock.hpp"
 
 namespace stdio {
 
@@ -22,14 +23,19 @@ struct virtual_terminal {
     bool active;
     bool canonical;
 
+    spinlock terminal_lock;
+
     circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
     circular_buffer<char, INPUT_BUFFER_SIZE> canonical_buffer;
 
     sleep_queue input_queue;
 
     void print(char c);
-    void send_input(char c);
+    void handle_input(char c);
     size_t read_input(char* buffer, size_t max);
+    
+    //Perhaps remove that
+    void send_input(char c);
 
     virtual_terminal(){}
 

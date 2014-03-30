@@ -8,31 +8,31 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
-#include <queue.hpp>
 #include <lock_guard.hpp>
 
 #include "spinlock.hpp"
 #include "scheduler.hpp"
+#include "sleep_queue.hpp"
 
 struct semaphore {
 private:
     spinlock lock;
     volatile size_t value;
-    std::queue<scheduler::pid_t> queue;
+    //std::queue<scheduler::pid_t> queue;
+    sleep_queue queue;
 
 public:
     void init(size_t v){
         value = v;
     }
 
+    //TODO Make sure it doesn't have the lost wake up problem
     void wait(){
         lock.acquire();
 
         if(!value){
-            queue.push(scheduler::get_pid());
-            scheduler::set_current_state(scheduler::process_state::BLOCKED);
             lock.release();
-            scheduler::reschedule();
+            queue.sleep();
             lock.acquire();
         }
 
@@ -47,10 +47,7 @@ public:
         ++value;
 
         if(!queue.empty()){
-            auto pid = queue.top();
-            queue.pop();
-
-            scheduler::unblock_process(pid);
+            queue.wake_up();
         }
     }
 };

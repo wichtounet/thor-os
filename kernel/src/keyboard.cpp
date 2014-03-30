@@ -10,6 +10,9 @@
 #include "kernel_utils.hpp"
 #include "terminal.hpp"
 
+//TODO REMOVE
+#include "console.hpp"
+
 namespace {
 
 char qwertz[128] = {
@@ -93,7 +96,9 @@ char shifted_qwertz[128] = {
 void keyboard_handler(interrupt::syscall_regs*){
     auto key = static_cast<char>(in_byte(0x60));
 
-    stdio::get_active_terminal().send_input(key);
+    if(scheduler::is_started()){
+        stdio::get_active_terminal().send_input(key);
+    }
 }
 
 } //end of anonymous namespace

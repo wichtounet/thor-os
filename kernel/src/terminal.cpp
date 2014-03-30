@@ -21,6 +21,13 @@ bool shift = false;
 
 std::array<stdio::virtual_terminal, MAX_TERMINALS> terminals;
 
+void tasklet_handle_input(size_t d1, size_t d2){
+    auto key = static_cast<char>(d1);
+    auto term = reinterpret_cast<stdio::virtual_terminal*>(d2);
+
+    term->handle_input(key);
+}
+
 } //end of anonymous namespace
 
 void stdio::virtual_terminal::print(char key){
@@ -29,7 +36,18 @@ void stdio::virtual_terminal::print(char key){
 }
 
 void stdio::virtual_terminal::send_input(char key){
+    scheduler::tasklet task;
+    task.fun = &tasklet_handle_input;
+    task.d1 = key;
+    task.d2 = reinterpret_cast<size_t>(this);
+
+    scheduler::irq_register_tasklet(task, scheduler::DEFAULT_PRIORITY);
+}
+
+void stdio::virtual_terminal::handle_input(char key){
     if(canonical){
+        std::lock_guard<spinlock> l(terminal_lock);
+
         //Key released
         if(key & 0x80){
             key &= ~(0x80);
@@ -74,37 +92,41 @@ size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
     char c;
 
     while(true){
-        while(read < max && !input_buffer.empty()){
-            c = input_buffer.pop();
+        {
+            std::lock_guard<spinlock> l(terminal_lock);
 
-            canonical_buffer.push(c);
+            while(read < max && !input_buffer.empty()){
+                c = input_buffer.pop();
 
-            if(c == '\b'){
-                if(read > 0){
-                    --read;
-                }
-            } else {
-                ++read;
+                canonical_buffer.push(c);
 
-                if(c == '\n'){
-                    break;
-                }
-            }
-        }
-
-        if(read > 0 && (c == '\n' || read == max)){
-            read = 0;
-            while(!canonical_buffer.empty()){
-                auto value = canonical_buffer.pop();
-
-                if(value == '\b'){
-                    --read;
+                if(c == '\b'){
+                    if(read > 0){
+                        --read;
+                    }
                 } else {
-                    buffer[read++] = value;
+                    ++read;
+
+                    if(c == '\n'){
+                        break;
+                    }
                 }
             }
 
-            return read;
+            if(read > 0 && (c == '\n' || read == max)){
+                read = 0;
+                while(!canonical_buffer.empty()){
+                    auto value = canonical_buffer.pop();
+
+                    if(value == '\b'){
+                        --read;
+                    } else {
+                        buffer[read++] = value;
+                    }
+                }
+
+                return read;
+            }
         }
 
         input_queue.sleep();

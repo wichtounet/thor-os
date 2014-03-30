@@ -16,7 +16,6 @@
 #include "disks.hpp"
 
 #include "mutex.hpp"
-#include "semaphore.hpp"
 #include "lock_guard.hpp"
 
 namespace {
@@ -60,58 +59,65 @@ static constexpr const size_t BLOCK_SIZE = 512;
 
 ata::drive_descriptor* drives;
 
+//TODO Use one lock per controller
+//TODO Separate all the data in structure controller
+
 mutex controller_lock;
 
-semaphore primary_sem;
-semaphore secondary_sem;
+volatile size_t primary_wait_pid = 0;
+volatile bool primary_release = false;
+volatile bool primary_wait = false;
 
-volatile bool primary_invoked = false;
-volatile bool secondary_invoked = false;
+volatile size_t secondary_wait_pid = 0;
+volatile bool secondary_release = false;
+volatile bool secondary_wait = false;
 
-//TODO In the future, the wait for IRQs, could
-//be done with a semaphore
-
-void primary_controller_handler(interrupt::syscall_regs*){
-    //primary_invoked = true;
-    primary_sem.signal();
+//TODO Perhaps not correct
+//TODO Should choose the controller more safely
+static void ata_delay(){
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
+    in_byte(0x1F0 + ATA_STATUS);
 }
 
-void secondary_controller_handler(interrupt::syscall_regs*){
-    //secondary_invoked = true;
-    secondary_sem.signal();
+void primary_controller_handler(interrupt::syscall_regs*){
+    scheduler::soft_unblock(primary_wait_pid);
+//    primary_release = true;
+//    if(!primary_wait){
+//        scheduler::irq_sync_release(primary_wait_pid);
+//    }
 }
 
 void ata_wait_irq_primary(){
-    primary_sem.wait();
-    /*while(!primary_invoked){
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-    }
-
-    primary_invoked = false;*/
+    scheduler::soft_reschedule(scheduler::get_pid());
+//    primary_wait = true;
+//    if(!primary_release){
+//        scheduler::irq_sync_wait();
+//    }
+    
+    //Cleanup
+    //primary_wait = false;
+    //primary_release = false;
 }
 
+void secondary_controller_handler(interrupt::syscall_regs*){
+    //TODO
+}
 void ata_wait_irq_secondary(){
-    secondary_sem.wait();
-    /*while(!secondary_invoked){
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-    }
-
-    secondary_invoked = false;*/
+    //TODO
 }
 
 static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
     uint8_t status;
     do {
         status = in_byte(controller + ATA_STATUS);
-        timer::sleep_ms(1);
+        ata_delay();
+        //timer::sleep_ms(1);
     } while ((status & mask) != value && --timeout);
 
     return timeout;
@@ -130,7 +136,7 @@ bool select_device(ata::drive_descriptor& drive){
     out_byte(controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
 
     //Sleep at least 400ns before reading the status register
-    timer::sleep_ms(1);
+    ata_delay();
 
     if(!wait_for_controller(controller, wait_mask, 0, 10000)){
         return false;
@@ -152,6 +158,15 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
     uint8_t ch = (start >> 16) & 0xFF;
     uint8_t hd = (start >> 24) & 0x0F;
 
+    //Prepare for waiting
+    if(controller == ATA_PRIMARY){
+        primary_wait_pid = scheduler::get_pid();
+    } else {
+        secondary_wait_pid = scheduler::get_pid();
+    }
+
+    scheduler::soft_block(scheduler::get_pid());
+
     auto command = read ? ATA_READ_BLOCK : ATA_WRITE_BLOCK;
 
     //Process the command
@@ -163,7 +178,7 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
     out_byte(controller + ATA_COMMAND, command);
 
     //Wait at least 400ns before reading status register
-    timer::sleep_ms(1);
+    ata_delay();
 
     //Wait at most 30 seconds for BSY flag to be cleared
     if(!wait_for_controller(controller, ATA_STATUS_BSY, 0, 30000)){
@@ -338,9 +353,6 @@ void identify(ata::drive_descriptor& drive){
 
 void ata::detect_disks(){
     controller_lock.init();
-
-    primary_sem.init(0);
-    secondary_sem.init(0);
 
     drives = new drive_descriptor[4];
 

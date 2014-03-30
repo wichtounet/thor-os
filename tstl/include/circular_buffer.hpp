@@ -15,36 +15,30 @@ private:
 
     T buffer[Size];
 
-    volatile size_t start;
-    volatile size_t end;
+    volatile size_t tail;
+    volatile size_t head;
 
 public:
-    circular_buffer() : start(0), end(0) {
+    circular_buffer() : tail(0), head(0) {
         //Nothing to init
     }
 
     bool full() const {
-        return (end + 1) % Size == start;
+        return tail - head == S;
     }
 
     bool empty() const {
-        return end == start;
+        return tail - head == 0;
     }
 
-    bool push(T value){
-        if(full()){
-            return false;
-        } else {
-            buffer[end] = value;
-            end = (end + 1) % Size;
-
-            return true;
-        }
+    void push(T value){
+        buffer[tail % S] = value;
+        ++tail;
     }
 
     T pop(){
-        auto value = buffer[start];
-        start = (start + 1) % Size;
+        auto value = buffer[head % S];
+        ++head;
         return value;
     }
 };
