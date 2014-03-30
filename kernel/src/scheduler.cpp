@@ -147,7 +147,7 @@ void gc_task(){
 
 //TODO tsh should be configured somewhere
 void init_task(){
-    logging::log("init_task started");
+    //logging::log("init_task started");
 
     std::vector<std::string> params;
 
@@ -650,7 +650,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
         pcb[process.pid].working_directory.push_back(p);
     }
 
-    logging::logf("Exec process pid=%u, ppid=%u", process.pid, process.ppid);
+    //logging::logf("Exec process pid=%u, ppid=%u", process.pid, process.ppid);
 
     return process.pid;
 }

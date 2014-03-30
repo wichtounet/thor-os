@@ -94,7 +94,7 @@ void  kernel_main(){
     vfs::init();
 
     //Starting from here, the logging system can output logs to file
-    logging::to_file();
+    //logging::to_file();
 
     //Only install system calls when everything else is ready
     install_system_calls();
