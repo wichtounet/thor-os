@@ -20,6 +20,8 @@ constexpr const size_t MAX_PROCESS = 128;
 void init();
 void start() __attribute__((noreturn));
 
+bool is_started();
+
 pid_t get_pid();
 scheduler::process_t& get_process(pid_t pid);
 

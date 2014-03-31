@@ -591,7 +591,13 @@ void scheduler::start(){
     init_task_switch(current_pid);
 }
 
+bool scheduler::is_started(){
+    return started;
+}
+
 int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
+    thor_assert(is_started(), "The scheduler is not started");
+
     std::string content;
     auto result = vfs::direct_read(file, content);
     if(result < 0){
@@ -648,6 +654,8 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
 }
 
 void scheduler::sbrk(size_t inc){
+    thor_assert(is_started(), "The scheduler is not started");
+
     auto& process = pcb[current_pid].process;
 
     size_t size = (inc + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
@@ -678,6 +686,8 @@ void scheduler::sbrk(size_t inc){
 }
 
 void scheduler::await_termination(pid_t pid){
+    thor_assert(is_started(), "The scheduler is not started");
+
     while(true){
         bool found = false;
         for(auto& process : pcb){
@@ -700,6 +710,8 @@ void scheduler::await_termination(pid_t pid){
 }
 
 void scheduler::kill_current_process(){
+    thor_assert(is_started(), "The scheduler is not started");
+
     if(DEBUG_SCHEDULER){
         printf("Kill %u\n", current_pid);
     }
@@ -722,7 +734,8 @@ void scheduler::kill_current_process(){
 }
 
 void scheduler::tick(){
-    if(!started){
+    //It is the only function that can be called when !started
+    if(!is_started()){
         return;
     }
 
@@ -763,16 +776,20 @@ void scheduler::tick(){
 }
 
 scheduler::pid_t scheduler::get_pid(){
+    thor_assert(is_started(), "The scheduler is not started");
+
     return current_pid;
 }
 
 scheduler::process_t& scheduler::get_process(pid_t pid){
+    thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
     return pcb[pid].process;
 }
 
 void scheduler::block_process(pid_t pid){
+    thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
 
@@ -786,6 +803,7 @@ void scheduler::block_process(pid_t pid){
 }
 
 void scheduler::unblock_process(pid_t pid){
+    thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
@@ -797,6 +815,7 @@ void scheduler::unblock_process(pid_t pid){
 }
 
 void scheduler::sleep_ms(pid_t pid, size_t time){
+    thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
