@@ -8,12 +8,8 @@
 #ifndef SLEEP_QUEUE_H
 #define SLEEP_QUEUE_H
 
-#include <queue.hpp>
-
 #include "arch.hpp"
 #include "scheduler.hpp"
-
-#include "console.hpp"
 
 struct sleep_queue {
 private:
