@@ -546,7 +546,7 @@ void reschedule(){
     auto& process = pcb[current_pid];
 
     //The process just got blocked or put to sleep, choose another one
-    if(process.state != process_state::RUNNING){
+    if(process.state != scheduler::process_state::RUNNING){
         auto index = select_next_process();
 
         switch_to_process(index);
