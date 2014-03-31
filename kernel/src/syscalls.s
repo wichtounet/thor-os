@@ -14,8 +14,6 @@
 .macro create_syscall number
 .global _syscall\number
 _syscall\number:
-    cli
-
     push rax
     push \number
 
