@@ -856,8 +856,9 @@ scheduler::process_t& scheduler::get_process(pid_t pid){
 }
 
 void scheduler::block_process(pid_t pid){
-    thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+    thor_assert(pid != idle_pid, "No reason to block the idle task");
+    thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
 
     if(DEBUG_SCHEDULER){
@@ -870,8 +871,9 @@ void scheduler::block_process(pid_t pid){
 }
 
 void scheduler::unblock_process(pid_t pid){
-    thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+    thor_assert(pid != idle_pid, "No reason to unblock the idle task");
+    thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
     if(DEBUG_SCHEDULER){
