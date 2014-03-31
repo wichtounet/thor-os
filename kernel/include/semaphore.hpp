@@ -32,7 +32,7 @@ public:
             --value;
         } else {
             queue.push(scheduler::get_pid());
-            scheduler::block_process(scheduler::get_pid());
+            scheduler::block_process();
         }
     }
 
