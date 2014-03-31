@@ -50,6 +50,8 @@ std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
 //Define one run queue for each priority level
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
 
+circular_buffer<scheduler::tasklet, 64> tasklets;
+
 std::vector<scheduler::pid_t>& run_queue(size_t priority){
     return run_queues[priority - scheduler::MIN_PRIORITY];
 }
@@ -60,16 +62,26 @@ constexpr const size_t QUANTUM_SIZE = 1;
 constexpr const size_t TURNOVER = 10;
 constexpr const size_t STACK_ALIGNMENT = 16;
 
-size_t current_ticks = 0;
+volatile size_t current_ticks = 0;
 
-size_t current_pid;
-size_t next_pid = 0;
+volatile size_t current_pid;
+volatile size_t next_pid = 0;
 
+size_t idle_pid = 0;
+size_t init_pid = 0;
 size_t gc_pid = 0;
+size_t tasklet_pid = 0;
 
 void idle_task(){
     while(true){
         asm volatile("hlt");
+    }
+}
+
+void tasklet_task(){
+    while(true){
+        //Wait until there is something to do
+        scheduler::block_process(scheduler::get_pid());
     }
 }
 
@@ -161,6 +173,9 @@ char init_kernel_stack[scheduler::kernel_stack_size];
 char gc_stack[scheduler::user_stack_size];
 char gc_kernel_stack[scheduler::kernel_stack_size];
 
+char tasklet_stack[scheduler::user_stack_size];
+char tasklet_kernel_stack[scheduler::kernel_stack_size];
+
 scheduler::process_t& new_process(){
     //TODO use get_free_pid() that searchs through the PCB
     auto pid = next_pid++;
@@ -230,26 +245,41 @@ void create_idle_task(){
     idle_process.priority = scheduler::MIN_PRIORITY;
 
     queue_process(idle_process.pid);
+
+    idle_pid = idle_process.pid;
 }
 
 void create_init_task(){
     auto& init_process = create_kernel_task(init_stack, init_kernel_stack, &init_task);
 
-    init_process.ppid = 0;
+    init_process.ppid = idle_pid;
     init_process.priority = scheduler::MIN_PRIORITY + 1;
 
     queue_process(init_process.pid);
+
+    init_pid = init_process.pid;
 }
 
 void create_gc_task(){
     auto& gc_process = create_kernel_task(gc_stack, gc_kernel_stack, &gc_task);
 
-    gc_process.ppid = 1;
+    gc_process.ppid = idle_pid;
     gc_process.priority = scheduler::MIN_PRIORITY + 1;
 
     queue_process(gc_process.pid);
 
     gc_pid = gc_process.pid;
+}
+
+void create_tasklet_task(){
+    auto& tasklet_process = create_kernel_task(tasklet_stack, tasklet_kernel_stack, &tasklet_task);
+
+    tasklet_process.ppid = idle_pid;
+    tasklet_process.priority = scheduler::MAX_PRIORITY;
+
+    queue_process(tasklet_process.pid);
+
+    tasklet_pid = tasklet_process.pid;
 }
 
 void switch_to_process(size_t pid){
@@ -575,6 +605,7 @@ void scheduler::init(){ //Create the idle task
     //Create all the kernel tasks
     create_idle_task();
     create_init_task();
+    create_tasklet_task();
     create_gc_task();
 
     current_ticks = 0;
@@ -593,6 +624,24 @@ void scheduler::start(){
 
 bool scheduler::is_started(){
     return started;
+}
+
+//This function can only be called by IRQ
+//As such, it is ininpteruptible
+void scheduler::irq_register_tasklet(const tasklet& task){
+    thor_assert(is_started(), "The scheduler is not started");
+
+    tasklets.push(task);
+
+    auto& state = pcb[tasklet_pid].state;
+
+    thor_assert(state == process_state::BLOCKED || state == process_state::RUNNING || state == process_state::READY, "Invalid state for tasklet executor");
+
+    if(state == process_state::BLOCKED){
+        state = process_state::READY;
+
+        reschedule();
+    }
 }
 
 int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){

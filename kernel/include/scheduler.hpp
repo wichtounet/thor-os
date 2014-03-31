@@ -11,11 +11,24 @@
 #include <vector.hpp>
 #include <string.hpp>
 
+#include "types.hpp"
 #include "process.hpp"
 
 namespace scheduler {
 
 constexpr const size_t MAX_PROCESS = 128;
+
+struct sleep_queue_ptr {
+    sleep_queue_ptr* next;
+    sleep_queue_ptr* prev;
+    pid_t pid;
+};
+
+struct tasklet {
+    void (*fun)(size_t,size_t);
+    size_t d1;
+    size_t d2;
+};
 
 void init();
 void start() __attribute__((noreturn));
@@ -24,6 +37,8 @@ bool is_started();
 
 pid_t get_pid();
 scheduler::process_t& get_process(pid_t pid);
+
+void irq_register_tasklet(const tasklet& task);
 
 void block_process(pid_t pid);
 void unblock_process(pid_t pid);
