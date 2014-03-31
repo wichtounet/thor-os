@@ -39,6 +39,7 @@ namespace {
 struct process_control_t {
     scheduler::process_t process;
     scheduler::process_state state;
+    scheduler::sleep_queue_ptr queue_ptr;
     size_t rounds;
     size_t sleep_timeout;
     std::vector<std::vector<std::string>> handles;
@@ -82,7 +83,7 @@ void idle_task(){
 void tasklet_task(){
     while(true){
         //Wait until there is something to do
-        scheduler::block_process(scheduler::get_pid());
+        scheduler::block_process();
 
         while(true){
             size_t rflags;
@@ -106,7 +107,7 @@ void tasklet_task(){
 void gc_task(){
     while(true){
         //Wait until there is something to do
-        scheduler::block_process(scheduler::get_pid());
+        scheduler::block_process();
 
         //2. Clean up each killed process
 
@@ -855,19 +856,32 @@ scheduler::process_t& scheduler::get_process(pid_t pid){
     return pcb[pid].process;
 }
 
-void scheduler::block_process(pid_t pid){
-    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
-    thor_assert(pid != idle_pid, "No reason to block the idle task");
+scheduler::sleep_queue_ptr* scheduler::queue_ptr(scheduler::pid_t pid){
     thor_assert(is_started(), "The scheduler is not started");
-    thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
-    if(DEBUG_SCHEDULER){
-        printf("Block process %u\n", pid);
-    }
+    return &pcb[pid].queue_ptr;
+}
 
-    pcb[pid].state = process_state::BLOCKED;
+void scheduler::block_process(){
+    thor_assert(current_pid != idle_pid, "No reason to block the idle task");
+    thor_assert(is_started(), "The scheduler is not started");
+
+    k_print_line(current_pid);
+    k_print_line(static_cast<size_t>(pcb[current_pid].state));
+    
+    size_t rflags;
+    arch::disable_hwint(rflags);
+
+    //TODO Perhaps not true to block it unconditionally
+
+    auto& state = pcb[current_pid].state;
+
+    state = process_state::BLOCKED;
 
     reschedule();
+
+    arch::enable_hwint(rflags);
 }
 
 void scheduler::unblock_process(pid_t pid){
@@ -876,11 +890,16 @@ void scheduler::unblock_process(pid_t pid){
     thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
-    if(DEBUG_SCHEDULER){
-        printf("Unblock process %u\n", pid);
-    }
+    size_t rflags;
+    arch::disable_hwint(rflags);
+    
+    auto& state = pcb[pid].state;
 
-    pcb[pid].state = process_state::READY;
+    if(state == process_state::BLOCKED){
+        state = process_state::READY;
+    }
+    
+    arch::enable_hwint(rflags);
 }
 
 void scheduler::sleep_ms(pid_t pid, size_t time){

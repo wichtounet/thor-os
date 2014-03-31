@@ -40,7 +40,9 @@ scheduler::process_t& get_process(pid_t pid);
 
 void irq_register_tasklet(const tasklet& task);
 
-void block_process(pid_t pid);
+sleep_queue_ptr* queue_ptr(pid_t pid);
+
+void block_process();
 void unblock_process(pid_t pid);
 
 int64_t exec(const std::string& path, const std::vector<std::string>& params);
