@@ -35,6 +35,21 @@ void stdio::virtual_terminal::print(char key){
     k_print(key);
 }
 
+void stdio::virtual_terminal::send_input(char key){
+    //Some input may arrive before the scheduler is started
+    //Loose them
+    if(!scheduler::is_started()){
+        return;
+    }
+    
+    scheduler::tasklet task;
+    task.fun = &tasklet_handle_input;
+    task.d1 = static_cast<size_t>(key);
+    task.d2 = reinterpret_cast<size_t>(this);
+
+    scheduler::irq_register_tasklet(task);
+}
+
 void stdio::virtual_terminal::handle_input(char key){
     if(canonical){
         //Key released
@@ -74,21 +89,6 @@ void stdio::virtual_terminal::handle_input(char key){
     } else {
         //TODO
     }
-}
-
-void stdio::virtual_terminal::send_input(char key){
-    //Some input may arrive before the scheduler is started
-    //Loose them
-    if(!scheduler::is_started()){
-        return;
-    }
-    
-    scheduler::tasklet task;
-    task.fun = &tasklet_handle_input;
-    task.d1 = static_cast<size_t>(key);
-    task.d2 = reinterpret_cast<size_t>(this);
-
-    scheduler::irq_register_tasklet(task);
 }
 
 size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
