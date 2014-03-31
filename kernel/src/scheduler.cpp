@@ -540,6 +540,21 @@ void init_context(scheduler::process_t& process, const char* buffer, const std::
     process.context = reinterpret_cast<interrupt::syscall_regs*>(scheduler::user_rsp - sizeof(interrupt::syscall_regs) - args_size);
 }
 
+void reschedule(){
+    thor_assert(started, "No interest in rescheduling before start");
+
+    auto& process = pcb[current_pid];
+
+    //The process just got blocked or put to sleep, choose another one
+    if(process.state != process_state::RUNNING){
+        auto index = select_next_process();
+
+        switch_to_process(index);
+    }
+
+    //At this point we just have to return to the current process
+}
+
 } //end of anonymous namespace
 
 //Provided for task_switch.s
@@ -747,21 +762,6 @@ void scheduler::tick(){
     //At this point we just have to return to the current process
 }
 
-void scheduler::reschedule(){
-    thor_assert(started, "No interest in rescheduling before start");
-
-    auto& process = pcb[current_pid];
-
-    //The process just got blocked or put to sleep, choose another one
-    if(process.state != process_state::RUNNING){
-        auto index = select_next_process();
-
-        switch_to_process(index);
-    }
-
-    //At this point we just have to return to the current process
-}
-
 scheduler::pid_t scheduler::get_pid(){
     return current_pid;
 }
@@ -810,6 +810,8 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     reschedule();
 }
 
+/* Handle management */
+
 size_t scheduler::register_new_handle(const std::vector<std::string>& path){
     pcb[current_pid].handles.push_back(path);
 
@@ -827,6 +829,8 @@ bool scheduler::has_handle(size_t fd){
 const std::vector<std::string>& scheduler::get_handle(size_t fd){
     return pcb[current_pid].handles[fd];
 }
+
+/* Working directory management */
 
 const std::vector<std::string>& scheduler::get_working_directory(){
     return pcb[current_pid].working_directory;

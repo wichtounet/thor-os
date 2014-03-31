@@ -17,14 +17,14 @@ namespace scheduler {
 
 constexpr const size_t MAX_PROCESS = 128;
 
+void init();
+void start() __attribute__((noreturn));
+
 pid_t get_pid();
 scheduler::process_t& get_process(pid_t pid);
 
 void block_process(pid_t pid);
 void unblock_process(pid_t pid);
-
-void init();
-void start() __attribute__((noreturn));
 
 int64_t exec(const std::string& path, const std::vector<std::string>& params);
 
@@ -33,7 +33,6 @@ void await_termination(pid_t pid);
 void sbrk(size_t inc);
 
 void tick();
-void reschedule();
 
 void sleep_ms(pid_t pid, size_t time);
 
