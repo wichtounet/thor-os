@@ -5,6 +5,9 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#ifndef ARCH_HPP
+#define ARCH_HPP
+
 #include "types.hpp"
 
 namespace arch {
@@ -12,7 +15,7 @@ namespace arch {
 void enable_sse();
 
 inline void disable_hwint(size_t& rflags){
-    asm volatile("pushfq: pop %0; cli;" : "=g" (rflags));
+    asm volatile("pushfq; pop %0; cli;" : "=g" (rflags));
 }
 
 inline void enable_hwint(size_t& rflags){
@@ -20,3 +23,5 @@ inline void enable_hwint(size_t& rflags){
 }
 
 } //enf of arch namespace
+
+#endif
