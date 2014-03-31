@@ -9,4 +9,12 @@ namespace arch {
 
 void enable_sse();
 
+inline void disable_hwint(size_t& rflags){
+    asm volatile("pushfq: pop %0; cli;" : "=g" (rflags));
+}
+
+inline void enable_hwint(size_t& rflags){
+    asm volatile("push %0; popfq; " :: "=g" (rflags));
+}
+
 } //enf of arch namespace
