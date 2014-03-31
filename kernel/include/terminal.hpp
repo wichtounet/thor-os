@@ -26,9 +26,11 @@ struct virtual_terminal {
     circular_buffer<char, INPUT_BUFFER_SIZE> canonical_buffer;
 
     sleep_queue input_queue;
+    
+    void send_input(char c);
+    void handle_input(char c);
 
     void print(char c);
-    void send_input(char c);
     size_t read_input(char* buffer, size_t max);
 
     virtual_terminal(){}

@@ -12,6 +12,7 @@
 #include <errors.hpp>
 
 #include "scheduler.hpp"
+#include "arch.hpp"
 #include "paging.hpp"
 #include "assert.hpp"
 #include "gdt.hpp"
@@ -82,6 +83,23 @@ void tasklet_task(){
     while(true){
         //Wait until there is something to do
         scheduler::block_process(scheduler::get_pid());
+
+        while(true){
+            size_t rflags;
+            arch::disable_hwint(rflags);
+
+            if(tasklets.empty()){
+                arch::enable_hwint(rflags);
+
+                break;
+            }
+
+            auto task = tasklets.pop();
+
+            arch::enable_hwint(rflags);
+
+            task.fun(task.d1, task.d2);
+        }
     }
 }
 
