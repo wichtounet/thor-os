@@ -8,17 +8,14 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
-#include <queue.hpp>
-#include <lock_guard.hpp>
-
-#include "spinlock.hpp"
-#include "scheduler.hpp"
+#include "arch.hpp"
+#include "sleep_queue.hpp"
 
 struct semaphore {
 private:
-    spinlock lock;
-    size_t value;
-    std::queue<scheduler::pid_t> queue;
+    volatile size_t value;
+
+    sleep_queue queue;
 
 public:
     void init(size_t v){
@@ -26,30 +23,27 @@ public:
     }
 
     void wait(){
-        std::lock_guard<spinlock> l(lock);
+        size_t rflags;
+        arch::disable_hwint(rflags);
 
-        if(value > 0){
-            --value;
-        } else {
-            queue.push(scheduler::get_pid());
-            scheduler::block_process();
+        if(!value){
+            queue.sleep();
         }
+
+        --value;
+
+        arch::enable_hwint(rflags);
     }
 
     void signal(){
-        std::lock_guard<spinlock> l(lock);
+        size_t rflags;
+        arch::disable_hwint(rflags);
 
-        if(queue.empty()){
-            ++value;
-        } else {
-            auto pid = queue.top();
-            scheduler::unblock_process(pid);
+        ++value;
 
-            queue.pop();
+        queue.wake_up();
 
-            //No need to increment value, the process won't
-            //decrement it
-        }
+        arch::enable_hwint(rflags);
     }
 };
 
