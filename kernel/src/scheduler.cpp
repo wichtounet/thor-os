@@ -12,7 +12,6 @@
 #include <errors.hpp>
 
 #include "scheduler.hpp"
-#include "arch.hpp"
 #include "paging.hpp"
 #include "assert.hpp"
 #include "gdt.hpp"

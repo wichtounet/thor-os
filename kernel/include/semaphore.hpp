@@ -8,8 +8,8 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
-#include "arch.hpp"
 #include "sleep_queue.hpp"
+#include "int_lock.hpp"
 
 struct semaphore {
 private:
@@ -23,27 +23,21 @@ public:
     }
 
     void wait(){
-        size_t rflags;
-        arch::disable_hwint(rflags);
+        int_lock lock;
 
         if(!value){
             queue.sleep();
         }
 
         --value;
-
-        arch::enable_hwint(rflags);
     }
 
     void signal(){
-        size_t rflags;
-        arch::disable_hwint(rflags);
+        int_lock lock;
 
         ++value;
 
         queue.wake_up();
-
-        arch::enable_hwint(rflags);
     }
 };
 

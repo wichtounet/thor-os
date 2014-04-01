@@ -8,8 +8,8 @@
 #ifndef SLEEP_QUEUE_H
 #define SLEEP_QUEUE_H
 
-#include "arch.hpp"
 #include "scheduler.hpp"
+#include "int_lock.hpp"
 
 struct sleep_queue {
 private:
@@ -18,8 +18,7 @@ private:
 
 public:
     void wake_up(){
-        size_t rflags;
-        arch::disable_hwint(rflags);
+        int_lock lock;
 
         if(head){
             //Get the first process
@@ -32,13 +31,10 @@ public:
             //to run
             scheduler::unblock_process(pid);
         }
-        
-        arch::enable_hwint(rflags);
     }
 
     void sleep(){
-        size_t rflags;
-        arch::disable_hwint(rflags);
+        int_lock lock;
 
         //Get the current process information
         auto pid = scheduler::get_pid();
@@ -55,11 +51,9 @@ public:
             tail->next = queue_ptr;
             tail = queue_ptr;
         }
-        
+
         //This process will sleep
         scheduler::block_process();
-
-        arch::enable_hwint(rflags);
     }
 };
 
