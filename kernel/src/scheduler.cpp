@@ -866,9 +866,6 @@ scheduler::sleep_queue_ptr* scheduler::queue_ptr(scheduler::pid_t pid){
 void scheduler::block_process(){
     thor_assert(current_pid != idle_pid, "No reason to block the idle task");
     thor_assert(is_started(), "The scheduler is not started");
-
-    k_print_line(current_pid);
-    k_print_line(static_cast<size_t>(pcb[current_pid].state));
     
     size_t rflags;
     arch::disable_hwint(rflags);
