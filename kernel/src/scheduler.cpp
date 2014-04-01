@@ -895,7 +895,7 @@ void scheduler::unblock_process(pid_t pid){
     
     auto& state = pcb[pid].state;
 
-    if(state == process_state::BLOCKED){
+    if(state == process_state::BLOCKED || state == process_state::WAITING){
         state = process_state::READY;
     }
     
@@ -907,14 +907,15 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
-    if(DEBUG_SCHEDULER){
-        printf("Put %u to sleep\n", pid);
-    }
+    size_t rflags;
+    arch::disable_hwint(rflags);
 
     pcb[pid].state = process_state::SLEEPING;
     pcb[pid].sleep_timeout = time;
 
     reschedule();
+    
+    arch::enable_hwint(rflags);
 }
 
 /* Handle management */
