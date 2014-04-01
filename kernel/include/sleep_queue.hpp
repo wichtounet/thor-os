@@ -13,8 +13,8 @@
 
 struct sleep_queue {
 private:
-    scheduler::sleep_queue_ptr* head = nullptr;
-    scheduler::sleep_queue_ptr* tail = nullptr;
+    volatile scheduler::sleep_queue_ptr* head = nullptr;
+    volatile scheduler::sleep_queue_ptr* tail = nullptr;
 
 public:
     void wake_up(){
