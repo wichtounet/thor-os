@@ -12,6 +12,7 @@
 #include <circular_buffer.hpp>
 
 #include "sleep_queue.hpp"
+#include "mutex.hpp"
 
 namespace stdio {
 
@@ -25,6 +26,7 @@ struct virtual_terminal {
     circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
     circular_buffer<char, INPUT_BUFFER_SIZE> canonical_buffer;
 
+    mutex lock;
     sleep_queue input_queue;
     
     void send_input(char c);

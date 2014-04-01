@@ -51,6 +51,8 @@ void stdio::virtual_terminal::send_input(char key){
 }
 
 void stdio::virtual_terminal::handle_input(char key){
+    lock.acquire();
+
     if(canonical){
         //Key released
         if(key & 0x80){
@@ -87,6 +89,8 @@ void stdio::virtual_terminal::handle_input(char key){
     } else {
         //TODO
     }
+
+    lock.release();
 }
 
 size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
@@ -94,6 +98,8 @@ size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
     char c;
 
     while(true){
+        lock.acquire();
+
         while(read < max && !input_buffer.empty()){
             c = input_buffer.pop();
 
@@ -124,8 +130,12 @@ size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
                 }
             }
 
+            lock.release();
+
             return read;
         }
+
+        lock.release();
 
         input_queue.sleep();
     }
@@ -138,6 +148,8 @@ void stdio::init_terminals(){
         terminal.id = i;
         terminal.active = false;
         terminal.canonical = true;
+
+        terminal.lock.init();
     }
 
     active_terminal = 0;
