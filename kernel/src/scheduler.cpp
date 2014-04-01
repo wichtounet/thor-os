@@ -25,6 +25,8 @@
 #include "physical_pointer.hpp"
 #include "kernel_utils.hpp"
 #include "logging.hpp"
+#include "int_lock.hpp"
+#include "explicit_int_lock.hpp"
 
 constexpr const bool DEBUG_SCHEDULER = false;
 
@@ -81,23 +83,24 @@ void idle_task(){
 }
 
 void tasklet_task(){
+    explicit_int_lock lock;
+
     while(true){
         //Wait until there is something to do
         scheduler::block_process();
 
         while(true){
-            size_t rflags;
-            arch::disable_hwint(rflags);
+            lock.lock();
 
             if(tasklets.empty()){
-                arch::enable_hwint(rflags);
+                lock.unlock();
 
                 break;
             }
 
             auto task = tasklets.pop();
 
-            arch::enable_hwint(rflags);
+            lock.unlock();
 
             task.fun(task.d1, task.d2);
         }
@@ -867,8 +870,7 @@ void scheduler::block_process(){
     thor_assert(current_pid != idle_pid, "No reason to block the idle task");
     thor_assert(is_started(), "The scheduler is not started");
     
-    size_t rflags;
-    arch::disable_hwint(rflags);
+    int_lock lock;
 
     //TODO Perhaps not true to block it unconditionally
 
@@ -877,8 +879,6 @@ void scheduler::block_process(){
     state = process_state::BLOCKED;
 
     reschedule();
-
-    arch::enable_hwint(rflags);
 }
 
 void scheduler::unblock_process(pid_t pid){
@@ -887,16 +887,13 @@ void scheduler::unblock_process(pid_t pid){
     thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
-    size_t rflags;
-    arch::disable_hwint(rflags);
+    int_lock lock;
     
     auto& state = pcb[pid].state;
 
     if(state == process_state::BLOCKED || state == process_state::WAITING){
         state = process_state::READY;
     }
-    
-    arch::enable_hwint(rflags);
 }
 
 void scheduler::sleep_ms(pid_t pid, size_t time){
@@ -904,15 +901,12 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
-    size_t rflags;
-    arch::disable_hwint(rflags);
+    int_lock lock;
 
     pcb[pid].state = process_state::SLEEPING;
     pcb[pid].sleep_timeout = time;
 
     reschedule();
-    
-    arch::enable_hwint(rflags);
 }
 
 /* Handle management */
