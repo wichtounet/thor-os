@@ -17,27 +17,23 @@ private:
     scheduler::sleep_queue_ptr* tail = nullptr;
 
 public:
-    bool empty() const {
-        return head == nullptr;
-    }
-
-    scheduler::pid_t wake_up(){
+    void wake_up(){
         size_t rflags;
         arch::disable_hwint(rflags);
-        
-        //Get the first process
-        auto pid = head->pid;
 
-        //Remove the process from the queue
-        head = head->next;
+        if(head){
+            //Get the first process
+            auto pid = head->pid;
 
-        //Indicate to the scheduler that this process will be able
-        //to run
-        scheduler::unblock_process(pid);
+            //Remove the process from the queue
+            head = head->next;
+
+            //Indicate to the scheduler that this process will be able
+            //to run
+            scheduler::unblock_process(pid);
+        }
         
         arch::enable_hwint(rflags);
-
-        return pid;
     }
 
     void sleep(){

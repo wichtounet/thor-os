@@ -80,9 +80,7 @@ void stdio::virtual_terminal::handle_input(char key){
 
                     print(qwertz_key);
 
-                    if(!input_queue.empty()){
-                        input_queue.wake_up();
-                    }
+                    input_queue.wake_up();
                 }
             }
         }
