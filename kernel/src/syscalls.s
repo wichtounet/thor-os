@@ -14,7 +14,9 @@
 .macro create_syscall number
 .global _syscall\number
 _syscall\number:
-    cli
+    //Interrupts are disabled on interrupt gate,
+    //so they must reenabled again
+    sti
 
     push rax
     push \number
