@@ -6,8 +6,8 @@
 //=======================================================================
 
 #include "ata.hpp"
+#include "arch.hpp"
 #include "kernel_utils.hpp"
-#include "timer.hpp"
 #include "kalloc.hpp"
 #include "thor.hpp"
 #include "interrupts.hpp"
@@ -94,11 +94,26 @@ void ata_wait_irq_secondary(){
     secondary_invoked = false;
 }
 
-static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
+void ata_delay(uint16_t controller){
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+}
+
+uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
+    timeout *= 10;
+
     uint8_t status;
     do {
         status = in_byte(controller + ATA_STATUS);
-        timer::sleep_ms(1);
+        ata_delay(controller);
     } while ((status & mask) != value && --timeout);
 
     return timeout;
@@ -117,7 +132,7 @@ bool select_device(ata::drive_descriptor& drive){
     out_byte(controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
 
     //Sleep at least 400ns before reading the status register
-    timer::sleep_ms(1);
+    ata_delay(controller);
 
     if(!wait_for_controller(controller, wait_mask, 0, 10000)){
         return false;
@@ -148,9 +163,9 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
     out_byte(controller + ATA_HCYL, ch);
     out_byte(controller + ATA_DRV_HEAD, (1 << 6) | (drive.slave << 4) | hd);
     out_byte(controller + ATA_COMMAND, command);
-
+        
     //Wait at least 400ns before reading status register
-    timer::sleep_ms(1);
+    ata_delay(controller);
 
     //Wait at most 30 seconds for BSY flag to be cleared
     if(!wait_for_controller(controller, ATA_STATUS_BSY, 0, 30000)){
@@ -196,7 +211,7 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
 bool reset_controller(uint16_t controller){
     out_byte(controller + ATA_DEV_CTL, ATA_CTL_SRST);
 
-    timer::sleep_ms(5);
+    ata_delay(controller);
 
     //The controller should set the BSY flag after, SRST has been set
     if(!wait_for_controller(controller, ATA_STATUS_BSY, ATA_STATUS_BSY, 1000)){
@@ -259,11 +274,11 @@ void identify(ata::drive_descriptor& drive){
 
     //Select the device
     out_byte(drive.controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
-    timer::sleep_ms(1);
+    ata_delay(drive.controller);
 
     //Generate the IDENTIFY command
     out_byte(drive.controller + ATA_COMMAND, ATA_IDENTIFY);
-    timer::sleep_ms(1);
+    ata_delay(drive.controller);
 
     //If status == 0, there are no device
     if(in_byte(drive.controller + ATA_STATUS) == 0){
@@ -303,7 +318,7 @@ void identify(ata::drive_descriptor& drive){
 
         //Generate the ATAPI IDENTIFY command
         out_byte(drive.controller + ATA_COMMAND, 0xA1);
-        timer::sleep_ms(1);
+        ata_delay(drive.controller);
     }
 
     drive.present = true;

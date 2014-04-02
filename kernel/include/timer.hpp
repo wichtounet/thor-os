@@ -17,9 +17,6 @@ void install();
 uint64_t ticks();
 uint64_t seconds();
 
-//Active sleep for I/O functions
-void sleep_ms(uint64_t delay);
-
 void tick();
 
 } //end of timer namespace
