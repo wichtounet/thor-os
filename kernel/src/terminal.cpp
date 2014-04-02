@@ -66,11 +66,10 @@ void stdio::virtual_terminal::handle_input(char key){
             if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
                 shift = true;
             } else if(key == keyboard::KEY_BACKSPACE){
-                if(!input_buffer.empty() || !canonical_buffer.empty()){
+                if(first - last > 0){
+                    --last;
                     print('\b');
                 }
-
-                input_buffer.push('\b');
             } else {
                 auto qwertz_key =
                     shift
@@ -78,7 +77,7 @@ void stdio::virtual_terminal::handle_input(char key){
                     : keyboard::key_to_ascii(key);
 
                 if(qwertz_key){
-                    input_buffer.push(qwertz_key);
+                    buffer_canonical[last++ % INPUT_BUFFER_SIZE] = qwertz_key;
 
                     print(qwertz_key);
 
@@ -94,41 +93,34 @@ void stdio::virtual_terminal::handle_input(char key){
 }
 
 size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
-    size_t read = 0;
-    char c;
-
     while(true){
         lock.acquire();
 
-        while(read < max && !input_buffer.empty()){
-            c = input_buffer.pop();
-
-            canonical_buffer.push(c);
-
-            if(c == '\b'){
-                if(read > 0){
-                    --read;
-                }
-            } else {
-                ++read;
-
-                if(c == '\n'){
+        bool ready = false;
+        if(last - first >= max){
+            ready = true;
+        } else {
+            for(size_t i = first; i < last; ++i){
+                if(buffer_canonical[i % INPUT_BUFFER_SIZE] == '\n'){
+                    ready = true;
                     break;
                 }
             }
         }
 
-        if(read > 0 && (c == '\n' || read == max)){
-            read = 0;
-            while(!canonical_buffer.empty()){
-                auto value = canonical_buffer.pop();
+        if(ready){
+            size_t read = 0;
 
-                if(value == '\b'){
-                    --read;
-                } else {
-                    buffer[read++] = value;
+            while(first + read < last){
+                buffer[read] = buffer_canonical[(first + read) % INPUT_BUFFER_SIZE];
+                ++read;
+                
+                if(buffer_canonical[((first + read) % INPUT_BUFFER_SIZE) - 1] == '\n'){
+                    break;
                 }
             }
+            
+            first += read;
 
             lock.release();
 
@@ -148,6 +140,9 @@ void stdio::init_terminals(){
         terminal.id = i;
         terminal.active = false;
         terminal.canonical = true;
+
+        terminal.first = 0;
+        terminal.last = 0;
 
         terminal.lock.init();
     }

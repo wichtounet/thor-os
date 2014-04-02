@@ -9,6 +9,7 @@
 #define TERMINAL_H
 
 #include <types.hpp>
+#include <array.hpp>
 #include <circular_buffer.hpp>
 
 #include "sleep_queue.hpp"
@@ -23,8 +24,10 @@ struct virtual_terminal {
     bool active;
     bool canonical;
 
-    circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
-    circular_buffer<char, INPUT_BUFFER_SIZE> canonical_buffer;
+    volatile size_t first;
+    volatile size_t last;
+
+    std::array<char, INPUT_BUFFER_SIZE> buffer_canonical;
 
     mutex lock;
     sleep_queue input_queue;
