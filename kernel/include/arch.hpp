@@ -14,6 +14,12 @@ namespace arch {
 
 void enable_sse();
 
+inline size_t get_rflags(){
+    size_t rflags;
+    asm volatile("pushfq; pop %0;" : "=g" (rflags));
+    return rflags;
+}
+
 inline void disable_hwint(size_t& rflags){
     asm volatile("pushfq; pop %0; cli;" : "=g" (rflags));
 }
