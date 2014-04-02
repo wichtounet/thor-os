@@ -605,7 +605,6 @@ void reschedule(){
     //The process just got blocked or put to sleep, choose another one
     if(process.state != scheduler::process_state::RUNNING){
         auto index = select_next_process();
-
         switch_to_process(index);
     }
 
