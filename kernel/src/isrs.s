@@ -12,8 +12,6 @@
 .macro create_irq number
 .global _isr\number
 _isr\number:
-    cli
-
     push \number
 
     jmp isr_common_handler

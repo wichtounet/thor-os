@@ -12,8 +12,6 @@
 .macro create_irq number
 .global _irq\number
 _irq\number:
-    cli
-
     push rax
     push \number
 
