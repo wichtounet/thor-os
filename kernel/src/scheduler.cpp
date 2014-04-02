@@ -177,6 +177,12 @@ void init_task(){
 
     while(true){
         auto pid = scheduler::exec("/bin/tsh", params);
+
+        if(pid < 0){
+            k_print_line("Failed to run shell, exiting init_task");
+            scheduler::kill_current_process();
+        }
+
         scheduler::await_termination(pid);
 
         if(DEBUG_SCHEDULER){
