@@ -119,13 +119,13 @@ void pwd_command(const std::vector<std::string>&){
 int main(){
     get_console_information();
 
-    char input_buffer[64];
+    char input_buffer[128];
     std::string current_input;
+        
+    print("thor> ");
 
     while(true){
-        print("thor> ");
-
-        auto c = read_input(input_buffer, 63);
+        auto c = read_input(input_buffer, 127);
 
         if(input_buffer[c-1] == '\n'){
             if(c > 1){
@@ -174,6 +174,8 @@ int main(){
             }
 
             current_input.clear();
+    
+            print("thor> ");
         } else {
             input_buffer[c] = '\0';
 
