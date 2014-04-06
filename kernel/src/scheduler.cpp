@@ -41,6 +41,7 @@ struct process_control_t {
     scheduler::process_t process;
     scheduler::process_state state;
     scheduler::queue_ptr sleep_queue_ptr;
+    scheduler::queue_ptr run_queue_ptr;
     size_t rounds;
     size_t sleep_timeout;
     std::vector<std::vector<std::string>> handles;
@@ -50,12 +51,84 @@ struct process_control_t {
 //The Process Control Block
 std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
 
+struct process_queue_iterator {
+    scheduler::queue_ptr* pointer;
+
+    process_queue_iterator& operator++(){
+        pointer = pointer->next;
+        return *this;
+    }
+
+    bool operator==(const process_queue_iterator& rhs) const {
+        return rhs.pointer == pointer;
+    }
+    
+    bool operator!=(const process_queue_iterator& rhs) const {
+        return rhs.pointer != pointer;
+    }
+    
+    scheduler::pid_t& operator*(){
+        return pointer->pid;
+    }
+    
+    const scheduler::pid_t& operator*() const {
+        return pointer->pid;
+    }
+};
+
+struct process_queue {
+    scheduler::queue_ptr* head = nullptr;
+    scheduler::queue_ptr* tail = nullptr;
+
+    process_queue_iterator begin(){
+        return {head};
+    }
+    
+    process_queue_iterator end(){
+        return {nullptr};
+    }
+
+    void erase(const process_queue_iterator& it){
+        auto ptr = it.pointer;
+
+        if(tail == head){
+            tail = head = nullptr;
+        } else if(head == ptr){
+            head = head->next;
+            head->prev = nullptr;
+        } else if(tail == ptr){
+            tail = tail->prev;
+            tail->next = nullptr;
+        } else {
+            ptr->prev = ptr->next;
+            ptr->next->prev = ptr->prev;
+        }
+
+        ptr->next = nullptr;
+        ptr->prev = nullptr;
+    }
+
+    void enqueue(scheduler::queue_ptr* ptr){
+        ptr->prev = tail;
+
+        if(!head){
+            head = ptr;
+        } else {
+            tail->next = ptr;
+        }
+            
+        tail = ptr;
+            
+        ptr->next = nullptr;
+    }
+};
+
 //Define one run queue for each priority level
-std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
+std::array<process_queue, scheduler::PRIORITY_LEVELS> run_queues;
 
 circular_buffer<scheduler::tasklet, 64> tasklets;
 
-std::vector<scheduler::pid_t>& run_queue(size_t priority){
+process_queue& run_queue(size_t priority){
     return run_queues[priority - scheduler::MIN_PRIORITY];
 }
 
@@ -139,12 +212,18 @@ void gc_task(){
                 paging::unmap_pages(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
 
                 //6. Remove process from run queue
-                size_t index = 0;
-                for(; index < run_queue(desc.priority).size(); ++index){
-                    if(run_queue(desc.priority)[index] == desc.pid){
-                        run_queue(desc.priority).erase(index);
+                auto& rq = run_queue(desc.priority);
+
+                auto it = rq.begin();
+                auto end = rq.end();
+
+                while(it != end){
+                    if(*it == desc.pid){
+                        rq.erase(it);
                         break;
                     }
+
+                    ++it;
                 }
 
                 //7. Clean process
@@ -232,7 +311,10 @@ void queue_process(scheduler::pid_t pid){
 
     process.state = scheduler::process_state::READY;
 
-    run_queue(process.process.priority).push_back(pid);
+    process.run_queue_ptr.pid = pid;
+    process.sleep_queue_ptr.pid = pid;
+
+    run_queue(process.process.priority).enqueue(&process.run_queue_ptr);
 }
 
 scheduler::process_t& create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)()){
@@ -343,21 +425,28 @@ size_t select_next_process(){
 
     auto& current_run_queue = run_queue(current_priority);
 
-    size_t next_index = 0;
-    for(size_t i = 0; i < current_run_queue.size(); ++i){
-        if(current_run_queue[i] == current_pid){
-            next_index = (i + 1) % current_run_queue.size();
+    auto it = current_run_queue.begin();
+    auto end = current_run_queue.end();
+
+    while(*it != current_pid){
+        ++it;
+    }
+    ++it;
+
+    while(true){
+        if(it == end){
+            it = current_run_queue.begin();
+        }
+
+        if(pcb[*it].state == scheduler::process_state::READY){
+            return *it;
+        }
+
+        if(*it == current_pid){
             break;
         }
-    }
-
-    for(size_t i = 0; i < current_run_queue.size(); ++i){
-        auto index = (next_index + i) % current_run_queue.size();
-        auto pid = current_run_queue[index];
-
-        if(pcb[pid].state == scheduler::process_state::READY){
-            return pid;
-        }
+        
+        ++it;
     }
 
     thor_assert(current_priority > 0, "The idle task should always be ready");
