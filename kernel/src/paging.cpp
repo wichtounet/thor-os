@@ -463,7 +463,7 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
         clear_physical_page(physical_pd);
 
         process.paging_size += paging::PAGE_SIZE;
-        process.segments.push_back({physical_pdpt, 1});
+        process.segments.push_back({physical_pd, 1});
     }
 
     auto physical_pd = reinterpret_cast<uintptr_t>(pdpt[pdpte]) & ~0xFFF;
@@ -482,7 +482,7 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
         clear_physical_page(physical_pt);
 
         process.paging_size += paging::PAGE_SIZE;
-        process.segments.push_back({physical_pdpt, 1});
+        process.segments.push_back({physical_pt, 1});
     }
 
     auto physical_pt = reinterpret_cast<uintptr_t>(pd[pde]) & ~0xFFF;
