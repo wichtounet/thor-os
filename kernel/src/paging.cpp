@@ -11,7 +11,6 @@
 #include "paging.hpp"
 #include "kernel.hpp"
 #include "physical_allocator.hpp"
-#include "console.hpp"
 #include "assert.hpp"
 #include "process.hpp"
 #include "physical_pointer.hpp"
@@ -105,9 +104,7 @@ void paging::init(){
     auto physical_memory = physical_allocator::early_allocate(physical_memory_pages);
 
     if(!physical_memory){
-        k_print_line("Impossible to allocate enough physical memory for paging tables");
-
-        suspend_boot();
+        suspend_kernel("Impossible to allocate enough physical memory for paging tables");
     }
 
     //Compute the physical offsets of the paging tables
