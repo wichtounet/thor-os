@@ -27,11 +27,11 @@ public:
         return __data[pos];
     }
 
-    const T& operator[](size_type pos) const {
+    constexpr const T& operator[](size_type pos) const {
         return __data[pos];
     }
 
-    size_type size(){
+    constexpr size_type size() const {
         return N;
     }
 
