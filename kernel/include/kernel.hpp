@@ -16,5 +16,6 @@ void kernel_main() __attribute__((noreturn));
 
 void suspend_boot() __attribute__((noreturn));
 void suspend_kernel() __attribute__((noreturn));
+void suspend_kernel(const char* message) __attribute__((noreturn));
 
 #endif

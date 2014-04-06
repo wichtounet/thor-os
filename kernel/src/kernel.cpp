@@ -109,11 +109,16 @@ void  kernel_main(){
 }
 
 void suspend_boot(){
-    k_print_line("Impossible to continue boot...");
-    suspend_kernel();
+    suspend_kernel("Impossible to continue boot...");
 }
 
 void suspend_kernel(){
+    asm volatile("cli; hlt");
+    __builtin_unreachable();
+}
+
+void suspend_kernel(const char* message){
+    k_print_line(message);
     asm volatile("cli; hlt");
     __builtin_unreachable();
 }
