@@ -5,8 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef SCHEDULER_H
-#define SCHEDULER_H
+#ifndef SCHEDULER_ASM_H
+#define SCHEDULER_ASM_H
 
 extern "C" {
 

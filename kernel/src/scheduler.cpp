@@ -40,7 +40,7 @@ namespace {
 struct process_control_t {
     scheduler::process_t process;
     scheduler::process_state state;
-    scheduler::sleep_queue_ptr queue_ptr;
+    scheduler::queue_ptr sleep_queue_ptr;
     size_t rounds;
     size_t sleep_timeout;
     std::vector<std::vector<std::string>> handles;
@@ -863,11 +863,11 @@ scheduler::process_t& scheduler::get_process(pid_t pid){
     return pcb[pid].process;
 }
 
-scheduler::sleep_queue_ptr* scheduler::queue_ptr(scheduler::pid_t pid){
+scheduler::queue_ptr* scheduler::sleep_queue_ptr(scheduler::pid_t pid){
     thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
-    return &pcb[pid].queue_ptr;
+    return &pcb[pid].sleep_queue_ptr;
 }
 
 void scheduler::block_process(){

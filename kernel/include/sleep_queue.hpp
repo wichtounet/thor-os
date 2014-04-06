@@ -13,8 +13,8 @@
 
 struct sleep_queue {
 private:
-    volatile scheduler::sleep_queue_ptr* head = nullptr;
-    volatile scheduler::sleep_queue_ptr* tail = nullptr;
+    volatile scheduler::queue_ptr* head = nullptr;
+    volatile scheduler::queue_ptr* tail = nullptr;
 
 public:
     void wake_up(){
@@ -39,7 +39,7 @@ public:
         //Get the current process information
         auto pid = scheduler::get_pid();
 
-        auto queue_ptr = scheduler::queue_ptr(pid);
+        auto queue_ptr = scheduler::sleep_queue_ptr(pid);
         queue_ptr->pid = pid;
         queue_ptr->next = nullptr;
         queue_ptr->prev = nullptr;

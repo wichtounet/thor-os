@@ -18,9 +18,9 @@ namespace scheduler {
 
 constexpr const size_t MAX_PROCESS = 128;
 
-struct sleep_queue_ptr {
-    sleep_queue_ptr* next;
-    sleep_queue_ptr* prev;
+struct queue_ptr {
+    queue_ptr* next;
+    queue_ptr* prev;
     pid_t pid;
 };
 
@@ -40,7 +40,7 @@ scheduler::process_t& get_process(pid_t pid);
 
 void irq_register_tasklet(const tasklet& task);
 
-sleep_queue_ptr* queue_ptr(pid_t pid);
+queue_ptr* sleep_queue_ptr(pid_t pid);
 
 void block_process();
 void unblock_process(pid_t pid);
