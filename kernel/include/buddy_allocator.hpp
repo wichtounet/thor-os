@@ -11,10 +11,10 @@
 #include <array.hpp>
 
 #include "bitmap.hpp"
-
-//For problems during boot
 #include "kernel.hpp"
-#include "console.hpp"
+#include "int_lock.hpp"
+
+//TODO Add more and better assert
 
 template <class T>
 inline constexpr T pow(T const& x, size_t n){
@@ -50,10 +50,11 @@ public:
     }
 
     size_t allocate(size_t pages){
+        int_lock lock;
+
         if(pages > max_block){
             if(pages > max_block * static_bitmap::bits_per_word){
-                k_print_line("Virtual block too big");
-                suspend_boot();
+                suspend_kernel("Virtual block too big");
 
                 //That means we try to allocate more than 33M at the same time
                 //probably not a good idea
@@ -91,10 +92,13 @@ public:
     }
 
     void free(size_t address, size_t pages){
+        thor_assert(address >= first_address && address <= last_address, "Out of range address to free");
+
+        int_lock lock;
+
         if(pages > max_block){
             if(pages > max_block * static_bitmap::bits_per_word){
-                k_print_line("Virtual block too big");
-                suspend_boot();
+                suspend_kernel("Virtual block too big");
 
                 //That means we try to allocate more than 33M at the same time
                 //probably not a good idea
