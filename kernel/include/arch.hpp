@@ -28,6 +28,11 @@ inline void enable_hwint(size_t& rflags){
     asm volatile("push %0; popfq; " :: "g" (rflags));
 }
 
+inline bool interrupts_enabled(){
+    auto flags = get_rflags();
+    return flags & 0x200;
+}
+
 } //enf of arch namespace
 
 #endif
