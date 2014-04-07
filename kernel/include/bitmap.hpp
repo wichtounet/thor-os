@@ -82,6 +82,8 @@ struct static_bitmap {
     }
 
     void set(size_t bit){
+        thor_assert(word_offset(bit) < words, "word out of range");
+
         data[word_offset(bit)] |= bit_mask(bit);
     }
 
