@@ -26,6 +26,7 @@
 #include "logging.hpp"
 #include "int_lock.hpp"
 #include "explicit_int_lock.hpp"
+#include "kernel.hpp"
 
 constexpr const bool DEBUG_SCHEDULER = false;
 
@@ -44,8 +45,8 @@ struct process_control_t {
     scheduler::queue_ptr run_queue_ptr;
     size_t rounds;
     size_t sleep_timeout;
-    std::vector<std::vector<std::string>> handles;
     std::vector<std::string> working_directory;
+    std::vector<std::vector<std::string>> handles;
 };
 
 //The Process Control Block
@@ -183,11 +184,12 @@ void gc_task(){
     while(true){
         //Wait until there is something to do
         scheduler::block_process();
-
+        
         //2. Clean up each killed process
-
+        
         for(auto& process : pcb){
             if(process.state == scheduler::process_state::KILLED){
+                int_lock l;
                 auto& desc = process.process;
 
                 if(DEBUG_SCHEDULER){
@@ -212,18 +214,22 @@ void gc_task(){
                 paging::unmap_pages(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
 
                 //6. Remove process from run queue
-                auto& rq = run_queue(desc.priority);
+                {
+                    int_lock lock;
 
-                auto it = rq.begin();
-                auto end = rq.end();
+                    auto& rq = run_queue(desc.priority);
 
-                while(it != end){
-                    if(*it == desc.pid){
-                        rq.erase(it);
-                        break;
+                    auto it = rq.begin();
+                    auto end = rq.end();
+
+                    while(it != end){
+                        if(*it == desc.pid){
+                            rq.erase(it);
+                            break;
+                        }
+
+                        ++it;
                     }
-
-                    ++it;
                 }
 
                 //7. Clean process
@@ -258,14 +264,15 @@ void init_task(){
         auto pid = scheduler::exec("/bin/tsh", params);
 
         if(pid < 0){
-            k_print_line("Failed to run shell, exiting init_task");
-            scheduler::kill_current_process();
+            k_print("Failed to run shell, hang system. Error: ");
+            k_print_line(pid);
+            suspend_kernel();
         }
 
         scheduler::await_termination(pid);
 
         if(DEBUG_SCHEDULER){
-            k_print_line("shell exited, run new one");
+            //k_print_line("shell exited, run new one");
         }
     }
 }
@@ -314,6 +321,7 @@ void queue_process(scheduler::pid_t pid){
     process.run_queue_ptr.pid = pid;
     process.sleep_queue_ptr.pid = pid;
 
+    int_lock lock;
     run_queue(process.process.priority).enqueue(&process.run_queue_ptr);
 }
 
@@ -410,6 +418,8 @@ void switch_to_process(size_t pid){
 }
 
 size_t select_next_process(){
+    int_lock lock;
+
     auto current_priority = pcb[current_pid].process.priority;
 
     //1. Run a process of higher priority, if any
@@ -741,162 +751,6 @@ bool scheduler::is_started(){
     return started;
 }
 
-//This function can only be called by IRQ
-//As such, it is ininpteruptible
-void scheduler::irq_register_tasklet(const tasklet& task){
-    thor_assert(is_started(), "The scheduler is not started");
-
-    tasklets.push(task);
-
-    auto& state = pcb[tasklet_pid].state;
-
-    thor_assert(state == process_state::BLOCKED || state == process_state::RUNNING || state == process_state::READY, "Invalid state for tasklet executor");
-
-    if(state == process_state::BLOCKED){
-        state = process_state::READY;
-
-        reschedule();
-    }
-}
-
-int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
-    thor_assert(is_started(), "The scheduler is not started");
-
-    std::string content;
-    auto result = vfs::direct_read(file, content);
-    if(result < 0){
-        if(DEBUG_SCHEDULER){
-            k_print_line(std::error_message(-result));
-        }
-
-        return result;
-    }
-
-    if(content.empty()){
-        if(DEBUG_SCHEDULER){
-            k_print_line("Not a file");
-        }
-
-        return -std::ERROR_NOT_EXISTS;
-    }
-
-    auto buffer = content.c_str();
-
-    if(!elf::is_valid(buffer)){
-        if(DEBUG_SCHEDULER){
-            k_print_line("Not a valid file");
-        }
-
-        return -std::ERROR_NOT_EXECUTABLE;
-    }
-
-    auto& process = new_process();
-
-    if(!create_paging(buffer, process)){
-        if(DEBUG_SCHEDULER){
-            k_print_line("Impossible to create paging");
-        }
-
-        return -std::ERROR_FAILED_EXECUTION;
-    }
-
-    process.brk_start = program_break;
-    process.brk_end = program_break;
-
-    init_context(process, buffer, file, params);
-
-    queue_process(process.pid);
-
-    pcb[process.pid].working_directory.clear();
-    for(auto& p : pcb[current_pid].working_directory){
-        pcb[process.pid].working_directory.push_back(p);
-    }
-
-    //logging::logf("Exec process pid=%u, ppid=%u", process.pid, process.ppid);
-
-    return process.pid;
-}
-
-void scheduler::sbrk(size_t inc){
-    thor_assert(is_started(), "The scheduler is not started");
-
-    auto& process = pcb[current_pid].process;
-
-    size_t size = (inc + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
-    size_t pages = size / paging::PAGE_SIZE;
-
-    //Get some physical memory
-    auto physical = physical_allocator::allocate(pages);
-
-    if(!physical){
-        return;
-    }
-
-    auto virtual_start = process.brk_start;
-
-    if(DEBUG_SCHEDULER){
-        printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, virtual_start, physical);
-    }
-
-    //Map the memory inside the process memory space
-    if(!paging::user_map_pages(process, virtual_start, physical, pages)){
-        physical_allocator::free(physical, pages);
-        return;
-    }
-
-    process.segments.push_back({physical, pages});
-
-    process.brk_end += size;
-}
-
-void scheduler::await_termination(pid_t pid){
-    thor_assert(is_started(), "The scheduler is not started");
-
-    while(true){
-        bool found = false;
-        for(auto& process : pcb){
-            if(process.process.ppid == current_pid && process.process.pid == pid){
-                if(process.state == process_state::KILLED){
-                    return;
-                }
-
-                found = true;
-            }
-        }
-
-        if(!found){
-            return;
-        }
-
-        pcb[current_pid].state = process_state::WAITING;
-        reschedule();
-    }
-}
-
-void scheduler::kill_current_process(){
-    thor_assert(is_started(), "The scheduler is not started");
-
-    if(DEBUG_SCHEDULER){
-        printf("Kill %u\n", current_pid);
-    }
-
-    //Notify parent if waiting
-    auto ppid = pcb[current_pid].process.ppid;
-    for(auto& process : pcb){
-        if(process.process.pid == ppid && process.state == process_state::WAITING){
-            unblock_process(process.process.pid);
-        }
-    }
-
-    //The GC thread will clean up eventually
-    unblock_process(gc_pid);
-
-    pcb[current_pid].state = scheduler::process_state::KILLED;
-
-    //Run another process
-    reschedule();
-}
-
 void scheduler::tick(){
     //It is the only function that can be called when !started
     if(!is_started()){
@@ -939,6 +793,24 @@ void scheduler::tick(){
     //At this point we just have to return to the current process
 }
 
+//This function can only be called by IRQ
+//As such, it is ininpteruptible
+void scheduler::irq_register_tasklet(const tasklet& task){
+    thor_assert(is_started(), "The scheduler is not started");
+
+    tasklets.push(task);
+
+    auto& state = pcb[tasklet_pid].state;
+
+    thor_assert(state == process_state::BLOCKED || state == process_state::RUNNING || state == process_state::READY, "Invalid state for tasklet executor");
+
+    if(state == process_state::BLOCKED){
+        state = process_state::READY;
+
+        reschedule();
+    }
+}
+
 scheduler::pid_t scheduler::get_pid(){
     thor_assert(is_started(), "The scheduler is not started");
 
@@ -959,6 +831,65 @@ scheduler::queue_ptr* scheduler::sleep_queue_ptr(scheduler::pid_t pid){
     return &pcb[pid].sleep_queue_ptr;
 }
 
+int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
+    thor_assert(is_started(), "The scheduler is not started");
+
+    std::string content;
+    auto result = vfs::direct_read(file, content);
+    if(result < 0){
+        if(DEBUG_SCHEDULER){
+            k_print_line(std::error_message(-result));
+        }
+
+        return result;
+    }
+
+    if(content.empty()){
+        if(DEBUG_SCHEDULER){
+            k_print_line("Not a file");
+        }
+
+        return -std::ERROR_NOT_EXISTS;
+    }
+
+    auto buffer = content.c_str();
+
+    if(!elf::is_valid(buffer)){
+        if(DEBUG_SCHEDULER){
+            k_print_line("Not a valid file");
+        }
+
+        return -std::ERROR_NOT_EXECUTABLE;
+    }
+    
+    int_lock lock;
+
+    auto& process = new_process();
+
+    if(!create_paging(buffer, process)){
+        if(DEBUG_SCHEDULER){
+            k_print_line("Impossible to create paging");
+        }
+
+        return -std::ERROR_FAILED_EXECUTION;
+    }
+
+    process.brk_start = program_break;
+    process.brk_end = program_break;
+
+    init_context(process, buffer, file, params);
+
+    queue_process(process.pid);
+
+    pcb[process.pid].working_directory.clear();
+    for(auto& p : pcb[current_pid].working_directory){
+        pcb[process.pid].working_directory.push_back(p);
+    }
+
+    //logging::logf("Exec process pid=%u, ppid=%u", process.pid, process.ppid);
+
+    return process.pid;
+}
 void scheduler::block_process(){
     thor_assert(current_pid != idle_pid, "No reason to block the idle task");
     thor_assert(is_started(), "The scheduler is not started");
@@ -989,6 +920,60 @@ void scheduler::unblock_process(pid_t pid){
     }
 }
 
+void scheduler::kill_current_process(){
+    thor_assert(is_started(), "The scheduler is not started");
+    thor_assert(!pcb[current_pid].process.system, "System threads are not safe to be killed (gc_task does not handle it)");
+
+    if(DEBUG_SCHEDULER){
+        printf("Kill %u\n", current_pid);
+    }
+
+    int_lock lock;
+
+    //Notify parent if waiting
+    auto ppid = pcb[current_pid].process.ppid;
+    for(auto& process : pcb){
+        if(process.process.pid == ppid && process.state == process_state::WAITING){
+            unblock_process(process.process.pid);
+        }
+    }
+
+    //The GC thread will clean up eventually
+    unblock_process(gc_pid);
+
+    pcb[current_pid].state = scheduler::process_state::KILLED;
+
+    //Run another process
+    reschedule();
+}
+
+void scheduler::await_termination(pid_t pid){
+    thor_assert(is_started(), "The scheduler is not started");
+
+    while(true){
+        int_lock lock;
+
+        bool found = false;
+        for(auto& process : pcb){
+            if(process.process.ppid == current_pid && process.process.pid == pid){
+                if(process.state == process_state::KILLED){
+                    return;
+                }
+
+                found = true;
+            }
+        }
+
+        if(!found){
+            return;
+        }
+
+        pcb[current_pid].state = process_state::WAITING;
+
+        reschedule();
+    }
+}
+
 void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
@@ -1000,6 +985,38 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     pcb[pid].sleep_timeout = time;
 
     reschedule();
+}
+
+void scheduler::sbrk(size_t inc){
+    thor_assert(is_started(), "The scheduler is not started");
+
+    auto& process = pcb[current_pid].process;
+
+    size_t size = (inc + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
+    size_t pages = size / paging::PAGE_SIZE;
+
+    //Get some physical memory
+    auto physical = physical_allocator::allocate(pages);
+
+    if(!physical){
+        return;
+    }
+
+    auto virtual_start = process.brk_start;
+
+    if(DEBUG_SCHEDULER){
+        printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, virtual_start, physical);
+    }
+
+    //Map the memory inside the process memory space
+    if(!paging::user_map_pages(process, virtual_start, physical, pages)){
+        physical_allocator::free(physical, pages);
+        return;
+    }
+
+    process.segments.push_back({physical, pages});
+
+    process.brk_end += size;
 }
 
 /* Handle management */
