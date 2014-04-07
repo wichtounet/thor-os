@@ -11,6 +11,7 @@
 #include "paging.hpp"
 #include "e820.hpp"
 #include "mutex.hpp"
+#include "explicit_int_lock.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -20,8 +21,6 @@ namespace {
 //can produce a lot of output
 const bool DEBUG_MALLOC = false;
 const bool TRACE_MALLOC = false;
-
-mutex lock;
 
 size_t _used_memory;
 size_t _allocated_memory;
@@ -323,18 +322,6 @@ std::string sysfs_used(){
     return std::to_string(kalloc::used_memory());
 }
 
-void malloc_lock(){
-    if(scheduler::is_started()){
-        lock.acquire();
-    }
-}
-
-void malloc_unlock(){
-    if(scheduler::is_started()){
-        lock.release();
-    }
-}
-
 } //end of anonymous namespace
 
 void kalloc::init(){
@@ -349,12 +336,10 @@ void kalloc::finalize(){
     sysfs::set_dynamic_value("/sys/", "/memory/dynamic/free", &sysfs_free);
     sysfs::set_dynamic_value("/sys/", "/memory/dynamic/used", &sysfs_used);
     sysfs::set_dynamic_value("/sys/", "/memory/dynamic/allocated", &sysfs_allocated);
-
-    lock.init();
 }
 
 void* kalloc::k_malloc(uint64_t bytes){
-    malloc_lock();
+    int_lock lock;
 
     auto current = malloc_head->next();
 
@@ -436,13 +421,11 @@ void* kalloc::k_malloc(uint64_t bytes){
         printf("m %u(%u) %h ", bytes, current->size(), block_start);
     }
 
-    malloc_unlock();
-
     return reinterpret_cast<void*>(block_start);
 }
 
 void kalloc::k_free(void* block){
-    malloc_lock();
+    int_lock lock;
 
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
@@ -465,8 +448,6 @@ void kalloc::k_free(void* block){
     insert_after(malloc_head, free_header);
 
     debug_malloc<DEBUG_MALLOC>("after free");
-
-    malloc_unlock();
 }
 
 size_t kalloc::allocated_memory(){
