@@ -15,6 +15,7 @@
 #include "process.hpp"
 #include "physical_pointer.hpp"
 #include "kernel_utils.hpp"
+#include "int_lock.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -95,6 +96,13 @@ size_t early_map_page_clear(size_t physical){
     std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
 
     return virt;
+}
+
+void clear_physical_page(size_t physical){
+    physical_pointer ptr(physical, 1);
+
+    auto it = ptr.as_ptr<uint64_t>();
+    std::fill_n(it, paging::PAGE_SIZE / sizeof(uint64_t), 0);
 }
 
 } //end of anonymous namespace
@@ -262,6 +270,8 @@ bool paging::page_free_or_set(size_t virt, size_t physical){
 }
 
 bool paging::map(size_t virt, size_t physical, uint8_t flags){
+    int_lock lock;
+
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -301,6 +311,8 @@ bool paging::map(size_t virt, size_t physical, uint8_t flags){
 }
 
 bool paging::map_pages(size_t virt, size_t physical, size_t pages, uint8_t flags){
+    int_lock lock;
+
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -331,6 +343,8 @@ bool paging::map_pages(size_t virt, size_t physical, size_t pages, uint8_t flags
 }
 
 bool paging::unmap(size_t virt){
+    int_lock lock;
+
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -375,6 +389,8 @@ bool paging::unmap(size_t virt){
 }
 
 bool paging::unmap_pages(size_t virt, size_t pages){
+    int_lock lock;
+
     //The address must be page-aligned
     if(!page_aligned(virt)){
         return false;
@@ -399,7 +415,10 @@ bool paging::identity_map(size_t virt, uint8_t flags){
 bool paging::identity_map_pages(size_t virt, size_t pages, uint8_t flags){
     return map_pages(virt, virt, pages, flags);
 }
+
 void paging::map_kernel_inside_user(scheduler::process_t& process){
+    int_lock lock;
+
     physical_pointer cr3_ptr(process.physical_cr3, 1);
 
     //As we are ensuring that the first PML4T entries are reserved to the
@@ -411,15 +430,10 @@ void paging::map_kernel_inside_user(scheduler::process_t& process){
     }
 }
 
-void clear_physical_page(size_t physical){
-    physical_pointer ptr(physical, 1);
-
-    auto it = ptr.as_ptr<uint64_t>();
-    std::fill_n(it, paging::PAGE_SIZE / sizeof(uint64_t), 0);
-}
-
 //TODO It is highly inefficient to remap CR3 each time
 bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physical){
+    int_lock lock;
+
     physical_pointer cr3_ptr(process.physical_cr3, 1);
 
     if(!cr3_ptr){
@@ -498,6 +512,8 @@ bool paging::user_map(scheduler::process_t& process, size_t virt, size_t physica
 }
 
 bool paging::user_map_pages(scheduler::process_t& process, size_t virt, size_t physical, size_t pages){
+    int_lock lock;
+
     //Map each page
     for(size_t page = 0; page < pages; ++page){
         auto virt_addr = virt + page * PAGE_SIZE;
