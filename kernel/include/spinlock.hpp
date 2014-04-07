@@ -8,6 +8,8 @@
 #ifndef SPINLOCK_H
 #define SPINLOCK_H
 
+//Should never been used when interrupts are disabled
+
 struct spinlock {
 private:
     volatile size_t lock = 0;
