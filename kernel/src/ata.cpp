@@ -14,6 +14,7 @@
 #include "console.hpp"
 #include "errors.hpp"
 #include "disks.hpp"
+#include "semaphore.hpp"
 
 namespace {
 
@@ -56,42 +57,23 @@ static constexpr const size_t BLOCK_SIZE = 512;
 
 ata::drive_descriptor* drives;
 
-volatile bool primary_invoked = false;
-volatile bool secondary_invoked = false;
-
-//TODO In the future, the wait for IRQs, could
-//be done with a semaphore
+semaphore primary_sem;
+semaphore secondary_sem;
 
 void primary_controller_handler(interrupt::syscall_regs*){
-    primary_invoked = true;
+    primary_sem.signal();
 }
 
 void secondary_controller_handler(interrupt::syscall_regs*){
-    secondary_invoked = true;
+    secondary_sem.signal();
 }
 
 void ata_wait_irq_primary(){
-    while(!primary_invoked){
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-    }
-
-    primary_invoked = false;
+    primary_sem.wait();
 }
 
 void ata_wait_irq_secondary(){
-    while(!secondary_invoked){
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-        __asm__  __volatile__ ("nop");
-    }
-
-    secondary_invoked = false;
+    secondary_sem.wait();
 }
 
 void ata_delay(uint16_t controller){
@@ -360,6 +342,9 @@ void ata::detect_disks(){
 
     interrupt::register_irq_handler(14, primary_controller_handler);
     interrupt::register_irq_handler(15, secondary_controller_handler);
+
+    primary_sem.init(0);
+    secondary_sem.init(0);
 }
 
 uint8_t ata::number_of_disks(){
