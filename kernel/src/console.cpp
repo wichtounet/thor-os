@@ -13,6 +13,9 @@
 #include "console.hpp"
 #include "vesa.hpp"
 
+#include "spinlock.hpp"
+#include "lock_guard.hpp"
+
 #include "text_console.hpp"
 #include "vesa_console.hpp"
 
@@ -22,12 +25,20 @@ text_console t_console;
 vesa_console v_console;
 bool text = true;
 
+volatile size_t current_line = 0;
+volatile size_t current_column = 0;
+
+spinlock lock;
+
 void clear(){
     if(text){
         t_console.clear();
     } else {
         v_console.clear();
     }
+
+    current_line = 0;
+    current_column = 0;
 }
 
 void scroll_up(){
@@ -38,6 +49,18 @@ void scroll_up(){
     }
 }
 
+void next_line(){
+    ++current_line;
+
+    if(current_line == get_rows()){
+        scroll_up();
+
+        --current_line;
+    }
+
+    current_column = 0;
+}
+
 void print_char(size_t line, size_t column, char c){
     if(text){
         t_console.print_char(line, column, c);
@@ -45,9 +68,6 @@ void print_char(size_t line, size_t column, char c){
         v_console.print_char(line, column, c);
     }
 }
-
-size_t current_line = 0;
-size_t current_column = 0;
 
 template<int B, typename D>
 void print_unsigned(D number){
@@ -109,22 +129,6 @@ size_t get_columns(){
     }
 }
 
-void set_column(size_t column){
-    current_column = column;
-}
-
-size_t get_column(){
-    return current_column;
-}
-
-void set_line(size_t line){
-    current_line= line;
-}
-
-size_t get_line(){
-    return current_line;
-}
-
 void k_print(uint8_t number){
     print_unsigned<3>(number);
 }
@@ -157,28 +161,20 @@ void k_print(int64_t number){
     print_signed<20,uint64_t,int64_t>(number);
 }
 
-void next_line(){
-    ++current_line;
-
-    if(current_line == get_rows()){
-        scroll_up();
-
-        --current_line;
-    }
-
-    current_column = 0;
-}
-
 void k_print(char key){
     if(key == '\n'){
+        std::lock_guard<spinlock> l(lock);
         next_line();
     } else if(key == '\b'){
+        std::lock_guard<spinlock> l(lock);
+
         --current_column;
-        k_print(' ');
-        --current_column;
+        print_char(current_line, current_column, ' ');
     } else if(key == '\t'){
         k_print("  ");
     } else {
+        std::lock_guard<spinlock> l(lock);
+
         print_char(current_line, current_column, key);
 
         ++current_column;
@@ -208,10 +204,9 @@ void k_print(const char* str, uint64_t end){
 }
 
 void wipeout(){
-    clear();
+    std::lock_guard<spinlock> l(lock);
 
-    current_line = 0;
-    current_column = 0;
+    clear();
 }
 
 #include "printf_def.hpp"

@@ -19,12 +19,6 @@ void init_console();
 size_t get_columns();
 size_t get_rows();
 
-void set_column(size_t column);
-size_t get_column();
-
-void set_line(size_t line);
-size_t get_line();
-
 void wipeout();
 void k_print(char key);
 void k_print(const char* string);
