@@ -17,6 +17,8 @@ bootloader/stage2.bin: force_look
 programs: force_look tlib/libtlib.a
 	cd programs/; ${MAKE} dist
 
+compile: bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin programs
+
 hdd.img:
 	dd if=/dev/zero of=hdd.img bs=516096c count=1000
 	(echo n; echo p; echo 1; echo ""; echo ""; echo t; echo c; echo a; echo 1; echo w;) | sudo fdisk -u -C1000 -S63 -H16 hdd.img
