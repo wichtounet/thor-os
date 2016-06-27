@@ -40,7 +40,7 @@ thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin 
 	sudo /sbin/losetup -d /dev/loop0
 
 qemu: default
-	qemu-kvm -cpu host -vga std -hda hdd.img
+	qemu-system-x86_64 -enable-kvm -cpu host -vga std -hda hdd.img
 
 bochs: default
 	echo "c" > commands
