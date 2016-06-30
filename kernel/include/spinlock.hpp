@@ -16,6 +16,7 @@ public:
     void acquire(){
         while(!__sync_bool_compare_and_swap(&lock, 0, 1));
         __sync_synchronize();
+        //TODO The last synchronize is probably not necessary
     }
 
     void release(){
