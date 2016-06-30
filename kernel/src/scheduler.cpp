@@ -61,16 +61,16 @@ mutex& run_queue_lock(size_t priority){
     return run_queue_locks[priority - scheduler::MIN_PRIORITY];
 }
 
-bool started = false;
+volatile bool started = false;
 
 constexpr const size_t STACK_ALIGNMENT = 16;
 
-constexpr const size_t TURNOVER = 10;
-constexpr const size_t QUANTUM_SIZE = 1000;
+constexpr const size_t TURNOVER = 5;
+constexpr const size_t QUANTUM_SIZE = 50;
 
 size_t current_ticks = 0;
 
-size_t current_pid;
+volatile size_t current_pid;
 size_t next_pid = 0;
 
 size_t gc_pid = 0;
@@ -190,6 +190,19 @@ scheduler::process_t& new_process(){
     return process.process;
 }
 
+void queue_system_process(scheduler::pid_t pid){
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+
+    auto& process = pcb[pid];
+
+    thor_assert(process.process.priority <= scheduler::MAX_PRIORITY, "Invalid priority");
+    thor_assert(process.process.priority >= scheduler::MIN_PRIORITY, "Invalid priority");
+
+    process.state = scheduler::process_state::READY;
+
+    run_queue(process.process.priority).push_back(pid);
+}
+
 void queue_process(scheduler::pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
@@ -240,7 +253,7 @@ void create_idle_task(){
     idle_process.ppid = 0;
     idle_process.priority = scheduler::MIN_PRIORITY;
 
-    queue_process(idle_process.pid);
+    queue_system_process(idle_process.pid);
 }
 
 void create_init_task(){
@@ -249,7 +262,7 @@ void create_init_task(){
     init_process.ppid = 0;
     init_process.priority = scheduler::MIN_PRIORITY + 1;
 
-    queue_process(init_process.pid);
+    queue_system_process(init_process.pid);
 }
 
 void create_gc_task(){
@@ -258,7 +271,7 @@ void create_gc_task(){
     gc_process.ppid = 1;
     gc_process.priority = scheduler::MIN_PRIORITY + 1;
 
-    queue_process(gc_process.pid);
+    queue_system_process(gc_process.pid);
 
     gc_pid = gc_process.pid;
 }
@@ -367,7 +380,6 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
     if(DEBUG_SCHEDULER){
         printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, first_page, aligned_physical_memory);
     }
-
 
     //4. Map physical allocated memory to the necessary virtual memory
     if(!paging::user_map_pages(process, first_page, aligned_physical_memory, pages)){
@@ -797,7 +809,6 @@ scheduler::process_t& scheduler::get_process(pid_t pid){
 
 void scheduler::block_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
-    thor_assert(pcb[pid].state == process_state::RUNNING, "Can only block RUNNING processes");
 
     if(DEBUG_SCHEDULER){
         printf("Block process %u\n", pid);
