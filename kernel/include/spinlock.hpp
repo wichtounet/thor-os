@@ -15,6 +15,7 @@ private:
 public:
     void acquire(){
         while(!__sync_bool_compare_and_swap(&lock, 0, 1));
+        __sync_synchronize();
     }
 
     void release(){
