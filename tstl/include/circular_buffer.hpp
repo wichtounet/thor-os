@@ -42,6 +42,10 @@ public:
         }
     }
 
+    T top() const {
+        return buffer[start];
+    }
+
     T pop(){
         auto value = buffer[start];
         start = (start + 1) % Size;
