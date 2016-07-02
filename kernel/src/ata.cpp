@@ -118,11 +118,20 @@ void ata_wait_irq_secondary(){
     }
 }
 
+inline void ata_400ns_delay(uint16_t /*controller*/){
+    timer::sleep_ms(1);
+
+    //TODO Ideally, we should have a real 400ns delay by simply reading the controller status 4 times
+}
+
 static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
     uint8_t status;
     do {
+        // Sleep at least 400ns before reading the status register
+        ata_400ns_delay(controller);
+
+        // Final read of the controller status
         status = in_byte(controller + ATA_STATUS);
-        timer::sleep_ms(1);
     } while ((status & mask) != value && --timeout);
 
     return timeout;
@@ -139,9 +148,6 @@ bool select_device(ata::drive_descriptor& drive){
 
     //Indicate the selected device
     out_byte(controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
-
-    //Sleep at least 400ns before reading the status register
-    timer::sleep_ms(1);
 
     if(!wait_for_controller(controller, wait_mask, 0, 10000)){
         return false;
@@ -174,9 +180,6 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
     out_byte(controller + ATA_HCYL, ch);
     out_byte(controller + ATA_DRV_HEAD, (1 << 6) | (drive.slave << 4) | hd);
     out_byte(controller + ATA_COMMAND, command);
-
-    //Wait at least 400ns before reading status register
-    timer::sleep_ms(1);
 
     //Wait at most 30 seconds for BSY flag to be cleared
     if(!wait_for_controller(controller, ATA_STATUS_BSY, 0, 30000)){
