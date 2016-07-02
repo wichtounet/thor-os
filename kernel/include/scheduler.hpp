@@ -25,6 +25,7 @@ void unblock_process(pid_t pid);
 
 void init();
 void start() __attribute__((noreturn));
+bool is_started();
 
 int64_t exec(const std::string& path, const std::vector<std::string>& params);
 
@@ -44,6 +45,9 @@ void release_handle(size_t fd);
 
 const std::vector<std::string>& get_working_directory();
 void set_working_directory(const std::vector<std::string>& directory);
+
+void block_process_light(pid_t pid);
+//TODO Maybe do that for unblock as well!
 
 } //end of namespace scheduler
 

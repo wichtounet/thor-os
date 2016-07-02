@@ -27,8 +27,6 @@
 #include "kernel_utils.hpp"
 #include "logging.hpp"
 
-constexpr const bool DEBUG_SCHEDULER = false;
-
 //Provided by task_switch.s
 extern "C" {
 extern void task_switch(size_t current, size_t next);
@@ -51,13 +49,13 @@ std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
 
 //Define one run queue for each priority level
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
-std::array<mutex, scheduler::PRIORITY_LEVELS> run_queue_locks;
+std::array<mutex<>, scheduler::PRIORITY_LEVELS> run_queue_locks;
 
 std::vector<scheduler::pid_t>& run_queue(size_t priority){
     return run_queues[priority - scheduler::MIN_PRIORITY];
 }
 
-mutex& run_queue_lock(size_t priority){
+mutex<>& run_queue_lock(size_t priority){
     return run_queue_locks[priority - scheduler::MIN_PRIORITY];
 }
 
@@ -92,9 +90,7 @@ void gc_task(){
             if(process.state == scheduler::process_state::KILLED){
                 auto& desc = process.process;
 
-                if(DEBUG_SCHEDULER){
-                    printf("Clean process %u\n", desc.pid);
-                }
+                logging::logf(logging::log_level::DEBUG, "Clean process %u\n", desc.pid);
 
                 //1. Release physical memory of PML4T
                 physical_allocator::free(desc.physical_cr3, 1);
@@ -116,7 +112,7 @@ void gc_task(){
                 //6. Remove process from run queue
                 size_t index = 0;
                 for(; index < run_queue(desc.priority).size(); ++index){
-                    std::lock_guard<mutex> l(run_queue_lock(desc.priority));
+                    std::lock_guard<mutex<>> l(run_queue_lock(desc.priority));
 
                     if(run_queue(desc.priority)[index] == desc.pid){
                         run_queue(desc.priority).erase(index);
@@ -148,7 +144,7 @@ void gc_task(){
 
 //TODO tsh should be configured somewhere
 void init_task(){
-    logging::log("init_task started");
+    logging::logf(logging::log_level::DEBUG, "init_task started (pid:%d)\n", scheduler::get_pid());
 
     std::vector<std::string> params;
 
@@ -156,9 +152,7 @@ void init_task(){
         auto pid = scheduler::exec("/bin/tsh", params);
         scheduler::await_termination(pid);
 
-        if(DEBUG_SCHEDULER){
-            k_print_line("shell exited, run new one");
-        }
+        logging::log(logging::log_level::DEBUG, "shell exited, run new one\n");
     }
 }
 
@@ -213,7 +207,7 @@ void queue_process(scheduler::pid_t pid){
 
     process.state = scheduler::process_state::READY;
 
-    std::lock_guard<mutex> l(run_queue_lock(process.process.priority));
+    std::lock_guard<mutex<>> l(run_queue_lock(process.process.priority));
     run_queue(process.process.priority).push_back(pid);
 }
 
@@ -280,9 +274,7 @@ void switch_to_process(size_t pid){
     auto old_pid = current_pid;
     current_pid = pid;
 
-    if(DEBUG_SCHEDULER){
-        printf("Switch to %u\n", current_pid);
-    }
+    logging::logf(logging::log_level::DEBUG, "Switch to %u\n", current_pid);
 
     auto& process = pcb[current_pid];
 
@@ -299,7 +291,7 @@ size_t select_next_process(){
 
     //1. Run a process of higher priority, if any
     for(size_t p = scheduler::MAX_PRIORITY; p > current_priority; --p){
-        std::lock_guard<mutex> l(run_queue_lock(p));
+        std::lock_guard<mutex<>> l(run_queue_lock(p));
 
         for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
@@ -311,7 +303,7 @@ size_t select_next_process(){
     //2. Run the next process of the same priority
 
     {
-        std::lock_guard<mutex> l(run_queue_lock(current_priority));
+        std::lock_guard<mutex<>> l(run_queue_lock(current_priority));
 
         auto& current_run_queue = run_queue(current_priority);
 
@@ -338,7 +330,7 @@ size_t select_next_process(){
     //3. Run a process of lower priority
 
     for(size_t p = current_priority - 1; p >= scheduler::MIN_PRIORITY; --p){
-        std::lock_guard<mutex> l(run_queue_lock(p));
+        std::lock_guard<mutex<>> l(run_queue_lock(p));
 
         for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
@@ -377,15 +369,11 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
     auto aligned_physical_memory = paging::page_aligned(physical_memory) ? physical_memory :
             (physical_memory / paging::PAGE_SIZE + 1) * paging::PAGE_SIZE;
 
-    if(DEBUG_SCHEDULER){
-        printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, first_page, aligned_physical_memory);
-    }
+    logging::logf(logging::log_level::DEBUG, "Map(p%u) virtual:%h into phys: %h\n", process.pid, first_page, aligned_physical_memory);
 
     //4. Map physical allocated memory to the necessary virtual memory
     if(!paging::user_map_pages(process, first_page, aligned_physical_memory, pages)){
-        if(DEBUG_SCHEDULER){
-            k_print_line("Impossible to map in user space");
-        }
+        logging::log(logging::log_level::DEBUG, "Impossible to map in user space\n");
 
         return false;
     }
@@ -409,9 +397,7 @@ bool create_paging(char* buffer, scheduler::process_t& process){
     process.physical_cr3 = physical_allocator::allocate(1);
     process.paging_size = paging::PAGE_SIZE;
 
-    if(DEBUG_SCHEDULER){
-        printf("Process %u cr3:%h\n", process.pid, process.physical_cr3);
-    }
+    logging::logf(logging::log_level::DEBUG, "Process %u cr3:%h\n", process.pid, process.physical_cr3);
 
     clear_physical_memory(process.physical_cr3, 1);
 
@@ -455,9 +441,7 @@ bool create_paging(char* buffer, scheduler::process_t& process){
 
             physical_pointer phys_ptr(segment.physical, pages);
 
-            if(DEBUG_SCHEDULER){
-                printf("Copy to physical:%h\n", segment.physical);
-            }
+            logging::logf(logging::log_level::DEBUG, "Copy to physical:%h\n", segment.physical);
 
             auto memory_start = phys_ptr.get() + left_padding;
 
@@ -611,21 +595,25 @@ void scheduler::start(){
     init_task_switch(current_pid);
 }
 
+bool scheduler::is_started(){
+    return started;
+}
+
 int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
+    logging::log(logging::log_level::TRACE, "scheduler:exec: read_file start\n");
+
     std::string content;
     auto result = vfs::direct_read(file, content);
     if(result < 0){
-        if(DEBUG_SCHEDULER){
-            k_print_line(std::error_message(-result));
-        }
+        logging::logf(logging::log_level::DEBUG, "%s\n", std::error_message(-result));
 
         return result;
     }
 
+    logging::log(logging::log_level::TRACE, "scheduler:exec: read_file end\n");
+
     if(content.empty()){
-        if(DEBUG_SCHEDULER){
-            k_print_line("Not a file");
-        }
+        logging::log(logging::log_level::DEBUG, "scheduler:exec: Not a file\n");
 
         return -std::ERROR_NOT_EXISTS;
     }
@@ -633,9 +621,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     auto buffer = content.c_str();
 
     if(!elf::is_valid(buffer)){
-        if(DEBUG_SCHEDULER){
-            k_print_line("Not a valid file");
-        }
+        logging::log(logging::log_level::DEBUG, "scheduler:exec: Not a valid file\n");
 
         return -std::ERROR_NOT_EXECUTABLE;
     }
@@ -643,9 +629,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     auto& process = new_process();
 
     if(!create_paging(buffer, process)){
-        if(DEBUG_SCHEDULER){
-            k_print_line("Impossible to create paging");
-        }
+        logging::log(logging::log_level::DEBUG, "scheduler:exec: Impossible to create paging\n");
 
         return -std::ERROR_FAILED_EXECUTION;
     }
@@ -662,7 +646,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
         pcb[process.pid].working_directory.push_back(p);
     }
 
-    logging::logf("Exec process pid=%u, ppid=%u", process.pid, process.ppid);
+    logging::logf(logging::log_level::DEBUG, "Exec process pid=%u, ppid=%u\n", process.pid, process.ppid);
 
     return process.pid;
 }
@@ -682,9 +666,7 @@ void scheduler::sbrk(size_t inc){
 
     auto virtual_start = process.brk_start;
 
-    if(DEBUG_SCHEDULER){
-        printf("Map(p%u) virtual:%h into phys: %h\n", process.pid, virtual_start, physical);
-    }
+    logging::logf(logging::log_level::DEBUG, "Map(p%u) virtual:%h into phys: %h\n", process.pid, virtual_start, physical);
 
     //Map the memory inside the process memory space
     if(!paging::user_map_pages(process, virtual_start, physical, pages)){
@@ -720,9 +702,7 @@ void scheduler::await_termination(pid_t pid){
 }
 
 void scheduler::kill_current_process(){
-    if(DEBUG_SCHEDULER){
-        printf("Kill %u\n", current_pid);
-    }
+    logging::logf(logging::log_level::DEBUG, "Kill %u\n", current_pid);
 
     //Notify parent if waiting
     auto ppid = pcb[current_pid].process.ppid;
@@ -807,12 +787,18 @@ scheduler::process_t& scheduler::get_process(pid_t pid){
     return pcb[pid].process;
 }
 
+void scheduler::block_process_light(pid_t pid){
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+
+    logging::logf(logging::log_level::DEBUG, "Block process (light) %u\n", pid);
+
+    pcb[pid].state = process_state::BLOCKED;
+}
+
 void scheduler::block_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
-    if(DEBUG_SCHEDULER){
-        printf("Block process %u\n", pid);
-    }
+    logging::logf(logging::log_level::DEBUG, "Block process %u\n", pid);
 
     pcb[pid].state = process_state::BLOCKED;
 
@@ -823,9 +809,7 @@ void scheduler::unblock_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
-    if(DEBUG_SCHEDULER){
-        printf("Unblock process %u\n", pid);
-    }
+    logging::logf(logging::log_level::DEBUG, "Unblock process %u\n", pid);
 
     pcb[pid].state = process_state::READY;
 }
@@ -834,9 +818,7 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
-    if(DEBUG_SCHEDULER){
-        printf("Put %u to sleep\n", pid);
-    }
+    logging::logf(logging::log_level::DEBUG, "Put %u to sleep\n", pid);
 
     pcb[pid].state = process_state::SLEEPING;
     pcb[pid].sleep_timeout = time;
