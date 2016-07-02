@@ -5,6 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <types.hpp>
+
 namespace arch {
 
 void enable_sse();
