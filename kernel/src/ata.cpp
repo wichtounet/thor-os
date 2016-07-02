@@ -9,7 +9,6 @@
 
 #include "ata.hpp"
 #include "kernel_utils.hpp"
-#include "timer.hpp"
 #include "kalloc.hpp"
 #include "thor.hpp"
 #include "interrupts.hpp"
@@ -118,10 +117,16 @@ void ata_wait_irq_secondary(){
     }
 }
 
-inline void ata_400ns_delay(uint16_t /*controller*/){
-    timer::sleep_ms(1);
-
-    //TODO Ideally, we should have a real 400ns delay by simply reading the controller status 4 times
+inline void ata_400ns_delay(uint16_t controller){
+    auto status = in_byte(controller + ATA_STATUS);
+    status = in_byte(controller + ATA_STATUS);
+    status = in_byte(controller + ATA_STATUS);
+    status = in_byte(controller + ATA_STATUS);
+    status = in_byte(controller + ATA_STATUS);
+    status = in_byte(controller + ATA_STATUS);
+    status = in_byte(controller + ATA_STATUS);
+    status = in_byte(controller + ATA_STATUS);
+    status = in_byte(controller + ATA_STATUS);
 }
 
 static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
@@ -225,7 +230,8 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
 bool reset_controller(uint16_t controller){
     out_byte(controller + ATA_DEV_CTL, ATA_CTL_SRST);
 
-    timer::sleep_ms(5);
+    ata_400ns_delay(controller);
+    ata_400ns_delay(controller);
 
     //The controller should set the BSY flag after, SRST has been set
     if(!wait_for_controller(controller, ATA_STATUS_BSY, ATA_STATUS_BSY, 1000)){
@@ -288,11 +294,11 @@ void identify(ata::drive_descriptor& drive){
 
     //Select the device
     out_byte(drive.controller + ATA_DRV_HEAD, 0xA0 | (drive.slave << 4));
-    timer::sleep_ms(1);
+    ata_400ns_delay(drive.controller);
 
     //Generate the IDENTIFY command
     out_byte(drive.controller + ATA_COMMAND, ATA_IDENTIFY);
-    timer::sleep_ms(1);
+    ata_400ns_delay(drive.controller);
 
     //If status == 0, there are no device
     if(in_byte(drive.controller + ATA_STATUS) == 0){
@@ -332,7 +338,7 @@ void identify(ata::drive_descriptor& drive){
 
         //Generate the ATAPI IDENTIFY command
         out_byte(drive.controller + ATA_COMMAND, 0xA1);
-        timer::sleep_ms(1);
+        ata_400ns_delay(drive.controller);
     }
 
     drive.present = true;
