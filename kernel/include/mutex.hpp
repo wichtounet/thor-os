@@ -8,28 +8,55 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
-//TODO Ideally this should simply be a wrapper around a semaphore
+#include <circular_buffer.hpp>
 
+#include "spinlock.hpp"
+#include "scheduler.hpp"
+#include "logging.hpp"
+
+template<bool Debug = false>
 struct mutex {
 private:
-    spinlock lock;
+    mutable spinlock lock;
     volatile size_t value;
     circular_buffer<scheduler::pid_t, 16> queue;
+    const char* name;
 
 public:
-    void init(){
-        value = 1;
+    void init(size_t v = 1){
+        value = v;
+
+        if(Debug){
+            name = "";
+        }
+    }
+
+    void set_name(const char* name){
+        this->name = name;
     }
 
     void acquire(){
-        std::lock_guard<spinlock> l(lock);
+        lock.acquire();
 
         if(value > 0){
             value = 0;
+
+            if(Debug){
+                logging::logf(logging::log_level::TRACE, "%s(mutex): directly acquired %d\n", name, scheduler::get_pid());
+            }
+
+            lock.release();
         } else {
             auto pid = scheduler::get_pid();
             queue.push(pid);
-            scheduler::block_process(pid);
+
+            if(Debug){
+                logging::logf(logging::log_level::TRACE, "%s(mutex): wait %d\n", name, pid);
+            }
+
+            scheduler::block_process_light(pid);
+            lock.release();
+            scheduler::reschedule();
         }
     }
 
@@ -38,9 +65,16 @@ public:
 
         if(queue.empty()){
             value = 1;
+            if(Debug){
+                logging::logf(logging::log_level::TRACE, "%s(mutex): direct release\n", name);
+            }
         } else {
             auto pid = queue.pop();
             scheduler::unblock_process(pid);
+
+            if(Debug){
+                logging::logf(logging::log_level::TRACE, "%s(mutex): wake %d\n", name, pid);
+            }
 
             //No need to increment value, the process won't
             //decrement it
