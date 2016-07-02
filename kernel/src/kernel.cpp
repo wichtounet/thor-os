@@ -12,6 +12,7 @@
 #include "kalloc.hpp"
 #include "timer.hpp"
 #include "keyboard.hpp"
+#include "serial.hpp"
 #include "disks.hpp"
 #include "acpi.hpp"
 #include "interrupts.hpp"
@@ -85,6 +86,7 @@ void  kernel_main(){
     kalloc::finalize();
 
     //Install drivers
+    serial::init();
     timer::install();
     //acpi::init();
     keyboard::install_driver();
@@ -94,7 +96,7 @@ void  kernel_main(){
     vfs::init();
 
     //Starting from here, the logging system can output logs to file
-    logging::to_file();
+    //TODO logging::to_file();
 
     //Only install system calls when everything else is ready
     install_system_calls();
