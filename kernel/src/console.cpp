@@ -46,8 +46,8 @@ void print_char(size_t line, size_t column, char c){
     }
 }
 
-size_t current_line = 0;
-size_t current_column = 0;
+volatile size_t current_line = 0;
+volatile size_t current_column = 0;
 
 template<int B, typename D>
 void print_unsigned(D number){
@@ -118,7 +118,7 @@ size_t get_column(){
 }
 
 void set_line(size_t line){
-    current_line= line;
+    current_line = line;
 }
 
 size_t get_line(){
