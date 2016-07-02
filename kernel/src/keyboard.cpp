@@ -100,6 +100,13 @@ void keyboard_handler(interrupt::syscall_regs*){
 
 void keyboard::install_driver(){
     interrupt::register_irq_handler(1, keyboard_handler);
+
+    // At this point, we need to clear the keyboard buffer
+    // Otherwise, all the following events will be lost
+    unsigned char key = 0;
+    while(((key = in_byte(0x64)) & 1) == 1){
+        in_byte(0x60);
+    }
 }
 
 char keyboard::key_to_ascii(uint8_t key){
