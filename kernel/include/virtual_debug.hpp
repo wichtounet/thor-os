@@ -12,6 +12,7 @@
 //TODO Integrate Qemu Serial debugging
 
 #include "kernel_utils.hpp"
+#include "serial.hpp"
 
 #define BOCHS_E9 0xE9
 
@@ -30,9 +31,17 @@ inline void bochs_print(const char* s){
     }
 }
 
+inline void serial_print(const char* s){
+    for(uint64_t i = 0; s[i] != '\0'; ++i){
+        serial::transmit(s[i]);
+    }
+}
+
 inline void virtual_debug(const char* s){
     if(is_bochs_e9()){
         bochs_print(s);
+    } else {
+        serial_print(s);
     }
 }
 

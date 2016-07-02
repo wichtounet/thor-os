@@ -40,7 +40,11 @@ thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin 
 	sudo /sbin/losetup -d /dev/loop0
 
 qemu: default
-	qemu-system-x86_64 -enable-kvm -cpu host -vga std -hda hdd.img
+	touch kernel.log
+	qemu-system-x86_64 -enable-kvm -cpu host -serial file:kernel.log -vga std -hda hdd.img &
+	echo "Reading kernel log (Ctrl+C for exit)"
+	tail -f kernel.log
+	kill %1
 
 bochs: default
 	echo "c" > commands

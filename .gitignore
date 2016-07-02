@@ -35,3 +35,6 @@ programs/uptime/uptime
 programs/df/df
 programs/dist/
 tstl/tester
+
+# Ignore the generated log (Qemu)
+kernel.log
