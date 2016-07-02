@@ -72,6 +72,7 @@ volatile size_t current_pid;
 size_t next_pid = 0;
 
 size_t gc_pid = 0;
+size_t idle_pid = 0;
 
 void idle_task(){
     while(true){
@@ -248,6 +249,8 @@ void create_idle_task(){
     idle_process.priority = scheduler::MIN_PRIORITY;
 
     queue_system_process(idle_process.pid);
+
+    idle_pid = idle_process.pid;
 }
 
 void create_init_task(){
