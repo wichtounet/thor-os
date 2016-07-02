@@ -9,7 +9,6 @@
 #define VIRTUAL_DEBUG_H
 
 //TODO Integrate Bochs Parallel debugging
-//TODO Integrate Qemu Serial debugging
 
 #include "kernel_utils.hpp"
 #include "serial.hpp"
