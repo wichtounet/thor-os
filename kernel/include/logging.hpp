@@ -14,8 +14,8 @@
 namespace logging {
 
 enum class log_level : char {
-    DEBUG,
     TRACE,
+    DEBUG,
     WARNING,
     ERROR
 };
