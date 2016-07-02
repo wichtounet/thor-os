@@ -584,7 +584,7 @@ void scheduler::init(){ //Create the idle task
 
     current_ticks = 0;
 
-    //Run the init queue by default
+    //Run the init task by default
     current_pid = 1;
     pcb[current_pid].state = scheduler::process_state::RUNNING;
 }
