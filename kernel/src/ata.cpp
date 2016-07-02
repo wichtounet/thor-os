@@ -5,6 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <lock_guard.hpp>
+
 #include "ata.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"
@@ -14,6 +16,7 @@
 #include "console.hpp"
 #include "errors.hpp"
 #include "disks.hpp"
+#include "mutex.hpp"
 
 namespace {
 
@@ -56,6 +59,11 @@ static constexpr const size_t BLOCK_SIZE = 512;
 
 ata::drive_descriptor* drives;
 
+mutex<> ata_lock;
+
+mutex<> primary_lock;
+mutex<> secondary_lock;
+
 volatile bool primary_invoked = false;
 volatile bool secondary_invoked = false;
 
@@ -63,35 +71,51 @@ volatile bool secondary_invoked = false;
 //be done with a semaphore
 
 void primary_controller_handler(interrupt::syscall_regs*){
-    primary_invoked = true;
+    if(scheduler::is_started()){
+        primary_lock.release();
+    } else {
+        primary_invoked = true;
+    }
 }
 
 void secondary_controller_handler(interrupt::syscall_regs*){
-    secondary_invoked = true;
+    if(scheduler::is_started()){
+        secondary_lock.release();
+    } else {
+        secondary_invoked = true;
+    }
 }
 
 void ata_wait_irq_primary(){
-    while(!primary_invoked){
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-    }
+    if(scheduler::is_started()){
+        primary_lock.acquire();
+    } else {
+        while(!primary_invoked){
+            asm volatile ("nop");
+            asm volatile ("nop");
+            asm volatile ("nop");
+            asm volatile ("nop");
+            asm volatile ("nop");
+        }
 
-    primary_invoked = false;
+        primary_invoked = false;
+    }
 }
 
 void ata_wait_irq_secondary(){
-    while(!secondary_invoked){
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-        asm volatile ("nop");
-    }
+    if(scheduler::is_started()){
+        secondary_lock.acquire();
+    } else {
+        while(!secondary_invoked){
+            asm volatile ("nop");
+            asm volatile ("nop");
+            asm volatile ("nop");
+            asm volatile ("nop");
+            asm volatile ("nop");
+        }
 
-    secondary_invoked = false;
+        secondary_invoked = false;
+    }
 }
 
 static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
@@ -127,6 +151,8 @@ bool select_device(ata::drive_descriptor& drive){
 }
 
 bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data, bool read){
+    std::lock_guard<decltype(ata_lock)> lock(ata_lock);
+
     //Select the device
     if(!select_device(drive)){
         return false;
@@ -324,6 +350,15 @@ void identify(ata::drive_descriptor& drive){
 } //end of anonymous namespace
 
 void ata::detect_disks(){
+    ata_lock.init();
+
+    primary_lock.init(0);
+    secondary_lock.init(0);
+
+    ata_lock.set_name("ata_lock");
+    primary_lock.set_name("ata_primary_lock");
+    secondary_lock.set_name("ata_secondary_lock");
+
     drives = new drive_descriptor[4];
 
     drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, false, "", "", ""};
