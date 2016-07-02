@@ -9,6 +9,7 @@
 #include "early_logging.hpp"
 #include "assert.hpp"
 #include "console.hpp"
+#include "virtual_debug.hpp"
 #include "vfs/vfs.hpp"
 
 #include <flags.hpp>
@@ -35,7 +36,7 @@ void append_to_file(const char* s, size_t length){
         stat_info info;
         if(vfs::stat(fd, info) == 0){
             if(vfs::truncate(fd, info.size + length + 1) == 0){
-                buffer = s;
+                std::string buffer = s;
                 buffer += '\n';
 
                 vfs::write(fd, buffer.c_str(), buffer.size(), info.size);
@@ -111,4 +112,36 @@ void logging::log(const std::string& s){
     //TODO Display the string in the kernel terminal
 
     append_to_file(s.c_str(), s.size());
+}
+
+void logging::log(log_level /*level*/, const char* s){
+    //First, print to the virtual debugger
+    virtual_debug(s);
+
+    if(is_early()){
+        thor_assert(current_early < MAX_EARLY, "early log buffer is full");
+
+        early_logs[current_early++] = s;
+    }
+
+    if(is_file()){
+        append_to_file(s, std::str_len(s));
+    }
+}
+
+void logging::log(log_level level, const std::string& s){
+    thor_assert(!is_early(), "log(level,string) is not valid in early mode");
+
+    log(level, s.c_str());
+}
+
+void logging::logf(log_level level, const char* s, ...){
+    thor_assert(!is_early(), "logf(level,string,...) in not valid in early mode");
+
+    va_list va;
+    va_start(va, s);
+    auto formatted = vsprintf(s, va);
+    va_end(va);
+
+    log(level, formatted.c_str());
 }

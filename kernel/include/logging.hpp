@@ -13,11 +13,23 @@
 
 namespace logging {
 
+enum class log_level : char {
+    DEBUG,
+    TRACE,
+    WARNING,
+    ERROR
+};
+
 bool is_early();
 bool is_file();
 void finalize();
 void to_file();
 
+void log(log_level level, const char* s);
+void log(log_level level, const std::string& s);
+void logf(log_level level, const char* s, ...);
+
+//TODO Deprecate theses
 void log(const char* s);
 void logf(const char* s, ...);
 void log(const std::string& s);
