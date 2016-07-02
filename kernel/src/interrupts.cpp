@@ -67,13 +67,13 @@ void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, id
 
 uint64_t get_cr2(){
     uint64_t value;
-    __asm__ __volatile__("mov rax, cr2; mov %0, rax;" : "=m" (value));
+    asm volatile("mov rax, cr2; mov %0, rax;" : "=m" (value));
     return value;
 }
 
 uint64_t get_cr3(){
     uint64_t value;
-    __asm__ __volatile__("mov rax, cr3; mov %0, rax;" : "=m" (value));
+    asm volatile("mov rax, cr3; mov %0, rax;" : "=m" (value));
     return value;
 }
 
@@ -89,7 +89,7 @@ void install_idt(){
     std::fill_n(irq_handlers, 16, nullptr);
 
     //Give the IDTR address to the CPU
-    __asm__ __volatile__("lidt [%0]" : : "m" (idtr_64));
+    asm volatile("lidt [%0]" : : "m" (idtr_64));
 }
 
 void install_isrs(){
@@ -181,7 +181,7 @@ void install_syscalls(){
 }
 
 void enable_interrupts(){
-    __asm__ __volatile__("sti" : : );
+    asm volatile("sti" : : );
 }
 
 const char* exceptions_title[32] {

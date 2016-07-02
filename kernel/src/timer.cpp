@@ -50,21 +50,21 @@ void timer::sleep_ms(uint64_t delay){
     _timer_countdown = delay;
 
     while(true){
-        __asm__  __volatile__ ("cli");
+        asm  volatile ("cli");
 
         if(_timer_countdown != 0){
-            __asm__  __volatile__ ("sti");
-            __asm__  __volatile__ ("nop");
-            __asm__  __volatile__ ("nop");
-            __asm__  __volatile__ ("nop");
-            __asm__  __volatile__ ("nop");
-            __asm__  __volatile__ ("nop");
+            asm  volatile ("sti");
+            asm  volatile ("nop");
+            asm  volatile ("nop");
+            asm  volatile ("nop");
+            asm  volatile ("nop");
+            asm  volatile ("nop");
         } else {
             break;
         }
     }
 
-    __asm__  __volatile__ ("sti");
+    asm  volatile ("sti");
 }
 
 uint64_t timer::ticks(){
