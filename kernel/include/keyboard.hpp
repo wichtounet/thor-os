@@ -19,6 +19,8 @@ const char KEY_DOWN = 0x50;
 const char KEY_LEFT_SHIFT = 0x2A;
 const char KEY_RIGHT_SHIFT = 0x36;
 
+const char KEY_LEFT_CTRL = 0x1D;
+
 void install_driver();
 char get_char();
 char key_to_ascii(uint8_t key);

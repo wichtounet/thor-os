@@ -121,11 +121,15 @@ int main(){
 
     char input_buffer[128];
     std::string current_input;
-        
+
     print("thor> ");
 
     while(true){
         auto c = read_input(input_buffer, 127);
+
+        if(input_buffer[c-1] == 200){
+            input_buffer[c-1] = '\n';
+        }
 
         if(input_buffer[c-1] == '\n'){
             if(c > 1){
@@ -174,7 +178,7 @@ int main(){
             }
 
             current_input.clear();
-    
+
             print("thor> ");
         } else {
             input_buffer[c] = '\0';
