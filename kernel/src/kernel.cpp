@@ -25,6 +25,7 @@
 #include "terminal.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
+#include "network.hpp"
 #include "vfs/vfs.hpp"
 #include "fs/sysfs.hpp"
 
@@ -93,6 +94,7 @@ void  kernel_main(){
     keyboard::install_driver();
     disks::detect_disks();
     pci::detect_devices();
+    network::init();
 
     //Init the virtual file system
     vfs::init();
