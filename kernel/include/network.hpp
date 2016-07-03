@@ -17,6 +17,7 @@ struct interface_descriptor {
     std::string name;
     std::string driver;
     size_t pci_device;
+    void* driver_data;
 };
 
 void init();

@@ -34,6 +34,7 @@ void network::init(){
             interface.pci_device = i;
             interface.enabled = false;
             interface.driver = "";
+            interface_driver_data = nullptr;
 
             if(pci_device.vendor_id == 0x10EC && pci_device.device_id == 0x8139){
                 interface.enabled = true;
