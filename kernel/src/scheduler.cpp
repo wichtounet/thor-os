@@ -739,7 +739,6 @@ void scheduler::kill_current_process(){
     unblock_process(gc_pid);
 
     pcb[current_pid].state = scheduler::process_state::KILLED;
-    logging::logf(logging::log_level::DEBUG, "Found%u\n", static_cast<uint8_t>(pcb[current_pid].state));
 
     //Run another process
     reschedule();
