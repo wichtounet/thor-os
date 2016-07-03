@@ -37,4 +37,4 @@ programs/dist/
 tstl/tester
 
 # Ignore the generated log (Qemu)
-kernel.log
+*.log
