@@ -80,8 +80,10 @@ std::string vsprintf(const std::string& format, va_list va){
                 s += std::to_string(arg);
             }
             //Hexadecimal
-            else if(ch == 'h'){
-                s += "0x";
+            else if(ch == 'h' || ch == 'x'){
+                if(ch == 'h'){
+                    s += "0x";
+                }
 
                 uint8_t buffer[20];
 
