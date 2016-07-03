@@ -252,9 +252,9 @@ size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path,
         auto cluster_last = (cluster + 1) * cluster_size;
 
         if(first < cluster_last){
-            std::unique_heap_array<char> cluster(cluster_size);
+            std::unique_heap_array<char> cluster_buffer(cluster_size);
 
-            if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+            if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster_buffer.get())){
                 size_t i = 0;
 
                 if(position == 0){
@@ -262,7 +262,7 @@ size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path,
                 }
 
                 for(; i < cluster_size && read_bytes < last; ++i, ++read_bytes){
-                    buffer[position++] = cluster[i];
+                    buffer[position++] = cluster_buffer[i];
                 }
             } else {
                 return std::ERROR_FAILED;
