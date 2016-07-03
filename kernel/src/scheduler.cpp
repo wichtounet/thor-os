@@ -90,8 +90,9 @@ void gc_task(){
         for(auto& process : pcb){
             if(process.state == scheduler::process_state::KILLED){
                 auto& desc = process.process;
+                auto prev_pid = desc.pid;
 
-                logging::logf(logging::log_level::DEBUG, "Clean process %u\n", desc.pid);
+                logging::logf(logging::log_level::DEBUG, "Clean process %u\n", prev_pid);
 
                 //1. Release physical memory of PML4T
                 physical_allocator::free(desc.physical_cr3, 1);
@@ -138,6 +139,8 @@ void gc_task(){
 
                 //9. Release the PCB slot
                 process.state = scheduler::process_state::EMPTY;
+
+                logging::logf(logging::log_level::DEBUG, "Process %u cleaned\n", prev_pid);
             }
         }
     }
@@ -277,9 +280,13 @@ void switch_to_process(size_t pid){
     auto old_pid = current_pid;
     current_pid = pid;
 
-    logging::logf(logging::log_level::DEBUG, "Switch to %u\n", current_pid);
-
     auto& process = pcb[current_pid];
+
+    if(process.process.system){
+        logging::logf(logging::log_level::DEBUG, "Switch from %u to %u (rip:%u)\n", old_pid, current_pid, process.process.context->rip);
+    } else {
+        logging::logf(logging::log_level::DEBUG, "Switch from %u to %u\n", old_pid, current_pid);
+    }
 
     process.state = scheduler::process_state::RUNNING;
 
@@ -744,7 +751,7 @@ void scheduler::tick(){
     if(current_ticks % QUANTUM_SIZE == 0){
         auto& process = pcb[current_pid];
 
-        if(process.rounds  == TURNOVER){
+        if(process.rounds == TURNOVER){
             process.rounds = 0;
 
             process.state = process_state::READY;
@@ -755,6 +762,8 @@ void scheduler::tick(){
             if(pid == current_pid){
                 return;
             }
+
+            logging::logf(logging::log_level::DEBUG, "Preempt %u to %u\n", current_pid, pid);
 
             switch_to_process(pid);
         } else {
