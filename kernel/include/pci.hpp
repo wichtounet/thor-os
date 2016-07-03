@@ -51,6 +51,9 @@ void detect_devices();
 size_t number_of_devices();
 device_descriptor& device(size_t index);
 
+uint32_t read_config_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
+void write_config_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t value);
+
 } //end of namespace pci
 
 #endif

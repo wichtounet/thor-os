@@ -18,50 +18,37 @@ std::vector<pci::device_descriptor> devices;
 #define PCI_CONFIG_ADDRESS 0xCF8
 #define PCI_CONFIG_DATA 0xCFC
 
- uint32_t pci_config_read_dword (uint8_t bus, uint8_t device, uint8_t function, uint8_t offset){
-    uint32_t address =
-            static_cast<uint32_t>(1 << 31)  //enabled
-        | (uint32_t(bus) << 16)  //bus number
-        | (uint32_t(device) << 11)  //device number
-        | (uint32_t(function) << 8) //function number
-        | ((uint32_t(offset) ) & 0xfc); //Register number
-
-    out_dword(PCI_CONFIG_ADDRESS, address);
-
-    return in_dword(PCI_CONFIG_DATA);
- }
-
  uint16_t get_vendor_id(uint8_t bus, uint8_t device, uint8_t function){
      // read "device id | vendor id"
-     auto large = pci_config_read_dword(bus, device, function, 0);
+     auto large = pci::read_config_dword(bus, device, function, 0);
      // extract vendor id
      return large;
  }
 
  uint16_t get_device_id(uint8_t bus, uint8_t device, uint8_t function){
      // read "device id | vendor id"
-     auto large = pci_config_read_dword(bus, device, function, 0);
+     auto large = pci::read_config_dword(bus, device, function, 0);
      // extract device id
      return large >> 16;
  }
 
  uint8_t get_class_code(uint8_t bus, uint8_t device, uint8_t function){
      // read "class code | subclass | prog if | revision id"
-     auto large = pci_config_read_dword(bus, device, function, 8);
+     auto large = pci::read_config_dword(bus, device, function, 8);
      // extract class code only
      return large >> 24 & 0xFF;
  }
 
  uint8_t get_subclass(uint8_t bus, uint8_t device, uint8_t function){
      // read "class code | subclass | prog if | revision id"
-     auto large = pci_config_read_dword(bus, device, function, 8);
+     auto large = pci::read_config_dword(bus, device, function, 8);
      // extract subclass only
      return large >> 16 & 0xFF;
  }
 
  uint8_t get_header_type(uint8_t bus, uint8_t device, uint8_t function){
      // read "BIST | header type | latency timer | cache line size"
-     auto large = pci_config_read_dword(bus, device, function, 12);
+     auto large = pci::read_config_dword(bus, device, function, 12);
      // extract header type only
      return large >> 16 & 0xFF;
  }
@@ -138,4 +125,30 @@ size_t pci::number_of_devices(){
 
 pci::device_descriptor& pci::device(size_t index){
     return devices[index];
+}
+
+uint32_t pci::read_config_dword (uint8_t bus, uint8_t device, uint8_t function, uint8_t offset){
+    uint32_t address =
+        static_cast<uint32_t>(1 << 31)  //enabled
+        | (uint32_t(bus) << 16)  //bus number
+        | (uint32_t(device) << 11)  //device number
+        | (uint32_t(function) << 8) //function number
+        | ((uint32_t(offset) ) & 0xfc); //Register number
+
+    out_dword(PCI_CONFIG_ADDRESS, address);
+
+    return in_dword(PCI_CONFIG_DATA);
+}
+
+void pci::write_config_dword (uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t value){
+    uint32_t address =
+        static_cast<uint32_t>(1 << 31)  //enabled
+        | (uint32_t(bus) << 16)  //bus number
+        | (uint32_t(device) << 11)  //device number
+        | (uint32_t(function) << 8) //function number
+        | ((uint32_t(offset) ) & 0xfc); //Register number
+
+    out_dword(PCI_CONFIG_ADDRESS, address);
+
+    out_dword(PCI_CONFIG_DATA, value);
 }
