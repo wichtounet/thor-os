@@ -15,6 +15,7 @@
 #include "console.hpp"
 
 #include "fs/devfs.hpp"
+#include "fs/sysfs.hpp"
 
 namespace {
 
@@ -61,17 +62,18 @@ void disks::detect_disks(){
         auto& descriptor = ata::drive(i);
 
         if(descriptor.present){
+            std::string name;
             if(descriptor.atapi){
                 _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATAPI, &descriptor};
 
-                std::string name = "cd";
+                name = "cd";
                 name += cdrom++;
 
                 devfs::register_device("/dev/", name, devfs::device_type::BLOCK_DEVICE, atapi_driver, &_disks[number_of_disks]);
             } else {
                 _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATA, &descriptor};
 
-                std::string name = "hd";
+                name = "hd";
                 name += disk++;
 
                 devfs::register_device("/dev/", name, devfs::device_type::BLOCK_DEVICE, ata_driver, &_disks[number_of_disks]);
@@ -84,6 +86,12 @@ void disks::detect_disks(){
                     devfs::register_device("/dev/", part_name, devfs::device_type::BLOCK_DEVICE, ata_part_driver, new partition_descriptor(partition));
                 }
             }
+
+            std::string path = "/ata/" + name;
+
+            sysfs::set_constant_value("/sys/", path + "/model", descriptor.model);
+            sysfs::set_constant_value("/sys/", path + "/serial", descriptor.serial);
+            sysfs::set_constant_value("/sys/", path + "/firmware", descriptor.firmware);
 
             ++number_of_disks;
         }
