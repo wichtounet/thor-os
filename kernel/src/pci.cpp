@@ -9,6 +9,8 @@
 #include "kernel_utils.hpp"
 #include "logging.hpp"
 
+#include "fs/sysfs.hpp"
+
 namespace {
 
 std::vector<pci::device_descriptor> devices;
@@ -74,6 +76,9 @@ std::vector<pci::device_descriptor> devices;
      auto class_code = get_class_code(bus, device, function);
      auto sub_class = get_subclass(bus, device, function);
 
+     logging::logf(logging::log_level::DEBUG, "Found device pci:%u:%u:%u (vendor:%u class:%u subclass:%u) \n",
+         uint64_t(bus), uint64_t(device), uint64_t(function), uint64_t(vendor_id), uint64_t(class_code), uint64_t(sub_class));
+
      devices.emplace_back();
 
      pci::device_descriptor& device_desc = devices.back();
@@ -94,8 +99,12 @@ std::vector<pci::device_descriptor> devices;
         device_desc.class_type = pci::device_class_type::UNKNOWN;
      }
 
-     logging::logf(logging::log_level::DEBUG, "Found device pci:%u:%u:%u (vendor:%u class:%u subclass:%u) \n",
-         uint64_t(bus), uint64_t(device), uint64_t(function), uint64_t(vendor_id), uint64_t(class_code), uint64_t(sub_class));
+     std::string path = "/pci/pci:" + std::to_string(bus) + ':' + std::to_string(device) + ':' + std::to_string(function);
+
+     sysfs::set_constant_value("/sys/", path + "/vendor", std::to_string(vendor_id));
+     sysfs::set_constant_value("/sys/", path + "/device", std::to_string(device_id));
+     sysfs::set_constant_value("/sys/", path + "/class", std::to_string(class_code));
+     sysfs::set_constant_value("/sys/", path + "/subclass", std::to_string(sub_class));
  }
 
  void check_device(uint8_t bus, uint8_t device) {
