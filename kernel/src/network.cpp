@@ -10,6 +10,8 @@
 
 #include "network.hpp"
 #include "pci.hpp"
+#include "rtl8139.hpp"
+#include "physical_allocator.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -34,11 +36,13 @@ void network::init(){
             interface.pci_device = i;
             interface.enabled = false;
             interface.driver = "";
-            interface_driver_data = nullptr;
+            interface.driver_data = nullptr;
 
             if(pci_device.vendor_id == 0x10EC && pci_device.device_id == 0x8139){
                 interface.enabled = true;
                 interface.driver = "rtl8139";
+
+                rtl8139::init_driver(interface, pci_device);
             }
 
             std::string path = "/net/" + interface.name;
@@ -47,6 +51,7 @@ void network::init(){
             sysfs::set_constant_value("/sys/", path + "/driver", interface.driver);
             sysfs::set_constant_value("/sys/", path + "/enabled", interface.enabled ? "true" : "false");
             sysfs::set_constant_value("/sys/", path + "/pci_device", std::to_string(i));
+            sysfs::set_constant_value("/sys/", path + "/mac", std::to_string(interface.mac_address));
 
             ++index;
         }

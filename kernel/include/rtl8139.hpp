@@ -5,27 +5,18 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef NETWORK_H
-#define NETWORK_H
+#ifndef RTL_8139_H
+#define RTL_8139_H
 
-#include <types.hpp>
-#include <string.hpp>
+#include<types.hpp>
 
-namespace network {
+#include "network.hpp"
+#include "pci.hpp"
 
-struct interface_descriptor {
-    bool enabled;
-    std::string name;
-    std::string driver;
-    size_t pci_device;
-    size_t mac_address;
-    void* driver_data;
-};
+namespace rtl8139 {
 
-void init();
+void init_driver(network::interface_descriptor& interface, pci::device_descriptor& pci_device);
 
-size_t number_of_interfaces();
-
-} // end of network namespace
+} //end of namespace rtl8139
 
 #endif
