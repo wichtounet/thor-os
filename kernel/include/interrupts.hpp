@@ -38,6 +38,10 @@ struct syscall_regs {
     uint64_t r10;
     uint64_t r11;
     uint64_t r12;
+    uint64_t r13;
+    uint64_t r14;
+    uint64_t r15;
+    uint64_t rbp;
     uint64_t code;
     uint64_t rip;
     uint64_t cs;
