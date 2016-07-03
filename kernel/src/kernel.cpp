@@ -14,6 +14,7 @@
 #include "keyboard.hpp"
 #include "serial.hpp"
 #include "disks.hpp"
+#include "pci.hpp"
 #include "acpi.hpp"
 #include "interrupts.hpp"
 #include "system_calls.hpp"
@@ -91,6 +92,7 @@ void  kernel_main(){
     //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();
+    pci::detect_devices();
 
     //Init the virtual file system
     vfs::init();
