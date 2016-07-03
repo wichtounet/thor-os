@@ -7,6 +7,9 @@
 
 #include "thor.hpp"
 #include "kalloc.hpp"
+#include "scheduler.hpp"
+#include "logging.hpp"
+#include "console.hpp"
 
 void* operator new(uint64_t size){
     return kalloc::k_malloc(size);
@@ -62,6 +65,20 @@ void __cxa_finalize(void *f){
         }
 #pragma GCC diagnostic pop
     }
+}
+
+#define STACK_CHK_GUARD 0x595e9fbd94fda766
+
+uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
+
+#define double_printf(...) \
+    logging::logf(logging::log_level::ERROR, __VA_ARGS__); \
+    printf(__VA_ARGS__);
+
+__attribute__((noreturn)) void __stack_chk_fail(){
+    double_printf("Stack smashing detected \n");
+    double_printf("pid=%u\n", scheduler::get_pid());
+    asm volatile("hlt" : : );
 }
 
 }

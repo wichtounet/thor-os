@@ -18,6 +18,10 @@ CPP_FLAGS_16=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mregparm=3 -mpreferred-stack-
 CPP_FLAGS_32=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mpreferred-stack-boundary=4
 CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mpreferred-stack-boundary=4 $(ENABLE_SSE_FLAGS) $(DISABLE_AVX_FLAGS)
 
+KERNEL_CPP_FLAGS_64=$(CPP_FLAGS_64)
+
+KERNEL_CPP_FLAGS_64 += -fstack-protector
+
 COMMON_LINK_FLAGS=-lgcc
 
 KERNEL_LINK_FLAGS=$(COMMON_LINK_FLAGS) -T linker.ld

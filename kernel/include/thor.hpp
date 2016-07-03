@@ -31,6 +31,6 @@ struct atexit_func_entry_t {
 int __cxa_atexit(void (*f)(void *), void *objptr, void *dso);
 void __cxa_finalize(void *f);
 
-}
+} // end of extern "C"
 
 #endif

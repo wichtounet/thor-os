@@ -43,28 +43,28 @@ src/%.s.o: src/%.s
 	$(AS) -g -c $< -o $@
 
 src/%.cpp.d: $(KERNEL_CPP_FILES)
-	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/drivers/%.cpp.d: $(KERNEL_CPP_DRIVERS_FILES)
-	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/drivers/$*.cpp.o src/drivers/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/drivers/$*.cpp.o src/drivers/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/fs/%.cpp.d: $(KERNEL_CPP_FS_FILES)
-	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/fs/$*.cpp.o src/fs/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/fs/$*.cpp.o src/fs/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/vfs/%.cpp.d: $(KERNEL_CPP_VFS_FILES)
-	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/vfs/$*.cpp.o src/vfs/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/vfs/$*.cpp.o src/vfs/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/%.cpp.o:
-	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+	$(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 src/drivers/%.cpp.o:
-	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+	$(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 src/vfs/%.cpp.o:
-	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+	$(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 src/fs/%.cpp.o:
-	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+	$(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 -include $(KERNEL_D_FILES)
 -include $(KERNEL_D_DRIVERS_FILES)
@@ -72,7 +72,7 @@ src/fs/%.cpp.o:
 -include $(KERNEL_D_FS_FILES)
 
 kernel.bin: $(LINK_O_FILES)
-	$(CC) $(KERNEL_LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
+	$(CC) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
 	$(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents kernel.bin.o kernel.bin
 
 clean:
