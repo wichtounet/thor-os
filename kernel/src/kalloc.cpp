@@ -10,6 +10,7 @@
 #include "physical_allocator.hpp"
 #include "paging.hpp"
 #include "e820.hpp"
+#include "int_lock.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -337,6 +338,8 @@ void kalloc::finalize(){
 }
 
 void* kalloc::k_malloc(uint64_t bytes){
+    direct_int_lock lock;
+
     auto current = malloc_head->next();
 
     //Try not to create too small blocks
@@ -421,6 +424,8 @@ void* kalloc::k_malloc(uint64_t bytes){
 }
 
 void kalloc::k_free(void* block){
+    direct_int_lock lock;
+
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 
