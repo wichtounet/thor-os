@@ -61,7 +61,7 @@ char shifted_qwertz[128] = {
   'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', ';', /* 39 */
  '\'', '`',   0,        /* Left shift */
  '\\', 'Y', 'X', 'C', 'V', 'B', 'N',            /* 49 */
-  'M', ',', '.', '/',   0,              /* Right shift */
+  'M', ',', ':', '/',   0,              /* Right shift */
   '*',
     0,  /* Alt */
   ' ',  /* Space bar */
