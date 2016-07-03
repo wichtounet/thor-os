@@ -41,7 +41,7 @@ thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin kernel/kernel.bin 
 
 qemu: default
 	touch kernel.log
-	qemu-system-x86_64 -enable-kvm -cpu host -serial file:kernel.log -vga std -hda hdd.img &
+	qemu-system-x86_64 -enable-kvm -cpu host -serial file:kernel.log -net nic,vlan=0,model=rtl8139 -vga std -hda hdd.img &
 	echo "Reading kernel log (Ctrl+C for exit)"
 	tail -f kernel.log
 	kill %1
