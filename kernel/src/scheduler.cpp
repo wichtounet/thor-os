@@ -26,6 +26,7 @@
 #include "mutex.hpp"
 #include "kernel_utils.hpp"
 #include "logging.hpp"
+#include "int_lock.hpp"
 
 //Provided by task_switch.s
 extern "C" {
@@ -690,23 +691,35 @@ void scheduler::sbrk(size_t inc){
 }
 
 void scheduler::await_termination(pid_t pid){
+    int_lock lock;
+
     while(true){
+        lock.acquire();
+
         bool found = false;
         for(auto& process : pcb){
             if(process.process.ppid == current_pid && process.process.pid == pid){
                 if(process.state == process_state::KILLED){
+                    lock.release();
                     return;
                 }
 
                 found = true;
+                break;
             }
         }
 
+        // The process may have already been cleaned, we can simply return
         if(!found){
+            lock.release();
             return;
         }
 
+        logging::logf(logging::log_level::DEBUG, "Process %u waits for %u\n", current_pid, pid);
+
         pcb[current_pid].state = process_state::WAITING;
+
+        lock.release();
         reschedule();
     }
 }
@@ -726,6 +739,7 @@ void scheduler::kill_current_process(){
     unblock_process(gc_pid);
 
     pcb[current_pid].state = scheduler::process_state::KILLED;
+    logging::logf(logging::log_level::DEBUG, "Found%u\n", static_cast<uint8_t>(pcb[current_pid].state));
 
     //Run another process
     reschedule();
