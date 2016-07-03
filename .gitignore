@@ -30,6 +30,7 @@ programs/mkdir/mkdir
 programs/rm/rm
 programs/date/date
 programs/ls/ls
+programs/lspci/lspci
 programs/mount/mount
 programs/uptime/uptime
 programs/df/df
