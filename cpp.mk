@@ -20,6 +20,7 @@ CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mpreferred-stack-boundary=4 $(ENABLE_SSE_FLAGS
 
 KERNEL_CPP_FLAGS_64=$(CPP_FLAGS_64)
 
+# Activate Stack Smashing Protection
 KERNEL_CPP_FLAGS_64 += -fstack-protector
 
 COMMON_LINK_FLAGS=-lgcc
