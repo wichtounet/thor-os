@@ -16,6 +16,7 @@
 #include "isrs.hpp"
 #include "irqs.hpp"
 #include "syscalls.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -223,17 +224,23 @@ const char* exceptions_title[32] {
 
 extern "C" {
 
+#define double_printf(...) \
+    logging::logf(logging::log_level::ERROR, __VA_ARGS__); \
+    printf(__VA_ARGS__);
+
+
+
 void _fault_handler(interrupt::fault_regs regs){
-    printf("Exception %u (%s) occured\n", regs.error_no, exceptions_title[regs.error_no]);
-    printf("error_code=%u\n", regs.error_code);
-    printf("rip=%h\n", regs.rip);
-    printf("rflags=%h\n", regs.rflags);
-    printf("cs=%h\n", regs.cs);
-    printf("rsp=%h\n", regs.rsp);
-    printf("ss=%h\n", regs.ss);
-    printf("pid=%u\n", scheduler::get_pid());
-    printf("cr2=%h\n", get_cr2());
-    printf("cr3=%h\n", get_cr3());
+    double_printf("Exception %u (%s) occured\n", regs.error_no, exceptions_title[regs.error_no]);
+    double_printf("error_code=%u\n", regs.error_code);
+    double_printf("rip=%h\n", regs.rip);
+    double_printf("rflags=%h\n", regs.rflags);
+    double_printf("cs=%h\n", regs.cs);
+    double_printf("rsp=%h\n", regs.rsp);
+    double_printf("ss=%h\n", regs.ss);
+    double_printf("pid=%u\n", scheduler::get_pid());
+    double_printf("cr2=%h\n", get_cr2());
+    double_printf("cr3=%h\n", get_cr3());
 
     //TODO Improve that with kind of blue screen
 
