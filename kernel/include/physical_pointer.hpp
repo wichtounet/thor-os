@@ -64,6 +64,10 @@ public:
         return virt;
     }
 
+    uintptr_t get_phys(){
+        return virt;
+    }
+
     operator bool() const {
         return virt != 0;
     }
