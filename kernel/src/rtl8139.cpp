@@ -94,7 +94,7 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     // 8. Set RCR (Receive Configuration Register)
 
-    out_dword(iobase + RCR, RCR_APM | RCR_AM | RCR_AB | RCR_WRAP);
+    out_dword(iobase + RCR, RCR_AAP | RCR_APM | RCR_AM | RCR_AB | RCR_WRAP);
 
     // 9. Enable RX and TX
 
