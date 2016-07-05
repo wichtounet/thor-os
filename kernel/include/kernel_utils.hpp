@@ -58,6 +58,17 @@ inline void out_dword(uint16_t _port, uint32_t _data){
         : [port] "dN" (_port), [data] "a" (_data));
 }
 
+inline uint16_t switch_endian_16(uint16_t nb) {
+   return (nb>>8) | (nb<<8);
+}
+
+inline uint32_t switch_endian_32(uint32_t nb) {
+   return ((nb>>24)&0xff)      |
+          ((nb<<8)&0xff0000)   |
+          ((nb>>8)&0xff00)     |
+          ((nb<<24)&0xff000000);
+}
+
 void print_stack(const char* msg, size_t check);
 #define SHOW_STACK(M) { size_t check = 0; asm volatile("mov %0, rsp;" : "=r" (check)); print_stack(((M)), check); }
 
