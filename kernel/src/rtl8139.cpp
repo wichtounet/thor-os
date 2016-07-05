@@ -13,6 +13,8 @@
 #include "interrupts.hpp"
 #include "paging.hpp"
 
+#include "ethernet_layer.hpp"
+
 #define MAC0 0x00
 #define MAC4 0x04
 #define CMD 0x37
@@ -66,8 +68,6 @@ void packet_handler(interrupt::syscall_regs*){
     //This should be a packet header
     uint16_t header = *reinterpret_cast<uint16_t*>(desc.buffer_rx);
 
-    logging::logf(logging::log_level::TRACE, "rtl8139: Packet Received %u\n", uint64_t(header));
-
     // Get the interrupt status
     auto status = in_word(desc.iobase + ISR);
 
@@ -81,31 +81,37 @@ void packet_handler(interrupt::syscall_regs*){
 
         while((in_byte(desc.iobase + CMD) & CMD_NOT_EMPTY) == 0){
             auto cur_offset = cur_rx % 0x3000;
-            auto buffer_rx = desc.buffer_rx;
+            auto buffer_rx = reinterpret_cast<char*>(desc.buffer_rx);
 
             auto packet_status = *reinterpret_cast<uint32_t*>(buffer_rx + cur_offset);
-            auto packet_length = packet_status >> 16;
+            auto packet_length = packet_status >> 16; //Extract the size from the header
+            auto packet_payload = buffer_rx + cur_offset + 4; //Skip the packet header (NIC)
 
             if (packet_status & (RX_BAD_SYMBOL | RX_RUNT | RX_TOO_LONG | RX_CRC_ERR | RX_BAD_ALIGN)) {
-                logging::logf(logging::log_level::TRACE, "rtl8139: Packet Error %u\n", uint64_t(packet_status));
+                logging::logf(logging::log_level::TRACE, "rtl8139: Packet Error, status:%u\n", uint64_t(packet_status));
 
                 //TODO We should probably reset the controller ?
+            } else if(packet_length == 0){
+                // TODO Normally this should not happen, it probably indicates a bug somewhere
+                logging::logf(logging::log_level::TRACE, "rtl8139: Packet Error Length = 0, status:%u\n", uint64_t(packet_status));
             } else {
+                // Omit CRC from the length
                 auto packet_only_length = packet_length - 4;
 
                 logging::logf(logging::log_level::TRACE, "rtl8139: Packet OK length:%u\n", uint64_t(packet_only_length));
 
                 auto packet_buffer = new char[packet_only_length];
 
-                std::copy_n(reinterpret_cast<uint32_t*>(buffer_rx + cur_offset + 4), packet_buffer, packet_only_length);
+                std::copy_n(packet_buffer, packet_payload, packet_only_length);
 
-                //TODO Handle packet
+                network::ethernet::packet packet(packet_buffer, packet_only_length);
+                network::ethernet::decode(packet);
 
                 delete[] packet_buffer;
             }
 
             cur_rx = (cur_rx + packet_length + 4 + 3) & ~3; //align on 4 bytes
-            out_word(desc.iobase + RX_BUF_PTR, cur_rx - 16);
+            out_word(desc.iobase + RX_BUF_PTR, cur_rx - 0x10);
 
             logging::logf(logging::log_level::TRACE, "rtl8139: Packet Handled\n");
         }
@@ -136,7 +142,7 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
     auto iobase = pci::read_config_dword(pci_device.bus, pci_device.device, pci_device.function, 0x10) & (~0x3);
     desc->iobase = iobase;
 
-    logging::logf(logging::log_level::TRACE, "rtl8139: I/O Base address :%u\n", uint64_t(iobase));
+    logging::logf(logging::log_level::TRACE, "rtl8139: I/O Base address :%h\n", uint64_t(iobase));
 
     // 3. Power on the device
 
@@ -156,12 +162,17 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     auto buffer_rx_virt = virtual_allocator::allocate(3);
     if(!paging::map_pages(buffer_rx_virt, buffer_rx_phys, 3)){
-        logging::logf(logging::log_level::ERROR, "rtl8139: I/O Unable to map %u into %u\n", buffer_rx_phys, buffer_rx_virt);
+        logging::logf(logging::log_level::ERROR, "rtl8139: Unable to map %h into %h\n", buffer_rx_phys, buffer_rx_virt);
     }
 
     desc->phys_buffer_rx = buffer_rx_phys;
     desc->buffer_rx = buffer_rx_virt;
     desc->cur_rx = 0;
+
+    std::fill_n(reinterpret_cast<char*>(desc->buffer_rx), 0x3000, 0);
+
+    logging::logf(logging::log_level::TRACE, "rtl8139: Physical RX Buffer :%h\n", uint64_t(desc->phys_buffer_rx));
+    logging::logf(logging::log_level::TRACE, "rtl8139: Virtual RX Buffer :%h\n", uint64_t(desc->buffer_rx));
 
     // 6. Register IRQ handler
 
