@@ -15,20 +15,34 @@
 
 #define MAC0 0x00
 #define MAC4 0x04
-#define RBSTART 0x30
 #define CMD 0x37
 #define IMR 0x3C //Interrupt mask register
 #define ISR 0x3E //Interrupt status register
 #define RCR 0x44 //Receive Config Register
 #define CONFIG_1 0x52
+#define RX_BUF 0x30
 #define RX_BUF_PTR 0x38
 #define RX_BUF_ADDR 0x3A
+
+#define RX_MISSED 0x4C
+#define RX_OK 0x01
+#define CMD_NOT_EMPTY 0x01
 
 #define RCR_AAP  (1 << 0) /* Accept All Packets */
 #define RCR_APM  (1 << 1) /* Accept Physical Match Packets */
 #define RCR_AM   (1 << 2) /* Accept Multicast Packets */
 #define RCR_AB   (1 << 3) /* Accept Broadcast Packets */
 #define RCR_WRAP (1 << 7) /* Wrap packets too long */
+
+#define RX_STATUS_OK 0x1
+#define RX_BAD_ALIGN 0x2
+#define RX_CRC_ERR 0x4
+#define RX_TOO_LONG 0x8
+#define RX_RUNT 0x10
+#define RX_BAD_SYMBOL 0x20
+#define RX_BROADCAST 0x2000
+#define RX_PHYSICAL 0x4000
+#define RX_MULTICAST 0x8000
 
 namespace {
 
@@ -60,28 +74,41 @@ void packet_handler(interrupt::syscall_regs*){
     // Acknowledge the handling of the packet
     out_word(desc.iobase + ISR, status);
 
-#define RX_OK 0x01
-#define CMD_NOT_EMPTY 0x01
-
     if(status & RX_OK){
         logging::logf(logging::log_level::TRACE, "rtl8139: Receive status OK\n");
 
         auto cur_rx = desc.cur_rx;
-        auto buffer_rx = desc.buffer_rx;
 
         while((in_byte(desc.iobase + CMD) & CMD_NOT_EMPTY) == 0){
-            auto packet_header = *reinterpret_cast<uint16_t*>(buffer_rx + cur_rx);
-            auto packet_length = *reinterpret_cast<uint16_t*>(buffer_rx + cur_rx + 2);
-            auto packet_only_length = packet_length - 4;
+            auto cur_offset = cur_rx % 0x3000;
+            auto buffer_rx = desc.buffer_rx;
 
-            logging::logf(logging::log_level::TRACE, "rtl8139: Handle Packet Received %u\n", uint64_t(packet_header));
-            logging::logf(logging::log_level::TRACE, "rtl8139: Handle Packet Received %u\n", uint64_t(packet_length));
+            auto packet_status = *reinterpret_cast<uint32_t*>(buffer_rx + cur_offset);
+            auto packet_length = packet_status >> 16;
 
-            cur_rx = (cur_rx + packet_length + 4 + 3) & ~3;
+            if (packet_status & (RX_BAD_SYMBOL | RX_RUNT | RX_TOO_LONG | RX_CRC_ERR | RX_BAD_ALIGN)) {
+                logging::logf(logging::log_level::TRACE, "rtl8139: Packet Error %u\n", uint64_t(packet_status));
+
+                //TODO We should probably reset the controller ?
+            } else {
+                auto packet_only_length = packet_length - 4;
+
+                logging::logf(logging::log_level::TRACE, "rtl8139: Packet OK length:%u\n", uint64_t(packet_only_length));
+
+                auto packet_buffer = new char[packet_only_length];
+
+                std::copy_n(reinterpret_cast<uint32_t*>(buffer_rx + cur_offset + 4), packet_buffer, packet_only_length);
+
+                //TODO Handle packet
+
+                delete[] packet_buffer;
+            }
+
+            cur_rx = (cur_rx + packet_length + 4 + 3) & ~3; //align on 4 bytes
             out_word(desc.iobase + RX_BUF_PTR, cur_rx - 16);
-        }
 
-        logging::logf(logging::log_level::TRACE, "rtl8139: Packet Handled\n");
+            logging::logf(logging::log_level::TRACE, "rtl8139: Packet Handled\n");
+        }
 
         desc.cur_rx = cur_rx;
     } else {
@@ -100,9 +127,9 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     // 1. Enable PCI Bus Mastering (allows DMA)
 
-    auto command_register = pci::read_config_dword(pci_device.bus, pci_device.device, pci_device.function, 4);
-    command_register |= 2; // Set Bus Mastering Bit
-    pci::write_config_dword(pci_device.bus, pci_device.device, pci_device.function, 4, command_register);
+    auto command_register = pci::read_config_dword(pci_device.bus, pci_device.device, pci_device.function, 0x4);
+    command_register |= 0x4; // Set Bus Mastering Bit
+    pci::write_config_dword(pci_device.bus, pci_device.device, pci_device.function, 0x4, command_register);
 
     // 2. Get the I/O base address
 
@@ -123,7 +150,9 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
     // 5. Init the receive buffer
 
     auto buffer_rx_phys = physical_allocator::allocate(3);
-    out_dword(iobase + RBSTART, buffer_rx_phys);
+    out_dword(iobase + RX_BUF, buffer_rx_phys);
+    out_dword(iobase + RX_BUF_PTR, 0);
+    out_dword(iobase + RX_BUF_ADDR, 0);
 
     auto buffer_rx_virt = virtual_allocator::allocate(3);
     if(!paging::map_pages(buffer_rx_virt, buffer_rx_phys, 3)){
@@ -151,6 +180,7 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     // 9. Enable RX and TX
 
+    out_dword(iobase+ RX_MISSED, 0x0);
     out_byte(iobase + CMD, 0x0C); // Sets the RE and TE bits high
 
     // 10. Get the mac address
