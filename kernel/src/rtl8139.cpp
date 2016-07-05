@@ -9,7 +9,9 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "physical_allocator.hpp"
+#include "virtual_allocator.hpp"
 #include "interrupts.hpp"
+#include "paging.hpp"
 
 #define MAC0 0x00
 #define MAC4 0x04
@@ -30,6 +32,8 @@ namespace {
 
 struct rtl8139_t {
     uint32_t iobase;
+    uint64_t phys_buffer_rx;
+    uint64_t buffer_rx;
 };
 
 //TODO Add a way so that the interrupt handler is able to pass a void ptr to the handler
@@ -80,6 +84,14 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     auto buffer_rx_phys = physical_allocator::allocate(3);
     out_dword(iobase + RBSTART, buffer_rx_phys);
+
+    auto buffer_rx_virt = virtual_allocator::allocate(3);
+    if(!paging::map_pages(buffer_rx_virt, buffer_rx_phys, 3)){
+        logging::logf(logging::log_level::ERROR, "rtl8139: I/O Unable to map %u into %u\n", buffer_rx_phys, buffer_rx_virt);
+    }
+
+    desc->phys_buffer_rx = buffer_rx_phys;
+    desc->buffer_rx = buffer_rx_virt;
 
     // 6. Register IRQ handler
 
