@@ -65,9 +65,6 @@ void packet_handler(interrupt::syscall_regs*){
 
     auto& desc = *saved_desc;
 
-    //This should be a packet header
-    uint16_t header = *reinterpret_cast<uint16_t*>(desc.buffer_rx);
-
     // Get the interrupt status
     auto status = in_word(desc.iobase + ISR);
 
