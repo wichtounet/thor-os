@@ -29,6 +29,19 @@ const char* new_line = "\n";
 
 std::string buffer;
 
+const char* level_to_string(logging::log_level level){
+    switch(level){
+        case logging::log_level::TRACE:
+            return "TRACE";
+        case logging::log_level::DEBUG:
+            return "DEBUG";
+        case logging::log_level::WARNING:
+            return "WARNING";
+        case logging::log_level::ERROR:
+            return "ERROR";
+    }
+}
+
 void append_to_file(const char* s, size_t length){
     auto fd = vfs::open("/messages", std::OPEN_CREATE);
 
@@ -114,8 +127,10 @@ void logging::log(const std::string& s){
     append_to_file(s.c_str(), s.size());
 }
 
-void logging::log(log_level /*level*/, const char* s){
+void logging::log(log_level level, const char* s){
     //First, print to the virtual debugger
+    virtual_debug(level_to_string(level));
+    virtual_debug(": ");
     virtual_debug(s);
 
     if(is_early()){
