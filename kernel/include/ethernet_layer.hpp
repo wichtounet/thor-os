@@ -29,8 +29,9 @@ struct packet {
 
     // Set by ethernet
     ether_type type;
+    size_t index;
 
-    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size) {}
+    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0) {}
 };
 
 struct address {

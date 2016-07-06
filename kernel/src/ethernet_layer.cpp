@@ -11,6 +11,7 @@
 #include "ethernet_layer.hpp"
 #include "logging.hpp"
 #include "kernel_utils.hpp"
+#include "arp_layer.hpp"
 
 namespace {
 
@@ -51,6 +52,7 @@ void network::ethernet::decode(packet& packet){
     logging::logf(logging::log_level::TRACE, "ethernet: Destination MAC Address %h \n", target_mac);
 
     packet.type = decode_ether_type(ether_header);
+    packet.index += sizeof(header);
 
     switch(packet.type){
         case ether_type::IPV4:
@@ -60,7 +62,7 @@ void network::ethernet::decode(packet& packet){
             logging::logf(logging::log_level::TRACE, "ethernet: IPV6 Packet (unsupported)\n");
             break;
         case ether_type::ARP:
-            logging::logf(logging::log_level::TRACE, "ethernet: ARP Packet (unsupported)\n");
+            network::arp::decode(packet);
             break;
         case ether_type::UNKNOWN:
             logging::logf(logging::log_level::TRACE, "ethernet: Unhandled Packet Type: %u\n", uint64_t(switch_endian_16(ether_header->type)));
