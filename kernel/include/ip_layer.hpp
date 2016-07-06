@@ -14,15 +14,21 @@ namespace network {
 
 namespace ip {
 
+//TODO Maybe packed 4x8 is better
+
 struct address {
-    uint32_t address = 0;
+    uint32_t raw_address = 0;
 
     uint8_t operator()(size_t index) const {
-        return (address >> ((3 - index) * 8)) & 0xFF;
+        return (raw_address >> ((3 - index) * 8)) & 0xFF;
     }
 
     void set_sub(size_t index, uint8_t value){
-        address |= uint32_t(value) << ((3 - index) * 8);
+        raw_address |= uint32_t(value) << ((3 - index) * 8);
+    }
+
+    bool operator==(const address& rhs) const {
+        return this->raw_address == rhs.raw_address;
     }
 };
 
