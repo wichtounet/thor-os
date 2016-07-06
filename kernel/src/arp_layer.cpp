@@ -9,6 +9,7 @@
 #include <string.hpp>
 
 #include "arp_layer.hpp"
+#include "arp_cache.hpp"
 #include "ip_layer.hpp"
 #include "logging.hpp"
 #include "kernel_utils.hpp"
@@ -58,8 +59,8 @@ void network::arp::decode(network::ethernet::packet& packet){
     size_t target_hw = 0;
 
     for(size_t i = 0; i < 3; ++i){
-        source_hw |= uint64_t(switch_endian_16(arp_header->source_hw_addr[i])) << ((3 - i) * 16);
-        target_hw |= uint64_t(switch_endian_16(arp_header->target_hw_addr[i])) << ((3 - i) * 16);
+        source_hw |= uint64_t(switch_endian_16(arp_header->source_hw_addr[i])) << ((2 - i) * 16);
+        target_hw |= uint64_t(switch_endian_16(arp_header->target_hw_addr[i])) << ((2 - i) * 16);
     }
 
     logging::logf(logging::log_level::TRACE, "arp: Source HW Address %h \n", source_hw);
@@ -83,6 +84,9 @@ void network::arp::decode(network::ethernet::packet& packet){
         uint64_t(source_prot(0)), uint64_t(source_prot(1)), uint64_t(source_prot(2)), uint64_t(source_prot(3)));
     logging::logf(logging::log_level::TRACE, "arp: Target Protocol Address %u.%u.%u.%u \n",
         uint64_t(target_prot(0)), uint64_t(target_prot(1)), uint64_t(target_prot(2)), uint64_t(target_prot(3)));
+
+    //TODO Only do that is not an ARP probe
+    network::arp::update_cache(source_hw, source_prot);
 
     if(operation == 0x1){
         logging::logf(logging::log_level::TRACE, "arp: Handle Request\n");
