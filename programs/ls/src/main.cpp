@@ -13,15 +13,10 @@
 
 static constexpr const size_t BUFFER_SIZE = 4096;
 
-int main(int argc, char* argv[]){
-    //TODO Support ls with no-arg
+namespace {
 
-    if(argc == 1){
-        print_line("Usage: ls file_path");
-        exit(1);
-    }
-
-    auto fd = open(argv[1]);
+void ls_files(const char* file_path){
+    auto fd = open(file_path);
 
     if(fd.valid()){
         auto info = stat(*fd);
@@ -61,6 +56,17 @@ int main(int argc, char* argv[]){
         close(*fd);
     } else {
         printf("ls: error: %s\n", std::error_message(fd.error()));
+    }
+}
+
+} // end of anonymous namespace
+
+int main(int argc, char* argv[]){
+    if(argc == 1){
+        auto cwd = current_working_directory();
+        ls_files(cwd.c_str());
+    } else {
+        ls_files(argv[1]);
     }
 
     exit(0);
