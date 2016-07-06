@@ -88,45 +88,6 @@ void logging::to_file(){
     }
 }
 
-void logging::log(const char* s){
-    if(!is_early()){
-        //TODO Display the string in the kernel terminal
-    }
-
-    if(is_file()){
-        append_to_file(s, std::str_len(s));
-    } else {
-        thor_assert(current_early < MAX_EARLY, "early log buffer is full");
-
-        early_logs[current_early++] = s;
-    }
-}
-
-void logging::logf(const char* format, ...){
-    thor_assert(!is_early(), "log(string) in only valid in normal mode");
-    thor_assert(is_file(), "log(string) in only valid file mode");
-
-    //TODO Display the string in the kernel terminal
-
-    va_list va;
-    va_start(va, format);
-
-    auto s = vsprintf(format, va);
-
-    va_end(va);
-
-    append_to_file(s.c_str(), s.size());
-}
-
-void logging::log(const std::string& s){
-    thor_assert(!is_early(), "log(string) in only valid in normal mode");
-    thor_assert(is_file(), "log(string) in only valid file mode");
-
-    //TODO Display the string in the kernel terminal
-
-    append_to_file(s.c_str(), s.size());
-}
-
 void logging::log(log_level level, const char* s){
     //First, print to the virtual debugger
     virtual_debug(level_to_string(level));

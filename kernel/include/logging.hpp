@@ -29,11 +29,6 @@ void log(log_level level, const char* s);
 void log(log_level level, const std::string& s);
 void logf(log_level level, const char* s, ...);
 
-//TODO Deprecate theses
-void log(const char* s);
-void logf(const char* s, ...);
-void log(const std::string& s);
-
 } //end of namespace logging
 
 #endif
