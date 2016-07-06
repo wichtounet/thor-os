@@ -22,6 +22,10 @@ struct header {
     uint8_t hw_len;
     uint8_t protocol_len;
     uint16_t operation;
+    uint16_t source_hw_addr[3];
+    uint16_t source_protocol_addr[2];
+    uint16_t target_hw_addr[3];
+    uint16_t target_protocol_addr[2];
 } __attribute__((packed));
 
 void decode(network::ethernet::packet& packet);
