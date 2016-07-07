@@ -14,7 +14,7 @@
 
 namespace {
 
-void timer_handler(interrupt::syscall_regs*){
+void timer_handler(interrupt::syscall_regs*, void*){
     timer::tick();
 }
 
@@ -27,5 +27,5 @@ void pit::install(){
     out_byte(0x40, static_cast<uint8_t>(divisor));
     out_byte(0x40, static_cast<uint8_t>(divisor >> 8));
 
-    interrupt::register_irq_handler(0, timer_handler);
+    interrupt::register_irq_handler(0, timer_handler, nullptr);
 }

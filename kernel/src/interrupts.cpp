@@ -49,7 +49,8 @@ struct idtr {
 idt_entry idt_64[64];
 idtr idtr_64;
 
-void (*irq_handlers[16])(interrupt::syscall_regs*);
+void (*irq_handlers[16])(interrupt::syscall_regs*, void*);
+void* irq_handler_data[16];
 void (*syscall_handlers[interrupt::SYSCALL_MAX])(interrupt::syscall_regs*);
 
 void idt_set_gate(size_t gate, void (*function)(void), uint16_t gdt_selector, idt_flags flags){
@@ -88,6 +89,7 @@ void install_idt(){
 
     //Clear the IRQ handlers
     std::fill_n(irq_handlers, 16, nullptr);
+    std::fill_n(irq_handler_data, 16, nullptr);
 
     //Give the IDTR address to the CPU
     asm volatile("lidt [%0]" : : "m" (idtr_64));
@@ -258,7 +260,7 @@ void _irq_handler(interrupt::syscall_regs* regs){
 
     //If there is an handler, call it
     if(irq_handlers[regs->code]){
-        irq_handlers[regs->code](regs);
+        irq_handlers[regs->code](regs, irq_handler_data[regs->code]);
     }
 }
 
@@ -273,8 +275,9 @@ void _syscall_handler(interrupt::syscall_regs* regs){
 
 } //end of extern "C"
 
-void interrupt::register_irq_handler(size_t irq, void (*handler)(interrupt::syscall_regs*)){
+void interrupt::register_irq_handler(size_t irq, void (*handler)(interrupt::syscall_regs*, void*), void* data){
     irq_handlers[irq] = handler;
+    irq_handler_data[irq] = data;
 }
 
 void interrupt::register_syscall_handler(size_t syscall, void (*handler)(interrupt::syscall_regs*)){

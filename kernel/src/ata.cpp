@@ -69,7 +69,7 @@ volatile bool secondary_invoked = false;
 //TODO In the future, the wait for IRQs, could
 //be done with a semaphore
 
-void primary_controller_handler(interrupt::syscall_regs*){
+void primary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
         primary_lock.release();
     } else {
@@ -77,7 +77,7 @@ void primary_controller_handler(interrupt::syscall_regs*){
     }
 }
 
-void secondary_controller_handler(interrupt::syscall_regs*){
+void secondary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
         secondary_lock.release();
     } else {
@@ -387,8 +387,8 @@ void ata::detect_disks(){
     out_byte(ATA_PRIMARY + ATA_DEV_CTL, 0);
     out_byte(ATA_SECONDARY + ATA_DEV_CTL, 0);
 
-    interrupt::register_irq_handler(14, primary_controller_handler);
-    interrupt::register_irq_handler(15, secondary_controller_handler);
+    interrupt::register_irq_handler(14, primary_controller_handler, nullptr);
+    interrupt::register_irq_handler(15, secondary_controller_handler, nullptr);
 }
 
 uint8_t ata::number_of_disks(){

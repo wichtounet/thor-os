@@ -90,7 +90,7 @@ char shifted_qwertz[128] = {
     0,  /* All other keys are undefined */
 };
 
-void keyboard_handler(interrupt::syscall_regs*){
+void keyboard_handler(interrupt::syscall_regs*, void*){
     auto key = static_cast<char>(in_byte(0x60));
 
     stdio::get_active_terminal().send_input(key);
@@ -99,7 +99,7 @@ void keyboard_handler(interrupt::syscall_regs*){
 } //end of anonymous namespace
 
 void keyboard::install_driver(){
-    interrupt::register_irq_handler(1, keyboard_handler);
+    interrupt::register_irq_handler(1, keyboard_handler, nullptr);
 
     // At this point, we need to clear the keyboard buffer
     // Otherwise, all the following events will be lost

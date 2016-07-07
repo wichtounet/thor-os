@@ -56,14 +56,10 @@ struct rtl8139_t {
     uint64_t cur_rx; //Index inside the buffer
 };
 
-//TODO Add a way so that the interrupt handler is able to pass a void ptr to the handler
-
-volatile rtl8139_t* saved_desc;
-
-void packet_handler(interrupt::syscall_regs*){
+void packet_handler(interrupt::syscall_regs*, void* data){
     logging::logf(logging::log_level::TRACE, "rtl8139: Packet Received\n");
 
-    auto& desc = *saved_desc;
+    auto& desc = *static_cast<rtl8139_t*>(data);
 
     // Get the interrupt status
     auto status = in_word(desc.iobase + ISR);
@@ -126,7 +122,6 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     rtl8139_t* desc = new rtl8139_t();
     interface.driver_data = desc;
-    saved_desc = desc;
 
     // 1. Enable PCI Bus Mastering (allows DMA)
 
@@ -174,7 +169,7 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
     // 6. Register IRQ handler
 
     auto irq = pci::read_config_dword(pci_device.bus, pci_device.device, pci_device.function, 0x3c) & 0xFF;
-    interrupt::register_irq_handler(irq, packet_handler);
+    interrupt::register_irq_handler(irq, packet_handler, desc);
 
     // 7. Set IMR + ISR
 
