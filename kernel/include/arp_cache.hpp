@@ -18,8 +18,8 @@ namespace arp {
 
 void update_cache(uint64_t mac, network::ip::address ip);
 
-void is_mac_cached(uint64_t mac);
-void is_ip_cached(network::ip::address ip);
+bool is_mac_cached(uint64_t mac);
+bool is_ip_cached(network::ip::address ip);
 
 network::ip::address get_ip(uint64_t mac);
 uint64_t get_mac(network::ip::address ip);
