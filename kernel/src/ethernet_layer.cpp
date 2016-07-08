@@ -12,6 +12,7 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "arp_layer.hpp"
+#include "network.hpp"
 
 namespace {
 
@@ -26,6 +27,20 @@ network::ethernet::ether_type decode_ether_type(network::ethernet::header* heade
         return network::ethernet::ether_type::ARP;
     } else {
         return network::ethernet::ether_type::UNKNOWN;
+    }
+}
+
+uint16_t type_to_code(network::ethernet::ether_type type){
+    switch(type){
+        case network::ethernet::ether_type::IPV4:
+            return 0x800;
+        case network::ethernet::ether_type::IPV6:
+            return 0x86DD;
+        case network::ethernet::ether_type::ARP:
+            return 0x806;
+        case network::ethernet::ether_type::UNKNOWN:
+            logging::logf(logging::log_level::ERROR, "ethernet: Decoding UNKOWN code\n");
+            return 0x0;
     }
 }
 
@@ -67,5 +82,23 @@ void network::ethernet::decode(packet& packet){
         case ether_type::UNKNOWN:
             logging::logf(logging::log_level::TRACE, "ethernet: Unhandled Packet Type: %u\n", uint64_t(switch_endian_16(ether_header->type)));
             break;
+    }
+}
+
+network::ethernet::packet network::ethernet::prepare_packet(size_t size, size_t destination, ether_type type){
+    auto total_size = size + sizeof(header);
+
+    network::ethernet::packet p(new char[total_size], total_size);
+    p.index = sizeof(header);
+
+    auto& inter = network::interface(0); //TODO Select the interface ?
+    auto source_mac = inter.mac_address;
+
+    header* ether_header = reinterpret_cast<header*>(p.payload);
+    ether_header->type = switch_endian_16(type_to_code(type));
+
+    for(size_t i = 0; i < 6; ++i){
+        ether_header->source.mac[i] = (source_mac >> ((5 - i) * 8)) & 0xF;
+        ether_header->target.mac[i] = (destination >> ((5 - i) * 8)) & 0xF;
     }
 }
