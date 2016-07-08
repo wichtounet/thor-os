@@ -91,6 +91,10 @@ void network::arp::decode(network::ethernet::packet& packet){
     if(operation == 0x1){
         logging::logf(logging::log_level::TRACE, "arp: Handle Request\n");
 
+        // Ask the ethernet layer to craft a packet
+        auto packet = network::ethernet::prepare_packet(sizeof(header), target_hw, ethernet::ether_type::ARP);
+
+
         //TODO
     } else if(operation == 0x2){
         logging::logf(logging::log_level::TRACE, "arp: Handle Reply\n");
