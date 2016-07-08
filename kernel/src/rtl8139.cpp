@@ -27,8 +27,10 @@
 #define RX_BUF_ADDR 0x3A
 
 #define RX_MISSED 0x4C
-#define RX_OK 0x01
 #define CMD_NOT_EMPTY 0x01
+
+#define RX_OK 0x01
+#define TX_OK 0x04
 
 #define RCR_AAP  (1 << 0) /* Accept All Packets */
 #define RCR_APM  (1 << 1) /* Accept Physical Match Packets */
@@ -175,7 +177,8 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     logging::logf(logging::log_level::TRACE, "rtl8139: IRQ :%u\n", uint64_t(irq));
 
-    out_word(iobase + IMR, 0x0005); // Sets the TOK and ROK bits high
+    // Enable some interrupts
+    out_word(iobase + IMR, TX_OK | RX_OK);
 
     // 8. Set RCR (Receive Configuration Register)
 
