@@ -61,3 +61,7 @@ void network::init(){
 size_t network::number_of_interfaces(){
     return interfaces.size();
 }
+
+interface_descriptor& network::interface(size_t index){
+    return interfaces[index];
+}

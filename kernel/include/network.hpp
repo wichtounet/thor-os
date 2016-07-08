@@ -26,6 +26,8 @@ void init();
 
 size_t number_of_interfaces();
 
+interface_descriptor& interface(size_t index);
+
 } // end of network namespace
 
 #endif
