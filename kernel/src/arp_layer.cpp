@@ -86,8 +86,10 @@ void network::arp::decode(network::ethernet::packet& packet){
     logging::logf(logging::log_level::TRACE, "arp: Target Protocol Address %u.%u.%u.%u \n",
         uint64_t(target_prot(0)), uint64_t(target_prot(1)), uint64_t(target_prot(2)), uint64_t(target_prot(3)));
 
-    //TODO Only do that is not an ARP probe
-    network::arp::update_cache(source_hw, source_prot);
+    // If not an ARP Probe, update the ARP cache
+    if(source_prot.raw_address == 0x0){
+        network::arp::update_cache(source_hw, source_prot);
+    }
 
     if(operation == 0x1){
         logging::logf(logging::log_level::TRACE, "arp: Handle Request\n");
