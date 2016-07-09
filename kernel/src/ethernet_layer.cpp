@@ -50,7 +50,7 @@ void network::ethernet::decode(packet& packet){
     header* ether_header = reinterpret_cast<header*>(packet.payload);
 
     // Filter out non-ethernet II frames
-    if(ether_header->type < 1536){
+    if(switch_endian_16(ether_header->type) < 1536){
         logging::logf(logging::log_level::ERROR, "ethernet: error only ethernet frame type II is supported\n");
         return;
     }
@@ -89,16 +89,19 @@ network::ethernet::packet network::ethernet::prepare_packet(size_t size, size_t 
     auto total_size = size + sizeof(header);
 
     network::ethernet::packet p(new char[total_size], total_size);
+    p.type = type;
     p.index = sizeof(header);
 
     auto& inter = network::interface(0); //TODO Select the interface ?
     auto source_mac = inter.mac_address;
 
-    header* ether_header = reinterpret_cast<header*>(p.payload);
+    auto* ether_header = reinterpret_cast<header*>(p.payload);
     ether_header->type = switch_endian_16(type_to_code(type));
 
     for(size_t i = 0; i < 6; ++i){
-        ether_header->source.mac[i] = (source_mac >> ((5 - i) * 8)) & 0xF;
-        ether_header->target.mac[i] = (destination >> ((5 - i) * 8)) & 0xF;
+        ether_header->source.mac[i] = (source_mac >> ((5 - i) * 8));
+        ether_header->target.mac[i] = (destination >> ((5 - i) * 8));
     }
+
+    return p;
 }

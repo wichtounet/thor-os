@@ -13,6 +13,7 @@
 #include "ip_layer.hpp"
 #include "logging.hpp"
 #include "kernel_utils.hpp"
+#include "network.hpp"
 
 namespace {
 
@@ -92,8 +93,31 @@ void network::arp::decode(network::ethernet::packet& packet){
         logging::logf(logging::log_level::TRACE, "arp: Handle Request\n");
 
         // Ask the ethernet layer to craft a packet
-        auto packet = network::ethernet::prepare_packet(sizeof(header), target_hw, ethernet::ether_type::ARP);
+        auto packet = network::ethernet::prepare_packet(sizeof(header), source_hw, ethernet::ether_type::ARP);
 
+        auto* arp_reply_header = reinterpret_cast<header*>(packet.payload + packet.index);
+
+        arp_reply_header->hw_type = switch_endian_16(0x1); // ethernet
+        arp_reply_header->protocol_type = switch_endian_16(0x800); // IPV4
+        arp_reply_header->hw_len = 0x6; // MAC Address
+        arp_reply_header->protocol_len = 0x4; // IP Address
+        arp_reply_header->operation = switch_endian_16(0x2); //ARP Reply
+
+        auto& inter = network::interface(0); //TODO Select the interface ?
+        auto source_mac = inter.mac_address;
+
+        for(size_t i = 0; i < 3; ++i){
+            arp_reply_header->target_hw_addr[i] = arp_header->source_hw_addr[i];
+
+            arp_reply_header->source_hw_addr[i] = switch_endian_16(uint16_t(source_mac >> ((2 - i) * 16)));
+        }
+
+        for(size_t i = 0; i < 2; ++i){
+            arp_reply_header->source_protocol_addr[i] = arp_header->target_protocol_addr[i];
+            arp_reply_header->target_protocol_addr[i] = arp_header->source_protocol_addr[i];
+        }
+
+        network::ethernet::finalize_packet(packet);
 
         //TODO
     } else if(operation == 0x2){
