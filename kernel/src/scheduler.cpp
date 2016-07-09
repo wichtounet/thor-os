@@ -189,19 +189,6 @@ scheduler::process_t& new_process(){
     return process.process;
 }
 
-void queue_system_process(scheduler::pid_t pid){
-    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
-
-    auto& process = pcb[pid];
-
-    thor_assert(process.process.priority <= scheduler::MAX_PRIORITY, "Invalid priority");
-    thor_assert(process.process.priority >= scheduler::MIN_PRIORITY, "Invalid priority");
-
-    process.state = scheduler::process_state::READY;
-
-    run_queue(process.process.priority).push_back(pid);
-}
-
 void queue_process(scheduler::pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
@@ -222,7 +209,7 @@ void create_idle_task(){
     idle_process.ppid = 0;
     idle_process.priority = scheduler::MIN_PRIORITY;
 
-    queue_system_process(idle_process.pid);
+    scheduler::queue_system_process(idle_process.pid);
 
     idle_pid = idle_process.pid;
 }
@@ -233,7 +220,7 @@ void create_init_task(){
     init_process.ppid = 0;
     init_process.priority = scheduler::MIN_PRIORITY + 1;
 
-    queue_system_process(init_process.pid);
+    scheduler::queue_system_process(init_process.pid);
 }
 
 void create_gc_task(){
@@ -242,7 +229,7 @@ void create_gc_task(){
     gc_process.ppid = 1;
     gc_process.priority = scheduler::MIN_PRIORITY + 1;
 
-    queue_system_process(gc_process.pid);
+    scheduler::queue_system_process(gc_process.pid);
 
     gc_pid = gc_process.pid;
 }
@@ -881,3 +868,15 @@ scheduler::process_t& scheduler::create_kernel_task(char* user_stack, char* kern
     return process;
 }
 
+void scheduler::queue_system_process(scheduler::pid_t pid){
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+
+    auto& process = pcb[pid];
+
+    thor_assert(process.process.priority <= scheduler::MAX_PRIORITY, "Invalid priority");
+    thor_assert(process.process.priority >= scheduler::MIN_PRIORITY, "Invalid priority");
+
+    process.state = scheduler::process_state::READY;
+
+    run_queue(process.process.priority).push_back(pid);
+}
