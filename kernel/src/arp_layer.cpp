@@ -14,12 +14,6 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 
-namespace {
-
-//TODO
-
-} //end of anonymous namespace
-
 void network::arp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
