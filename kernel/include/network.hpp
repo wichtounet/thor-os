@@ -29,7 +29,8 @@ struct interface_descriptor {
     }
 };
 
-void init();
+void init();        // Called early on
+void finalize();    // Called after scheduler is initialized
 
 size_t number_of_interfaces();
 

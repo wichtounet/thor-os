@@ -12,6 +12,7 @@
 #include "pci.hpp"
 #include "rtl8139.hpp"
 #include "physical_allocator.hpp"
+#include "scheduler.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -54,6 +55,18 @@ void network::init(){
             sysfs::set_constant_value("/sys/", path + "/mac", std::to_string(interface.mac_address));
 
             ++index;
+        }
+    }
+}
+
+void network::finalize(){
+    for(auto& interface : interfaces){
+        // if the interface has a driver
+        if(interface.enabled){
+            auto* user_stack = new char[scheduler::user_stack_size];
+            auto* kernel_stack = new char[scheduler::kernel_stack_size];
+
+            //TODO Create the system process
         }
     }
 }

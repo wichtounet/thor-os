@@ -108,7 +108,13 @@ void  kernel_main(){
     sysfs::set_constant_value("/sys/", "version", "0.1");
     sysfs::set_constant_value("/sys/", "author", "Baptiste Wicht");
 
+    // Initialize the scheduler
     scheduler::init();
+
+    // Start the secondary kernel processes
+    network::finalize();
+
+    // Start the scheduler
     scheduler::start();
 }
 
