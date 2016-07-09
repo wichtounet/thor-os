@@ -50,6 +50,7 @@ static_assert(sizeof(header) == 14, "The size of the Ethernet header is 14 bytes
 void decode(packet& packet);
 
 packet prepare_packet(size_t size, size_t destination, ether_type type);
+packet finalize_packet(size_t size, size_t destination, ether_type type);
 
 } // end of ethernet namespace
 
