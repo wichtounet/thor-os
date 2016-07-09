@@ -118,8 +118,6 @@ void network::arp::decode(network::ethernet::packet& packet){
         }
 
         network::ethernet::finalize_packet(packet);
-
-        //TODO
     } else if(operation == 0x2){
         logging::logf(logging::log_level::TRACE, "arp: Handle Reply\n");
 
