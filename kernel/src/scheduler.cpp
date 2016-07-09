@@ -582,7 +582,7 @@ uint64_t get_process_cr3(size_t pid){
 
 } //end of extern "C"
 
-void scheduler::init(){ //Create the idle task
+void scheduler::init(){
     //Init all the semaphores
     for(auto& lock : run_queue_locks){
         lock.init();
@@ -594,13 +594,13 @@ void scheduler::init(){ //Create the idle task
     create_gc_task();
 
     current_ticks = 0;
-
-    //Run the init task by default
-    current_pid = 1;
-    pcb[current_pid].state = scheduler::process_state::RUNNING;
 }
 
 void scheduler::start(){
+    //Run the init task by default
+    current_pid = 1;
+    pcb[current_pid].state = scheduler::process_state::RUNNING;
+
     started = true;
 
     init_task_switch(current_pid);
