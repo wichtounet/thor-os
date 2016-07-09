@@ -212,6 +212,9 @@ size_t paging::physical_address(size_t virt){
         return 0;
     }
 
+    // Offset inside the page
+    auto offset = virt & uint64_t((1 << 13) - 1);
+
     //Find the correct indexes inside the paging table for the physical address
     auto pml4e = pml4_entry(virt);
     auto pdpte = pdpt_entry(virt);
@@ -223,7 +226,7 @@ size_t paging::physical_address(size_t virt){
     auto pd = find_pd(pdpt, pdpte);
     auto pt = find_pt(pd, pde);
 
-    return reinterpret_cast<uintptr_t>(pt[pte]) & ~0xFFF;
+    return offset + reinterpret_cast<uintptr_t>(pt[pte]) & ~0xFFF;
 }
 
 bool paging::page_present(size_t virt){
