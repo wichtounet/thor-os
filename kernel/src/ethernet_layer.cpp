@@ -106,6 +106,6 @@ network::ethernet::packet network::ethernet::prepare_packet(size_t size, size_t 
     return p;
 }
 
-packet finalize_packet(size_t size, size_t destination, ether_type type){
+void network::ethernet::finalize_packet(packet& p){
     //TODO Send the packet
 }
