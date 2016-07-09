@@ -8,7 +8,7 @@
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
 
-#include <queue.hpp>
+#include <circular_buffer.hpp>
 #include <lock_guard.hpp>
 
 #include "spinlock.hpp"
@@ -18,37 +18,58 @@ struct semaphore {
 private:
     spinlock lock;
     size_t value;
-    std::queue<scheduler::pid_t> queue;
+    circular_buffer<scheduler::pid_t, 16> queue;
 
 public:
     void init(size_t v){
         value = v;
     }
 
-    void wait(){
-        std::lock_guard<spinlock> l(lock);
+    void acquire(){
+        lock.acquire();
 
         if(value > 0){
             --value;
+            lock.release();
         } else {
-            queue.push(scheduler::get_pid());
-            scheduler::block_process(scheduler::get_pid());
+            auto pid = scheduler::get_pid();
+            queue.push(pid);
+
+            scheduler::block_process_light(pid);
+            lock.release();
+            scheduler::reschedule();
         }
     }
 
-    void signal(){
+    void release(){
         std::lock_guard<spinlock> l(lock);
 
         if(queue.empty()){
             ++value;
         } else {
-            auto pid = queue.top();
+            auto pid = queue.pop();
             scheduler::unblock_process(pid);
-
-            queue.pop();
 
             //No need to increment value, the process won't
             //decrement it
+        }
+    }
+
+    void release(size_t v){
+        std::lock_guard<spinlock> l(lock);
+
+        if(queue.empty()){
+            value += v;
+        } else {
+            while(v && !queue.empty()){
+                auto pid = queue.pop();
+                scheduler::unblock_process(pid);
+                --v;
+            }
+
+            if(v){
+                value += v;
+            }
         }
     }
 };
