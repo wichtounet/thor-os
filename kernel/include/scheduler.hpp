@@ -50,6 +50,7 @@ void block_process_light(pid_t pid);
 //TODO Maybe do that for unblock as well!
 
 process_t& create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)());
+process_t& create_kernel_task_args(char* user_stack, char* kernel_stack, void (*fun)(void*), void* data);
 void queue_system_process(pid_t pid);
 
 } //end of namespace scheduler

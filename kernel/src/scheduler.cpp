@@ -868,6 +868,15 @@ scheduler::process_t& scheduler::create_kernel_task(char* user_stack, char* kern
     return process;
 }
 
+scheduler::process_t& scheduler::create_kernel_task_args(char* user_stack, char* kernel_stack, void (*fun)(void*), void* data){
+    auto& process = scheduler::create_kernel_task(user_stack, kernel_stack, reinterpret_cast<void(*)()>(fun));
+
+    // rdi is the first register used for integers parameter passing
+    process.context->rdi = reinterpret_cast<size_t>(data);
+
+    return process;
+}
+
 void scheduler::queue_system_process(scheduler::pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
