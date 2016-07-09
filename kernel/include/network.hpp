@@ -15,12 +15,16 @@
 namespace network {
 
 struct interface_descriptor {
+    size_t id;
     bool enabled;
     std::string name;
     std::string driver;
     size_t pci_device;
     size_t mac_address;
     void* driver_data;
+
+    size_t rx_thread_pid;
+    size_t tx_thread_pid;
 
     void (*hw_send)(const interface_descriptor&, ethernet::packet& p);
 

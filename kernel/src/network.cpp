@@ -13,12 +13,37 @@
 #include "rtl8139.hpp"
 #include "physical_allocator.hpp"
 #include "scheduler.hpp"
+#include "logging.hpp"
 
 #include "fs/sysfs.hpp"
 
 namespace {
 
 std::vector<network::interface_descriptor> interfaces;
+
+void rx_thread(void* data){
+    auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
+
+    auto pid = scheduler::get_pid();
+
+    logging::logf(logging::log_level::TRACE, "network: RX Thread for interface %u started (pid:%u)\n", interface.id, pid);
+
+    while(true){
+        scheduler::block_process(pid);
+    }
+}
+
+void tx_thread(void* data){
+    auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
+
+    auto pid = scheduler::get_pid();
+
+    logging::logf(logging::log_level::TRACE, "network: TX Thread for interface %u started (pid:%u)\n", interface.id, pid);
+
+    while(true){
+        scheduler::block_process(pid);
+    }
+}
 
 } //end of anonymous namespace
 
@@ -33,6 +58,7 @@ void network::init(){
 
             auto& interface = interfaces.back();
 
+            interface.id = interfaces.size() - 1;
             interface.name = std::string("net") + std::to_string(index);
             interface.pci_device = i;
             interface.enabled = false;
@@ -63,10 +89,26 @@ void network::finalize(){
     for(auto& interface : interfaces){
         // if the interface has a driver
         if(interface.enabled){
-            auto* user_stack = new char[scheduler::user_stack_size];
-            auto* kernel_stack = new char[scheduler::kernel_stack_size];
+            auto* rx_user_stack = new char[scheduler::user_stack_size];
+            auto* rx_kernel_stack = new char[scheduler::kernel_stack_size];
 
-            //TODO Create the system process
+            auto* tx_user_stack = new char[scheduler::user_stack_size];
+            auto* tx_kernel_stack = new char[scheduler::kernel_stack_size];
+
+            auto& rx_process = scheduler::create_kernel_task_args(rx_user_stack, rx_kernel_stack, &rx_thread, &interface);
+            auto& tx_process = scheduler::create_kernel_task_args(tx_user_stack, tx_kernel_stack, &tx_thread, &interface);
+
+            rx_process.ppid = 1;
+            tx_process.ppid = 1;
+
+            rx_process.priority = scheduler::DEFAULT_PRIORITY;
+            tx_process.priority = scheduler::DEFAULT_PRIORITY;
+
+            scheduler::queue_system_process(rx_process.pid);
+            scheduler::queue_system_process(tx_process.pid);
+
+            interface.tx_thread_pid = tx_process.pid;
+            interface.rx_thread_pid = rx_process.pid;
         }
     }
 }
