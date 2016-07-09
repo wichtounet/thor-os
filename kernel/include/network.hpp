@@ -10,6 +10,7 @@
 
 #include <types.hpp>
 #include <string.hpp>
+#include "ethernet_packet.hpp"
 
 namespace network {
 
@@ -20,6 +21,12 @@ struct interface_descriptor {
     size_t pci_device;
     size_t mac_address;
     void* driver_data;
+
+    void (*hw_send)(const interface_descriptor&, ethernet::packet& p);
+
+    void send(ethernet::packet& p) const {
+        hw_send(*this, p);
+    }
 };
 
 void init();

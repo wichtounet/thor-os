@@ -9,32 +9,13 @@
 #define NET_ETHERNET_LAYER_H
 
 #include <types.hpp>
-#include <string.hpp>
 
 #include "network.hpp"
+#include "ethernet_packet.hpp"
 
 namespace network {
 
 namespace ethernet {
-
-enum class ether_type {
-    IPV4,
-    IPV6,
-    ARP,
-    UNKNOWN
-};
-
-struct packet {
-    // Set from the beginning
-    char* payload;
-    size_t payload_size;
-
-    // Set by ethernet
-    ether_type type;
-    size_t index;
-
-    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0) {}
-};
 
 struct address {
     char mac[6];

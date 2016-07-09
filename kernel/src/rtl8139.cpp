@@ -119,14 +119,24 @@ void packet_handler(interrupt::syscall_regs*, void* data){
     }
 }
 
+void send_packet(const network::interface_descriptor& interface, network::ethernet::packet& packet){
+    logging::logf(logging::log_level::TRACE, "rtl8139: Start transmitting packet\n");
+
+    auto& desc = *reinterpret_cast<rtl8139_t*>(interface.driver_data);
+
+    //TODO
+}
+
 } //end of anonymous namespace
 
 void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_descriptor& pci_device){
     logging::logf(logging::log_level::TRACE, "rtl8139: Initialize RTL8139 driver on pci:%u:%u:%u\n", uint64_t(pci_device.bus), uint64_t(pci_device.device), uint64_t(pci_device.function));
 
     rtl8139_t* desc = new rtl8139_t();
-    interface.driver_data = desc;
     desc->interface = &interface;
+
+    interface.driver_data = desc;
+    interface.hw_send = send_packet;
 
     // 1. Enable PCI Bus Mastering (allows DMA)
 
