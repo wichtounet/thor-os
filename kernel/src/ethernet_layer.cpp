@@ -12,7 +12,6 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "arp_layer.hpp"
-#include "network.hpp"
 
 namespace {
 
@@ -46,7 +45,7 @@ uint16_t type_to_code(network::ethernet::ether_type type){
 
 } //end of anonymous namespace
 
-void network::ethernet::decode(packet& packet){
+void network::ethernet::decode(network::interface_descriptor& interface, packet& packet){
     header* ether_header = reinterpret_cast<header*>(packet.payload);
 
     // Filter out non-ethernet II frames
@@ -77,7 +76,7 @@ void network::ethernet::decode(packet& packet){
             logging::logf(logging::log_level::TRACE, "ethernet: IPV6 Packet (unsupported)\n");
             break;
         case ether_type::ARP:
-            network::arp::decode(packet);
+            network::arp::decode(interface, packet);
             break;
         case ether_type::UNKNOWN:
             logging::logf(logging::log_level::TRACE, "ethernet: Unhandled Packet Type: %u\n", uint64_t(switch_endian_16(ether_header->type)));
@@ -85,15 +84,14 @@ void network::ethernet::decode(packet& packet){
     }
 }
 
-network::ethernet::packet network::ethernet::prepare_packet(size_t size, size_t destination, ether_type type){
+network::ethernet::packet network::ethernet::prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
     auto total_size = size + sizeof(header);
 
     network::ethernet::packet p(new char[total_size], total_size);
     p.type = type;
     p.index = sizeof(header);
 
-    auto& inter = network::interface(0); //TODO Select the interface ?
-    auto source_mac = inter.mac_address;
+    auto source_mac = interface.mac_address;
 
     auto* ether_header = reinterpret_cast<header*>(p.payload);
     ether_header->type = switch_endian_16(type_to_code(type));
@@ -106,6 +104,6 @@ network::ethernet::packet network::ethernet::prepare_packet(size_t size, size_t 
     return p;
 }
 
-void network::ethernet::finalize_packet(packet& p){
+void network::ethernet::finalize_packet(network::interface_descriptor& interface, packet& p){
     //TODO Send the packet
 }

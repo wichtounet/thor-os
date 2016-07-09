@@ -11,6 +11,8 @@
 #include <types.hpp>
 #include <string.hpp>
 
+#include "network.hpp"
+
 namespace network {
 
 namespace ethernet {
@@ -47,10 +49,10 @@ struct header {
 static_assert(sizeof(address) == 6, "The size of a MAC address is 6 bytes");
 static_assert(sizeof(header) == 14, "The size of the Ethernet header is 14 bytes");
 
-void decode(packet& packet);
+void decode(network::interface_descriptor& interface, packet& packet);
 
-packet prepare_packet(size_t size, size_t destination, ether_type type);
-void finalize_packet(packet& p);
+packet prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
+void finalize_packet(network::interface_descriptor& interface, packet& p);
 
 } // end of ethernet namespace
 

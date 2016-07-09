@@ -11,6 +11,7 @@
 #include <types.hpp>
 
 #include "ethernet_layer.hpp"
+#include "network.hpp"
 
 namespace network {
 
@@ -28,7 +29,7 @@ struct header {
     uint16_t target_protocol_addr[2];
 } __attribute__((packed));
 
-void decode(network::ethernet::packet& packet);
+void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
 } // end of arp namespace
 

@@ -13,7 +13,6 @@
 #include "ip_layer.hpp"
 #include "logging.hpp"
 #include "kernel_utils.hpp"
-#include "network.hpp"
 
 namespace {
 
@@ -21,7 +20,7 @@ namespace {
 
 } //end of anonymous namespace
 
-void network::arp::decode(network::ethernet::packet& packet){
+void network::arp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
     logging::logf(logging::log_level::TRACE, "arp: Start ARP packet handling\n");
@@ -95,7 +94,7 @@ void network::arp::decode(network::ethernet::packet& packet){
         logging::logf(logging::log_level::TRACE, "arp: Handle Request\n");
 
         // Ask the ethernet layer to craft a packet
-        auto packet = network::ethernet::prepare_packet(sizeof(header), source_hw, ethernet::ether_type::ARP);
+        auto packet = network::ethernet::prepare_packet(interface, sizeof(header), source_hw, ethernet::ether_type::ARP);
 
         auto* arp_reply_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
@@ -105,8 +104,7 @@ void network::arp::decode(network::ethernet::packet& packet){
         arp_reply_header->protocol_len = 0x4; // IP Address
         arp_reply_header->operation = switch_endian_16(0x2); //ARP Reply
 
-        auto& inter = network::interface(0); //TODO Select the interface ?
-        auto source_mac = inter.mac_address;
+        auto source_mac = interface.mac_address;
 
         for(size_t i = 0; i < 3; ++i){
             arp_reply_header->target_hw_addr[i] = arp_header->source_hw_addr[i];
@@ -119,7 +117,7 @@ void network::arp::decode(network::ethernet::packet& packet){
             arp_reply_header->target_protocol_addr[i] = arp_header->source_protocol_addr[i];
         }
 
-        network::ethernet::finalize_packet(packet);
+        network::ethernet::finalize_packet(interface, packet);
     } else if(operation == 0x2){
         logging::logf(logging::log_level::TRACE, "arp: Handle Reply\n");
 

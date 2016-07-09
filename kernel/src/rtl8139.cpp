@@ -56,6 +56,8 @@ struct rtl8139_t {
     uint64_t buffer_rx;
 
     uint64_t cur_rx; //Index inside the buffer
+
+    network::interface_descriptor* interface;
 };
 
 void packet_handler(interrupt::syscall_regs*, void* data){
@@ -100,7 +102,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
                 std::copy_n(packet_buffer, packet_payload, packet_only_length);
 
                 network::ethernet::packet packet(packet_buffer, packet_only_length);
-                network::ethernet::decode(packet);
+                network::ethernet::decode(*desc.interface, packet);
 
                 delete[] packet_buffer;
             }
@@ -124,6 +126,7 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     rtl8139_t* desc = new rtl8139_t();
     interface.driver_data = desc;
+    desc->interface = &interface;
 
     // 1. Enable PCI Bus Mastering (allows DMA)
 
