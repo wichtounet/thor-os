@@ -194,8 +194,6 @@ void send_packet(const network::interface_descriptor& interface, network::ethern
 
     out_dword(iobase + TX_ADDR + entry * 4, tx_desc.buffer_phys);
     out_dword(iobase + TX_STATUS + entry * 4, uint32_t(256) << 16 | packet.payload_size);
-
-    delete[] packet.payload; //TODO Probably not the base place
 }
 
 } //end of anonymous namespace
