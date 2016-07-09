@@ -12,6 +12,8 @@
 #include "virtual_allocator.hpp"
 #include "interrupts.hpp"
 #include "paging.hpp"
+#include "semaphore.hpp"
+#include "paging.hpp"
 
 #include "ethernet_layer.hpp"
 
@@ -26,11 +28,15 @@
 #define RX_BUF_PTR 0x38
 #define RX_BUF_ADDR 0x3A
 
+#define TX_STATUS 0x10 // First TX status register (32 bit)
+#define TX_ADDR   0x20 // First Tx Address register (32 bit)
+
 #define RX_MISSED 0x4C
 #define CMD_NOT_EMPTY 0x01
 
-#define RX_OK 0x01
-#define TX_OK 0x04
+#define RX_OK 0x01 // Receive OK
+#define TX_OK 0x04 // Transmit OK
+#define TX_ERR 0x08 // Transmit error
 
 #define RCR_AAP  (1 << 0) /* Accept All Packets */
 #define RCR_APM  (1 << 1) /* Accept Physical Match Packets */
@@ -48,21 +54,39 @@
 #define RX_PHYSICAL 0x4000
 #define RX_MULTICAST 0x8000
 
+#define TX_STATUS_HOST_OWNS 0x00002000
+#define TX_STATUS_UNDERRUN 0x00004000
+#define TX_STATUS_OK 0x00008000
+#define TX_STATUS_OUT_OF_WINDOW 0x20000000
+#define TX_STATUS_ABORTED 0x40000000
+#define TX_STATUS_CARRIER_LOST 0x80000000
+
 namespace {
+
+constexpr const size_t tx_buffers = 4;
+constexpr const size_t tx_buffer_size = 0x2000;
+
+struct tx_desc_t {
+    size_t buffer_phys;
+    size_t buffer_virt;
+};
 
 struct rtl8139_t {
     uint32_t iobase;
     uint64_t phys_buffer_rx;
     uint64_t buffer_rx;
 
-    uint64_t cur_rx; //Index inside the buffer
+    uint64_t cur_rx; //Index inside the receive buffer
+    volatile uint64_t cur_tx; //Index inside the transmit buffer
+    volatile uint64_t dirty_tx; //Index inside the transmit buffer
+
+    tx_desc_t tx_desc[tx_buffers];
+    semaphore tx_sem;
 
     network::interface_descriptor* interface;
 };
 
 void packet_handler(interrupt::syscall_regs*, void* data){
-    logging::logf(logging::log_level::TRACE, "rtl8139: Packet Received\n");
-
     auto& desc = *static_cast<rtl8139_t*>(data);
 
     // Get the interrupt status
@@ -72,7 +96,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
     out_word(desc.iobase + ISR, status);
 
     if(status & RX_OK){
-        logging::logf(logging::log_level::TRACE, "rtl8139: Receive status OK\n");
+        logging::logf(logging::log_level::TRACE, "rtl8139: Packet received correctly OK\n");
 
         auto cur_rx = desc.cur_rx;
 
@@ -114,8 +138,41 @@ void packet_handler(interrupt::syscall_regs*, void* data){
         }
 
         desc.cur_rx = cur_rx;
+    } else if(status & (TX_OK | TX_ERR)){
+        auto& dirty_tx = desc.dirty_tx;
+        size_t cleaned_up = 0;
+
+        while(desc.cur_tx - dirty_tx > 0){
+            auto entry = dirty_tx % tx_buffers;
+
+            auto tx_status = in_dword(desc.iobase + TX_STATUS + entry * 4);
+
+            // Check if the packet has already been transmitted
+            if(!(tx_status & (TX_STATUS_OK | TX_STATUS_ABORTED | TX_STATUS_UNDERRUN))){
+                break;
+            }
+
+            if(tx_status & (TX_STATUS_OUT_OF_WINDOW | TX_STATUS_ABORTED)){
+                if(tx_status & TX_STATUS_CARRIER_LOST){
+                    logging::logf(logging::log_level::ERROR, "rtl8139: Carrier lost\n");
+                } else if (tx_status & TX_STATUS_OUT_OF_WINDOW){
+                    logging::logf(logging::log_level::ERROR, "rtl8139: Out of window\n");
+                } else {
+                    logging::logf(logging::log_level::TRACE, "rtl8139: Packet abortd\n");
+                }
+            } else {
+                logging::logf(logging::log_level::TRACE, "rtl8139: Packet transmitted correctly\n");
+            }
+
+            ++cleaned_up;
+            ++dirty_tx;
+        }
+
+        desc.tx_sem.release(cleaned_up);
     } else {
-        logging::logf(logging::log_level::TRACE, "rtl8139: Receive status not OK\n");
+        // This should not happen since we only enable a few
+        // interrupts
+        logging::logf(logging::log_level::ERROR, "rtl8139: Receive status unhandled OK\n");
     }
 }
 
@@ -123,8 +180,22 @@ void send_packet(const network::interface_descriptor& interface, network::ethern
     logging::logf(logging::log_level::TRACE, "rtl8139: Start transmitting packet\n");
 
     auto& desc = *reinterpret_cast<rtl8139_t*>(interface.driver_data);
+    auto iobase = desc.iobase;
 
-    //TODO
+    // Wait for a free entry in the tx buffers
+    desc.tx_sem.acquire();
+
+    // Claim an entry in the tx buffers
+    auto entry = __sync_fetch_and_add(&desc.cur_tx, 1) % tx_buffers;
+
+    auto& tx_desc = desc.tx_desc[entry];
+
+    std::copy_n(reinterpret_cast<char*>(tx_desc.buffer_virt), packet.payload, packet.payload_size);
+
+    out_dword(iobase + TX_ADDR + entry * 4, tx_desc.buffer_phys);
+    out_dword(iobase + TX_STATUS + entry * 4, uint32_t(256) << 16 | packet.payload_size);
+
+    delete[] packet.payload; //TODO Probably not the base place
 }
 
 } //end of anonymous namespace
@@ -137,6 +208,19 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     interface.driver_data = desc;
     interface.hw_send = send_packet;
+
+    desc->tx_sem.init(tx_buffers);
+
+    for(size_t i = 0; i < tx_buffers; ++i){
+        auto& tx_desc = desc->tx_desc[i];
+
+        tx_desc.buffer_phys = physical_allocator::allocate(2);
+        tx_desc.buffer_virt = virtual_allocator::allocate(2);
+
+        if(!paging::map_pages(tx_desc.buffer_virt, tx_desc.buffer_phys, 2)){
+            logging::logf(logging::log_level::ERROR, "rtl8139: Unable to map %h into %h\n", tx_desc.buffer_virt, tx_desc.buffer_phys);
+        }
+    }
 
     // 1. Enable PCI Bus Mastering (allows DMA)
 
@@ -175,6 +259,8 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
     desc->phys_buffer_rx = buffer_rx_phys;
     desc->buffer_rx = buffer_rx_virt;
     desc->cur_rx = 0;
+    desc->cur_tx = 0;
+    desc->dirty_tx = 0;
 
     std::fill_n(reinterpret_cast<char*>(desc->buffer_rx), 0x3000, 0);
 
@@ -191,7 +277,7 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
     logging::logf(logging::log_level::TRACE, "rtl8139: IRQ :%u\n", uint64_t(irq));
 
     // Enable some interrupts
-    out_word(iobase + IMR, TX_OK | RX_OK);
+    out_word(iobase + IMR, RX_OK | TX_OK | TX_ERR);
 
     // 8. Set RCR (Receive Configuration Register)
 
