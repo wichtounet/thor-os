@@ -216,38 +216,8 @@ void queue_process(scheduler::pid_t pid){
     run_queue(process.process.priority).push_back(pid);
 }
 
-scheduler::process_t& create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)()){
-    auto& process = new_process();
-
-    process.system = true;
-    process.physical_cr3 = paging::get_physical_pml4t();
-    process.paging_size = 0;
-
-    process.physical_user_stack = 0;
-    process.physical_kernel_stack = 0;
-
-    auto rsp = &user_stack[scheduler::user_stack_size - STACK_ALIGNMENT];
-    rsp -= sizeof(interrupt::syscall_regs);
-
-    process.context = reinterpret_cast<interrupt::syscall_regs*>(rsp);
-
-    process.context->rflags = 0x200;
-    process.context->rip = reinterpret_cast<size_t>(fun);
-    process.context->rsp = reinterpret_cast<size_t>(rsp);
-    process.context->cs = gdt::LONG_SELECTOR;
-    process.context->ds = gdt::DATA_SELECTOR;
-
-    process.kernel_rsp = reinterpret_cast<size_t>(&kernel_stack[scheduler::kernel_stack_size - STACK_ALIGNMENT]);
-
-    thor_assert((reinterpret_cast<size_t>(process.context) - sizeof(interrupt::syscall_regs)) % STACK_ALIGNMENT == 0, "Process context must be correctly aligned");
-    thor_assert((process.context->rsp - sizeof(interrupt::syscall_regs)) % STACK_ALIGNMENT == 0, "Process user stack must be correctly aligned");
-    thor_assert(process.kernel_rsp % STACK_ALIGNMENT == 0, "Process kernel stack must be correctly aligned");
-
-    return process;
-}
-
 void create_idle_task(){
-    auto& idle_process = create_kernel_task(idle_stack, idle_kernel_stack, &idle_task);
+    auto& idle_process = scheduler::create_kernel_task(idle_stack, idle_kernel_stack, &idle_task);
 
     idle_process.ppid = 0;
     idle_process.priority = scheduler::MIN_PRIORITY;
@@ -258,7 +228,7 @@ void create_idle_task(){
 }
 
 void create_init_task(){
-    auto& init_process = create_kernel_task(init_stack, init_kernel_stack, &init_task);
+    auto& init_process = scheduler::create_kernel_task(init_stack, init_kernel_stack, &init_task);
 
     init_process.ppid = 0;
     init_process.priority = scheduler::MIN_PRIORITY + 1;
@@ -267,7 +237,7 @@ void create_init_task(){
 }
 
 void create_gc_task(){
-    auto& gc_process = create_kernel_task(gc_stack, gc_kernel_stack, &gc_task);
+    auto& gc_process = scheduler::create_kernel_task(gc_stack, gc_kernel_stack, &gc_task);
 
     gc_process.ppid = 1;
     gc_process.priority = scheduler::MIN_PRIORITY + 1;
@@ -880,3 +850,34 @@ const std::vector<std::string>& scheduler::get_working_directory(){
 void scheduler::set_working_directory(const std::vector<std::string>& directory){
     pcb[current_pid].working_directory = directory;
 }
+
+scheduler::process_t& scheduler::create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)()){
+    auto& process = new_process();
+
+    process.system = true;
+    process.physical_cr3 = paging::get_physical_pml4t();
+    process.paging_size = 0;
+
+    process.physical_user_stack = 0;
+    process.physical_kernel_stack = 0;
+
+    auto rsp = &user_stack[scheduler::user_stack_size - STACK_ALIGNMENT];
+    rsp -= sizeof(interrupt::syscall_regs);
+
+    process.context = reinterpret_cast<interrupt::syscall_regs*>(rsp);
+
+    process.context->rflags = 0x200;
+    process.context->rip = reinterpret_cast<size_t>(fun);
+    process.context->rsp = reinterpret_cast<size_t>(rsp);
+    process.context->cs = gdt::LONG_SELECTOR;
+    process.context->ds = gdt::DATA_SELECTOR;
+
+    process.kernel_rsp = reinterpret_cast<size_t>(&kernel_stack[scheduler::kernel_stack_size - STACK_ALIGNMENT]);
+
+    thor_assert((reinterpret_cast<size_t>(process.context) - sizeof(interrupt::syscall_regs)) % STACK_ALIGNMENT == 0, "Process context must be correctly aligned");
+    thor_assert((process.context->rsp - sizeof(interrupt::syscall_regs)) % STACK_ALIGNMENT == 0, "Process user stack must be correctly aligned");
+    thor_assert(process.kernel_rsp % STACK_ALIGNMENT == 0, "Process kernel stack must be correctly aligned");
+
+    return process;
+}
+
