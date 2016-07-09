@@ -30,6 +30,7 @@ struct packet {
     ether_type type;
     size_t index;
 
+    packet(){}
     packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0) {}
 };
 

@@ -10,6 +10,11 @@
 
 #include <types.hpp>
 #include <string.hpp>
+#include <circular_buffer.hpp>
+#include <mutex.hpp>
+#include <semaphore.hpp>
+#include <lock_guard.hpp>
+
 #include "ethernet_packet.hpp"
 
 namespace network {
@@ -23,13 +28,21 @@ struct interface_descriptor {
     size_t mac_address;
     void* driver_data;
 
+    mutable mutex<> tx_lock; //To synchronize the queue
+    mutable semaphore tx_sem;
+
     size_t rx_thread_pid;
     size_t tx_thread_pid;
 
+    circular_buffer<ethernet::packet, 32> rx_queue;
+    circular_buffer<ethernet::packet, 32> tx_queue;
+
     void (*hw_send)(const interface_descriptor&, ethernet::packet& p);
 
-    void send(ethernet::packet& p) const {
-        hw_send(*this, p);
+    void send(ethernet::packet& p){
+        std::lock_guard<mutex<>> l(tx_lock);
+        tx_queue.push(p);
+        tx_sem.release();
     }
 };
 

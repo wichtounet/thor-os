@@ -9,6 +9,7 @@
 #define MUTEX_H
 
 #include <circular_buffer.hpp>
+#include <lock_guard.hpp>
 
 #include "spinlock.hpp"
 #include "scheduler.hpp"

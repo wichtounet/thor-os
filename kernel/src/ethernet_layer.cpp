@@ -106,6 +106,4 @@ network::ethernet::packet network::ethernet::prepare_packet(network::interface_d
 
 void network::ethernet::finalize_packet(network::interface_descriptor& interface, packet& p){
     interface.send(p);
-
-    delete[] p.payload;
 }

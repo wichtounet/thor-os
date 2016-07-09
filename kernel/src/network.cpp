@@ -41,7 +41,11 @@ void tx_thread(void* data){
     logging::logf(logging::log_level::TRACE, "network: TX Thread for interface %u started (pid:%u)\n", interface.id, pid);
 
     while(true){
-        scheduler::block_process(pid);
+        interface.tx_sem.acquire();
+
+        auto packet = interface.tx_queue.pop();
+        interface.hw_send(interface, packet);
+        delete[] packet.payload;
     }
 }
 
@@ -64,6 +68,8 @@ void network::init(){
             interface.enabled = false;
             interface.driver = "";
             interface.driver_data = nullptr;
+            interface.tx_lock.init(1);
+            interface.tx_sem.init(0);
 
             if(pci_device.vendor_id == 0x10EC && pci_device.device_id == 0x8139){
                 interface.enabled = true;
