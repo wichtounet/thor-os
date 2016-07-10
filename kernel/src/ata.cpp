@@ -66,9 +66,6 @@ mutex<> secondary_lock;
 volatile bool primary_invoked = false;
 volatile bool secondary_invoked = false;
 
-//TODO In the future, the wait for IRQs, could
-//be done with a semaphore
-
 void primary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
         primary_lock.release();
