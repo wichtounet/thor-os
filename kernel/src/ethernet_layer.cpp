@@ -81,6 +81,9 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
         case ether_type::UNKNOWN:
             logging::logf(logging::log_level::TRACE, "ethernet: Unhandled Packet Type: %u\n", uint64_t(switch_endian_16(ether_header->type)));
             break;
+        default:
+            logging::logf(logging::log_level::ERROR, "ethernet: Unhandled Packet Type in switch: %u\n", uint64_t(switch_endian_16(ether_header->type)));
+            break;
     }
 }
 
