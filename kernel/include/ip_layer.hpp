@@ -32,6 +32,15 @@ struct address {
     }
 };
 
+inline address make_address(uint8_t a, uint8_t b, uint8_t c, uint8_t d){
+    address addr;
+    addr.set_sub(0, a);
+    addr.set_sub(1, b);
+    addr.set_sub(2, c);
+    addr.set_sub(3, d);
+    return addr;
+}
+
 } // end of ip namespace
 
 } // end of network namespace
