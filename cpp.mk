@@ -23,6 +23,8 @@ KERNEL_CPP_FLAGS_64=$(CPP_FLAGS_64)
 # Activate Stack Smashing Protection
 KERNEL_CPP_FLAGS_64 += -fstack-protector
 
+KERNEL_CPP_FLAGS_64 += -Iacpica/source/include
+
 COMMON_LINK_FLAGS=-lgcc
 
 KERNEL_LINK_FLAGS=$(COMMON_LINK_FLAGS) -T linker.ld

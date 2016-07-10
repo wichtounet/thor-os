@@ -7,6 +7,10 @@
 
 #include <types.hpp>
 
+//ACPICA
+#include "thor_acenv.hpp" //The OS Specific Layer
+#include "acpi.h"
+
 #include "acpi.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"
@@ -270,9 +274,23 @@ int init_acpi(){
    return -1;
 }
 
+bool initialize_acpica(){
+    auto status = AcpiInitializeSubsystem();
+    if(ACPI_FAILURE(status)){
+        logging::logf("Impossible to initialize ACPICA subsystem\n");
+        return false;
+    }
+
+    //TODO COntinue
+}
+
 } //end of anonymous namespace
 
 bool acpi::init(){
+    if(!initialize_acpica()){
+        logging::logf("Impossible to initialize ACPICA\n");
+    }
+
     return init_acpi() == 0;
 }
 
