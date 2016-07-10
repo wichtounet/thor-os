@@ -14,6 +14,7 @@
 #include "paging.hpp"
 #include "semaphore.hpp"
 #include "paging.hpp"
+#include "int_lock.hpp"
 
 #include "ethernet_layer.hpp"
 
@@ -88,6 +89,7 @@ struct rtl8139_t {
 
 void packet_handler(interrupt::syscall_regs*, void* data){
     auto& desc = *static_cast<rtl8139_t*>(data);
+    auto& interface = *desc.interface;
 
     // Get the interrupt status
     auto status = in_word(desc.iobase + ISR);
@@ -126,9 +128,14 @@ void packet_handler(interrupt::syscall_regs*, void* data){
                 std::copy_n(packet_buffer, packet_payload, packet_only_length);
 
                 network::ethernet::packet packet(packet_buffer, packet_only_length);
-                network::ethernet::decode(*desc.interface, packet);
 
-                delete[] packet_buffer;
+                direct_int_lock lock;
+
+            logging::logf(logging::log_level::TRACE, "rtl8139: interface 1 %u\n", reinterpret_cast<size_t>(&interface));
+                interface.rx_queue.push(packet);
+            logging::logf(logging::log_level::TRACE, "rtl8139: interface 2 %u\n", reinterpret_cast<size_t>(&interface));
+                interface.rx_sem.release();
+            logging::logf(logging::log_level::TRACE, "rtl8139: interface 3 %u\n", reinterpret_cast<size_t>(&interface));
             }
 
             cur_rx = (cur_rx + packet_length + 4 + 3) & ~3; //align on 4 bytes

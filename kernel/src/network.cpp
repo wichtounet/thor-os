@@ -14,6 +14,7 @@
 #include "physical_allocator.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
+#include "ethernet_layer.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -29,7 +30,11 @@ void rx_thread(void* data){
     logging::logf(logging::log_level::TRACE, "network: RX Thread for interface %u started (pid:%u)\n", interface.id, pid);
 
     while(true){
-        scheduler::block_process(pid);
+        interface.rx_sem.acquire();
+
+        auto packet = interface.rx_queue.pop();
+        network::ethernet::decode(interface, packet);
+        delete[] packet.payload;
     }
 }
 
@@ -70,6 +75,7 @@ void network::init(){
             interface.driver_data = nullptr;
             interface.tx_lock.init(1);
             interface.tx_sem.init(0);
+            interface.rx_sem.init(0);
 
             if(pci_device.vendor_id == 0x10EC && pci_device.device_id == 0x8139){
                 interface.enabled = true;

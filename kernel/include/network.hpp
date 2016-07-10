@@ -30,6 +30,7 @@ struct interface_descriptor {
 
     mutable mutex<> tx_lock; //To synchronize the queue
     mutable semaphore tx_sem;
+    mutable semaphore rx_sem;
 
     size_t rx_thread_pid;
     size_t tx_thread_pid;

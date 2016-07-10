@@ -16,8 +16,8 @@
 
 struct semaphore {
 private:
-    spinlock lock;
-    size_t value;
+    mutable spinlock lock;
+    volatile size_t value;
     circular_buffer<scheduler::pid_t, 16> queue;
 
 public:
