@@ -5,10 +5,10 @@ default: cpuid
 include ../../cpp.mk
 
 %.cpp.o: src/%.cpp
-	$(CC) -c $< -o $@ $(PROGRAM_FLAGS)
+	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
 
 cpuid: main.cpp.o
-	$(CC) -o cpuid main.cpp.o $(PROGRAM_LINK_FLAGS)
+	$(CXX) -o cpuid main.cpp.o $(PROGRAM_LINK_FLAGS)
 
 clean:
 	rm -f *.cpp.o

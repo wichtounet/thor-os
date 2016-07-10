@@ -1,4 +1,5 @@
-CC=x86_64-elf-g++
+CC=x86_64-elf-gcc
+CXX=x86_64-elf-g++
 AS=x86_64-elf-as
 OC=x86_64-elf-objcopy
 AR=x86_64-elf-ar
@@ -24,6 +25,8 @@ KERNEL_CPP_FLAGS_64=$(CPP_FLAGS_64)
 KERNEL_CPP_FLAGS_64 += -fstack-protector
 
 KERNEL_CPP_FLAGS_64 += -Iacpica/source/include
+
+ACPICA_CPP_FLAGS = $(KERNEL_CPP_FLAGS_64) -include include/thor_acenv.hpp
 
 COMMON_LINK_FLAGS=-lgcc
 

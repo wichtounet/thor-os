@@ -5,11 +5,11 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef THOR_ACPI_H
-#define THOR_ACPI_H
+#ifndef THOR_ACPI_HPP
+#define THOR_ACPI_HPP
 
 // This file contains the OS specific layer for ACPICA for thor-os
 
-#define ACPI_MACHINE_WIDTH          8 //thor works in 64 bits
+#define ACPI_MACHINE_WIDTH          64 //thor works in 64 bits
 
 #endif

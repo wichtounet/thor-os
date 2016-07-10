@@ -9,10 +9,10 @@ D_FILES=$(CPP_FILES:%.cpp=%.cpp.d)
 O_FILES=$(CPP_FILES:%.cpp=%.cpp.o)
 
 src/%.cpp.d: $(CPP_FILES)
-	@ $(CC) $(LIB_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CXX) $(LIB_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/%.cpp.o:
-	$(CC) $(LIB_FLAGS) -c $< -o $@
+	$(CXX) $(LIB_FLAGS) -c $< -o $@
 
 -include $(D_FILES)
 

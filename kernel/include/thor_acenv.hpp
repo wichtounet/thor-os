@@ -244,6 +244,7 @@
  *****************************************************************************/
 
 #include "thor_acpi.hpp"
+#include <stdarg.h>
 
 /*! [End] no source code translation !*/
 
@@ -341,74 +342,6 @@
  * C library configuration
  *
  *****************************************************************************/
-
-/*
- * ACPI_USE_SYSTEM_CLIBRARY - Define this if linking to an actual C library.
- *      Otherwise, local versions of string/memory functions will be used.
- * ACPI_USE_STANDARD_HEADERS - Define this if linking to a C library and
- *      the standard header files may be used.
- *
- * The ACPICA subsystem only uses low level C library functions that do not
- * call operating system services and may therefore be inlined in the code.
- *
- * It may be necessary to tailor these include files to the target
- * generation environment.
- */
-#ifdef ACPI_USE_SYSTEM_CLIBRARY
-
-/* Use the standard C library headers. We want to keep these to a minimum. */
-
-#ifdef ACPI_USE_STANDARD_HEADERS
-
-/* Use the standard headers from the standard locations */
-
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
-#endif /* ACPI_USE_STANDARD_HEADERS */
-
-/* We will be linking to the standard Clib functions */
-
-#else
-
-/******************************************************************************
- *
- * Not using native C library, use local implementations
- *
- *****************************************************************************/
-
-/*
- * Use local definitions of C library macros and functions. These function
- * implementations may not be as efficient as an inline or assembly code
- * implementation provided by a native C library, but they are functionally
- * equivalent.
- */
-#ifndef va_arg
-
-#ifndef _VALIST
-#define _VALIST
-typedef char *va_list;
-#endif /* _VALIST */
-
-/* Storage alignment properties */
-
-#define  _AUPBND                (sizeof (ACPI_NATIVE_INT) - 1)
-#define  _ADNBND                (sizeof (ACPI_NATIVE_INT) - 1)
-
-/* Variable argument list macro definitions */
-
-#define _Bnd(X, bnd)            (((sizeof (X)) + (bnd)) & (~(bnd)))
-#define va_arg(ap, T)           (*(T *)(((ap) += (_Bnd (T, _AUPBND))) - (_Bnd (T,_ADNBND))))
-#define va_end(ap)              (ap = (va_list) NULL)
-#define va_start(ap, A)         (void) ((ap) = (((char *) &(A)) + (_Bnd (A,_AUPBND))))
-
-#endif /* va_arg */
-
-/* Use the local (ACPICA) definitions of the clib functions */
-
-#endif /* ACPI_USE_SYSTEM_CLIBRARY */
 
 #ifndef ACPI_FILE
 #ifdef ACPI_APPLICATION

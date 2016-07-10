@@ -9,29 +9,54 @@ KERNEL_CPP_DRIVERS_FILES=$(wildcard src/drivers/*.cpp)
 KERNEL_CPP_FS_FILES=$(wildcard src/fs/*.cpp)
 KERNEL_CPP_VFS_FILES=$(wildcard src/vfs/*.cpp)
 
+ACPICA_DISPATCHER_CPP_FILES=$(wildcard acpica/source/components/dispatcher/*.c)
+ACPICA_EVENTS_CPP_FILES=$(wildcard acpica/source/components/events/*.c)
+ACPICA_EXECUTER_CPP_FILES=$(wildcard acpica/source/components/executer/*.c)
+ACPICA_NAMESPACE_CPP_FILES=$(wildcard acpica/source/components/namespace/*.c)
+ACPICA_RESOURCES_CPP_FILES=$(wildcard acpica/source/components/resources/*.c)
+ACPICA_TABLES_CPP_FILES=$(wildcard acpica/source/components/tables/*.c)
+ACPICA_UTILITIES_CPP_FILES=$(wildcard acpica/source/components/utilities/*.c)
+
 KERNEL_D_FILES=$(KERNEL_CPP_FILES:%.cpp=%.cpp.d)
 KERNEL_D_DRIVERS_FILES=$(KERNEL_CPP_DRIVERS_FILES:%.cpp=%.cpp.d)
 KERNEL_D_FS_FILES=$(KERNEL_CPP_FS_FILES:%.cpp=%.cpp.d)
 KERNEL_D_VFS_FILES=$(KERNEL_CPP_VFS_FILES:%.cpp=%.cpp.d)
+
+ACPICA_DISPATCHER_D_FILES=$(ACPICA_DISPATCHER_CPP_FILES:%.c=%.c.d)
+ACPICA_EVENTS_D_FILES=$(ACPICA_EVENTS_CPP_FILES:%.c=%.c.d)
+ACPICA_EXECUTER_D_FILES=$(ACPICA_EXECUTER_CPP_FILES:%.c=%.c.d)
+ACPICA_NAMESPACE_D_FILES=$(ACPICA_NAMESPACE_CPP_FILES:%.c=%.c.d)
+ACPICA_RESOURCES_D_FILES=$(ACPICA_RESOURCES_CPP_FILES:%.c=%.c.d)
+ACPICA_TABLES_D_FILES=$(ACPICA_TABLES_CPP_FILES:%.c=%.c.d)
+ACPICA_UTILITIES_D_FILES=$(ACPICA_UTILITIES_CPP_FILES:%.c=%.c.d)
 
 KERNEL_O_FILES=$(KERNEL_CPP_FILES:%.cpp=%.cpp.o)
 KERNEL_O_DRIVERS_FILES=$(KERNEL_CPP_DRIVERS_FILES:%.cpp=%.cpp.o)
 KERNEL_O_FS_FILES=$(KERNEL_CPP_FS_FILES:%.cpp=%.cpp.o)
 KERNEL_O_VFS_FILES=$(KERNEL_CPP_VFS_FILES:%.cpp=%.cpp.o)
 
-#TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_O_FILES) $(KERNEL_O_FS_FILES) $(KERNEL_O_VFS_FILES) $(KERNEL_O_DRIVERS_FILES) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
+ACPICA_DISPATCHER_O_FILES=$(ACPICA_DISPATCHER_CPP_FILES:%.c=%.c.o)
+ACPICA_EVENTS_O_FILES=$(ACPICA_EVENTS_CPP_FILES:%.c=%.c.o)
+ACPICA_EXECUTER_O_FILES=$(ACPICA_EXECUTER_CPP_FILES:%.c=%.c.o)
+ACPICA_NAMESPACE_O_FILES=$(ACPICA_NAMESPACE_CPP_FILES:%.c=%.c.o)
+ACPICA_RESOURCES_O_FILES=$(ACPICA_RESOURCES_CPP_FILES:%.c=%.c.o)
+ACPICA_TABLES_O_FILES=$(ACPICA_TABLES_CPP_FILES:%.c=%.c.o)
+ACPICA_UTILITIES_O_FILES=$(ACPICA_UTILITIES_CPP_FILES:%.c=%.c.o)
+ACPICA_O_FILES=$(ACPICA_DISPATCHER_O_FILES) $(ACPICA_EVENTS_O_FILES) $(ACPICA_EXECUTER_O_FILES) $(ACPICA_NAMESPACE_O_FILES) $(ACPICA_RESOURCES_O_FILES) $(ACPICA_TABLES_O_FILES) $(ACPICA_UTILITIES_O_FILES)
 
-CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
-CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
+#TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
+O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_O_FILES) $(KERNEL_O_FS_FILES) $(KERNEL_O_VFS_FILES) $(KERNEL_O_DRIVERS_FILES) $(ACPICA_O_FILES) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
+
+CRTBEGIN_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtend.o)
 
 LINK_O_FILES=src/crti.s.o $(CRTBEGIN_OBJ) $(O_FILES) $(CRTEND_OBJ) src/crtn.s.o
 
 boot_16.o: src/boot/boot_16.cpp
-	$(CC) $(CPP_FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
+	$(CXX) $(CPP_FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
 
 boot_32.o: src/boot/boot_32.cpp
-	$(CC) $(CPP_FLAGS_32) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_32.cpp -o boot_32.o
+	$(CXX) $(CPP_FLAGS_32) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_32.cpp -o boot_32.o
 
 boot_16_64.o: boot_16.o
 	$(OC) -I elf32-i386 -O elf64-x86-64 boot_16.o boot_16_64.o
@@ -43,36 +68,85 @@ src/%.s.o: src/%.s
 	$(AS) -g -c $< -o $@
 
 src/%.cpp.d: $(KERNEL_CPP_FILES)
-	@ $(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/drivers/%.cpp.d: $(KERNEL_CPP_DRIVERS_FILES)
-	@ $(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/drivers/$*.cpp.o src/drivers/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/drivers/$*.cpp.o src/drivers/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/fs/%.cpp.d: $(KERNEL_CPP_FS_FILES)
-	@ $(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/fs/$*.cpp.o src/fs/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/fs/$*.cpp.o src/fs/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/vfs/%.cpp.d: $(KERNEL_CPP_VFS_FILES)
-	@ $(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/vfs/$*.cpp.o src/vfs/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+	@ $(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/vfs/$*.cpp.o src/vfs/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+acpica/source/components/dispatcher/%.c.d: $(ACPICA_DISPATCHER_CPP_FILES)
+	@ $(CXX) $(ACPICA_CPP_FLAGS) -include include/thor_acenv.hpp $(THOR_FLAGS) -MM -MT acpica/source/components/dispatcher/$*.c.o acpica/source/components/dispatcher/$*.c | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+acpica/source/components/events/%.c.d: $(ACPICA_EVENTS_CPP_FILES)
+	@ $(CXX) $(ACPICA_CPP_FLAGS)  -include include/thor_acenv.hpp $(THOR_FLAGS) -MM -MT acpica/source/components/events/$*.c.o acpica/source/components/events/$*.c | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+acpica/source/components/executer/%.c.d: $(ACPICA_EXECUTER_CPP_FILES)
+	@ $(CXX) $(ACPICA_CPP_FLAGS)  -include include/thor_acenv.hpp $(THOR_FLAGS) -MM -MT acpica/source/components/executer/$*.c.o acpica/source/components/executer/$*.c | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+acpica/source/components/namespace/%.c.d: $(ACPICA_NAMESPACE_CPP_FILES)
+	@ $(CXX) $(ACPICA_CPP_FLAGS)  -include include/thor_acenv.hpp $(THOR_FLAGS) -MM -MT acpica/source/components/namespace/$*.c.o acpica/source/components/namespace/$*.c | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+acpica/source/components/resources/%.c.d: $(ACPICA_RESOURCES_CPP_FILES)
+	@ $(CXX) $(ACPICA_CPP_FLAGS)  -include include/thor_acenv.hpp $(THOR_FLAGS) -MM -MT acpica/source/components/resources/$*.c.o acpica/source/components/resources/$*.c | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+acpica/source/components/tables/%.c.d: $(ACPICA_TABLES_CPP_FILES)
+	@ $(CXX) $(ACPICA_CPP_FLAGS)  -include include/thor_acenv.hpp $(THOR_FLAGS) -MM -MT acpica/source/components/tables/$*.c.o acpica/source/components/tables/$*.c | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+
+acpica/source/components/utilities/%.c.d: $(ACPICA_UTILITIES_CPP_FILES)
+	@ $(CXX) $(ACPICA_CPP_FLAGS) -include include/thor_acenv.hpp $(THOR_FLAGS) -MM -MT acpica/source/components/utilities/$*.c.o acpica/source/components/utilities/$*.c | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
 
 src/%.cpp.o:
-	$(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+	$(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 src/drivers/%.cpp.o:
-	$(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+	$(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 src/vfs/%.cpp.o:
-	$(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+	$(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
 
 src/fs/%.cpp.o:
-	$(CC) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+	$(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+
+acpica/source/components/dispatcher/%.c.o:
+	$(CC) $(ACPICA_CPP_FLAGS) $(THOR_FLAGS) -c $< -o $@
+
+acpica/source/components/events/%.c.o:
+	$(CC) $(ACPICA_CPP_FLAGS) $(THOR_FLAGS) -c $< -o $@
+
+acpica/source/components/executer/%.c.o:
+	$(CC) $(ACPICA_CPP_FLAGS) $(THOR_FLAGS) -c $< -o $@
+
+acpica/source/components/namespace/%.c.o:
+	$(CC) $(ACPICA_CPP_FLAGS) $(THOR_FLAGS) -c $< -o $@
+
+acpica/source/components/utilies/%.c.o:
+	$(CC) $(ACPICA_CPP_FLAGS) $(THOR_FLAGS) -c $< -o $@
+
+acpica/source/components/resources/%.c.o:
+	$(CC) $(ACPICA_CPP_FLAGS) $(THOR_FLAGS) -c $< -o $@
+
+acpica/source/components/tables/%.c.o:
+	$(CC) $(ACPICA_CPP_FLAGS) $(THOR_FLAGS) -c $< -o $@
 
 -include $(KERNEL_D_FILES)
 -include $(KERNEL_D_DRIVERS_FILES)
 -include $(KERNEL_D_VFS_FILES)
 -include $(KERNEL_D_FS_FILES)
+-include $(ACPICA_DISPATCHER_D_FILES)
+-include $(ACPICA_EVENTS_D_FILES)
+-include $(ACPICA_EXECUTER_D_FILES)
+-include $(ACPICA_NAMESPACE_D_FILES)
+-include $(ACPICA_RESOURCES_D_FILES)
+-include $(ACPICA_TABLES_D_FILES)
+-include $(ACPICA_UTILITIES_D_FILES)
 
 kernel.bin: $(LINK_O_FILES)
-	$(CC) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
+	$(CXX) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
 	$(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents kernel.bin.o kernel.bin
 
 clean:
@@ -80,6 +154,13 @@ clean:
 	rm -f $(KERNEL_D_DRIVERS_FILES)
 	rm -f $(KERNEL_D_FS_FILES)
 	rm -f $(KERNEL_D_VFS_FILES)
+	rm -f $(ACPICA_DISPATCHER_D_FILES)
+	rm -f $(ACPICA_EVENTS_D_FILES)
+	rm -f $(ACPICA_EXECUTER_D_FILES)
+	rm -f $(ACPICA_NAMESPACE_D_FILES)
+	rm -f $(ACPICA_RESOURCES_D_FILES)
+	rm -f $(ACPICA_TABLES_D_FILES)
+	rm -f $(ACPICA_UTILITIES_D_FILES)
 	rm -f $(O_FILES)
 	rm -f crti.o
 	rm -f crts.o

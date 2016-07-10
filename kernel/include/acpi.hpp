@@ -5,8 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef ACPI_H
-#define ACPI_H
+#ifndef ACPI_HPP
+#define ACPI_HPP
 
 namespace acpi {
 

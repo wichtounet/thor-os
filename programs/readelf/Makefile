@@ -5,10 +5,10 @@ default: readelf
 include ../../cpp.mk
 
 %.cpp.o: src/%.cpp
-	$(CC) -c $< -o $@ $(PROGRAM_FLAGS)
+	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
 
 readelf: main.cpp.o
-	$(CC) -o readelf main.cpp.o $(PROGRAM_LINK_FLAGS)
+	$(CXX) -o readelf main.cpp.o $(PROGRAM_LINK_FLAGS)
 
 clean:
 	rm -f *.cpp.o

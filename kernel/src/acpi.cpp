@@ -5,17 +5,23 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include <types.hpp>
-
 //ACPICA
 #include "thor_acenv.hpp" //The OS Specific Layer
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-function" //TODO Does not work
 #include "acpi.h"
+#pragma GCC diagnostic pop
+
+#include <types.hpp>
 
 #include "acpi.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"
 #include "paging.hpp"
 #include "console.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -277,7 +283,7 @@ int init_acpi(){
 bool initialize_acpica(){
     auto status = AcpiInitializeSubsystem();
     if(ACPI_FAILURE(status)){
-        logging::logf("Impossible to initialize ACPICA subsystem\n");
+        logging::logf(logging::log_level::ERROR, "Impossible to initialize ACPICA subsystem\n");
         return false;
     }
 
@@ -288,7 +294,7 @@ bool initialize_acpica(){
 
 bool acpi::init(){
     if(!initialize_acpica()){
-        logging::logf("Impossible to initialize ACPICA\n");
+        logging::logf(logging::log_level::ERROR, "Impossible to initialize ACPICA\n");
     }
 
     return init_acpi() == 0;
