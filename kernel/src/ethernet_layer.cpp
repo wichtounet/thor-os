@@ -12,6 +12,7 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "arp_layer.hpp"
+#include "ip_layer.hpp"
 
 namespace {
 
@@ -70,7 +71,7 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
 
     switch(packet.type){
         case ether_type::IPV4:
-            logging::logf(logging::log_level::TRACE, "ethernet: IPV4 Packet (unsupported)\n");
+            network::ip::decode(interface, packet);
             break;
         case ether_type::IPV6:
             logging::logf(logging::log_level::TRACE, "ethernet: IPV6 Packet (unsupported)\n");

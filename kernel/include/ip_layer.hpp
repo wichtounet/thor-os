@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+#include "network.hpp"
+
 namespace network {
 
 namespace ip {
@@ -18,6 +20,9 @@ namespace ip {
 
 struct address {
     uint32_t raw_address = 0;
+
+    address(){}
+    address(uint32_t raw) : raw_address(raw) {}
 
     uint8_t operator()(size_t index) const {
         return (raw_address >> ((3 - index) * 8)) & 0xFF;
@@ -40,6 +45,23 @@ inline address make_address(uint8_t a, uint8_t b, uint8_t c, uint8_t d){
     addr.set_sub(3, d);
     return addr;
 }
+
+struct header {
+    uint8_t version_ihl;
+    uint8_t dscp_ecn;
+    uint16_t total_len;
+    uint16_t identification;
+    uint16_t flags_offset;
+    uint8_t ttl;
+    uint8_t protocol;
+    uint16_t header_checksum;
+    uint32_t source_ip;
+    uint32_t target_ip;
+} __attribute__((packed));
+
+static_assert(sizeof(header) == 20, "The size of an IPv4 header must be 20 bytes");
+
+void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
 } // end of ip namespace
 
