@@ -85,33 +85,35 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
     }
 
     if(operation == 0x1){
-        logging::logf(logging::log_level::TRACE, "arp: Handle Request\n");
+        if(target_prot == network::ip::make_address(64,65,66,67)){
+            logging::logf(logging::log_level::TRACE, "arp: Reply to Request for own IP\n");
 
-        // Ask the ethernet layer to craft a packet
-        auto packet = network::ethernet::prepare_packet(interface, sizeof(header), source_hw, ethernet::ether_type::ARP);
+            // Ask the ethernet layer to craft a packet
+            auto packet = network::ethernet::prepare_packet(interface, sizeof(header), source_hw, ethernet::ether_type::ARP);
 
-        auto* arp_reply_header = reinterpret_cast<header*>(packet.payload + packet.index);
+            auto* arp_reply_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
-        arp_reply_header->hw_type = switch_endian_16(0x1); // ethernet
-        arp_reply_header->protocol_type = switch_endian_16(0x800); // IPV4
-        arp_reply_header->hw_len = 0x6; // MAC Address
-        arp_reply_header->protocol_len = 0x4; // IP Address
-        arp_reply_header->operation = switch_endian_16(0x2); //ARP Reply
+            arp_reply_header->hw_type = switch_endian_16(0x1); // ethernet
+            arp_reply_header->protocol_type = switch_endian_16(0x800); // IPV4
+            arp_reply_header->hw_len = 0x6; // MAC Address
+            arp_reply_header->protocol_len = 0x4; // IP Address
+            arp_reply_header->operation = switch_endian_16(0x2); //ARP Reply
 
-        auto source_mac = interface.mac_address;
+            auto source_mac = interface.mac_address;
 
-        for(size_t i = 0; i < 3; ++i){
-            arp_reply_header->target_hw_addr[i] = arp_header->source_hw_addr[i];
+            for(size_t i = 0; i < 3; ++i){
+                arp_reply_header->target_hw_addr[i] = arp_header->source_hw_addr[i];
 
-            arp_reply_header->source_hw_addr[i] = switch_endian_16(uint16_t(source_mac >> ((2 - i) * 16)));
+                arp_reply_header->source_hw_addr[i] = switch_endian_16(uint16_t(source_mac >> ((2 - i) * 16)));
+            }
+
+            for(size_t i = 0; i < 2; ++i){
+                arp_reply_header->source_protocol_addr[i] = arp_header->target_protocol_addr[i];
+                arp_reply_header->target_protocol_addr[i] = arp_header->source_protocol_addr[i];
+            }
+
+            network::ethernet::finalize_packet(interface, packet);
         }
-
-        for(size_t i = 0; i < 2; ++i){
-            arp_reply_header->source_protocol_addr[i] = arp_header->target_protocol_addr[i];
-            arp_reply_header->target_protocol_addr[i] = arp_header->source_protocol_addr[i];
-        }
-
-        network::ethernet::finalize_packet(interface, packet);
     } else if(operation == 0x2){
         logging::logf(logging::log_level::TRACE, "arp: Handle Reply\n");
 
