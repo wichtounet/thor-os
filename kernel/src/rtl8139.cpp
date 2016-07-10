@@ -131,11 +131,8 @@ void packet_handler(interrupt::syscall_regs*, void* data){
 
                 direct_int_lock lock;
 
-            logging::logf(logging::log_level::TRACE, "rtl8139: interface 1 %u\n", reinterpret_cast<size_t>(&interface));
                 interface.rx_queue.push(packet);
-            logging::logf(logging::log_level::TRACE, "rtl8139: interface 2 %u\n", reinterpret_cast<size_t>(&interface));
                 interface.rx_sem.release();
-            logging::logf(logging::log_level::TRACE, "rtl8139: interface 3 %u\n", reinterpret_cast<size_t>(&interface));
             }
 
             cur_rx = (cur_rx + packet_length + 4 + 3) & ~3; //align on 4 bytes
