@@ -45,7 +45,9 @@ ACPICA_UTILITIES_O_FILES=$(ACPICA_UTILITIES_CPP_FILES:%.c=%.c.o)
 ACPICA_O_FILES=$(ACPICA_DISPATCHER_O_FILES) $(ACPICA_EVENTS_O_FILES) $(ACPICA_EXECUTER_O_FILES) $(ACPICA_NAMESPACE_O_FILES) $(ACPICA_RESOURCES_O_FILES) $(ACPICA_TABLES_O_FILES) $(ACPICA_UTILITIES_O_FILES)
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_O_FILES) $(KERNEL_O_FS_FILES) $(KERNEL_O_VFS_FILES) $(KERNEL_O_DRIVERS_FILES) $(ACPICA_O_FILES) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
+O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_O_FILES) $(KERNEL_O_FS_FILES) $(KERNEL_O_VFS_FILES) $(KERNEL_O_DRIVERS_FILES) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
+
+#O_FILES += $(ACPICA_O_FILES)
 
 CRTBEGIN_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtend.o)
