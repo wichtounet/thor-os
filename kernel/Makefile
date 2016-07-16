@@ -50,10 +50,14 @@ O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_O_FILES) $(KERNEL_O_FS_FILES) $(KERNE
 # Add the APCICA files that are necessary to compile
 O_FILES += $(ACPICA_O_FILES)
 
+# Ask GCC for the crtbegin and crtend files
 CRTBEGIN_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtend.o)
 
+# The final link files
 LINK_O_FILES=src/crti.s.o $(CRTBEGIN_OBJ) $(O_FILES) $(CRTEND_OBJ) src/crtn.s.o
+
+# Compile the 16-bit and 32-bit parts of the executable
 
 boot_16.o: src/boot/boot_16.cpp
 	$(CXX) $(CPP_FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
