@@ -37,3 +37,25 @@ LIB_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -Wl,-gc-sec
 
 PROGRAM_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -I../../printf/include/  -static -L../../tlib/ -ltlib -mcmodel=small -fPIC
 PROGRAM_LINK_FLAGS=$(CPP_FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld -Wl,-gc-sections
+
+# Generate the rules for the CPP files of a directory
+define compile_cpp_folder
+
+$(1)/%.cpp.d: $(1)/%.cpp
+	$(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT $(1)/$$*.cpp.o $$< | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $$@
+
+$(1)/%.cpp.o: $(1)/%.cpp
+	$(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $$< -o $(1)/$$*.cpp.o
+
+endef
+
+# Generate the rules for the APCICA C files of a components subdirectory
+define acpica_folder_compile
+
+acpica/source/components/$(1)/%.c.d: acpica/source/components/$(1)/%.c
+	@ $(CXX) $(ACPICA_CPP_FLAGS) -include include/thor_acenv.hpp $(THOR_FLAGS) -MM -MT acpica/source/components/$(1)/$$*.c.o $$< | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $$@
+
+acpica/source/components/$(1)/%.c.o: acpica/source/components/$(1)/%.c
+	$(CC) $(ACPICA_CPP_FLAGS) $(THOR_FLAGS) -c $$< -o $$@
+
+endef
