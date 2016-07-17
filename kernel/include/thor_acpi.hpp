@@ -20,4 +20,7 @@
 // Let APCICA use its own cache
 #define ACPI_USE_LOCAL_CACHE
 
+// Limit compatibility to ACPI 5.0
+#define ACPI_REDUCED_HARDWARE TRUE
+
 #endif

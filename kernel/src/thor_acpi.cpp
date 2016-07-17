@@ -13,6 +13,7 @@
 
 #include "kalloc.hpp"
 #include "console.hpp"
+#include "scheduler.hpp"
 
 extern "C" {
 
@@ -35,6 +36,17 @@ void AcpiOsPrintf(const char* format, ...){
 
 void AcpiOsVprintf(const char* format, va_list va){
     printf(format, va);
+}
+
+ACPI_THREAD_ID AcpiOsGetThreadId(void){
+    return scheduler::get_pid();
+}
+
+ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
+	ACPI_PHYSICAL_ADDRESS  root_pointer;
+	root_pointer = 0;
+	AcpiFindRootPointer(&root_pointer);
+	return root_pointer;
 }
 
 } //end of extern "C"
