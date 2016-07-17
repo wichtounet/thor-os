@@ -11,8 +11,13 @@
 // This file contains the OS specific layer for ACPICA for thor-os
 // It is meant to only be included by thor_acenv
 
-#define ACPI_MACHINE_WIDTH          64 //thor works in 64 bits
+//thor works in 64 bits
+#define ACPI_MACHINE_WIDTH 64
 
-#define ACPI_DEBUGGER // Cannot compile ACPICA without this flag for some reason
+// Cannot compile ACPICA without this flag for some reason
+#define ACPI_DEBUGGER
+
+// Let APCICA use its own cache
+#define ACPI_USE_LOCAL_CACHE
 
 #endif
