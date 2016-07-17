@@ -1,4 +1,4 @@
-default: kernel.bin
+default: debug/kernel.bin
 
 include ../cpp.mk
 
@@ -54,15 +54,15 @@ $(eval $(call acpica_folder_compile,utilities))
 
 LINK_O_FILES=$(SPECIAL_O_FILES) $(O_FILES)
 
-kernel.bin: $(LINK_O_FILES)
-	$(CXX) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
-	$(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents kernel.bin.o kernel.bin
+debug/kernel.bin: $(LINK_O_FILES)
+	@ mkdir -p debug/
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link $(FILE_COLOR)$@$(NO_COLOR)"
+	@ $(CXX) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o $@.o $(LINK_O_FILES)
+	@ $(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents $@.o $@
 
 clean:
-	@ echo -e "Remove deps files"
-	@ rm -f $(D_FILES)
-	@ echo -e "Remove object files"
-	@ rm -f $(O_FILES)
+	@ echo -e "Remove compiled files (deps/objects)"
+	@ rm -rf debug
 	@ rm -f crti.o
 	@ rm -f crts.o
 	@ echo -e "Remove bin files"
