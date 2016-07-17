@@ -28,7 +28,7 @@ FLAGS_64=-mpreferred-stack-boundary=4 $(ENABLE_SSE_FLAGS) $(DISABLE_AVX_FLAGS)
 
 KERNEL_CPP_FLAGS_64=$(COMMON_CPP_FLAGS) $(FLAGS_64)
 
-ACPICA_C_FLAGS= $(COMMON_C_FLAGS) $(FLAGS_64) -include include/thor_acenv.hpp
+ACPICA_C_FLAGS= $(COMMON_C_FLAGS) $(FLAGS_64) -include include/thor_acenv.hpp -include include/thor_acenvex.hpp
 
 COMMON_LINK_FLAGS=-lgcc
 
