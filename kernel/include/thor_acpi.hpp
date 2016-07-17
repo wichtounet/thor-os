@@ -12,4 +12,6 @@
 
 #define ACPI_MACHINE_WIDTH          64 //thor works in 64 bits
 
+#define ACPI_DEBUGGER // Cannot compile ACPICA without this flag for some reason
+
 #endif
