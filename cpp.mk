@@ -51,8 +51,10 @@ $(1)/%.cpp.o: $(1)/%.cpp
 
 folder_cpp_files=$(wildcard $(1)/*.cpp)
 folder_d_files=$(folder_cpp_files:%.cpp=%.cpp.d)
+folder_o_files=$(folder_cpp_files:%.cpp=%.cpp.o)
 
 D_FILES += $(folder_d_files)
+O_FILES += $(folder_o_files)
 
 endef
 
@@ -67,5 +69,9 @@ acpica/source/components/$(1)/%.c.o: acpica/source/components/$(1)/%.c
 
 folder_c_files=$(wildcard acpica/source/components/$(1)/*.c)
 folder_d_files=$(folder_c_files:%.c=%.c.d)
+folder_o_files=$(folder_c_files:%.c=%.c.o)
+
+D_FILES += $(folder_d_files)
+O_FILES += $(folder_o_files)
 
 endef

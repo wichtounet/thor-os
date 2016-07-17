@@ -4,45 +4,15 @@ include ../cpp.mk
 
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
-KERNEL_CPP_FILES=$(wildcard src/*.cpp)
-KERNEL_CPP_DRIVERS_FILES=$(wildcard src/drivers/*.cpp)
-KERNEL_CPP_FS_FILES=$(wildcard src/fs/*.cpp)
-KERNEL_CPP_VFS_FILES=$(wildcard src/vfs/*.cpp)
-
-KERNEL_O_FILES=$(KERNEL_CPP_FILES:%.cpp=%.cpp.o)
-KERNEL_O_DRIVERS_FILES=$(KERNEL_CPP_DRIVERS_FILES:%.cpp=%.cpp.o)
-KERNEL_O_FS_FILES=$(KERNEL_CPP_FS_FILES:%.cpp=%.cpp.o)
-KERNEL_O_VFS_FILES=$(KERNEL_CPP_VFS_FILES:%.cpp=%.cpp.o)
-
-ACPICA_DISPATCHER_CPP_FILES=$(wildcard acpica/source/components/dispatcher/*.c)
-ACPICA_EVENTS_CPP_FILES=$(wildcard acpica/source/components/events/*.c)
-ACPICA_EXECUTER_CPP_FILES=$(wildcard acpica/source/components/executer/*.c)
-ACPICA_NAMESPACE_CPP_FILES=$(wildcard acpica/source/components/namespace/*.c)
-ACPICA_RESOURCES_CPP_FILES=$(wildcard acpica/source/components/resources/*.c)
-ACPICA_TABLES_CPP_FILES=$(wildcard acpica/source/components/tables/*.c)
-ACPICA_UTILITIES_CPP_FILES=$(wildcard acpica/source/components/utilities/*.c)
-
-ACPICA_DISPATCHER_O_FILES=$(ACPICA_DISPATCHER_CPP_FILES:%.c=%.c.o)
-ACPICA_EVENTS_O_FILES=$(ACPICA_EVENTS_CPP_FILES:%.c=%.c.o)
-ACPICA_EXECUTER_O_FILES=$(ACPICA_EXECUTER_CPP_FILES:%.c=%.c.o)
-ACPICA_NAMESPACE_O_FILES=$(ACPICA_NAMESPACE_CPP_FILES:%.c=%.c.o)
-ACPICA_RESOURCES_O_FILES=$(ACPICA_RESOURCES_CPP_FILES:%.c=%.c.o)
-ACPICA_TABLES_O_FILES=$(ACPICA_TABLES_CPP_FILES:%.c=%.c.o)
-ACPICA_UTILITIES_O_FILES=$(ACPICA_UTILITIES_CPP_FILES:%.c=%.c.o)
-ACPICA_O_FILES=$(ACPICA_DISPATCHER_O_FILES) $(ACPICA_EVENTS_O_FILES) $(ACPICA_EXECUTER_O_FILES) $(ACPICA_NAMESPACE_O_FILES) $(ACPICA_RESOURCES_O_FILES) $(ACPICA_TABLES_O_FILES) $(ACPICA_UTILITIES_O_FILES)
-
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_O_FILES) $(KERNEL_O_FS_FILES) $(KERNEL_O_VFS_FILES) $(KERNEL_O_DRIVERS_FILES) src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
-
-# Add the APCICA files that are necessary to compile
-O_FILES += $(ACPICA_O_FILES)
+O_FILES=boot_16_64.o boot_32_64.o src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
 
 # Ask GCC for the crtbegin and crtend files
 CRTBEGIN_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtend.o)
 
 # The final link files
-LINK_O_FILES=src/crti.s.o $(CRTBEGIN_OBJ) $(O_FILES) $(CRTEND_OBJ) src/crtn.s.o
+SPECIAL_O_FILES=src/crti.s.o $(CRTBEGIN_OBJ) $(CRTEND_OBJ) src/crtn.s.o
 
 # Compile the 16-bit and 32-bit parts of the executable
 
@@ -81,6 +51,8 @@ $(eval $(call acpica_folder_compile,tables))
 $(eval $(call acpica_folder_compile,utilities))
 
 -include $(D_FILES)
+
+LINK_O_FILES=$(SPECIAL_O_FILES) $(O_FILES)
 
 kernel.bin: $(LINK_O_FILES)
 	$(CXX) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
