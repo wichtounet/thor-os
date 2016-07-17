@@ -5,17 +5,7 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-//ACPICA
-#include "thor_acenv.hpp" //The OS Specific Layer
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wunused-function" //TODO Does not work
-#include "acpi.h"
-#pragma GCC diagnostic pop
-
-#include <types.hpp>
-
+#include "acpica.hpp"
 #include "acpi.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"

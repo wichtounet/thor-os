@@ -5,14 +5,22 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#ifndef THOR_ACPI_HPP
-#define THOR_ACPI_HPP
+/*
+ * This file contains the OS specific layer
+ */
 
-// This file contains the OS specific layer for ACPICA for thor-os
-// It is meant to only be included by thor_acenv
+#include "acpica.hpp"
 
-#define ACPI_MACHINE_WIDTH          64 //thor works in 64 bits
+#include "kalloc.hpp"
 
-#define ACPI_DEBUGGER // Cannot compile ACPICA without this flag for some reason
+extern "C" {
 
-#endif
+void* AcpiOsAllocate(ACPI_SIZE size){
+    kalloc::k_malloc(size);
+}
+
+void AcpiOsFree(void* p){
+    kalloc::k_free(p);
+}
+
+} //end of extern "C"
