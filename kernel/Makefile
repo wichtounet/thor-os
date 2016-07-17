@@ -17,10 +17,10 @@ SPECIAL_O_FILES=src/crti.s.o $(CRTBEGIN_OBJ) $(CRTEND_OBJ) src/crtn.s.o
 # Compile the 16-bit and 32-bit parts of the executable
 
 boot_16.o: src/boot/boot_16.cpp
-	$(CXX) $(CPP_FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
+	$(CXX) $(COMMON_CPP_FLAGS) $(FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
 
 boot_32.o: src/boot/boot_32.cpp
-	$(CXX) $(CPP_FLAGS_32) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_32.cpp -o boot_32.o
+	$(CXX) $(COMMON_CPP_FLAGS) $(FLAGS_32) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_32.cpp -o boot_32.o
 
 boot_16_64.o: boot_16.o
 	$(OC) -I elf32-i386 -O elf64-x86-64 boot_16.o boot_16_64.o
