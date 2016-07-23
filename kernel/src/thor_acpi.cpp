@@ -82,6 +82,32 @@ void AcpiOsVprintf(const char* format, va_list va){
     printf(format, va);
 }
 
+ACPI_STATUS AcpiOsSignal(UINT32 function, void* info){
+    // This should never happen
+    if(!info){
+        return AE_NO_MEMORY;
+    }
+
+    switch (function) {
+        case ACPI_SIGNAL_FATAL:{
+            auto* fatal_info = static_cast<ACPI_SIGNAL_FATAL_INFO*>(info);
+
+            printf("ACPI fatal signal: Type %h, %h, %h \n", fatal_info->Type, fatal_info->Code, fatal_info->Argument);
+            asm volatile("cli; hlt;");
+                               }
+            break;
+
+        case ACPI_SIGNAL_BREAKPOINT:
+            printf("ACPI Signal Breakpoint: %s\n", static_cast<char*>(info));
+            return AE_NOT_EXIST;
+
+        default:
+            return AE_BAD_PARAMETER;
+    }
+
+    return AE_OK;
+}
+
 // Scheduling
 
 ACPI_THREAD_ID AcpiOsGetThreadId(){
