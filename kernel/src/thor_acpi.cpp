@@ -537,6 +537,9 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine, 
         return AE_BAD_PARAMETER;
     }
 
+    //TODO This memory is leaking
+    //Needs to be removed in acpiosremoveinterrupthandler
+
     auto* acpi_context = new acpi_interrupt_context();
     acpi_context->routine = routine;
     acpi_context->context = context;
@@ -557,7 +560,9 @@ ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine){
         return AE_BAD_PARAMETER;
     }
 
-    //TODO Remote the interrupt handler
+    if(!interrupt::unregister_irq_handler(irq, acpi_interrupt_handler)){
+        return AE_NOT_EXIST;
+    }
 
     return AE_OK;
 }
