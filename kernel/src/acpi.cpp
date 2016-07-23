@@ -278,6 +278,8 @@ bool initialize_acpica(){
     }
 
     //TODO COntinue
+
+    return true;
 }
 
 } //end of anonymous namespace
@@ -285,9 +287,12 @@ bool initialize_acpica(){
 bool acpi::init(){
     if(!initialize_acpica()){
         logging::logf(logging::log_level::ERROR, "Impossible to initialize ACPICA\n");
+        return false;
     }
 
-    return init_acpi() == 0;
+    //Nothing else to init for now
+
+    return true;
 }
 
 void acpi::shutdown(){
