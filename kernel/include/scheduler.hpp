@@ -54,6 +54,14 @@ process_t& create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)(
 process_t& create_kernel_task_args(char* user_stack, char* kernel_stack, void (*fun)(void*), void* data);
 void queue_system_process(pid_t pid);
 
+/*!
+ * \brief Queue an initilization task that will be run after the
+ * scheduler is started
+ *
+ * This must be used for drivers that needs scheduling to be started
+ * or for drivers depending on others drivers asynchronously
+ * started.
+ */
 void queue_async_init_task(void (*fun)());
 
 } //end of namespace scheduler
