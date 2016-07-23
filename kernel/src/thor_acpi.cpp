@@ -222,8 +222,12 @@ void AcpiOsWaitEventsComplete(){
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
     ACPI_PHYSICAL_ADDRESS  root_pointer;
     root_pointer = 0;
-    AcpiFindRootPointer(&root_pointer);
-    logging::logf(logging::log_level::TRACE, "acpica: Root pointer at physical address %h\n", size_t(root_pointer));
+    auto status = AcpiFindRootPointer(&root_pointer);
+    if(ACPI_FAILURE(status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Unable to find ACPI root pointer: error: %u\n", size_t(status));
+    } else {
+        logging::logf(logging::log_level::TRACE, "acpica: ACPI Root pointer found at physical address %h\n", size_t(root_pointer));
+    }
     return root_pointer;
 }
 

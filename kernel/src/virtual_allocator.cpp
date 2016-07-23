@@ -11,6 +11,7 @@
 #include "paging.hpp"
 #include "buddy_allocator.hpp"
 #include "assert.hpp"
+#include "logging.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -85,7 +86,13 @@ size_t virtual_allocator::allocate(size_t pages){
 
     allocated_pages += buddy_type::level_size(pages);
 
-    return allocator.allocate(pages);
+    auto virt = allocator.allocate(pages);
+
+    if(!virt){
+        logging::logf(logging::log_level::ERROR, "valloc: Unable to allocate %u pages\n", size_t(pages));
+    }
+
+    return virt;
 }
 
 void virtual_allocator::free(size_t address, size_t pages){

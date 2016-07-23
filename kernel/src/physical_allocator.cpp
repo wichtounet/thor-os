@@ -10,6 +10,7 @@
 #include "paging.hpp"
 #include "buddy_allocator.hpp"
 #include "assert.hpp"
+#include "logging.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -153,11 +154,17 @@ void physical_allocator::finalize(){
 }
 
 size_t physical_allocator::allocate(size_t blocks){
-    thor_assert(blocks < free() / paging::PAGE_SIZE, "Not enough virtual memory");
+    thor_assert(blocks < free() / paging::PAGE_SIZE, "Not enough physical memory");
 
     allocated_memory += buddy_type::level_size(blocks) * unit;
 
-    return allocator.allocate(blocks);
+    auto phys = allocator.allocate(blocks);
+
+    if(!phys){
+        logging::logf(logging::log_level::ERROR, "palloc: Unable to allocate %u blocks\n", size_t(blocks));
+    }
+
+    return phys;
 }
 
 void physical_allocator::free(size_t address, size_t blocks){
