@@ -302,5 +302,5 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
 
     interface.mac_address = mac;
 
-    logging::logf(logging::log_level::TRACE, "rtl8139: MAC Address %h n", mac);
+    logging::logf(logging::log_level::TRACE, "rtl8139: MAC Address %h \n", mac);
 }
