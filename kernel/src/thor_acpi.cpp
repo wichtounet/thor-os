@@ -16,6 +16,7 @@
 #include "scheduler.hpp"
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
+#include "kernel_utils.hpp"
 
 #include "mutex.hpp"
 #include "semaphore.hpp"
@@ -183,6 +184,58 @@ ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 units){
     auto* lock = static_cast<semaphore*>(handle);
 
     lock->release();
+
+    return AE_OK;
+}
+
+// Input / Output
+
+ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS port, UINT32* value, UINT32 width){
+    switch (width) {
+        case 8:
+            *value = in_byte(port);
+            break;
+
+        case 16:
+            *value = in_word(port);
+            break;
+
+        case 32:
+            *value = in_dword(port);
+            break;
+
+        case 64:
+            *value = in_qword(port);
+            break;
+
+        default:
+            return AE_BAD_PARAMETER;
+    }
+
+    return AE_OK;
+}
+
+ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS port, UINT32 value, UINT32 width){
+    switch (width) {
+        case 8:
+            out_byte(port, value);
+            break;
+
+        case 16:
+            out_word(port, value);
+            break;
+
+        case 32:
+            out_dword(port, value);
+            break;
+
+        case 64:
+            out_qword(port, value);
+            break;
+
+        default:
+            return AE_BAD_PARAMETER;
+    }
 
     return AE_OK;
 }

@@ -40,6 +40,16 @@ inline uint32_t in_dword(uint16_t _port){
     return rv;
 }
 
+inline uint64_t in_qword(uint16_t _port){
+    uint64_t rv;
+
+    asm volatile ("in %[data], %[port]"
+        : [data] "=a" (rv)
+        : [port] "dN" (_port));
+
+    return rv;
+}
+
 inline void out_byte (uint16_t _port, uint8_t _data){
     asm volatile ("out %[port], %[data]"
         : /* No outputs */
@@ -53,6 +63,12 @@ inline void out_word(uint16_t _port, uint16_t _data){
 }
 
 inline void out_dword(uint16_t _port, uint32_t _data){
+    asm volatile ("out %[port], %[data]"
+        :  /* No outputs */
+        : [port] "dN" (_port), [data] "a" (_data));
+}
+
+inline void out_qword(uint16_t _port, uint64_t _data){
     asm volatile ("out %[port], %[data]"
         :  /* No outputs */
         : [port] "dN" (_port), [data] "a" (_data));
