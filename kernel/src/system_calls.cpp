@@ -98,11 +98,14 @@ void sc_reboot(interrupt::syscall_regs*){
 }
 
 void sc_shutdown(interrupt::syscall_regs*){
-    if(!acpi::init()){
-        k_print_line("Unable to init ACPI");
+    if(!acpi::initialized()){
+        logging::logf(logging::log_level::ERROR, "ACPI not initialized, impossible to shutdown\n");
+        return;
     }
 
     acpi::shutdown();
+
+    __builtin_unreachable();
 }
 
 void sc_open(interrupt::syscall_regs* regs){
