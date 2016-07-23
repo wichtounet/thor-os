@@ -127,7 +127,17 @@ pci::device_descriptor& pci::device(size_t index){
     return devices[index];
 }
 
-uint32_t pci::read_config_dword (uint8_t bus, uint8_t device, uint8_t function, uint8_t offset){
+uint8_t pci::read_config_byte(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset){
+    auto value = read_config_dword(bus, device, function, offset);
+    return (value >> ((offset & 3) * 8)) & 0xff;
+}
+
+uint16_t pci::read_config_word(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset){
+    auto value = read_config_dword(bus, device, function, offset);
+    return (value >> ((offset & 3) * 8)) & 0xffff;
+}
+
+uint32_t pci::read_config_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset){
     uint32_t address =
         static_cast<uint32_t>(1 << 31)  //enabled
         | (uint32_t(bus) << 16)  //bus number
@@ -138,6 +148,24 @@ uint32_t pci::read_config_dword (uint8_t bus, uint8_t device, uint8_t function, 
     out_dword(PCI_CONFIG_ADDRESS, address);
 
     return in_dword(PCI_CONFIG_DATA);
+}
+
+void pci::write_config_byte(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint8_t value){
+    auto tmp = read_config_dword(bus, device, function, offset);
+
+    tmp &= ~(0xff << ((offset & 3) * 8));
+    tmp |= (value << ((offset & 3) * 8));
+
+    write_config_dword(bus, device, function, offset, tmp);
+}
+
+void pci::write_config_word(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint16_t value){
+    auto tmp = read_config_dword(bus, device, function, offset);
+
+    tmp &= ~(0xffff << ((offset & 3) * 8));
+    tmp |= (value << ((offset & 3) * 8));
+
+    write_config_dword(bus, device, function, offset, tmp);
 }
 
 void pci::write_config_dword (uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t value){

@@ -51,7 +51,12 @@ void detect_devices();
 size_t number_of_devices();
 device_descriptor& device(size_t index);
 
+uint8_t  read_config_byte(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
+uint16_t read_config_word(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
 uint32_t read_config_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset);
+
+void write_config_byte(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint8_t value);
+void write_config_word(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint16_t value);
 void write_config_dword(uint8_t bus, uint8_t device, uint8_t function, uint8_t offset, uint32_t value);
 
 } //end of namespace pci
