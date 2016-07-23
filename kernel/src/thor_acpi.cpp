@@ -223,6 +223,7 @@ ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
     ACPI_PHYSICAL_ADDRESS  root_pointer;
     root_pointer = 0;
     AcpiFindRootPointer(&root_pointer);
+    logging::logf(logging::log_level::TRACE, "acpica: Root pointer at physical address %h\n", size_t(root_pointer));
     return root_pointer;
 }
 
@@ -232,34 +233,40 @@ ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
  * \brief Map physical memory to a virtual address
  */
 void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys, ACPI_SIZE length){
-    size_t pages = (length + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
+    auto offset = phys % paging::PAGE_SIZE;
 
-    auto virt = virtual_allocator::allocate(pages);
+    auto real_length = offset + length;
+    size_t pages = real_length / paging::PAGE_SIZE + (real_length % paging::PAGE_SIZE == 0 ? 0 : 1);
 
-    if(!virt){
+    auto virt_aligned = virtual_allocator::allocate(pages);
+
+    if(!virt_aligned){
         return nullptr;
     }
 
-    auto phys_aligned = phys - (phys & ~(paging::PAGE_SIZE - 1));
+    auto phys_aligned = phys - offset;
 
-    if(!paging::map_pages(virt, phys_aligned, pages)){
+    if(!paging::map_pages(virt_aligned, phys_aligned, pages)){
         return nullptr;
     }
 
-    return reinterpret_cast<void*>(virt + (phys & ~(paging::PAGE_SIZE - 1)));
+    return reinterpret_cast<void*>(virt_aligned + offset);
 }
 
 /*!
  * \brief Unmap physical memory from a virtual address
  */
-void AcpiOsUnmapMemory(void* virt_aligned_raw, ACPI_SIZE length){
-    size_t pages = (length + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
+void AcpiOsUnmapMemory(void* virt_raw, ACPI_SIZE length){
+    auto virt = reinterpret_cast<size_t>(virt_raw);
 
-    auto virt_aligned = reinterpret_cast<size_t>(virt_aligned_raw);
-    auto virt = virt_aligned - (virt_aligned & ~(paging::PAGE_SIZE - 1));
+    auto offset = virt % paging::PAGE_SIZE;
+    auto real_length = offset + length;
+    size_t pages = real_length / paging::PAGE_SIZE + (real_length % paging::PAGE_SIZE == 0 ? 0 : 1);
 
-    paging::unmap_pages(virt, pages);
-    virtual_allocator::free(virt, pages);
+    auto virt_aligned = virt - offset;
+
+    paging::unmap_pages(virt_aligned, pages);
+    virtual_allocator::free(virt_aligned, pages);
 }
 
 // Concurrency
