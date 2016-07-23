@@ -43,10 +43,10 @@ ACPI_THREAD_ID AcpiOsGetThreadId(void){
 }
 
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
-	ACPI_PHYSICAL_ADDRESS  root_pointer;
-	root_pointer = 0;
-	AcpiFindRootPointer(&root_pointer);
-	return root_pointer;
+    ACPI_PHYSICAL_ADDRESS  root_pointer;
+    root_pointer = 0;
+    AcpiFindRootPointer(&root_pointer);
+    return root_pointer;
 }
 
 } //end of extern "C"
