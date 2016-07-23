@@ -14,6 +14,8 @@
 #include "kalloc.hpp"
 #include "console.hpp"
 #include "scheduler.hpp"
+#include "virtual_allocator.hpp"
+#include "paging.hpp"
 
 extern "C" {
 
@@ -47,6 +49,27 @@ ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
     root_pointer = 0;
     AcpiFindRootPointer(&root_pointer);
     return root_pointer;
+}
+
+void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys, ACPI_SIZE length){
+    size_t pages = (length + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
+
+    auto virt = virtual_allocator::allocate(pages);
+    auto phys_aligned = phys - (phys & ~(paging::PAGE_SIZE - 1));
+
+    paging::map_pages(virt, phys_aligned, pages);
+
+    return reinterpret_cast<void*>(virt + (phys & ~(paging::PAGE_SIZE - 1)));
+}
+
+void AcpiOsUnmapMemory(void* virt_aligned_raw, ACPI_SIZE length){
+    size_t pages = (length + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
+
+    auto virt_aligned = reinterpret_cast<size_t>(virt_aligned_raw);
+    auto virt = virt_aligned - (virt_aligned & ~(paging::PAGE_SIZE - 1));
+
+    paging::unmap_pages(virt, pages);
+    virtual_allocator::free(virt, pages);
 }
 
 } //end of extern "C"
