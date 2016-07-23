@@ -384,8 +384,13 @@ void ata::detect_disks(){
     out_byte(ATA_PRIMARY + ATA_DEV_CTL, 0);
     out_byte(ATA_SECONDARY + ATA_DEV_CTL, 0);
 
-    interrupt::register_irq_handler(14, primary_controller_handler, nullptr);
-    interrupt::register_irq_handler(15, secondary_controller_handler, nullptr);
+    if(!interrupt::register_irq_handler(14, primary_controller_handler, nullptr)){
+        logging::logf(logging::log_level::ERROR, "ata: Unable to register IRQ handler 14\n");
+    }
+
+    if(!interrupt::register_irq_handler(15, secondary_controller_handler, nullptr)){
+        logging::logf(logging::log_level::ERROR, "ata: Unable to register IRQ handler 15\n");
+    }
 }
 
 uint8_t ata::number_of_disks(){

@@ -346,5 +346,7 @@ void system_call_entry(interrupt::syscall_regs* regs){
 }
 
 void install_system_calls(){
-    interrupt::register_syscall_handler(0, &system_call_entry);
+    if(!interrupt::register_syscall_handler(0, &system_call_entry)){
+        logging::logf(logging::log_level::ERROR, "Unable to register syscall handler 0\n");
+    }
 }

@@ -99,7 +99,10 @@ void keyboard_handler(interrupt::syscall_regs*, void*){
 } //end of anonymous namespace
 
 void keyboard::install_driver(){
-    interrupt::register_irq_handler(1, keyboard_handler, nullptr);
+    if(!interrupt::register_irq_handler(1, keyboard_handler, nullptr)){
+        logging::logf(logging::log_level::ERROR, "kbd: Unable to register IRQ handler 1\n");
+        return;
+    }
 
     // At this point, we need to clear the keyboard buffer
     // Otherwise, all the following events will be lost

@@ -272,7 +272,9 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
     // 6. Register IRQ handler
 
     auto irq = pci::read_config_dword(pci_device.bus, pci_device.device, pci_device.function, 0x3c) & 0xFF;
-    interrupt::register_irq_handler(irq, packet_handler, desc);
+    if(!interrupt::register_irq_handler(irq, packet_handler, desc)){
+        logging::logf(logging::log_level::ERROR, "rtl8139: Unable to register IRQ handler %u\n", irq);
+    }
 
     // 7. Set IMR + ISR
 

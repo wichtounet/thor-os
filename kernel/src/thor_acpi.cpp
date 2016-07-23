@@ -541,7 +541,9 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine, 
     acpi_context->routine = routine;
     acpi_context->context = context;
 
-    interrupt::register_irq_handler(irq, acpi_interrupt_handler, acpi_context);
+    if(!interrupt::register_irq_handler(irq, acpi_interrupt_handler, acpi_context)){
+        return AE_ALREADY_EXISTS;
+    }
 
     return AE_OK;
 }
