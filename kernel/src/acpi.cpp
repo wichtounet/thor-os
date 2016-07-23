@@ -274,6 +274,8 @@ int init_acpi(){
 }
 
 void initialize_acpica(){
+    logging::logf(logging::log_level::DEBUG, "acpi:: Started initialization of ACPICA\n");
+
     auto status = AcpiInitializeSubsystem();
     if(ACPI_FAILURE(status)){
         logging::logf(logging::log_level::ERROR, "Impossible to initialize ACPICA subsystem\n");
@@ -282,6 +284,8 @@ void initialize_acpica(){
     //TODO COntinue
 
     acpi_initialized = true;
+
+    logging::logf(logging::log_level::DEBUG, "acpi:: Finished initialization of ACPICA\n");
 }
 
 } //end of anonymous namespace
