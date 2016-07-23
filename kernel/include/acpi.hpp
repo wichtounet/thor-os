@@ -13,6 +13,8 @@ namespace acpi {
 bool init();
 void shutdown();
 
+bool initialized();
+
 } //end of acpi namespace
 
 #endif

@@ -15,6 +15,8 @@
 
 namespace {
 
+bool acpi_initialized = false;
+
 uint32_t SMI_CMD; //ptr
 uint8_t ACPI_ENABLE;
 uint8_t ACPI_DISABLE;
@@ -279,6 +281,9 @@ bool initialize_acpica(){
 
     //TODO COntinue
 
+
+    acpi_initialized = true;
+
     return true;
 }
 
@@ -310,4 +315,8 @@ void acpi::shutdown(){
    }
 
    k_print_line("acpi poweroff failed.");
+}
+
+bool acpi::initialized(){
+    return acpi_initialized;
 }
