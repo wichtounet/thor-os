@@ -106,6 +106,16 @@ void AcpiOsSleep(UINT64 ms){
     scheduler::sleep_ms(ms);
 }
 
+ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE /*type*/, ACPI_OSD_EXEC_CALLBACK function, void* context){
+    auto* user_stack = new char[scheduler::user_stack_size];
+    auto* kernel_stack = new char[scheduler::kernel_stack_size];
+
+    auto& process = scheduler::create_kernel_task_args(user_stack, kernel_stack, function, context);
+    process.ppid = scheduler::get_pid();
+
+    scheduler::queue_system_process(process.pid);
+}
+
 // ACPI
 
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
