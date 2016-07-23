@@ -516,6 +516,8 @@ ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 value, UINT3
     return rv;
 }
 
+// Interrupts
+
 struct acpi_interrupt_context {
     ACPI_OSD_HANDLER routine;
     void* context;
@@ -525,8 +527,6 @@ void acpi_interrupt_handler(interrupt::syscall_regs*, void* context){
     auto acpi_context = static_cast<acpi_interrupt_context*>(context);
     acpi_context->routine(acpi_context->context);
 }
-
-// Interrupts
 
 ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine, void* context){
     if (irq > 255){
