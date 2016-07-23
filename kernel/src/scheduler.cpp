@@ -147,6 +147,20 @@ void gc_task(){
     }
 }
 
+std::vector<void(*)()> init_tasks;
+
+void post_init_task(){
+    logging::logf(logging::log_level::DEBUG, "post_init_task (pid:%u) started %u tasks\n", scheduler::get_pid(), init_tasks.size());
+
+    for(auto func : init_tasks){
+        func();
+    }
+
+    logging::logf(logging::log_level::DEBUG, "post_init_task finished %u tasks\n", init_tasks.size());
+
+    scheduler::kill_current_process();
+}
+
 //TODO tsh should be configured somewhere
 void init_task(){
     logging::logf(logging::log_level::DEBUG, "init_task started (pid:%d)\n", scheduler::get_pid());
@@ -169,6 +183,9 @@ char init_kernel_stack[scheduler::kernel_stack_size];
 
 char gc_stack[scheduler::user_stack_size];
 char gc_kernel_stack[scheduler::kernel_stack_size];
+
+char post_init_stack[scheduler::user_stack_size];
+char post_init_kernel_stack[scheduler::kernel_stack_size];
 
 scheduler::process_t& new_process(){
     //TODO use get_free_pid() that searchs through the PCB
@@ -232,6 +249,15 @@ void create_gc_task(){
     scheduler::queue_system_process(gc_process.pid);
 
     gc_pid = gc_process.pid;
+}
+
+void create_post_init_task(){
+    auto& post_init_process = scheduler::create_kernel_task(post_init_stack, post_init_kernel_stack, &post_init_task);
+
+    post_init_process.ppid = 1;
+    post_init_process.priority = scheduler::MAX_PRIORITY;
+
+    scheduler::queue_system_process(post_init_process.pid);
 }
 
 void switch_to_process(size_t pid){
@@ -549,6 +575,7 @@ void scheduler::init(){
     create_idle_task();
     create_init_task();
     create_gc_task();
+    create_post_init_task();
 
     current_ticks = 0;
 }
@@ -692,8 +719,10 @@ void scheduler::kill_current_process(){
         }
     }
 
-    //The GC thread will clean up eventually
-    unblock_process(gc_pid);
+    //The GC thread will clean the resources eventually
+    if(pcb[gc_pid].state == process_state::WAITING){
+        unblock_process(gc_pid);
+    }
 
     pcb[current_pid].state = scheduler::process_state::KILLED;
 
@@ -790,12 +819,12 @@ void scheduler::block_process(pid_t pid){
 }
 
 void scheduler::unblock_process(pid_t pid){
+    logging::logf(logging::log_level::DEBUG, "Unblock process %u\n", pid);
+
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pid != idle_pid, "No reason to unblock the idle task");
     thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
-
-    logging::logf(logging::log_level::DEBUG, "Unblock process %u\n", pid);
 
     pcb[pid].state = process_state::READY;
 }
@@ -894,4 +923,8 @@ void scheduler::queue_system_process(scheduler::pid_t pid){
     process.state = scheduler::process_state::READY;
 
     run_queue(process.process.priority).push_back(pid);
+}
+
+void scheduler::queue_async_init_task(void (*fun)()){
+    init_tasks.emplace_back(fun);
 }
