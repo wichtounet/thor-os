@@ -17,9 +17,11 @@
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
 #include "kernel_utils.hpp"
+#include "timer.hpp"
 
 #include "mutex.hpp"
 #include "semaphore.hpp"
+#include "int_lock.hpp"
 
 extern "C" {
 
@@ -82,8 +84,26 @@ void AcpiOsVprintf(const char* format, va_list va){
 
 // Scheduling
 
-ACPI_THREAD_ID AcpiOsGetThreadId(void){
+ACPI_THREAD_ID AcpiOsGetThreadId(){
     return scheduler::get_pid();
+}
+
+//TODO Need a real micro seconds clock
+void AcpiOsStall(UINT32 us){
+    auto ticks = timer::ticks();
+    auto wait = 1 + us / 1000;
+
+    while(timer::ticks() != ticks + wait){
+        asm volatile("nop");
+        asm volatile("nop");
+        asm volatile("nop");
+        asm volatile("nop");
+        asm volatile("nop");
+    }
+}
+
+void AcpiOsSleep(UINT64 ms){
+    scheduler::sleep_ms(ms);
 }
 
 // ACPI
@@ -101,9 +121,16 @@ void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys, ACPI_SIZE length){
     size_t pages = (length + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
 
     auto virt = virtual_allocator::allocate(pages);
+
+    if(!virt){
+        return nullptr;
+    }
+
     auto phys_aligned = phys - (phys & ~(paging::PAGE_SIZE - 1));
 
-    paging::map_pages(virt, phys_aligned, pages);
+    if(!paging::map_pages(virt, phys_aligned, pages)){
+        return nullptr;
+    }
 
     return reinterpret_cast<void*>(virt + (phys & ~(paging::PAGE_SIZE - 1)));
 }
@@ -190,6 +217,34 @@ ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 units){
     return AE_OK;
 }
 
+ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *handle){
+    auto* lock = new int_lock();
+
+    *handle = lock;
+
+    return AE_OK;
+}
+
+void AcpiOsDeleteLock(ACPI_HANDLE handle){
+    auto* lock = static_cast<semaphore*>(handle);
+
+    delete lock;
+}
+
+ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle){
+    auto* lock = static_cast<semaphore*>(handle);
+
+    lock->acquire();
+
+    return 0;
+}
+
+void AcpiOsReleaseLock(ACPI_SPINLOCK handle, ACPI_CPU_FLAGS /*flags*/){
+    auto* lock = static_cast<semaphore*>(handle);
+
+    lock->release();
+}
+
 // Input / Output
 
 ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS port, UINT32* value, UINT32 width){
@@ -232,6 +287,74 @@ ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS port, UINT32 value, UINT32 width){
     }
 
     return AE_OK;
+}
+
+ACPI_STATUS AcpiOsReadMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 *value, UINT32 width){
+    ACPI_STATUS rv = AE_OK;
+
+    void* logical_address = AcpiOsMapMemory(Address, width / 8);
+    if (!logical_address){
+        return AE_NOT_EXIST;
+    }
+
+    switch (width) {
+        case 8:
+            *value = *((volatile uint8_t*) logical_address);
+            break;
+
+        case 16:
+            *value = *((volatile uint16_t*) logical_address);
+            break;
+
+        case 32:
+            *value = *((volatile uint32_t*) logical_address);
+            break;
+
+        case 64:
+            *value = *((volatile uint64_t*) logical_address);
+            break;
+
+        default:
+            rv = AE_BAD_PARAMETER;
+    }
+
+    AcpiOsUnmapMemory(logical_address, width / 8);
+
+    return rv;
+}
+
+ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 value, UINT32 width){
+    ACPI_STATUS rv = AE_OK;
+
+    void* logical_address = AcpiOsMapMemory(Address, width / 8);
+    if (!logical_address){
+        return AE_NOT_FOUND;
+    }
+
+    switch (width) {
+        case 8:
+            *((volatile uint8_t*) logical_address) = value;
+            break;
+
+        case 16:
+            *((volatile uint16_t*) logical_address) = value;
+            break;
+
+        case 32:
+            *((volatile uint32_t*) logical_address) = value;
+            break;
+
+        case 64:
+            *((volatile uint64_t*) logical_address) = value;
+            break;
+
+        default:
+            rv = AE_BAD_PARAMETER;
+    }
+
+    AcpiOsUnmapMemory(logical_address, width / 8);
+
+    return rv;
 }
 
 } //end of extern "C"

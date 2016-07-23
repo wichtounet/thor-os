@@ -800,6 +800,12 @@ void scheduler::unblock_process(pid_t pid){
     pcb[pid].state = process_state::READY;
 }
 
+void scheduler::sleep_ms(size_t time){
+    auto pid = get_pid();
+
+    sleep_ms(time);
+}
+
 void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");

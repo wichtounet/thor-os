@@ -22,8 +22,7 @@ namespace {
 
 constexpr const size_t virtual_start = paging::virtual_paging_start + (paging::physical_memory_pages * paging::PAGE_SIZE);
 constexpr const size_t first_virtual_address = virtual_start % 0x100000 == 0 ? virtual_start : (virtual_start / 0x100000 + 1) * 0x100000;
-constexpr const size_t last_virtual_address = virtual_allocator::kernel_virtual_size;
-constexpr const size_t managed_space = last_virtual_address - first_virtual_address;
+constexpr const size_t last_virtual_address = virtual_allocator::kernel_virtual_size; constexpr const size_t managed_space = last_virtual_address - first_virtual_address;
 constexpr const size_t unit = paging::PAGE_SIZE;
 
 size_t allocated_pages = first_virtual_address / paging::PAGE_SIZE;

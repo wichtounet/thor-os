@@ -35,7 +35,7 @@ void sc_get_input(interrupt::syscall_regs* regs){
 void sc_sleep_ms(interrupt::syscall_regs* regs){
     auto time = regs->rbx;
 
-    scheduler::sleep_ms(scheduler::get_pid(), time);
+    scheduler::sleep_ms(time);
 }
 
 void sc_exec(interrupt::syscall_regs* regs){

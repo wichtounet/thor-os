@@ -36,6 +36,7 @@ void sbrk(size_t inc);
 void tick();
 void reschedule();
 
+void sleep_ms(size_t time);
 void sleep_ms(pid_t pid, size_t time);
 
 size_t register_new_handle(const std::vector<std::string>& path);
