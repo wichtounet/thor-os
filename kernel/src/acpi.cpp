@@ -276,12 +276,45 @@ int init_acpi(){
 void initialize_acpica(){
     logging::logf(logging::log_level::DEBUG, "acpi:: Started initialization of ACPICA\n");
 
+    /* Initialize the ACPICA subsystem */
+
     auto status = AcpiInitializeSubsystem();
     if(ACPI_FAILURE(status)){
-        logging::logf(logging::log_level::ERROR, "Impossible to initialize ACPICA subsystem\n");
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to initialize subsystem: error: %u\n", size_t(status));
+        return;
     }
 
-    //TODO COntinue
+    /* Initialize the ACPICA Table Manager and get all ACPI tables */
+
+    status = AcpiInitializeTables(nullptr, 16, FALSE);
+    if (ACPI_FAILURE (status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to initialize tables: error: %u\n", size_t(status));
+        return;
+    }
+
+    /* Create the ACPI namespace from ACPI tables */
+
+    status = AcpiLoadTables ();
+    if (ACPI_FAILURE (status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to load tables: error: %u\n", size_t(status));
+        return;
+    }
+
+    /* Initialize the ACPI hardware */
+
+    status = AcpiEnableSubsystem (ACPI_FULL_INITIALIZATION);
+    if (ACPI_FAILURE (status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to enable subsystem: error: %u\n", size_t(status));
+        return;
+    }
+
+    /* Complete the ACPI namespace object initialization */
+
+    status = AcpiInitializeObjects (ACPI_FULL_INITIALIZATION);
+    if (ACPI_FAILURE (status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to initialize objects: error: %u\n", size_t(status));
+        return;
+    }
 
     acpi_initialized = true;
 
