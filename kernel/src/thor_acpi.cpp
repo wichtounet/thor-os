@@ -19,6 +19,7 @@
 #include "kernel_utils.hpp"
 #include "interrupts.hpp"
 #include "timer.hpp"
+#include "pci.hpp"
 
 #include "mutex.hpp"
 #include "semaphore.hpp"
@@ -514,6 +515,56 @@ ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 value, UINT3
     AcpiOsUnmapMemory(logical_address, width / 8);
 
     return rv;
+}
+
+ACPI_STATUS AcpiOsReadPciConfiguration(ACPI_PCI_ID* pci_id, UINT32 Register, UINT64* value, UINT32 width){
+    if (pci_id->Bus >= 256 || pci_id->Device >= 32 || pci_id->Function >= 8){
+        return AE_BAD_PARAMETER;
+    }
+
+    switch (width) {
+        case 8:
+            *((uint8_t*) value) = pci::read_config_byte(pci_id->Bus, pci_id->Device, pci_id->Function, Register);
+            break;
+
+        case 16:
+            *((uint16_t*) value) = pci::read_config_word(pci_id->Bus, pci_id->Device, pci_id->Function, Register);
+            break;
+
+        case 32:
+            *((uint32_t*) value) = pci::read_config_dword(pci_id->Bus, pci_id->Device, pci_id->Function, Register);
+            break;
+
+        default:
+            return AE_BAD_PARAMETER;
+    }
+
+    return AE_OK;
+}
+
+ACPI_STATUS AcpiOsWritePciConfiguration(ACPI_PCI_ID* pci_id, UINT32 Register, ACPI_INTEGER value, UINT32 width){
+    if (pci_id->Bus >= 256 || pci_id->Device >= 32 || pci_id->Function >= 8){
+        return AE_BAD_PARAMETER;
+    }
+
+    switch (width) {
+        case 8:
+            pci::write_config_byte(pci_id->Bus, pci_id->Device, pci_id->Function, Register, value);
+            break;
+
+        case 16:
+            pci::write_config_word(pci_id->Bus, pci_id->Device, pci_id->Function, Register, value);
+            break;
+
+        case 32:
+            pci::write_config_dword(pci_id->Bus, pci_id->Device, pci_id->Function, Register, value);
+            break;
+
+        default:
+            return AE_BAD_PARAMETER;
+    }
+
+    return AE_OK;
 }
 
 // Interrupts
