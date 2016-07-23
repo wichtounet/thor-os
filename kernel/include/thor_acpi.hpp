@@ -14,8 +14,8 @@
 //thor works in 64 bits
 #define ACPI_MACHINE_WIDTH 64
 
-// Cannot compile ACPICA without this flag for some reason
-#define ACPI_DEBUGGER
+// Don't use the full debugger, only the features for debugging output
+#define ACPI_DEBUG_OUTPUT
 
 // Let APCICA use its own cache
 #define ACPI_USE_LOCAL_CACHE
