@@ -144,6 +144,16 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE /*type*/, ACPI_OSD_EXEC_CALLBACK fun
     scheduler::queue_system_process(process.pid);
 }
 
+//TODO This should be done much more precise
+// and should be real timestamp not an uptime timestamp
+
+/*!
+ * \brief Returns the system time in 100 nanoseconds units
+ */
+UINT64 AcpiOsGetTimer(void){
+    return timer::seconds() * 10000000;
+}
+
 // ACPI
 
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
