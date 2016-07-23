@@ -150,8 +150,15 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE /*type*/, ACPI_OSD_EXEC_CALLBACK fun
 /*!
  * \brief Returns the system time in 100 nanoseconds units
  */
-UINT64 AcpiOsGetTimer(void){
+UINT64 AcpiOsGetTimer(){
     return timer::seconds() * 10000000;
+}
+
+/*!
+ * \brief Wait for all asynchronous events to complete
+ */
+void AcpiOsWaitEventsComplete(){
+    return;
 }
 
 // ACPI
