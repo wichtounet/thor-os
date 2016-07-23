@@ -20,6 +20,7 @@
 #include "interrupts.hpp"
 #include "timer.hpp"
 #include "pci.hpp"
+#include "logging.hpp"
 
 #include "mutex.hpp"
 #include "semaphore.hpp"
@@ -33,6 +34,8 @@ extern "C" {
  * \brief Initialize the OSL
  */
 ACPI_STATUS AcpiOsInitialize(){
+    logging::logf(logging::log_level::DEBUG, "ACPICA started initialization\n");
+
     //Nothing to initialize
 
     return AE_OK;
@@ -186,6 +189,8 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE /*type*/, ACPI_OSD_EXEC_CALLBACK fun
 
     auto& process = scheduler::create_kernel_task_args(user_stack, kernel_stack, function, context);
     process.ppid = scheduler::get_pid();
+
+    logging::logf(logging::log_level::DEBUG, "ACPICA new process %u\n", process.pid);
 
     scheduler::queue_system_process(process.pid);
 
