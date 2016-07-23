@@ -19,6 +19,8 @@
 
 extern "C" {
 
+// Dynamic allocation
+
 void* AcpiOsAllocate(ACPI_SIZE size){
     return kalloc::k_malloc(size);
 }
@@ -26,6 +28,8 @@ void* AcpiOsAllocate(ACPI_SIZE size){
 void AcpiOsFree(void* p){
     kalloc::k_free(p);
 }
+
+// terminal
 
 void AcpiOsPrintf(const char* format, ...){
     va_list va;
@@ -40,9 +44,13 @@ void AcpiOsVprintf(const char* format, va_list va){
     printf(format, va);
 }
 
+// Scheduling
+
 ACPI_THREAD_ID AcpiOsGetThreadId(void){
     return scheduler::get_pid();
 }
+
+// ACPI
 
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
     ACPI_PHYSICAL_ADDRESS  root_pointer;
@@ -50,6 +58,8 @@ ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
     AcpiFindRootPointer(&root_pointer);
     return root_pointer;
 }
+
+// Paging
 
 void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys, ACPI_SIZE length){
     size_t pages = (length + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
