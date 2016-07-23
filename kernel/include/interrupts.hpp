@@ -52,8 +52,11 @@ struct syscall_regs {
 
 void setup_interrupts();
 
-void register_irq_handler(size_t irq, void (*handler)(syscall_regs*, void*), void* data);
-void register_syscall_handler(size_t irq, void (*handler)(syscall_regs*));
+bool register_irq_handler(size_t irq, void (*handler)(syscall_regs*, void*), void* data);
+bool register_syscall_handler(size_t irq, void (*handler)(syscall_regs*));
+
+bool unregister_irq_handler(size_t irq, void (*handler)(syscall_regs*, void*));
+bool unregister_syscall_handler(size_t irq, void (*handler)(syscall_regs*));
 
 } //end of interrupt namespace
 

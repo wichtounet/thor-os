@@ -275,13 +275,81 @@ void _syscall_handler(interrupt::syscall_regs* regs){
 
 } //end of extern "C"
 
-void interrupt::register_irq_handler(size_t irq, void (*handler)(interrupt::syscall_regs*, void*), void* data){
+bool interrupt::register_irq_handler(size_t irq, void (*handler)(interrupt::syscall_regs*, void*), void* data){
+    if(irq_handlers[irq]){
+        logging::logf(logging::log_level::ERROR, "Register interrupt %u while already registered\n", irq);
+        return false;
+    }
+
+    if(irq > 15){
+        logging::logf(logging::log_level::ERROR, "Register interrupt %u too high\n", irq);
+        return false;
+    }
+
     irq_handlers[irq] = handler;
     irq_handler_data[irq] = data;
+
+    return true;
 }
 
-void interrupt::register_syscall_handler(size_t syscall, void (*handler)(interrupt::syscall_regs*)){
+bool interrupt::register_syscall_handler(size_t syscall, void (*handler)(interrupt::syscall_regs*)){
+    if(syscall_handlers[syscall]){
+        logging::logf(logging::log_level::ERROR, "Register syscall %u while already registered\n", syscall);
+        return false;
+    }
+
+    if(syscall > interrupt::SYSCALL_MAX){
+        logging::logf(logging::log_level::ERROR, "Register syscall %u too high\n", syscall);
+        return false;
+    }
+
     syscall_handlers[syscall] = handler;
+
+    return true;
+}
+
+bool interrupt::unregister_irq_handler(size_t irq, void (*handler)(interrupt::syscall_regs*, void*)){
+    if(!irq_handlers[irq]){
+        logging::logf(logging::log_level::ERROR, "Unregister interrupt %u while not registered\n", irq);
+        return false;
+    }
+
+    if(irq > 15){
+        logging::logf(logging::log_level::ERROR, "Unregister interrupt %u too high\n", irq);
+        return false;
+    }
+
+    if(irq_handlers[irq] != handler){
+        logging::logf(logging::log_level::ERROR, "Unregister wrong irq handler %u\n", irq);
+        return false;
+    }
+
+
+    irq_handlers[irq] = nullptr;
+    irq_handler_data[irq] = nullptr;
+
+    return true;
+}
+
+bool interrupt::unregister_syscall_handler(size_t syscall, void (*handler)(interrupt::syscall_regs*)){
+    if(!syscall_handlers[syscall]){
+        logging::logf(logging::log_level::ERROR, "Unregister syscall %u while not registered\n", syscall);
+        return false;
+    }
+
+    if(syscall > interrupt::SYSCALL_MAX){
+        logging::logf(logging::log_level::ERROR, "Unregister syscall %u too high\n", syscall);
+        return false;
+    }
+
+    if(syscall_handlers[syscall] != handler){
+        logging::logf(logging::log_level::ERROR, "Unregister wrong syscall handler %u\n", syscall);
+        return false;
+    }
+
+    syscall_handlers[syscall] = nullptr;
+
+    return true;
 }
 
 void interrupt::setup_interrupts(){
