@@ -48,7 +48,6 @@ $(eval $(call acpica_folder_compile,executer))
 $(eval $(call acpica_folder_compile,namespace))
 $(eval $(call acpica_folder_compile,parser))
 $(eval $(call acpica_folder_compile,hardware))
-$(eval $(call acpica_folder_compile,resources))
 $(eval $(call acpica_folder_compile,tables))
 $(eval $(call acpica_folder_compile,utilities))
 
