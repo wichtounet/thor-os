@@ -172,10 +172,12 @@ ACPI_STATUS AcpiOsDeleteSemaphore(ACPI_SEMAPHORE handle){
     return AE_OK;
 }
 
-ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 units, UINT16 timeout){
+ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 units, UINT16 /*timeout*/){
     auto* lock = static_cast<semaphore*>(handle);
 
-    lock->acquire();
+    for(size_t i = 0; i < units; ++i){
+        lock->acquire();
+    }
 
     return AE_OK;
 }
@@ -183,7 +185,7 @@ ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 units, UINT16 time
 ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 units){
     auto* lock = static_cast<semaphore*>(handle);
 
-    lock->release();
+    lock->release(units);
 
     return AE_OK;
 }
@@ -202,10 +204,6 @@ ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS port, UINT32* value, UINT32 width){
 
         case 32:
             *value = in_dword(port);
-            break;
-
-        case 64:
-            *value = in_qword(port);
             break;
 
         default:
@@ -227,10 +225,6 @@ ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS port, UINT32 value, UINT32 width){
 
         case 32:
             out_dword(port, value);
-            break;
-
-        case 64:
-            out_qword(port, value);
             break;
 
         default:
