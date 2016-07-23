@@ -34,11 +34,11 @@ COMMON_LINK_FLAGS=-lgcc
 
 KERNEL_LINK_FLAGS=$(COMMON_LINK_FLAGS) -T linker.ld
 
-LIB_FLAGS=$(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -ffunction-sections -fdata-sections
-LIB_LINK_FLAGS=$(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -Wl,-gc-sections
+LIB_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -ffunction-sections -fdata-sections
+LIB_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -Wl,-gc-sections
 
-PROGRAM_FLAGS=$(FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -I../../printf/include/  -static -L../../tlib/ -ltlib -mcmodel=small -fPIC
-PROGRAM_LINK_FLAGS=$(FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld -Wl,-gc-sections
+PROGRAM_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -I../../printf/include/  -static -L../../tlib/ -ltlib -mcmodel=small -fPIC
+PROGRAM_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld -Wl,-gc-sections
 
 NO_COLOR=\x1b[0m
 MODE_COLOR=\x1b[31;01m

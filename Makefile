@@ -2,7 +2,7 @@
 
 default: thor.flp
 
-kernel/kernel.bin: force_look
+kernel/debug/kernel.bin: force_look
 	cd kernel; $(MAKE)
 
 tlib/libtlib.a: force_look
