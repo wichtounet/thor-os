@@ -17,6 +17,7 @@
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
 #include "kernel_utils.hpp"
+#include "interrupts.hpp"
 #include "timer.hpp"
 
 #include "mutex.hpp"
@@ -186,6 +187,8 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE /*type*/, ACPI_OSD_EXEC_CALLBACK fun
     process.ppid = scheduler::get_pid();
 
     scheduler::queue_system_process(process.pid);
+
+    return AE_OK;
 }
 
 /*!
@@ -511,6 +514,50 @@ ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 value, UINT3
     AcpiOsUnmapMemory(logical_address, width / 8);
 
     return rv;
+}
+
+struct acpi_interrupt_context {
+    ACPI_OSD_HANDLER routine;
+    void* context;
+};
+
+void acpi_interrupt_handler(interrupt::syscall_regs*, void* context){
+    auto acpi_context = static_cast<acpi_interrupt_context*>(context);
+    acpi_context->routine(acpi_context->context);
+}
+
+// Interrupts
+
+ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine, void* context){
+    if (irq > 255){
+        return AE_BAD_PARAMETER;
+    }
+
+    if (!routine){
+        return AE_BAD_PARAMETER;
+    }
+
+    auto* acpi_context = new acpi_interrupt_context();
+    acpi_context->routine = routine;
+    acpi_context->context = context;
+
+    interrupt::register_irq_handler(irq, acpi_interrupt_handler, acpi_context);
+
+    return AE_OK;
+}
+
+ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine){
+    if (irq > 255){
+        return AE_BAD_PARAMETER;
+    }
+
+    if (!routine){
+        return AE_BAD_PARAMETER;
+    }
+
+    //TODO Remote the interrupt handler
+
+    return AE_OK;
 }
 
 } //end of extern "C"
