@@ -87,10 +87,12 @@ void  kernel_main(){
     virtual_allocator::finalize();
     kalloc::finalize();
 
+    // Asynchronously initialized drivers
+    acpi::init();
+
     //Install drivers
     serial::init();
     timer::install();
-    //acpi::init();
     keyboard::install_driver();
     disks::detect_disks();
     pci::detect_devices();
@@ -118,7 +120,7 @@ void  kernel_main(){
     scheduler::start();
 }
 
-}
+} //end of extern "C"
 
 void suspend_boot(){
     k_print_line("Impossible to continue boot...");

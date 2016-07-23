@@ -12,10 +12,11 @@
 #include "paging.hpp"
 #include "console.hpp"
 #include "logging.hpp"
+#include "scheduler.hpp"
 
 namespace {
 
-bool acpi_initialized = false;
+volatile bool acpi_initialized = false;
 
 uint32_t SMI_CMD; //ptr
 uint8_t ACPI_ENABLE;
@@ -272,32 +273,22 @@ int init_acpi(){
    return -1;
 }
 
-bool initialize_acpica(){
+void initialize_acpica(){
     auto status = AcpiInitializeSubsystem();
     if(ACPI_FAILURE(status)){
         logging::logf(logging::log_level::ERROR, "Impossible to initialize ACPICA subsystem\n");
-        return false;
     }
 
     //TODO COntinue
 
-
     acpi_initialized = true;
-
-    return true;
 }
 
 } //end of anonymous namespace
 
-bool acpi::init(){
-    if(!initialize_acpica()){
-        logging::logf(logging::log_level::ERROR, "Impossible to initialize ACPICA\n");
-        return false;
-    }
-
-    //Nothing else to init for now
-
-    return true;
+void acpi::init(){
+    // ACPICA needs scheduling to be started
+    scheduler::queue_async_init_task(initialize_acpica);
 }
 
 void acpi::shutdown(){
