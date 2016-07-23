@@ -373,7 +373,7 @@ ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *handle){
  * \brief Delete an interrupt spinlock
  */
 void AcpiOsDeleteLock(ACPI_HANDLE handle){
-    auto* lock = static_cast<semaphore*>(handle);
+    auto* lock = static_cast<int_lock*>(handle);
 
     delete lock;
 }
@@ -382,7 +382,7 @@ void AcpiOsDeleteLock(ACPI_HANDLE handle){
  * \brief Acquire an interrupt spinlock
  */
 ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle){
-    auto* lock = static_cast<semaphore*>(handle);
+    auto* lock = static_cast<int_lock*>(handle);
 
     lock->acquire();
 
@@ -393,7 +393,7 @@ ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle){
  * \brief Release an interrupt spinlock
  */
 void AcpiOsReleaseLock(ACPI_SPINLOCK handle, ACPI_CPU_FLAGS /*flags*/){
-    auto* lock = static_cast<semaphore*>(handle);
+    auto* lock = static_cast<int_lock*>(handle);
 
     lock->release();
 }
