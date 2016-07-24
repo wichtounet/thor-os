@@ -104,8 +104,6 @@ void sc_shutdown(interrupt::syscall_regs*){
     }
 
     acpi::shutdown();
-
-    __builtin_unreachable();
 }
 
 void sc_open(interrupt::syscall_regs* regs){
