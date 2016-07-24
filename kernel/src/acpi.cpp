@@ -192,4 +192,6 @@ bool acpi::reboot(){
     auto reset_value = AcpiGbl_FADT.ResetValue;
 
     acpi_write(reset_register, reset_value);
+
+    return true;
 }
