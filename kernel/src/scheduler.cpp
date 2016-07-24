@@ -96,6 +96,7 @@ void gc_task(){
                 logging::logf(logging::log_level::DEBUG, "Clean process %u\n", prev_pid);
 
                 // 1. Release physical memory of PML4T (if not system task)
+
                 if(!desc.system){
                     physical_allocator::free(desc.physical_cr3, 1);
                 }
@@ -111,18 +112,20 @@ void gc_task(){
                 }
 
                 // 3. Release segment's physical memory
+
                 for(auto& segment : desc.segments){
                     physical_allocator::free(segment.physical, segment.size / paging::PAGE_SIZE);
                 }
                 desc.segments.clear();
 
-                //5. Release virtual kernel stack
+                // 4. Release virtual kernel stack
+
                 if(desc.virtual_kernel_stack){
                     virtual_allocator::free(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
                     paging::unmap_pages(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
                 }
 
-                //6. Remove process from run queue
+                // 5. Remove process from run queue
                 size_t index = 0;
                 for(; index < run_queue(desc.priority).size(); ++index){
                     std::lock_guard<mutex<>> l(run_queue_lock(desc.priority));
@@ -133,7 +136,8 @@ void gc_task(){
                     }
                 }
 
-                //7. Clean process
+                // 6. Clean process
+
                 desc.pid = 0;
                 desc.ppid = 0;
                 desc.system = false;
@@ -145,11 +149,11 @@ void gc_task(){
                 desc.context = nullptr;
                 desc.brk_start = desc.brk_end = 0;
 
-                //8 Clean file handles
+                // 7. Clean file handles
                 //TODO If not empty, probably something should be done
                 process.handles.clear();
 
-                //9. Release the PCB slot
+                // 8. Release the PCB slot
                 process.state = scheduler::process_state::EMPTY;
 
                 logging::logf(logging::log_level::DEBUG, "Process %u cleaned\n", prev_pid);
