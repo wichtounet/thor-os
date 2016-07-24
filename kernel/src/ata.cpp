@@ -115,15 +115,15 @@ void ata_wait_irq_secondary(){
 }
 
 inline void ata_400ns_delay(uint16_t controller){
-    auto status = in_byte(controller + ATA_STATUS);
-    status = in_byte(controller + ATA_STATUS);
-    status = in_byte(controller + ATA_STATUS);
-    status = in_byte(controller + ATA_STATUS);
-    status = in_byte(controller + ATA_STATUS);
-    status = in_byte(controller + ATA_STATUS);
-    status = in_byte(controller + ATA_STATUS);
-    status = in_byte(controller + ATA_STATUS);
-    status = in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
 }
 
 static uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){

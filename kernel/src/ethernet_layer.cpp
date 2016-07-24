@@ -39,9 +39,12 @@ uint16_t type_to_code(network::ethernet::ether_type type){
         case network::ethernet::ether_type::ARP:
             return 0x806;
         case network::ethernet::ether_type::UNKNOWN:
-            logging::logf(logging::log_level::ERROR, "ethernet: Decoding UNKOWN code\n");
+            logging::logf(logging::log_level::ERROR, "ethernet: Decoding UNKNOWN code\n");
             return 0x0;
     }
+
+    logging::logf(logging::log_level::ERROR, "ethernet: Decoding UNKNOWN code\n");
+    return 0x0;
 }
 
 } //end of anonymous namespace

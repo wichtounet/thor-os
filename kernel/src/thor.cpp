@@ -79,6 +79,7 @@ __attribute__((noreturn)) void __stack_chk_fail(){
     double_printf("Stack smashing detected \n");
     double_printf("pid=%u\n", scheduler::get_pid());
     asm volatile("hlt" : : );
+    __builtin_unreachable();
 }
 
 }

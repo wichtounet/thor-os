@@ -25,8 +25,6 @@ constexpr const size_t MAX_EARLY = 128;
 size_t current_early = 0;
 const char* early_logs[MAX_EARLY];
 
-const char* new_line = "\n";
-
 std::string buffer;
 
 const char* level_to_string(logging::log_level level){
@@ -40,6 +38,8 @@ const char* level_to_string(logging::log_level level){
         case logging::log_level::ERROR:
             return "ERROR";
     }
+
+    return "UNKNOWN";
 }
 
 void append_to_file(const char* s, size_t length){

@@ -12,7 +12,7 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 
-void network::ip::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+void network::ip::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
     logging::logf(logging::log_level::TRACE, "ip: Start IPv4 packet handling\n");

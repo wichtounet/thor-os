@@ -846,8 +846,7 @@ void scheduler::unblock_process(pid_t pid){
 
 void scheduler::sleep_ms(size_t time){
     auto pid = get_pid();
-
-    sleep_ms(time);
+    sleep_ms(pid, time);
 }
 
 void scheduler::sleep_ms(pid_t pid, size_t time){
