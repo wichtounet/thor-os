@@ -57,7 +57,7 @@ public:
                 auto index = bitmaps[l].free_word();
                 auto address = block_start(l, index);
 
-                if(address + level_size(pages) >= last_address){
+                if(address + level_size(l) >= last_address){
                     logging::logf(logging::log_level::ERROR, "buddy: Address too high level:%u index:%u address:%h\n", l, index, address);
                     return 0;
                 }
@@ -74,7 +74,7 @@ public:
             auto index = bitmaps[l].free_bit();
             auto address = block_start(l, index);
 
-            if(address + level_size(pages) >= last_address){
+            if(address + level_size(l) >= last_address){
                 logging::logf(logging::log_level::ERROR, "buddy: Address too high pages:%u level:%u index:%u address:%h\n", pages, l, index, address);
                 return 0;
             }
