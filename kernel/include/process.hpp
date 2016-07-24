@@ -61,6 +61,10 @@ struct process_t {
     size_t brk_start;
     size_t brk_end;
 
+    // Only for system kernels
+    char* user_stack;
+    char* kernel_stack;
+
     volatile interrupt::syscall_regs* context;
 
     std::vector<segment_t> segments;

@@ -111,6 +111,18 @@ void gc_task(){
                     physical_allocator::free(desc.physical_user_stack, scheduler::user_stack_size / paging::PAGE_SIZE);
                 }
 
+                // kernel processes can either use dynamic memory or static memory
+
+                if(desc.system){
+                    if(reinterpret_cast<size_t>(desc.user_stack) >= paging::virtual_paging_start + (paging::physical_memory_pages * paging::PAGE_SIZE)){
+                        delete[] desc.user_stack;
+                    }
+
+                    if(reinterpret_cast<size_t>(desc.kernel_stack) >= paging::virtual_paging_start + (paging::physical_memory_pages * paging::PAGE_SIZE)){
+                        delete[] desc.kernel_stack;
+                    }
+                }
+
                 // 3. Release segment's physical memory
 
                 for(auto& segment : desc.segments){
@@ -190,18 +202,6 @@ void init_task(){
     }
 }
 
-char idle_stack[scheduler::user_stack_size];
-char idle_kernel_stack[scheduler::kernel_stack_size];
-
-char init_stack[scheduler::user_stack_size];
-char init_kernel_stack[scheduler::kernel_stack_size];
-
-char gc_stack[scheduler::user_stack_size];
-char gc_kernel_stack[scheduler::kernel_stack_size];
-
-char post_init_stack[scheduler::user_stack_size];
-char post_init_kernel_stack[scheduler::kernel_stack_size];
-
 scheduler::process_t& new_process(){
     //TODO use get_free_pid() that searchs through the PCB
     auto pid = next_pid++;
@@ -236,7 +236,7 @@ void queue_process(scheduler::pid_t pid){
 }
 
 void create_idle_task(){
-    auto& idle_process = scheduler::create_kernel_task(idle_stack, idle_kernel_stack, &idle_task);
+    auto& idle_process = scheduler::create_kernel_task(new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &idle_task);
 
     idle_process.ppid = 0;
     idle_process.priority = scheduler::MIN_PRIORITY;
@@ -247,7 +247,7 @@ void create_idle_task(){
 }
 
 void create_init_task(){
-    auto& init_process = scheduler::create_kernel_task(init_stack, init_kernel_stack, &init_task);
+    auto& init_process = scheduler::create_kernel_task(new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &init_task);
 
     init_process.ppid = 0;
     init_process.priority = scheduler::MIN_PRIORITY + 1;
@@ -256,7 +256,7 @@ void create_init_task(){
 }
 
 void create_gc_task(){
-    auto& gc_process = scheduler::create_kernel_task(gc_stack, gc_kernel_stack, &gc_task);
+    auto& gc_process = scheduler::create_kernel_task(new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &gc_task);
 
     gc_process.ppid = 1;
     gc_process.priority = scheduler::MIN_PRIORITY + 1;
@@ -267,7 +267,7 @@ void create_gc_task(){
 }
 
 void create_post_init_task(){
-    auto& post_init_process = scheduler::create_kernel_task(post_init_stack, post_init_kernel_stack, &post_init_task);
+    auto& post_init_process = scheduler::create_kernel_task(new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &post_init_task);
 
     post_init_process.ppid = 1;
     post_init_process.priority = scheduler::MAX_PRIORITY;
@@ -899,6 +899,9 @@ scheduler::process_t& scheduler::create_kernel_task(char* user_stack, char* kern
     process.physical_user_stack = 0;
     process.physical_kernel_stack = 0;
     process.virtual_kernel_stack = 0;
+
+    process.user_stack = user_stack;
+    process.user_stack = kernel_stack;
 
     auto rsp = &user_stack[scheduler::user_stack_size - STACK_ALIGNMENT];
     rsp -= sizeof(interrupt::syscall_regs);
