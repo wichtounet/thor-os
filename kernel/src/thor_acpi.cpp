@@ -103,7 +103,7 @@ void AcpiOsPrintf(const char* format, ...){
     va_list va;
     va_start(va, format);
 
-    printf(format, va);
+    logging::logf(logging::log_level::TRACE, format, va);
 
     va_end(va);
 }
@@ -112,7 +112,7 @@ void AcpiOsPrintf(const char* format, ...){
  * \brief Print something to terminal
  */
 void AcpiOsVprintf(const char* format, va_list va){
-    printf(format, va);
+    logging::logf(logging::log_level::TRACE, format, va);
 }
 
 /*!

@@ -7,6 +7,7 @@
 
 #include <types.hpp>
 #include <string.hpp>
+#include <stdarg.h>
 
 #ifndef LOGGING_HPP
 #define LOGGING_HPP
@@ -27,6 +28,7 @@ void to_file();
 
 void log(log_level level, const char* s);
 void log(log_level level, const std::string& s);
+void logf(log_level level, const char* s, va_list va);
 void logf(log_level level, const char* s, ...);
 
 } //end of namespace logging

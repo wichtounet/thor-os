@@ -111,8 +111,15 @@ void logging::log(log_level level, const std::string& s){
     log(level, s.c_str());
 }
 
+void logging::logf(log_level level, const char* s, va_list va){
+    thor_assert(!is_early(), "logf(level,string,...) is not valid in early mode");
+
+    auto formatted = vsprintf(s, va);
+    log(level, formatted.c_str());
+}
+
 void logging::logf(log_level level, const char* s, ...){
-    thor_assert(!is_early(), "logf(level,string,...) in not valid in early mode");
+    thor_assert(!is_early(), "logf(level,string,...) is not valid in early mode");
 
     va_list va;
     va_start(va, s);
