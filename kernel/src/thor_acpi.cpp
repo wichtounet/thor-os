@@ -467,6 +467,7 @@ ACPI_STATUS AcpiOsReadMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 *value, UINT3
 
     void* logical_address = AcpiOsMapMemory(Address, width / 8);
     if (!logical_address){
+        logging::log(logging::log_level::ERROR, "acpica: Cannot read memory (cannot map memory)\n");
         return AE_NOT_EXIST;
     }
 
@@ -504,6 +505,7 @@ ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 value, UINT3
 
     void* logical_address = AcpiOsMapMemory(Address, width / 8);
     if (!logical_address){
+        logging::log(logging::log_level::ERROR, "acpica: Cannot write memory (cannot map memory)\n");
         return AE_NOT_FOUND;
     }
 
@@ -628,6 +630,7 @@ ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine){
     }
 
     if(!interrupt::unregister_irq_handler(irq, acpi_interrupt_handler)){
+        logging::log(logging::log_level::ERROR, "acpica: Cannot remove interrupt handler\n");
         return AE_NOT_EXIST;
     }
 
