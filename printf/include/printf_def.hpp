@@ -80,8 +80,8 @@ std::string vsprintf(const std::string& format, va_list va){
                 s += std::to_string(arg);
             }
             //Hexadecimal
-            else if(ch == 'h' || ch == 'x'){
-                if(ch == 'h'){
+            else if(ch == 'h' || ch == 'x' || ch == 'p'){
+                if(ch == 'h' || ch == 'p'){
                     s += "0x";
                 }
 
