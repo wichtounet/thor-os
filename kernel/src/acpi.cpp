@@ -70,7 +70,7 @@ void initialize_acpica(){
 
     /* Initialize the ACPICA Table Manager and get all ACPI tables */
 
-    status = AcpiInitializeTables(nullptr, 16, FALSE);
+    status = AcpiInitializeTables(nullptr, 16, true);
     if (ACPI_FAILURE (status)){
         logging::logf(logging::log_level::ERROR, "acpica: Impossible to initialize tables: error: %s\n", AcpiGbl_ExceptionNames_Env[status].Name);
         return;
