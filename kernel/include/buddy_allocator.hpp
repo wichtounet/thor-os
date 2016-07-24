@@ -11,10 +11,7 @@
 #include <array.hpp>
 
 #include "bitmap.hpp"
-
-//For problems during boot
-#include "kernel.hpp"
-#include "console.hpp"
+#include "logging.hpp"
 
 template <class T>
 inline constexpr T pow(T const& x, size_t n){
@@ -52,12 +49,8 @@ public:
     size_t allocate(size_t pages){
         if(pages > max_block){
             if(pages > max_block * static_bitmap::bits_per_word){
-                k_print_line("Virtual block too big");
-                suspend_boot();
-
-                //That means we try to allocate more than 33M at the same time
-                //probably not a good idea
-                //TODO Implement it all the same
+                logging::logf(logging::log_level::ERROR, "buddy: Impossible to allocate mor than 33M block:%u\n", pages);
+                //TODO Implement larger allocation
                 return 0;
             } else {
                 auto l = bitmaps.size() - 1;
@@ -65,6 +58,7 @@ public:
                 auto address = block_start(l, index);
 
                 if(address + level_size(pages) >= last_address){
+                    logging::logf(logging::log_level::ERROR, "buddy: Address too high level:%u index:%u address:%h\n", l, index, address);
                     return 0;
                 }
 
@@ -81,6 +75,7 @@ public:
             auto address = block_start(l, index);
 
             if(address + level_size(pages) >= last_address){
+                logging::logf(logging::log_level::ERROR, "buddy: Address too high pages:%u level:%u index:%u address:%h\n", pages, l, index, address);
                 return 0;
             }
 
@@ -93,12 +88,8 @@ public:
     void free(size_t address, size_t pages){
         if(pages > max_block){
             if(pages > max_block * static_bitmap::bits_per_word){
-                k_print_line("Virtual block too big");
-                suspend_boot();
-
-                //That means we try to allocate more than 33M at the same time
-                //probably not a good idea
-                //TODO Implement it all the same
+                logging::logf(logging::log_level::ERROR, "buddy: Impossible to free more than 33M block:%u\n", pages);
+                //TODO Implement larger allocation
             } else {
                 auto l = level(pages);
                 auto index = get_block_index(address, l);
