@@ -95,22 +95,32 @@ void gc_task(){
 
                 logging::logf(logging::log_level::DEBUG, "Clean process %u\n", prev_pid);
 
-                //1. Release physical memory of PML4T
-                physical_allocator::free(desc.physical_cr3, 1);
+                // 1. Release physical memory of PML4T (if not system task)
+                if(!desc.system){
+                    physical_allocator::free(desc.physical_cr3, 1);
+                }
 
-                //3. Release physical stacks
-                physical_allocator::free(desc.physical_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
-                physical_allocator::free(desc.physical_user_stack, scheduler::user_stack_size / paging::PAGE_SIZE);
+                // 2. Release physical stacks (if dynamically allocated)
 
-                //4. Release segment's physical memory
+                if(desc.physical_kernel_stack){
+                    physical_allocator::free(desc.physical_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
+                }
+
+                if(desc.physical_user_stack){
+                    physical_allocator::free(desc.physical_user_stack, scheduler::user_stack_size / paging::PAGE_SIZE);
+                }
+
+                // 3. Release segment's physical memory
                 for(auto& segment : desc.segments){
                     physical_allocator::free(segment.physical, segment.size / paging::PAGE_SIZE);
                 }
                 desc.segments.clear();
 
                 //5. Release virtual kernel stack
-                virtual_allocator::free(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
-                paging::unmap_pages(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
+                if(desc.virtual_kernel_stack){
+                    virtual_allocator::free(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
+                    paging::unmap_pages(desc.virtual_kernel_stack, scheduler::kernel_stack_size / paging::PAGE_SIZE);
+                }
 
                 //6. Remove process from run queue
                 size_t index = 0;
@@ -130,6 +140,7 @@ void gc_task(){
                 desc.physical_cr3 = 0;
                 desc.physical_user_stack = 0;
                 desc.physical_kernel_stack = 0;
+                desc.virtual_kernel_stack = 0;
                 desc.paging_size = 0;
                 desc.context = nullptr;
                 desc.brk_start = desc.brk_end = 0;
@@ -720,7 +731,7 @@ void scheduler::kill_current_process(){
     }
 
     //The GC thread will clean the resources eventually
-    if(pcb[gc_pid].state == process_state::WAITING){
+    if(pcb[gc_pid].state == process_state::BLOCKED){
         unblock_process(gc_pid);
     }
 
@@ -880,8 +891,10 @@ scheduler::process_t& scheduler::create_kernel_task(char* user_stack, char* kern
     process.physical_cr3 = paging::get_physical_pml4t();
     process.paging_size = 0;
 
+    // Directly uses memory of the executable
     process.physical_user_stack = 0;
     process.physical_kernel_stack = 0;
+    process.virtual_kernel_stack = 0;
 
     auto rsp = &user_stack[scheduler::user_stack_size - STACK_ALIGNMENT];
     rsp -= sizeof(interrupt::syscall_regs);
