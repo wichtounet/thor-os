@@ -17,8 +17,8 @@ extern "C" {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 #pragma GCC diagnostic ignored "-Wunused-function" //TODO Does not work
-#include "acpi.h"
-#include "accommon.h"
+#include <acpi.h>
+#include <accommon.h>
 #pragma GCC diagnostic pop
 
 } //end of extern "C"

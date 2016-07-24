@@ -9,7 +9,7 @@ COMMON_C_FLAGS=-masm=intel -I../../tstl/include/ -I../printf/include/ -I../tstl/
 
 # Activate Stack Smashing Protection
 COMMON_C_FLAGS += -fstack-protector
-COMMON_C_FLAGS += -Iacpica/source/include
+COMMON_C_FLAGS += -isystem acpica/source/include
 
 # Add more flags for C++
 COMMON_CPP_FLAGS=$(COMMON_C_FLAGS) -std=c++11 -fno-rtti
