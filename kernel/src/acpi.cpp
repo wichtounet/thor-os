@@ -14,6 +14,7 @@
 #include "logging.hpp"
 #include "scheduler.hpp"
 #include "arch.hpp"
+#include "assert.hpp"
 
 namespace {
 
@@ -105,6 +106,43 @@ void initialize_acpica(){
     logging::logf(logging::log_level::DEBUG, "acpi:: Finished initialization of ACPICA\n");
 }
 
+uint64_t acpi_read(const ACPI_GENERIC_ADDRESS& address){
+    if(address.SpaceId == ACPI_ADR_SPACE_SYSTEM_MEMORY){
+        UINT64 value = 0;
+        auto status = AcpiOsReadMemory(address.Address, &value, address.BitWidth);
+        if(ACPI_FAILURE(status)){
+            logging::logf(logging::log_level::ERROR, "acpica: Unable to read from memory: error: %s\n", AcpiGbl_ExceptionNames_Env[status].Name);
+        }
+        return value;
+    } else if(address.SpaceId == ACPI_ADR_SPACE_SYSTEM_IO){
+        UINT32 value = 0;
+        auto status = AcpiHwReadPort(address.Address, &value, address.BitWidth);
+        if(ACPI_FAILURE(status)){
+            logging::logf(logging::log_level::ERROR, "acpica: Unable to read from hardware port: error: %s\n", AcpiGbl_ExceptionNames_Env[status].Name);
+        }
+        return value;
+    } else {
+        logging::logf(logging::log_level::ERROR, "acpica: Unimplemented read generic address space id\n");
+        return 0;
+    }
+}
+
+void acpi_write(const ACPI_GENERIC_ADDRESS& address, uint64_t value){
+    if(address.SpaceId == ACPI_ADR_SPACE_SYSTEM_MEMORY){
+        auto status = AcpiOsWriteMemory(address.Address, value, address.BitWidth);
+        if(ACPI_FAILURE(status)){
+            logging::logf(logging::log_level::ERROR, "acpica: Unable to write to memory: error: %s\n", AcpiGbl_ExceptionNames_Env[status].Name);
+        }
+    } else if(address.SpaceId == ACPI_ADR_SPACE_SYSTEM_IO){
+        auto status = AcpiHwWritePort(address.Address, value, address.BitWidth);
+        if(ACPI_FAILURE(status)){
+            logging::logf(logging::log_level::ERROR, "acpica: Unable to write to hardware port: error: %s\n", AcpiGbl_ExceptionNames_Env[status].Name);
+        }
+    } else {
+        logging::logf(logging::log_level::ERROR, "acpica: Unimplemented write generic address space id\n");
+    }
+}
+
 } //end of anonymous namespace
 
 void acpi::init(){
@@ -112,7 +150,13 @@ void acpi::init(){
     scheduler::queue_async_init_task(initialize_acpica);
 }
 
+bool acpi::initialized(){
+    return acpi_initialized;
+}
+
 void acpi::shutdown(){
+    thor_assert(acpi::initialized(), "ACPI must be initialized for acpi::shutdown()");
+
     auto status = AcpiEnterSleepStatePrep(5);
 
     if(ACPI_FAILURE(status)){
@@ -133,6 +177,19 @@ void acpi::shutdown(){
     arch::enable_hwint(rflags);
 }
 
-bool acpi::initialized(){
-    return acpi_initialized;
+bool acpi::reboot(){
+    thor_assert(acpi::initialized(), "ACPI must be initialized for acpi::reboot()");
+
+    if (AcpiGbl_FADT.Header.Revision < FADT2_REVISION_ID){
+        return false;
+    }
+
+    if(!(AcpiGbl_FADT.Flags & ACPI_FADT_RESET_REGISTER)){
+        return false;
+    }
+
+    auto reset_register = AcpiGbl_FADT.ResetRegister;
+    auto reset_value = AcpiGbl_FADT.ResetValue;
+
+    acpi_write(reset_register, reset_value);
 }

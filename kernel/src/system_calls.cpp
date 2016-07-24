@@ -91,8 +91,10 @@ void sc_clear(interrupt::syscall_regs*){
 }
 
 void sc_reboot(interrupt::syscall_regs*){
-    //TODO Reboot should be done more properly
-    asm volatile("mov al, 0x64; or al, 0xFE; out 0x64, al; mov al, 0xFE; out 0x64, al; " : : );
+    if(!acpi::initialized() || !acpi::reboot()){
+        logging::logf(logging::log_level::ERROR, "ACPI reset not possible, fallback to 8042 reboot\n");
+        asm volatile("mov al, 0x64; or al, 0xFE; out 0x64, al; mov al, 0xFE; out 0x64, al; " : : );
+    }
 
     __builtin_unreachable();
 }

@@ -13,8 +13,6 @@
 
 namespace {
 
-constexpr const size_t FADT2_REVISION_ID = 3;
-
 #define CURRENT_YEAR        2013
 #define cmos_address        0x70
 #define cmos_data           0x71
