@@ -245,12 +245,14 @@ void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys, ACPI_SIZE length){
     auto virt_aligned = virtual_allocator::allocate(pages);
 
     if(!virt_aligned){
+        logging::logf(logging::log_level::ERROR, "acpica: map memory failed (impossible to allocate virtual memory\n");
         return nullptr;
     }
 
     auto phys_aligned = phys - offset;
 
     if(!paging::map_pages(virt_aligned, phys_aligned, pages)){
+        logging::logf(logging::log_level::ERROR, "acpica: map memory failed (impossible to map pages\n");
         return nullptr;
     }
 
@@ -614,6 +616,7 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine, 
     acpi_context->context = context;
 
     if(!interrupt::register_irq_handler(irq, acpi_interrupt_handler, acpi_context)){
+        logging::logf(logging::log_level::ERROR, "acpica: cannot install interrupt handler\n");
         return AE_ALREADY_EXISTS;
     }
 
