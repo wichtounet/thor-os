@@ -10,7 +10,7 @@
 
 namespace pit {
 
-void install();
+bool install();
 
 } //end of namespace pit
 
