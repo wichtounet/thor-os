@@ -30,13 +30,13 @@ bool find_hw_timer(){
     if(hpet::install()){
         return true;
     } else {
-        logging::logf(logging::log_level::ERROR, "timer: Unable to install HPET driver\n");
+        logging::logf(logging::log_level::DEBUG, "timer: Unable to install HPET driver\n");
     }
 
     if(pit::install()){
         return true;
     } else {
-        logging::logf(logging::log_level::ERROR, "timer: Unable to install PIT driver\n");
+        logging::logf(logging::log_level::DEBUG, "timer: Unable to install PIT driver\n");
     }
 
     return false;

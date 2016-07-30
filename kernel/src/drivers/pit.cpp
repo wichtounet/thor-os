@@ -34,5 +34,7 @@ bool pit::install(){
         return false;
     }
 
+    logging::logf(logging::log_level::TRACE, "PIT Driver Installed\n");
+
     return true;
 }

@@ -7,10 +7,23 @@
 
 #include "drivers/hpet.hpp"
 
+#include "acpica.hpp"
+#include "logging.hpp"
+
 namespace {
 
 } //End of anonymous namespace
 
 bool hpet::install(){
+    ACPI_TABLE_HPET *hpet;
+
+    // Find the HPET table
+    auto status = AcpiGetTable("HPET", 0, (ACPI_TABLE_HEADER **) &hpet);
+    if (ACPI_FAILURE(status)){
+        return false;
+    }
+
+    logging::logf(logging::log_level::TRACE, "hpet: Found ACPI HPET table\n");
+
     return false;
 }
