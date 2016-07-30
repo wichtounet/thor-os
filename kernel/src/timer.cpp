@@ -11,6 +11,7 @@
 #include "kernel.hpp"   //suspend_boot
 
 #include "drivers/pit.hpp"
+#include "drivers/hpet.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -25,10 +26,26 @@ std::string sysfs_uptime(){
     return std::to_string(timer::seconds());
 }
 
+bool find_hw_timer(){
+    if(hpet::install()){
+        return true;
+    } else {
+        logging::logf(logging::log_level::ERROR, "timer: Unable to install HPET driver\n");
+    }
+
+    if(pit::install()){
+        return true;
+    } else {
+        logging::logf(logging::log_level::ERROR, "timer: Unable to install PIT driver\n");
+    }
+
+    return false;
+}
+
 } //End of anonymous namespace
 
 void timer::install(){
-    if(!pit::install()){
+    if(!find_hw_timer()){
         logging::logf(logging::log_level::ERROR, "Unable to install any timer driver\n");
         suspend_boot();
     }
