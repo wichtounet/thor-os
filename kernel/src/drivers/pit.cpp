@@ -21,7 +21,7 @@ void timer_handler(interrupt::syscall_regs*, void*){
 
 } //End of anonymous namespace
 
-void pit::install(){
+bool pit::install(){
     uint64_t divisor = 1193180 / 1000;
 
     out_byte(0x43, 0x36);
@@ -30,5 +30,9 @@ void pit::install(){
 
     if(!interrupt::register_irq_handler(0, timer_handler, nullptr)){
         logging::logf(logging::log_level::ERROR, "Unable to register PIT 0\n");
+
+        return false;
     }
+
+    return true;
 }

@@ -7,7 +7,8 @@
 
 #include "timer.hpp"
 #include "scheduler.hpp"
-#include "kernel_utils.hpp"
+#include "logging.hpp"
+#include "kernel.hpp"   //suspend_boot
 
 #include "drivers/pit.hpp"
 
@@ -27,7 +28,10 @@ std::string sysfs_uptime(){
 } //End of anonymous namespace
 
 void timer::install(){
-    pit::install();
+    if(!pit::install()){
+        logging::logf(logging::log_level::ERROR, "Unable to install any timer driver\n");
+        suspend_boot();
+    }
 
     sysfs::set_dynamic_value("/sys/", "uptime", &sysfs_uptime);
 }
