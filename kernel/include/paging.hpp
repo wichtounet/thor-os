@@ -48,17 +48,17 @@ constexpr const auto pdpt_entries = entries(pdpte_allocations);
 constexpr const auto pd_entries = entries(pde_allocations);
 constexpr const auto pt_entries = entries(pte_allocations);
 
-//Virtual address where the paging structures are stored
-constexpr const size_t virtual_paging_start = 0x101000;
-
-//Compute the start address of each structure
-constexpr const size_t virtual_pml4t_start = virtual_paging_start;
-constexpr const size_t virtual_pdpt_start = virtual_pml4t_start + paging::PAGE_SIZE;
-constexpr const size_t virtual_pd_start = virtual_pdpt_start + pml4_entries * paging::PAGE_SIZE;
-constexpr const size_t virtual_pt_start = virtual_pd_start + pdpt_entries * paging::PAGE_SIZE;
-
 //Compute the amount of physical memory pages needed for the paging tables
 constexpr const size_t  physical_memory_pages = 1 + pml4_entries + pdpt_entries + pd_entries;
+
+//Virtual address where the paging structures are stored
+extern size_t virtual_paging_start;
+
+//Compute the start address of each structure
+extern size_t virtual_pml4t_start;
+extern size_t virtual_pdpt_start;
+extern size_t virtual_pd_start;
+extern size_t virtual_pt_start;
 
 //Flags
 constexpr const uint8_t PRESENT = 0x1;
@@ -76,6 +76,7 @@ constexpr size_t page_align(size_t addr){
     return (addr / paging::PAGE_SIZE) * paging::PAGE_SIZE;
 }
 
+void early_init();
 void init();
 void finalize();
 

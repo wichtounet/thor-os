@@ -19,6 +19,13 @@
 
 #include "fs/sysfs.hpp"
 
+size_t paging::virtual_paging_start;
+
+size_t paging::virtual_pml4t_start;
+size_t paging::virtual_pdpt_start;
+size_t paging::virtual_pd_start;
+size_t paging::virtual_pt_start;
+
 namespace {
 
 typedef uint64_t* page_entry;
@@ -49,7 +56,7 @@ constexpr size_t pt_entry(size_t virt){
     return (virt >> 12) & 0x1FF;
 }
 
-constexpr pml4t_t find_pml4t(){
+pml4t_t find_pml4t(){
     return reinterpret_cast<pml4t_t>(paging::virtual_pml4t_start);
 }
 
@@ -99,6 +106,16 @@ size_t early_map_page_clear(size_t physical){
 }
 
 } //end of anonymous namespace
+
+void paging::early_init(){
+    paging::virtual_paging_start = 0x101000;
+
+    //Compute the start address of each structure
+    paging::virtual_pml4t_start = virtual_paging_start;
+    paging::virtual_pdpt_start = virtual_pml4t_start + paging::PAGE_SIZE;
+    paging::virtual_pd_start = virtual_pdpt_start + pml4_entries * paging::PAGE_SIZE;
+    paging::virtual_pt_start = virtual_pd_start + pdpt_entries * paging::PAGE_SIZE;
+}
 
 void paging::init(){
     //Get some physical memory

@@ -21,16 +21,17 @@
 
 namespace {
 
-constexpr const size_t virtual_start = paging::virtual_paging_start + (paging::physical_memory_pages * paging::PAGE_SIZE);
-constexpr const size_t first_virtual_address = virtual_start % 0x100000 == 0 ? virtual_start : (virtual_start / 0x100000 + 1) * 0x100000;
-constexpr const size_t last_virtual_address = virtual_allocator::kernel_virtual_size;
-constexpr const size_t managed_space = last_virtual_address - first_virtual_address;
+size_t virtual_start;
+size_t first_virtual_address;
+size_t last_virtual_address;
+size_t managed_space;
+
 constexpr const size_t unit = paging::PAGE_SIZE;
 
 size_t allocated_pages = first_virtual_address / paging::PAGE_SIZE;
 
 constexpr size_t array_size(int block){
-    return (managed_space / (block * unit) + 1) / (sizeof(uint64_t) * 8) + 1;
+    return (virtual_allocator::kernel_virtual_size / (block * unit) + 1) / (sizeof(uint64_t) * 8) + 1;
 }
 
 std::array<uint64_t, array_size(1)> data_bitmap_1;
@@ -60,6 +61,11 @@ std::string sysfs_allocated(){
 } //end of anonymous namespace
 
 void virtual_allocator::init(){
+    virtual_start = paging::virtual_paging_start + (paging::physical_memory_pages * paging::PAGE_SIZE);
+    first_virtual_address = virtual_start % 0x100000 == 0 ? virtual_start : (virtual_start / 0x100000 + 1) * 0x100000;
+    last_virtual_address = virtual_allocator::kernel_virtual_size;
+    managed_space = last_virtual_address - first_virtual_address;
+
     allocator.set_memory_range(first_virtual_address, last_virtual_address);
 
     //Give room to the bitmaps

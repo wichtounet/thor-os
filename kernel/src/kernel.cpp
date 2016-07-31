@@ -48,6 +48,9 @@ void  kernel_main(){
 
     interrupt::setup_interrupts();
 
+    //Compute virtual addresses for paging
+    paging::early_init();
+
     //Init the virtual allocator
     virtual_allocator::init();
 
