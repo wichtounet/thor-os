@@ -8,7 +8,9 @@
 #ifndef KERNEL_UTILS_H
 #define KERNEL_UTILS_H
 
+#ifndef THOR_INIT
 #include <types.hpp>
+#endif
 
 inline uint8_t in_byte(uint16_t _port){
     uint8_t rv;
@@ -19,6 +21,14 @@ inline uint8_t in_byte(uint16_t _port){
 
     return rv;
 }
+
+inline void out_byte (uint16_t _port, uint8_t _data){
+    asm volatile ("out %[port], %[data]"
+        : /* No outputs */
+        : [port] "dN" (_port), [data] "a" (_data));
+}
+
+#ifndef THOR_INIT
 
 inline uint16_t in_word(uint16_t _port){
     uint16_t rv;
@@ -48,12 +58,6 @@ inline uint64_t in_qword(uint16_t _port){
         : [port] "dN" (_port));
 
     return rv;
-}
-
-inline void out_byte (uint16_t _port, uint8_t _data){
-    asm volatile ("out %[port], %[data]"
-        : /* No outputs */
-        : [port] "dN" (_port), [data] "a" (_data));
 }
 
 inline void out_word(uint16_t _port, uint16_t _data){
@@ -87,5 +91,7 @@ inline uint32_t switch_endian_32(uint32_t nb) {
 
 void print_stack(const char* msg, size_t check);
 #define SHOW_STACK(M) { size_t check = 0; asm volatile("mov %0, rsp;" : "=r" (check)); print_stack(((M)), check); }
+
+#endif //THOR_INIT
 
 #endif

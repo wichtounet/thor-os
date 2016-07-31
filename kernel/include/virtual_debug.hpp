@@ -11,7 +11,12 @@
 //TODO Integrate Bochs Parallel debugging
 
 #include "kernel_utils.hpp"
+
+#ifdef THOR_INIT
+void serial_transmit(char a);
+#else
 #include "serial.hpp"
+#endif
 
 #define BOCHS_E9 0xE9
 
@@ -32,7 +37,11 @@ inline void bochs_print(const char* s){
 
 inline void serial_print(const char* s){
     for(uint64_t i = 0; s[i] != '\0'; ++i){
+#ifdef THOR_INIT
+        serial_transmit(s[i]);
+#else
         serial::transmit(s[i]);
+#endif
     }
 }
 
