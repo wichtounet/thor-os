@@ -138,7 +138,7 @@ void pm_main(){
     setup_paging();
 
     // TODO This will need to be computed from the init loader
-    *reinterpret_cast<uint32_t*>(kernel_mib) = 1;
+    *reinterpret_cast<uint32_t*>(kernel_mib_address) = 1;
 
     //Enable long mode by setting the EFER.LME flag
     enable_long_mode();

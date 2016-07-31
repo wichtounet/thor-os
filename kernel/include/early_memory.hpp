@@ -13,9 +13,13 @@
 #define EARLY_MEMORY_H
 
 // The number of MiB used by the kernel
-constexpr const uint32_t kernel_mib = 0x90000; //4 bytes (32 bits)
+constexpr const uint32_t kernel_mib_address = 0x90000; //4 bytes (32 bits)
 
 // The address of the kernel
 constexpr const uint32_t kernel_address = 0x100000;  //1Mib aligned size (kernel_mib)
+
+inline uint32_t kernel_mib(){
+    return *reinterpret_cast<uint32_t*>(kernel_mib_address);
+}
 
 #endif
