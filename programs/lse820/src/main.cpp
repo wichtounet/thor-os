@@ -70,11 +70,11 @@ int main(int /*argc*/, char* /*argv*/[]){
                     std::string entry_name = &entry->name;
 
                     if(entry_name != "entries"){
-                        auto base = read_file(base_path + entry_name + "/base");
-                        auto size = read_file(base_path + entry_name + "/size");
+                        auto base = parse(read_file(base_path + entry_name + "/base"));
+                        auto size = parse(read_file(base_path + entry_name + "/size"));
                         auto type = read_file(base_path + entry_name + "/type");
 
-                        printf("%s: %s %s %s\n", &entry->name, type.c_str(), base.c_str(), size.c_str());
+                        printf("%s: %s (%hB) %h -> %h\n", &entry->name, type.c_str(), size, base, base + size);
                     }
 
                     if(!entry->offset_next){
