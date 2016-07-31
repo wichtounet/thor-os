@@ -11,6 +11,7 @@
 #include "kernel.hpp"
 #include "paging.hpp"
 #include "early_logging.hpp"
+#include "early_memory.hpp"
 
 namespace {
 
@@ -135,6 +136,9 @@ void pm_main(){
 
     //Setup paging
     setup_paging();
+
+    // TODO This will need to be computed from the init loader
+    *reinterpret_cast<uint32_t*>(kernel_mib) = 1;
 
     //Enable long mode by setting the EFER.LME flag
     enable_long_mode();
