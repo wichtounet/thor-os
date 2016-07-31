@@ -25,7 +25,7 @@ int main(int argc, char* argv[]){
     auto fd = open(path.c_str());
 
     if(fd.valid()){
-        print(path);
+        print_line(path);
 
         close(*fd);
     } else {
