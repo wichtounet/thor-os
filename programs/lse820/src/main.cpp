@@ -49,46 +49,6 @@ std::string read_file(const std::string& path){
     return "";
 }
 
-const char* device_type_str(const std::string& class_code){
-    if(class_code == "1"){
-        return "Mass Storage Controller";
-    } else if(class_code == "2"){
-        return "Network Controller";
-    } else if(class_code == "3"){
-        return "Display Controller";
-    } else if(class_code == "4"){
-        return "Multimedia Controller";
-    } else if(class_code == "5"){
-        return "Memory Controller";
-    } else if(class_code == "6"){
-        return "Bridge Device";
-    } else if(class_code == "7"){
-        return "Simple Communications Controller";
-    } else if(class_code == "8"){
-        return "Base System Peripheral";
-    } else if(class_code == "9"){
-        return "Input Device";
-    } else if(class_code == "10"){
-        return "Docking Station";
-    } else if(class_code == "11"){
-        return "Processors";
-    } else if(class_code == "12"){
-        return "Serial Bus Controller";
-    } else if(class_code == "13"){
-        return "Wireless Controller";
-    } else if(class_code == "14"){
-        return "Intelligent I/O Controller";
-    } else if(class_code == "15"){
-        return "Satellite Communication Controller";
-    } else if(class_code == "16"){
-        return "Encryption/Decryption Controller";
-    } else if(class_code == "17"){
-        return "Data Acquisition and Signal Processing Controller";
-    } else {
-        return "Unknown Device";
-    }
-}
-
 int main(int /*argc*/, char* /*argv*/[]){
     auto fd = open("/sys/memory/e820/");
 
