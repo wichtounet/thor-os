@@ -16,6 +16,7 @@
 #include "process.hpp"
 #include "physical_pointer.hpp"
 #include "kernel_utils.hpp"
+#include "logging.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -115,6 +116,8 @@ void paging::early_init(){
     paging::virtual_pdpt_start = virtual_pml4t_start + paging::PAGE_SIZE;
     paging::virtual_pd_start = virtual_pdpt_start + pml4_entries * paging::PAGE_SIZE;
     paging::virtual_pt_start = virtual_pd_start + pdpt_entries * paging::PAGE_SIZE;
+
+    logging::logf(logging::log_level::TRACE, "paging: early_init (virtual_paging_start:%h)\n", virtual_paging_start);
 }
 
 void paging::init(){
@@ -126,6 +129,8 @@ void paging::init(){
 
         suspend_boot();
     }
+
+    logging::logf(logging::log_level::TRACE, "paging: init (physical_memory:%h)\n", physical_memory);
 
     //Compute the physical offsets of the paging tables
     physical_pml4t_start = physical_memory;
