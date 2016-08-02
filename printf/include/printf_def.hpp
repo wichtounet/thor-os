@@ -48,7 +48,7 @@ std::string vsprintf(const std::string& format, va_list va){
 
             //Signed decimal
             if(ch == 'd'){
-                auto arg = va_arg(va, int64_t);
+                int64_t arg = va_arg(va, int64_t);
 
                 if(min_digits > 0){
                     size_t d = std::digits(arg);
@@ -71,7 +71,7 @@ std::string vsprintf(const std::string& format, va_list va){
             }
             //Unsigned Decimal
             else if(ch == 'u'){
-                auto arg = va_arg(va, uint64_t);
+                uint64_t arg = va_arg(va, uint64_t);
 
                 if(min_digits > 0){
                     size_t d = std::digits(arg);
@@ -94,7 +94,7 @@ std::string vsprintf(const std::string& format, va_list va){
 
                 uint8_t buffer[20];
 
-                auto arg = va_arg(va, uint64_t);
+                uint64_t arg = va_arg(va, uint64_t);
                 size_t i = 0;
 
                 while(arg / 16 != 0){
@@ -149,7 +149,7 @@ std::string vsprintf(const std::string& format, va_list va){
             }
             //Memory
             else if(ch == 'm'){
-                auto memory= va_arg(va, uint64_t);
+                uint64_t memory= va_arg(va, uint64_t);
 
                 if(memory >= 1024 * 1024 * 1024){
                     s += std::to_string(memory / (1024 * 1024 * 1024));
@@ -167,7 +167,7 @@ std::string vsprintf(const std::string& format, va_list va){
             }
             //String
             else if(ch == 's'){
-                auto arg = va_arg(va, const char*);
+                const char* arg = va_arg(va, const char*);
                 s += arg;
             }
 
@@ -248,7 +248,7 @@ void vsprintf_raw(char* out_buffer, size_t n, const char* format, va_list va){
 
             //Signed decimal
             if(ch == 'd'){
-                auto arg = va_arg(va, int64_t);
+                int64_t arg = va_arg(va, int64_t);
 
                 if(min_digits > 0){
                     size_t d = std::digits(arg);
@@ -273,7 +273,7 @@ void vsprintf_raw(char* out_buffer, size_t n, const char* format, va_list va){
             }
             //Unsigned Decimal
             else if(ch == 'u'){
-                auto arg = va_arg(va, uint64_t);
+                uint64_t arg = va_arg(va, uint64_t);
 
                 if(min_digits > 0){
                     size_t d = std::digits(arg);
@@ -299,7 +299,7 @@ void vsprintf_raw(char* out_buffer, size_t n, const char* format, va_list va){
 
                 uint8_t buffer[20];
 
-                auto arg = va_arg(va, uint64_t);
+                uint64_t arg = va_arg(va, uint64_t);
                 size_t i = 0;
 
                 while(arg / 16 != 0){
@@ -354,7 +354,7 @@ void vsprintf_raw(char* out_buffer, size_t n, const char* format, va_list va){
             }
             //Memory
             else if(ch == 'm'){
-                auto memory= va_arg(va, uint64_t);
+                uint64_t memory= va_arg(va, uint64_t);
 
                 char buffer[32];
 
@@ -378,7 +378,7 @@ void vsprintf_raw(char* out_buffer, size_t n, const char* format, va_list va){
             }
             //String
             else if(ch == 's'){
-                auto arg = va_arg(va, const char*);
+                const char* arg = va_arg(va, const char*);
                 out_i += str_cat(out_buffer + out_i, arg);
             }
 
@@ -396,6 +396,8 @@ void vsprintf_raw(char* out_buffer, size_t n, const char* format, va_list va){
             }
         }
     }
+
+    out_buffer[out_i++] = '\0';
 }
 
 void sprintf_raw(const char* format, ...){
