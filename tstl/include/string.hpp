@@ -643,8 +643,6 @@ inline void to_raw_string<uint64_t>(const uint64_t& value, char* buffer, size_t 
         return;
     }
 
-    std::string s;
-
     char int_buffer[20];
     int i = 0;
     auto rem = value;
