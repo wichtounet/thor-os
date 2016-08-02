@@ -193,7 +193,7 @@ std::string sprintf(const std::string& format, ...){
     return std::move(s);
 }
 
-void printf(const std::string& format, va_list va){
+void vprintf(const std::string& format, va_list va){
     __printf(vsprintf(format, va));
 }
 
