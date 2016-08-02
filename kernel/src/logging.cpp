@@ -27,7 +27,7 @@ const char* early_logs[MAX_EARLY];
 
 std::string buffer;
 
-const char* level_to_string(logging::log_level level){
+inline const char* level_to_string(logging::log_level level){
     switch(level){
         case logging::log_level::TRACE:
             return "TRACE";
@@ -112,16 +112,12 @@ void logging::log(log_level level, const std::string& s){
 }
 
 void logging::logf(log_level level, const char* s, va_list va){
-    thor_assert(!is_early(), "logf(level,string,...) is not valid in early mode");
-
     char buffer[1024];
     vsprintf_raw(buffer, 1024, s, va);
     log(level, buffer);
 }
 
 void logging::logf(log_level level, const char* s, ...){
-    thor_assert(!is_early(), "logf(level,string,...) is not valid in early mode");
-
     va_list va;
     va_start(va, s);
 
