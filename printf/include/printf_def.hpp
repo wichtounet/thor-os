@@ -50,10 +50,8 @@ std::string vsprintf(const std::string& format, va_list va){
                         }
 
                         while(min_digits > 0){
-                            while(min_digits > 0){
-                                arg += '0';
-                                --min_digits;
-                            }
+                            s += '0';
+                            --min_digits;
                         }
                     }
                 }
@@ -69,10 +67,8 @@ std::string vsprintf(const std::string& format, va_list va){
                     if(min_digits > d){
                         min_digits -= d;
                         while(min_digits > 0){
-                            while(min_digits > 0){
-                                arg += '0';
-                                --min_digits;
-                            }
+                            s += '0';
+                            --min_digits;
                         }
                     }
                 }
@@ -201,7 +197,7 @@ void printf(const std::string& format, ...){
     va_list va;
     va_start(va, format);
 
-    printf(format, va);
+    vprintf(format, va);
 
     va_end(va);
 }
