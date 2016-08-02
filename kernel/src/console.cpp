@@ -219,3 +219,7 @@ void wipeout(){
 void __printf(const std::string& str){
     k_print(str);
 }
+
+void __printf_raw(const char* str){
+    k_print(str);
+}
