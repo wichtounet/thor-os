@@ -73,31 +73,37 @@ bool logging::is_file(){
 void logging::finalize(){
     //Starting from there, the messages will be sent to the terminal
     early_mode = false;
-}
-
-void logging::to_file(){
-    //Starting from there, the messages will be sent to the log file
-    file = true;
 
     for(size_t i = 0; i < early::early_logs_count; ++i){
         auto early_log = early::early_logs[i];
 
         auto early_log_str = reinterpret_cast<const char*>(static_cast<size_t>(early_log));
 
-        append_to_file(early_log_str, std::str_len(early_log_str));
+        // Print to the virtual debugger
+        virtual_debug("EARLY: ");
+        virtual_debug(early_log_str);
+        virtual_debug("\n");
     }
 }
 
-void logging::log(log_level level, const char* s){
-    //First, print to the virtual debugger
-    virtual_debug(level_to_string(level));
-    virtual_debug(": ");
-    virtual_debug(s);
+void logging::to_file(){
+    thor_assert(false, "logging to file needs revision");
 
+    //Starting from there, the messages will be sent to the log file
+    file = true;
+}
+
+void logging::log(log_level level, const char* s){
     if(is_early()){
+        // In early mode, we simply save the logs
         thor_assert(current_early < MAX_EARLY, "early log buffer is full");
 
         early_logs[current_early++] = s;
+    } else {
+        // Print to the virtual debugger
+        virtual_debug(level_to_string(level));
+        virtual_debug(": ");
+        virtual_debug(s);
     }
 
     if(is_file()){

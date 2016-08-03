@@ -48,6 +48,12 @@ void  kernel_main(){
 
     interrupt::setup_interrupts();
 
+    // Necessary for logging with Qemu
+    serial::init();
+
+    //Starting from here, the logging system can stop saving early logs
+    logging::finalize();
+
     //Compute virtual addresses for paging
     paging::early_init();
 
@@ -81,9 +87,6 @@ void  kernel_main(){
     init_console();
     stdio::init_terminals();
 
-    //Starting from here, the logging system can use the console
-    logging::finalize();
-
     //Finalize memory operations (register sysfs values)
     paging::finalize();
     physical_allocator::finalize();
@@ -94,7 +97,6 @@ void  kernel_main(){
     acpi::init();
 
     //Install drivers
-    serial::init();
     timer::install();
     keyboard::install_driver();
     disks::detect_disks();
