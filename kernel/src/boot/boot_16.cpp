@@ -19,13 +19,22 @@
 gdt::task_state_segment_t gdt::tss;
 
 e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
-int16_t e820::bios_e820_entry_count = 0;
 
 vesa::vbe_info_block_t vesa::vbe_info_block;
 vesa::mode_info_block_t vesa::mode_info_block;
 bool vesa::vesa_enabled = false;
 
 namespace {
+
+void early_write_32(uint32_t address, uint32_t value){
+    auto seg = early_base / 0x10;
+    auto offset = address - early_base;
+
+    asm volatile("mov fs, %[seg]; mov eax, %[offset]; mov [fs:0x0 + eax], %[value]; xor eax, eax; mov fs, eax;"
+        : /* nothing */
+        : [seg] "r" (seg), [offset] "r" (offset), [value] "r" (value)
+        : "eax");
+}
 
 /* Early Logging  */
 
@@ -111,9 +120,13 @@ int detect_memory_e820(){
 }
 
 void detect_memory(){
-    //TODO If e820 fails, try other solutions to get memory map
+    // Init it to 0
+    early_write_32(e820_entry_count_address, 0);
 
-    e820::bios_e820_entry_count = detect_memory_e820();
+    auto entry_count = detect_memory_e820();
+    early_write_32(e820_entry_count_address, entry_count);
+
+    //TODO If e820 fails, try other solutions to get memory map
 }
 
 uint16_t read_mode(uint16_t i){
@@ -427,10 +440,8 @@ void  __attribute__ ((noreturn)) rm_main(){
     //Make sure segments are clean
     reset_segments();
 
-    asm volatile ("mov eax, 0x9000; mov ds, eax; xor eax, eax; mov [ds:0x4], eax; mov ds, eax;"
-        : /* Nothing */
-        : /* Nothing */
-        : "eax");
+    // Initialize the number of early logs
+    early_write_32(early_logs_count_address, 0);
 
     //Enable VESA
     setup_vesa();

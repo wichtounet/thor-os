@@ -30,7 +30,6 @@ struct bios_e820_entry {
 } __attribute__((packed));
 
 extern bios_e820_entry bios_e820_entries[MAX_E820_ENTRIES];
-extern int16_t bios_e820_entry_count;
 
 struct mmapentry {
     uint64_t base;

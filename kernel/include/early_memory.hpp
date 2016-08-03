@@ -12,6 +12,12 @@
 #ifndef EARLY_MEMORY_H
 #define EARLY_MEMORY_H
 
+// The address of the kernel
+constexpr const uint32_t kernel_address = 0x100000;  //1Mib aligned size (kernel_mib)
+
+// The first address used for early memory
+constexpr const uint32_t early_base = 0x90000;
+
 // The number of MiB used by the kernel
 constexpr const uint32_t kernel_mib_address = 0x90000; //4 bytes (32 bits)
 
@@ -22,9 +28,6 @@ inline uint32_t kernel_mib(){
 inline void kernel_mib(uint32_t value){
     *reinterpret_cast<uint32_t*>(kernel_mib_address) = value;
 }
-
-// The address of the kernel
-constexpr const uint32_t kernel_address = 0x100000;  //1Mib aligned size (kernel_mib)
 
 // Maximum number of early logs
 constexpr const uint32_t MAX_EARLY_LOGGING = 128;
@@ -43,6 +46,16 @@ inline void early_logs_count(uint32_t value){
 
 inline uint32_t* early_logs(){
     return *reinterpret_cast<uint32_t**>(early_logs_address);
+}
+
+constexpr const uint32_t e820_entry_count_address = 0x90208; // 4 bytes (32 bits)
+
+inline uint32_t e820_entry_count(){
+    return *reinterpret_cast<uint32_t*>(e820_entry_count_address);
+}
+
+inline void e820_entry_count(uint32_t value){
+    *reinterpret_cast<uint32_t*>(e820_entry_count_address) = value;
 }
 
 #endif
