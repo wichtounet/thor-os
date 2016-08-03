@@ -223,7 +223,7 @@ void paging::init(){
         auto pte = pt_entry(virt_page);
 
         auto pt_index = pde * 512 + pdpte * 512 * 512 + pml4e * 512 * 512 * 512;
-        auto physical = physical_pt_start + pt_index * paging::PAGE_SIZE;
+        auto physical = physical_pt_start + (pt_index / 512) * paging::PAGE_SIZE;
 
         if(pt_index != current_pt_index || current_virt == 0){
             current_virt = early_map_page(physical);
