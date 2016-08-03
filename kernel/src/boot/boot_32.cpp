@@ -16,7 +16,8 @@ namespace {
 
 void early_log(const char* s){
     auto c = early_logs_count();
-    early_logs()[c] = reinterpret_cast<uint32_t>(s);
+    auto table = reinterpret_cast<uint32_t*>(early_logs_address);
+    table[c] = reinterpret_cast<uint32_t>(s);
     early_logs_count(c + 1);
 }
 

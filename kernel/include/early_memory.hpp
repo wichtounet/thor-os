@@ -32,7 +32,6 @@ inline void kernel_mib(uint32_t value){
 // Maximum number of early logs
 constexpr const uint32_t MAX_EARLY_LOGGING = 128;
 
-//TODO Find a way for this shit to works in boot-16
 constexpr const uint32_t early_logs_count_address = 0x90004; // 4 bytes (32 bits)
 constexpr const uint32_t early_logs_address = 0x90008; // 128 * 4 bytes (32 bits ) = 512
 
@@ -44,11 +43,8 @@ inline void early_logs_count(uint32_t value){
     *reinterpret_cast<uint32_t*>(early_logs_count_address) = value;
 }
 
-inline uint32_t* early_logs(){
-    return *reinterpret_cast<uint32_t**>(early_logs_address);
-}
-
 constexpr const uint32_t e820_entry_count_address = 0x90208; // 4 bytes (32 bits)
+constexpr const uint32_t e820_entry_address = 0x9020C; // 20 * 20 bytes
 
 inline uint32_t e820_entry_count(){
     return *reinterpret_cast<uint32_t*>(e820_entry_count_address);

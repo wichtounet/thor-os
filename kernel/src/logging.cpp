@@ -71,14 +71,14 @@ void logging::finalize(){
 
     logf(log_level::TRACE, "%u early logs \n", early_logs_count());
 
-    for(size_t i = 0; i < early_logs_count(); ++i){
-        auto early_log = early_logs()[i];
+    auto table_address = early_logs_address;
 
-        auto early_log_str = reinterpret_cast<const char*>(static_cast<size_t>(early_log));
+    for(size_t i = 0; i < early_logs_count(); ++i){
+        auto string_address = size_t(*reinterpret_cast<uint32_t*>(table_address + i * 4));
 
         // Print to the virtual debugger
         virtual_debug("EARLY: ");
-        virtual_debug(early_log_str);
+        virtual_debug(reinterpret_cast<const char*>(string_address));
         virtual_debug("\n");
     }
 }

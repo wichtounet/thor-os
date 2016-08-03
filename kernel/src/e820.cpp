@@ -7,6 +7,7 @@
 
 #include "e820.hpp"
 #include "early_memory.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -20,7 +21,8 @@ void e820::finalize_memory_detection(){
     e820_entries = e820_entry_count();
 
     auto t = mmap_entry_count();;
-    auto smap = bios_e820_entries;
+
+    auto* smap = reinterpret_cast<e820::bios_e820_entry*>(e820_entry_address);
 
     if(t > 0){
         for(size_t i = 0; i < t; ++i){

@@ -29,8 +29,6 @@ struct bios_e820_entry {
     uint16_t acpi;
 } __attribute__((packed));
 
-extern bios_e820_entry bios_e820_entries[MAX_E820_ENTRIES];
-
 struct mmapentry {
     uint64_t base;
     uint64_t size;

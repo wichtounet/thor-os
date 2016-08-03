@@ -18,7 +18,7 @@
 //The Task State Segment
 gdt::task_state_segment_t gdt::tss;
 
-e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
+e820::bios_e820_entry bios_e820_entries[e820::MAX_E820_ENTRIES];
 
 vesa::vbe_info_block_t vesa::vbe_info_block;
 vesa::mode_info_block_t vesa::mode_info_block;
@@ -26,43 +26,42 @@ bool vesa::vesa_enabled = false;
 
 namespace {
 
-inline void early_write_32(uint32_t address, uint32_t value){
-    auto seg = early_base / 0x10;
-    auto offset = address - early_base;
+// Note: it seems to be impossible to pass parameters > 16 bit to
+// functions, thus the macros. This should be fixable by
+// reconfiguring better gcc for 16bit compilation which is highly
+// inconvenient right now
 
-    asm volatile("mov fs, %[seg]; mov eax, %[offset]; mov [fs:0x0 + eax], %[value]; xor eax, eax; mov fs, eax;"
-        : /* nothing */
-        : [seg] "r" (seg), [offset] "r" (offset), [value] "r" (value)
-        : "eax");
+#define early_write_32(ADDRESS, VALUE) \
+{ \
+    auto seg = early_base / 0x10; \
+    auto offset = ADDRESS - early_base; \
+    asm volatile("mov fs, %[seg]; mov eax, %[offset]; mov [fs:0x0 + eax], %[value]; xor eax, eax; mov fs, eax;" \
+        : /* nothing */ \
+        : [seg] "r" (seg), [offset] "r" (offset), [value] "r" (VALUE) \
+        : "eax"); \
 }
 
-inline uint32_t early_read_32(uint32_t address){
-    auto seg = early_base / 0x10;
-    auto offset = address - early_base;
-
-    uint32_t value;
-
-    asm volatile("mov fs, %[seg]; mov eax, %[offset]; mov %[value], [fs:0x0 + eax]; xor eax, eax; mov fs, eax;"
-        : [value] "=r" (value)
-        : [seg] "r" (seg), [offset] "r" (offset)
-        : "eax");
-
-    return value;
+#define early_read_32(ADDRESS, VALUE) \
+{\
+    uint32_t temp_value; \
+    auto seg = early_base / 0x10; \
+    auto offset = ADDRESS - early_base; \
+    asm volatile("mov fs, %[seg]; mov eax, %[offset]; mov %[value], [fs:0x0 + eax]; xor eax, eax; mov fs, eax;" \
+        : [value] "=r" (temp_value) \
+        : [seg] "r" (seg), [offset] "r" (offset) \
+        : "eax"); \
+    VALUE = temp_value; \
 }
 
 /* Early Logging  */
 
-//TODO Check out why only very few early log are possible and it seems only
-//at some position...
-void early_log(const char* s){
-    return;
-
-    //TODO Check out why this freaking shit does not work
-
-    auto c = early_read_32(early_logs_count_address);
-    early_write_32(early_logs_address + c * 4, reinterpret_cast<uint32_t>(s));
-    early_write_32(early_logs_count_address, c + 1);
-}
+#define early_log(STRING)                                                      \
+  {                                                                            \
+    uint32_t c;                                                                \
+    early_read_32(early_logs_count_address, c);                                \
+    early_write_32(early_logs_address + c * 4, STRING);                        \
+    early_write_32(early_logs_count_address, c + 1);                           \
+  }
 
 /* VESA */
 
@@ -97,10 +96,10 @@ void reset_segments(){
     set_es(0);
 }
 
-int detect_memory_e820(){
-    auto smap = &e820::bios_e820_entries[0];
+uint32_t detect_memory_e820(){
+    auto smap = &bios_e820_entries[0];
 
-    uint16_t entries = 0;
+    uint32_t entries = 0;
 
     uint32_t contID = 0;
     int signature;
@@ -135,6 +134,16 @@ void detect_memory(){
 
     auto entry_count = detect_memory_e820();
     early_write_32(e820_entry_count_address, entry_count);
+
+    auto smap = reinterpret_cast<uint32_t*>((&bios_e820_entries[0]));
+
+    // Copy to early memory
+    for(uint16_t i = 0; i < entry_count; ++i){
+        for(uint16_t j = 0; j < 5; ++j){
+            early_write_32(e820_entry_address + (i * 5 + j) * 4, *smap);
+            ++smap;
+        }
+    }
 
     //TODO If e820 fails, try other solutions to get memory map
 }
@@ -246,7 +255,7 @@ void setup_vesa(){
 void disable_interrupts(){
     asm volatile ("cli");
 
-    //early_log("Interrupts disabled");
+    early_log("Interrupts disabled");
 }
 
 void enable_a20_gate(){
