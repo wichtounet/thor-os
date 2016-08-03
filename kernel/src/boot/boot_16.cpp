@@ -26,7 +26,7 @@ bool vesa::vesa_enabled = false;
 
 namespace {
 
-void early_write_32(uint32_t address, uint32_t value){
+inline void early_write_32(uint32_t address, uint32_t value){
     auto seg = early_base / 0x10;
     auto offset = address - early_base;
 
@@ -36,22 +36,32 @@ void early_write_32(uint32_t address, uint32_t value){
         : "eax");
 }
 
+inline uint32_t early_read_32(uint32_t address){
+    auto seg = early_base / 0x10;
+    auto offset = address - early_base;
+
+    uint32_t value;
+
+    asm volatile("mov fs, %[seg]; mov eax, %[offset]; mov %[value], [fs:0x0 + eax]; xor eax, eax; mov fs, eax;"
+        : [value] "=r" (value)
+        : [seg] "r" (seg), [offset] "r" (offset)
+        : "eax");
+
+    return value;
+}
+
 /* Early Logging  */
 
 //TODO Check out why only very few early log are possible and it seems only
 //at some position...
 void early_log(const char* s){
-    //auto c = early_logs_count();
-    //early_logs()[c] = reinterpret_cast<uint32_t>(s);
-    //early_logs_count(c + 1);
-
-    //TODO Check out why this freaking shit does not work
     return;
 
-    asm volatile ("mov eax, 0x9000; mov ds, eax; mov eax, [ds:0x4]; mov [ds:0x8 + eax * 4], %[s]; inc eax; mov [ds:0x4], eax; xor eax, eax; mov ds, eax;"
-        : /* Nothing */
-        : [s] "r" (reinterpret_cast<uint32_t>(s))
-        : "eax");
+    //TODO Check out why this freaking shit does not work
+
+    auto c = early_read_32(early_logs_count_address);
+    early_write_32(early_logs_address + c * 4, reinterpret_cast<uint32_t>(s));
+    early_write_32(early_logs_count_address, c + 1);
 }
 
 /* VESA */
