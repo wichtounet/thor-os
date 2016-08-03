@@ -51,6 +51,9 @@ constexpr const auto pt_entries = entries(pte_allocations);
 //Compute the amount of physical memory pages needed for the paging tables
 constexpr const size_t  physical_memory_pages = 1 + pml4_entries + pdpt_entries + pd_entries;
 
+//Virtual address where early page can be mapped
+extern size_t virtual_early_page;
+
 //Virtual address where the paging structures are stored
 extern size_t virtual_paging_start;
 
