@@ -37,9 +37,9 @@ void early_log(const char* s){
     //early_logs_count(c + 1);
 
     //TODO Check out why this freaking shit does not work
-    return;
+    //return;
 
-    asm volatile ("xchg bx, bx; mov eax, 0x9000; mov ds, eax; mov eax, [ds:0x4]; mov [ds:0x8 + eax * 4], %[s]; inc eax; mov [ds:0x4], eax; xor eax, eax; mov ds, eax; xchg bx, bx;"
+    asm volatile ("mov eax, 0x9000; mov ds, eax; mov eax, [ds:0x4]; mov [ds:0x8 + eax * 4], %[s]; inc eax; mov [ds:0x4], eax; xor eax, eax; mov ds, eax;"
         : /* Nothing */
         : [s] "r" (reinterpret_cast<uint32_t>(s))
         : "eax");
@@ -227,7 +227,6 @@ void disable_interrupts(){
 }
 
 void enable_a20_gate(){
-    early_log("A20 gate enabled");
 
     //TODO This should really be improved:
     // 1. Test if a20 already enabled
@@ -239,6 +238,7 @@ void enable_a20_gate(){
     port_a &= ~0x01;
     out_byte(port_a, 0x92);
 
+    early_log("A20 gate enabled");
 }
 
 void setup_idt(){
