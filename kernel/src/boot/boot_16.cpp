@@ -37,7 +37,7 @@ void early_log(const char* s){
     //early_logs_count(c + 1);
 
     //TODO Check out why this freaking shit does not work
-    //return;
+    return;
 
     asm volatile ("mov eax, 0x9000; mov ds, eax; mov eax, [ds:0x4]; mov [ds:0x8 + eax * 4], %[s]; inc eax; mov [ds:0x4], eax; xor eax, eax; mov ds, eax;"
         : /* Nothing */
