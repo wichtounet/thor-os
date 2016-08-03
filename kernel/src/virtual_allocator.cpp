@@ -61,7 +61,10 @@ std::string sysfs_allocated(){
 } //end of anonymous namespace
 
 void virtual_allocator::init(){
+    // The first addressable virtual address is just after the paging structures
     virtual_start = paging::virtual_paging_start + (paging::physical_memory_pages * paging::PAGE_SIZE);
+
+    // Take the next first aligned 1MiB virtual address
     first_virtual_address = virtual_start % 0x100000 == 0 ? virtual_start : (virtual_start / 0x100000 + 1) * 0x100000;
     last_virtual_address = virtual_allocator::kernel_virtual_size;
     managed_space = last_virtual_address - first_virtual_address;
