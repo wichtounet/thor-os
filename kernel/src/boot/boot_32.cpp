@@ -10,13 +10,14 @@
 #include "boot/boot_32.hpp"
 #include "kernel.hpp"
 #include "paging.hpp"
-#include "early_logging.hpp"
 #include "early_memory.hpp"
 
 namespace {
 
 void early_log(const char* s){
-    early::early_logs[early::early_logs_count++] = reinterpret_cast<uint32_t>(s);
+    auto c = early_logs_count();
+    early_logs()[c] = reinterpret_cast<uint32_t>(s);
+    early_logs_count(c + 1);
 }
 
 typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
@@ -138,7 +139,7 @@ void pm_main(){
     setup_paging();
 
     // TODO This will need to be computed from the init loader
-    *reinterpret_cast<uint32_t*>(kernel_mib_address) = 1;
+    kernel_mib(1);
 
     //Enable long mode by setting the EFER.LME flag
     enable_long_mode();

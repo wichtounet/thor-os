@@ -6,10 +6,10 @@
 //=======================================================================
 
 #include "logging.hpp"
-#include "early_logging.hpp"
 #include "assert.hpp"
 #include "console.hpp"
 #include "virtual_debug.hpp"
+#include "early_memory.hpp"
 #include "vfs/vfs.hpp"
 
 #include <flags.hpp>
@@ -19,11 +19,6 @@ namespace {
 
 bool early_mode = true;
 bool file = false;
-
-constexpr const size_t MAX_EARLY = 128;
-
-size_t current_early = 0;
-const char* early_logs[MAX_EARLY];
 
 std::string buffer;
 
@@ -74,8 +69,10 @@ void logging::finalize(){
     //Starting from there, the messages will be sent to the terminal
     early_mode = false;
 
-    for(size_t i = 0; i < early::early_logs_count; ++i){
-        auto early_log = early::early_logs[i];
+    logf(log_level::TRACE, "%u early logs \n", early_logs_count());
+
+    for(size_t i = 0; i < early_logs_count(); ++i){
+        auto early_log = early_logs()[i];
 
         auto early_log_str = reinterpret_cast<const char*>(static_cast<size_t>(early_log));
 
@@ -94,12 +91,7 @@ void logging::to_file(){
 }
 
 void logging::log(log_level level, const char* s){
-    if(is_early()){
-        // In early mode, we simply save the logs
-        thor_assert(current_early < MAX_EARLY, "early log buffer is full");
-
-        early_logs[current_early++] = s;
-    } else {
+    if(!is_early()){
         // Print to the virtual debugger
         virtual_debug(level_to_string(level));
         virtual_debug(": ");

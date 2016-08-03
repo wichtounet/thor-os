@@ -13,13 +13,10 @@
 #include "gdt.hpp"
 #include "e820.hpp" //Just for the address of the e820 map
 #include "vesa.hpp"
-#include "early_logging.hpp"
+#include "early_memory.hpp"
 
 //The Task State Segment
 gdt::task_state_segment_t gdt::tss;
-
-uint32_t early::early_logs_count = 0;
-uint32_t early::early_logs[early::MAX_EARLY_LOGGING];
 
 e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
 int16_t e820::bios_e820_entry_count = 0;
@@ -35,7 +32,17 @@ namespace {
 //TODO Check out why only very few early log are possible and it seems only
 //at some position...
 void early_log(const char* s){
-    early::early_logs[early::early_logs_count++] = reinterpret_cast<uint32_t>(s);
+    //auto c = early_logs_count();
+    //early_logs()[c] = reinterpret_cast<uint32_t>(s);
+    //early_logs_count(c + 1);
+
+    //TODO Check out why this freaking shit does not work
+    return;
+
+    asm volatile ("xchg bx, bx; mov eax, 0x9000; mov ds, eax; mov eax, [ds:0x4]; mov [ds:0x8 + eax * 4], %[s]; inc eax; mov [ds:0x4], eax; xor eax, eax; mov ds, eax; xchg bx, bx;"
+        : /* Nothing */
+        : [s] "r" (reinterpret_cast<uint32_t>(s))
+        : "eax");
 }
 
 /* VESA */
@@ -216,7 +223,7 @@ void setup_vesa(){
 void disable_interrupts(){
     asm volatile ("cli");
 
-    early_log("Interrupts disabled");
+    //early_log("Interrupts disabled");
 }
 
 void enable_a20_gate(){
@@ -419,6 +426,11 @@ void __attribute__((noreturn)) pm_jump(){
 void  __attribute__ ((noreturn)) rm_main(){
     //Make sure segments are clean
     reset_segments();
+
+    asm volatile ("mov eax, 0x9000; mov ds, eax; xor eax, eax; mov [ds:0x4], eax; mov ds, eax;"
+        : /* Nothing */
+        : /* Nothing */
+        : "eax");
 
     //Enable VESA
     setup_vesa();
