@@ -31,14 +31,18 @@
 
 extern "C" {
 
+void _init();
+
 void __cxa_pure_virtual(){
     k_print_line("A pure virtual function has been called");
     suspend_kernel();
 }
 
-void _init();
+} //end of extern "C"
 
-void  kernel_main(){
+void kernel_main() __attribute__((section(".start")));
+
+void kernel_main(){
     //Make sure stack is aligned to 16 byte boundary
     asm volatile("and rsp, -16");
 
@@ -46,13 +50,14 @@ void  kernel_main(){
 
     gdt::flush_tss();
 
-    interrupt::setup_interrupts();
-
     // Necessary for logging with Qemu
     serial::init();
 
     //Starting from here, the logging system can stop saving early logs
     logging::finalize();
+
+    // Setup interrupts
+    interrupt::setup_interrupts();
 
     //Compute virtual addresses for paging
     paging::early_init();
@@ -124,8 +129,6 @@ void  kernel_main(){
     // Start the scheduler
     scheduler::start();
 }
-
-} //end of extern "C"
 
 void suspend_boot(){
     k_print_line("Impossible to continue boot...");
