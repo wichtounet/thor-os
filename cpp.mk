@@ -7,8 +7,7 @@ AR=x86_64-elf-ar
 WARNING_FLAGS=-Wall -Wextra -pedantic -Wold-style-cast
 COMMON_C_FLAGS=-masm=intel -I../../tstl/include/ -I../printf/include/ -I../tstl/include/ -I../tlib/include/ -Iinclude/ -nostdlib -g -Os -fno-stack-protector -fno-exceptions -funsigned-char -ffreestanding -fomit-frame-pointer -mno-red-zone -mno-3dnow -mno-mmx -fno-asynchronous-unwind-tables
 
-# Activate Stack Smashing Protection
-COMMON_C_FLAGS += -fstack-protector
+# Include ACPICA
 COMMON_C_FLAGS += -isystem acpica/source/include
 
 # Add more flags for C++
@@ -25,6 +24,9 @@ CPP_FLAGS_LOW=-march=i386 -m32 -fno-strict-aliasing -fno-pic -fno-toplevel-reord
 FLAGS_16=$(CPP_FLAGS_LOW) -mregparm=3 -mpreferred-stack-boundary=2
 FLAGS_32=$(CPP_FLAGS_LOW) -mpreferred-stack-boundary=4
 FLAGS_64=-mpreferred-stack-boundary=4 $(ENABLE_SSE_FLAGS) $(DISABLE_AVX_FLAGS)
+
+# Activate Stack Smashing Protection
+FLAGS_64 += -fstack-protector
 
 KERNEL_CPP_FLAGS_64=$(COMMON_CPP_FLAGS) $(FLAGS_64)
 
