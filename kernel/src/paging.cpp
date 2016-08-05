@@ -89,7 +89,7 @@ inline void flush_tlb(size_t page){
 }
 
 size_t early_map_page(size_t physical){
-    thor_assert(paging::virtual_early_page == 0x100000, "Invalid early page");
+    thor_assert(paging::virtual_early_page < 0x100000, "Invalid early page");
 
     //PD[0] already points to a valid PT (0x73000)
     auto pt = reinterpret_cast<pt_t>(0x73000);
@@ -97,7 +97,7 @@ size_t early_map_page(size_t physical){
     // The first 256 entries are used for identity mapping the first 1Mib
     // The page 256 can safely be used
 
-    pt[256] = reinterpret_cast<page_entry>(physical | paging::PRESENT | paging::WRITE);
+    pt[paging::virtual_early_page / 0x1000] = reinterpret_cast<page_entry>(physical | paging::PRESENT | paging::WRITE);
     flush_tlb(paging::virtual_early_page);
 
     return paging::virtual_early_page;
@@ -120,7 +120,7 @@ void paging::early_init(){
 
     // This page is used for mapping the physical address of the paging structure before
     // paging is completely initialized. It won't be used after final paging is setup
-    paging::virtual_early_page = 0x100000;
+    paging::virtual_early_page = 0x20000;
 
     // The paging structures lies in memory just after the kernel code itself
     paging::virtual_paging_start = early::kernel_address + 0x100000 * early::kernel_mib();
@@ -191,7 +191,7 @@ void paging::init(){
         early_map_page_clear(physical_pt_start + i * PAGE_SIZE);
     }
 
-    //5. Identity map the first MiB and the identity the kernel code
+    //5. Identity map the first MiB and the kernel code
 
     auto current_pt_phys = physical_pt_start;
     virt = early_map_page_clear(current_pt_phys);
