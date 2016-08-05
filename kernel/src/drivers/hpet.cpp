@@ -12,13 +12,13 @@
 
 namespace {
 
+ACPI_TABLE_HPET* hpet_table;
+
 } //End of anonymous namespace
 
 bool hpet::install(){
-    ACPI_TABLE_HPET *hpet;
-
     // Find the HPET table
-    auto status = AcpiGetTable("HPET", 0, (ACPI_TABLE_HEADER **) &hpet);
+    auto status = AcpiGetTable(ACPI_SIG_HPET, 0, (ACPI_TABLE_HEADER **) &hpet_table);
     if (ACPI_FAILURE(status)){
         return false;
     }
@@ -31,6 +31,8 @@ bool hpet::install(){
 void hpet::late_install(){
     if(hpet::install()){
         logging::logf(logging::log_level::TRACE, "hpet: Late install suceeded\n");
+
+        logging::logf(logging::log_level::TRACE, "hpet: HPET Address: %h\n", hpet_table->Address.Address);
 
         //TODO Register the timer to the timer system
     }
