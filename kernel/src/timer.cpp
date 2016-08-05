@@ -67,27 +67,6 @@ void timer::tick(){
     }
 }
 
-void timer::sleep_ms(uint64_t delay){
-    _timer_countdown = delay;
-
-    while(true){
-        asm  volatile ("cli");
-
-        if(_timer_countdown != 0){
-            asm  volatile ("sti");
-            asm  volatile ("nop");
-            asm  volatile ("nop");
-            asm  volatile ("nop");
-            asm  volatile ("nop");
-            asm  volatile ("nop");
-        } else {
-            break;
-        }
-    }
-
-    asm  volatile ("sti");
-}
-
 uint64_t timer::ticks(){
     return _timer_ticks;
 }
