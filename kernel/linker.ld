@@ -1,57 +1,33 @@
-ENTRY(kernel_main)
+ENTRY(_Z11kernel_mainv)
 
 SECTIONS
 {
     /* This is where the bootloader will load the code */
-	. = 0x6000;
-
-    .text_16 BLOCK(512) : ALIGN(512)
-	{
-		boot_16_64.o(.text)
-	}
-
-    .rodata_16 BLOCK(512) : ALIGN(512)
-    {
-		boot_16_64.o(.rodata)
-    }
-
-    .bss_16 BLOCK(512) : ALIGN(512)
-    {
-		boot_16_64.o(.bss)
-    }
-
-    .data_16 BLOCK(512) : ALIGN(512)
-    {
-		boot_16_64.o(.data)
-    }
-
-    .text_32 BLOCK(512) : ALIGN(512)
-	{
-		boot_32_64.o(.text)
-	}
+    . = 0x100000;
 
     /* 4K of code */
-	.text BLOCK(1K) : ALIGN(1K)
-	{
-		*(.text)
+    .text : ALIGN(0x1000)
+    {
+        *(.start)
+        *(.text)
         *(.text.*)
-	}
+    }
 
-	/* 4K of Read-only data */
-	.rodata BLOCK(1K) : ALIGN(1K)
-	{
-		*(.rodata)
-	}
+    /* 4K of Read-only data */
+    .rodata : ALIGN(0x1000)
+    {
+        *(.rodata)
+    }
 
-	/* 4K of Read-write initialized data. */
-	.data BLOCK(1K) : ALIGN(1K)
-	{
-		*(.data)
-	}
+    /* 4K of Read-write initialized data. */
+    .data : ALIGN(0x1000)
+    {
+        *(.data)
+    }
 
-	/* 4K of Read-write uninitialized data. */
-	.bss BLOCK(1K) : ALIGN(1K)
-	{
-		*(.bss)
-	}
+    /* 4K of Read-write uninitialized data. */
+    .bss : ALIGN(0x1000)
+    {
+        *(.bss)
+    }
 }
