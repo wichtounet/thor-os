@@ -10,9 +10,9 @@
 #include "boot/code16gcc.h"
 #include "boot/boot_32.hpp"
 
-#include "gdt.hpp"  // For the types
-#include "e820.hpp" // For the types
-#include "vesa.hpp" // For the types
+#include "gdt_types.hpp"
+#include "e820_types.hpp"
+#include "vesa_types.hpp"
 #include "early_memory.hpp"
 
 e820::bios_e820_entry bios_e820_entries[e820::MAX_E820_ENTRIES];
