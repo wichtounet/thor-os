@@ -10,15 +10,14 @@
 #include "boot/code16gcc.h"
 #include "boot/boot_32.hpp"
 
-#include "gdt.hpp"
+#include "gdt.hpp"  // For the types
 #include "e820.hpp" // For the types
 #include "vesa.hpp" // For the types
 #include "early_memory.hpp"
 
-//The Task State Segment
-gdt::task_state_segment_t gdt::tss;
-
 e820::bios_e820_entry bios_e820_entries[e820::MAX_E820_ENTRIES];
+
+gdt::task_state_segment_t tss; // TODO Remove this (causes relocation errors for now)
 
 namespace {
 
@@ -411,7 +410,7 @@ void setup_gdt(){
 
     //2. Init TSS Descriptor
 
-    uint32_t base = reinterpret_cast<uint32_t>(&gdt::tss);
+    uint32_t base = tss_address;;
     uint32_t limit = base + sizeof(gdt::task_state_segment_t);
 
     auto tss_selector = reinterpret_cast<gdt::tss_descriptor_t*>(&gdt[6]);
@@ -441,9 +440,8 @@ void setup_gdt(){
     asm volatile("lgdt [%0]" : : "m" (gdtr));
 
     //5. Zero-out the TSS
-    auto tss_ptr = reinterpret_cast<char*>(&gdt::tss);
-    for(unsigned int i = 0; i < sizeof(gdt::task_state_segment_t); ++i){
-        *tss_ptr++ = 0;
+    for(uint16_t i = 0; i < 128; i += 4){
+        early_write_32(tss_address + i * 4, 0);
     }
 }
 

@@ -289,8 +289,8 @@ void switch_to_process(size_t pid){
 
     process.state = scheduler::process_state::RUNNING;
 
-    gdt::tss.rsp0_low = process.process.kernel_rsp & 0xFFFFFFFF;
-    gdt::tss.rsp0_high = process.process.kernel_rsp >> 32;
+    gdt::tss().rsp0_low = process.process.kernel_rsp & 0xFFFFFFFF;
+    gdt::tss().rsp0_high = process.process.kernel_rsp >> 32;
 
     task_switch(old_pid, current_pid);
 }

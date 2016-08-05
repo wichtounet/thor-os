@@ -65,4 +65,6 @@ inline void vesa_enabled(bool value){
     *reinterpret_cast<uint32_t*>(vesa_enabled_address) = value ? 1 : 0;
 }
 
+constexpr const uint32_t tss_address = 0x904A0; // 104 bytes (aligned to 128)
+
 #endif
