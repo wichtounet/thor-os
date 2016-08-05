@@ -10,7 +10,7 @@
 
 #include <types.hpp>
 
-#include "boot/boot_32.hpp"
+#include "boot_32.hpp"
 #include "kernel.hpp"
 #include "early_memory.hpp"
 #include "virtual_debug.hpp"

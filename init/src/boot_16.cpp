@@ -8,8 +8,8 @@
 #define CODE_16
 #define THOR_INIT
 
-#include "boot/code16gcc.h"
-#include "boot/boot_32.hpp"
+#include "code16gcc.h"
+#include "boot_32.hpp"
 
 #include "gdt_types.hpp"
 #include "e820_types.hpp"
