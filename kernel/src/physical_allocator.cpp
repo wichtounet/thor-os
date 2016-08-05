@@ -11,6 +11,7 @@
 #include "buddy_allocator.hpp"
 #include "assert.hpp"
 #include "logging.hpp"
+#include "early_memory.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -74,22 +75,34 @@ void physical_allocator::early_init(){
         k_print_line("e820 failed, no way to allocate memory");
         suspend_boot();
     }
-}
 
-size_t physical_allocator::early_allocate(size_t blocks){
-    if(!current_mmap_entry){
-        for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
-            auto& entry = e820::mmap_entry(i);
+    bool found = false;
 
-            if(entry.type == 1 && entry.base >= 0x100000 && entry.size >= 16384){
-                current_mmap_entry = &entry;
-                current_mmap_entry_position = entry.base;
+    for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
+        auto& entry = e820::mmap_entry(i);
 
+        if(entry.type == 1 && entry.base == early::kernel_address){
+            if(entry.size < early::kernel_mib() * 0x100000){
                 break;
             }
+
+            current_mmap_entry = &entry;
+            current_mmap_entry_position = entry.base + early::kernel_mib() * 0x100000;
+            allocated_memory += early::kernel_mib() * 0x100000;
+
+            found = true;
+
+            break;
         }
     }
 
+    if(!found){
+        k_print_line("did not find any e820 for the kernel itself");
+        suspend_boot();
+    }
+}
+
+size_t physical_allocator::early_allocate(size_t blocks){
     if(!current_mmap_entry){
         return 0;
     }
@@ -151,6 +164,20 @@ void physical_allocator::finalize(){
     sysfs::set_dynamic_value("/sys/", "/memory/physical/available", &sysfs_available);
     sysfs::set_dynamic_value("/sys/", "/memory/physical/free", &sysfs_free);
     sysfs::set_dynamic_value("/sys/", "/memory/physical/allocated", &sysfs_allocated);
+
+    // Publish the e820 map
+    auto entries = e820::mmap_entry_count();
+    sysfs::set_constant_value("/sys/", "/memory/e820/entries", std::to_string(entries));
+
+    for(size_t i = 0; i < entries; ++i){
+        auto& entry = e820::mmap_entry(i);
+
+        std::string base_path = "/memory/e820/" + std::to_string(i);
+
+        sysfs::set_constant_value("/sys/", base_path + "/base", std::to_string(entry.base));
+        sysfs::set_constant_value("/sys/", base_path + "/size", std::to_string(entry.size));
+        sysfs::set_constant_value("/sys/", base_path + "/type", e820::str_e820_type(entry.type));
+    }
 }
 
 size_t physical_allocator::allocate(size_t blocks){

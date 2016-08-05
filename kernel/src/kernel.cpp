@@ -48,6 +48,15 @@ void  kernel_main(){
 
     interrupt::setup_interrupts();
 
+    // Necessary for logging with Qemu
+    serial::init();
+
+    //Starting from here, the logging system can stop saving early logs
+    logging::finalize();
+
+    //Compute virtual addresses for paging
+    paging::early_init();
+
     //Init the virtual allocator
     virtual_allocator::init();
 
@@ -67,8 +76,8 @@ void  kernel_main(){
     _init();
 
     //Try to init VESA
-    if(vesa::vesa_enabled && !vesa::init()){
-        vesa::vesa_enabled = false;
+    if(vesa::enabled() && !vesa::init()){
+        vesa::disable();
 
         //Unfortunately, we are in long mode, we cannot go back
         //to text mode for now
@@ -77,9 +86,6 @@ void  kernel_main(){
 
     init_console();
     stdio::init_terminals();
-
-    //Starting from here, the logging system can use the console
-    logging::finalize();
 
     //Finalize memory operations (register sysfs values)
     paging::finalize();
@@ -91,7 +97,6 @@ void  kernel_main(){
     acpi::init();
 
     //Install drivers
-    serial::init();
     timer::install();
     keyboard::install_driver();
     disks::detect_disks();

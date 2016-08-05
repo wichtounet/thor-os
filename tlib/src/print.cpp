@@ -117,3 +117,7 @@ void print_line(const std::string& s){
 void __printf(const std::string& formatted){
     print(formatted);
 }
+
+void __printf_raw(const char* formatted){
+    print(formatted);
+}

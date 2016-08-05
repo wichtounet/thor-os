@@ -31,6 +31,7 @@ programs/rm/rm
 programs/date/date
 programs/ls/ls
 programs/lspci/lspci
+programs/lse820/lse820
 programs/mount/mount
 programs/uptime/uptime
 programs/df/df

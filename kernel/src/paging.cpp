@@ -16,8 +16,18 @@
 #include "process.hpp"
 #include "physical_pointer.hpp"
 #include "kernel_utils.hpp"
+#include "logging.hpp"
+#include "early_memory.hpp"
 
 #include "fs/sysfs.hpp"
+
+size_t paging::virtual_paging_start;
+size_t paging::virtual_early_page;
+
+size_t paging::virtual_pml4t_start;
+size_t paging::virtual_pdpt_start;
+size_t paging::virtual_pd_start;
+size_t paging::virtual_pt_start;
 
 namespace {
 
@@ -49,7 +59,7 @@ constexpr size_t pt_entry(size_t virt){
     return (virt >> 12) & 0x1FF;
 }
 
-constexpr pml4t_t find_pml4t(){
+pml4t_t find_pml4t(){
     return reinterpret_cast<pml4t_t>(paging::virtual_pml4t_start);
 }
 
@@ -79,13 +89,18 @@ inline void flush_tlb(size_t page){
 }
 
 size_t early_map_page(size_t physical){
+    thor_assert(paging::virtual_early_page == 0x100000, "Invalid early page");
+
     //PD[0] already points to a valid PT (0x73000)
     auto pt = reinterpret_cast<pt_t>(0x73000);
 
-    pt[256] = reinterpret_cast<page_entry>(physical | paging::PRESENT | paging::WRITE);
-    flush_tlb(0x100000);
+    // The first 256 entries are used for identity mapping the first 1Mib
+    // The page 256 can safely be used
 
-    return 0x100000;
+    pt[256] = reinterpret_cast<page_entry>(physical | paging::PRESENT | paging::WRITE);
+    flush_tlb(paging::virtual_early_page);
+
+    return paging::virtual_early_page;
 }
 
 size_t early_map_page_clear(size_t physical){
@@ -99,6 +114,23 @@ size_t early_map_page_clear(size_t physical){
 }
 
 } //end of anonymous namespace
+
+void paging::early_init(){
+    // This page is used for mapping the physical address of the paging structure before
+    // paging is completely initialized. It won't be used after final paging is setup
+    paging::virtual_early_page = 0x100000;
+
+    // The paging structures lies in memory just after the kernel code itself
+    paging::virtual_paging_start = early::kernel_address + 0x100000 * early::kernel_mib();
+
+    //Compute the start address of each structure
+    paging::virtual_pml4t_start = virtual_paging_start;
+    paging::virtual_pdpt_start = virtual_pml4t_start + paging::PAGE_SIZE;
+    paging::virtual_pd_start = virtual_pdpt_start + pml4_entries * paging::PAGE_SIZE;
+    paging::virtual_pt_start = virtual_pd_start + pdpt_entries * paging::PAGE_SIZE;
+
+    logging::logf(logging::log_level::TRACE, "paging: early_init (virtual_paging_start:%h)\n", virtual_paging_start);
+}
 
 void paging::init(){
     //Get some physical memory
@@ -115,6 +147,12 @@ void paging::init(){
     physical_pdpt_start = physical_pml4t_start + paging::PAGE_SIZE;
     physical_pd_start = physical_pdpt_start + pml4_entries * paging::PAGE_SIZE;
     physical_pt_start = physical_pd_start + pdpt_entries * paging::PAGE_SIZE;
+
+    logging::logf(logging::log_level::TRACE, "paging: init (physical_memory:%h, physical_pages:%u)\n", physical_memory, physical_memory_pages);
+    logging::logf(logging::log_level::TRACE, "paging: PML4T entries:%u phys:%h virt:%h\n", pml4_entries, physical_pml4t_start, virtual_pml4t_start);
+    logging::logf(logging::log_level::TRACE, "paging: PDPT entries:%u phys:%h virt:%h\n", pdpt_entries, physical_pdpt_start, virtual_pdpt_start);
+    logging::logf(logging::log_level::TRACE, "paging: PD entries:%u phys:%h virt:%h\n", pd_entries, physical_pd_start, virtual_pd_start);
+    logging::logf(logging::log_level::TRACE, "paging: PT entries:%u phys:%h virt:%h\n", pt_entries, physical_pt_start, virtual_pt_start);
 
     auto high_flags = PRESENT | WRITE | USER;
 
@@ -151,17 +189,24 @@ void paging::init(){
         early_map_page_clear(physical_pt_start + i * PAGE_SIZE);
     }
 
-    //5. Identity map the first MiB
+    //5. Identity map the first MiB and the identity the kernel code
 
-    virt = early_map_page_clear(physical_pt_start);
+    auto current_pt_phys = physical_pt_start;
+    virt = early_map_page_clear(current_pt_phys);
     auto page_table_ptr = reinterpret_cast<uint64_t*>(virt);
     auto phys = PRESENT | WRITE;
-    for(size_t i = 0; i < 256; ++i){
+    for(size_t i = 0; i < 256 + 256 * early::kernel_mib(); ++i){
         *page_table_ptr = phys;
 
         phys += paging::PAGE_SIZE;
 
         ++page_table_ptr;
+
+        if(i > 0 && i % 511 == 0){
+            current_pt_phys += paging::PAGE_SIZE;
+            virt = early_map_page_clear(current_pt_phys);
+            page_table_ptr = reinterpret_cast<uint64_t*>(virt);
+        }
     }
 
     //6. Map all the paging structures
@@ -178,7 +223,7 @@ void paging::init(){
         auto pte = pt_entry(virt_page);
 
         auto pt_index = pde * 512 + pdpte * 512 * 512 + pml4e * 512 * 512 * 512;
-        auto physical = physical_pt_start + pt_index * paging::PAGE_SIZE;
+        auto physical = physical_pt_start + (pt_index / 512) * paging::PAGE_SIZE;
 
         if(pt_index != current_pt_index || current_virt == 0){
             current_virt = early_map_page(physical);
@@ -194,7 +239,27 @@ void paging::init(){
 
     //7. Use the new structure as the new paging structure (in CR3)
 
+    logging::logf(logging::log_level::TRACE, "paging: Set %h (physical) as new CR3\n", physical_pml4t_start);
+
     asm volatile("mov rax, %0; mov cr3, rax" : : "m"(physical_pml4t_start) : "memory", "rax");
+
+    //8. Perform some basic tests
+
+    //TODO Some basic tests here
+
+    logging::logf(logging::log_level::TRACE, "paging: basic tests\n");
+
+    if(!page_present(virtual_pml4t_start)){
+        logging::logf(logging::log_level::ERROR, "paging: PML4T is not correctly mapped\n");
+        suspend_boot();
+    }
+
+    if(physical_address(virtual_pml4t_start) != physical_pml4t_start){
+        logging::logf(logging::log_level::ERROR, "paging: PML4T is not correctly mapped\n");
+        suspend_boot();
+    }
+
+    logging::logf(logging::log_level::TRACE, "paging: basic tests finished\n");
 }
 
 void paging::finalize(){

@@ -627,6 +627,81 @@ inline std::string to_string<int32_t>(const int32_t& value){
     return to_string(static_cast<int64_t>(value));
 }
 
+template<typename T>
+void to_raw_string(const T& value, char* buffer, size_t n);
+
+template<>
+inline void to_raw_string<uint64_t>(const uint64_t& value, char* buffer, size_t n){
+    if(n < 20){
+        //TODO Print an error ?
+        return;
+    }
+
+    if(value == 0){
+        buffer[0] = '0';
+        buffer[1] = '\0';
+        return;
+    }
+
+    char int_buffer[20];
+    int i = 0;
+    auto rem = value;
+
+    while(rem != 0){
+        int_buffer[i++] = '0' + rem  % 10;
+        rem /= 10;
+    }
+
+    --i;
+
+    size_t j = 0;
+    for(; i >= 0; --i){
+        buffer[j++] = int_buffer[i];
+    }
+
+    buffer[j] = '\0';
+}
+
+template<>
+inline void to_raw_string<int64_t>(const int64_t& value, char* buffer, size_t n){
+    if(value < 0){
+        *buffer = '-';
+        to_raw_string(static_cast<uint64_t>(value), buffer + 1, n - 1);
+    } else {
+        to_raw_string(static_cast<uint64_t>(value), buffer, n);
+    }
+}
+
+template<>
+inline void to_raw_string<uint8_t>(const uint8_t& value, char* buffer, size_t n){
+    to_raw_string(static_cast<uint64_t>(value), buffer, n);
+}
+
+template<>
+inline void to_raw_string<uint16_t>(const uint16_t& value, char* buffer, size_t n){
+    to_raw_string(static_cast<uint64_t>(value), buffer, n);
+}
+
+template<>
+inline void to_raw_string<uint32_t>(const uint32_t& value, char* buffer, size_t n){
+    to_raw_string(static_cast<uint64_t>(value), buffer, n);
+}
+
+template<>
+inline void to_raw_string<int8_t>(const int8_t& value, char* buffer, size_t n){
+    to_raw_string(static_cast<uint64_t>(value), buffer, n);
+}
+
+template<>
+inline void to_raw_string<int16_t>(const int16_t& value, char* buffer, size_t n){
+    to_raw_string(static_cast<uint64_t>(value), buffer, n);
+}
+
+template<>
+inline void to_raw_string<int32_t>(const int32_t& value, char* buffer, size_t n){
+    to_raw_string(static_cast<uint64_t>(value), buffer, n);
+}
+
 } //end of namespace std
 
 #endif

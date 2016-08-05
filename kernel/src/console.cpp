@@ -84,7 +84,7 @@ void print_signed(D number){
 } //end of anonymous namespace
 
 void init_console(){
-    text = !vesa::vesa_enabled;
+    text = !vesa::enabled();
 
     if(text){
         t_console.init();
@@ -217,5 +217,9 @@ void wipeout(){
 #include "printf_def.hpp"
 
 void __printf(const std::string& str){
+    k_print(str);
+}
+
+void __printf_raw(const char* str){
     k_print(str);
 }

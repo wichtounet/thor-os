@@ -7,15 +7,22 @@
 
 #define CODE_32
 
+#include <types.hpp>
+
 #include "boot/boot_32.hpp"
 #include "kernel.hpp"
-#include "paging.hpp"
-#include "early_logging.hpp"
+#include "early_memory.hpp"
 
 namespace {
 
+//The size of page in memory
+constexpr const size_t PAGE_SIZE = 4096;
+
 void early_log(const char* s){
-    early::early_logs[early::early_logs_count++] = reinterpret_cast<uint32_t>(s);
+    auto c = early::early_logs_count();
+    auto table = reinterpret_cast<uint32_t*>(early::early_logs_address);
+    table[c] = reinterpret_cast<uint32_t>(s);
+    early::early_logs_count(c + 1);
 }
 
 typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
@@ -61,22 +68,22 @@ void setup_paging(){
     //Link tables (0x3 means Writeable and Supervisor)
 
     //PML4T[0] -> PDPT
-    *reinterpret_cast<uint32_t*>(PML4T) = PML4T + paging::PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T) = PML4T + PAGE_SIZE + 0x7;
 
     //PDPT[0] -> PDT
-    *reinterpret_cast<uint32_t*>(PML4T + 1 * paging::PAGE_SIZE) = PML4T + 2 * paging::PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T + 1 * PAGE_SIZE) = PML4T + 2 * PAGE_SIZE + 0x7;
 
     //PD[0] -> PT
-    *reinterpret_cast<uint32_t*>(PML4T + 2 * paging::PAGE_SIZE) = PML4T + 3 * paging::PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T + 2 * PAGE_SIZE) = PML4T + 3 * PAGE_SIZE + 0x7;
 
     //Map the first MiB
 
-    auto page_table_ptr = reinterpret_cast<uint32_t*>(PML4T + 3 * paging::PAGE_SIZE);
+    auto page_table_ptr = reinterpret_cast<uint32_t*>(PML4T + 3 * PAGE_SIZE);
     auto phys = 0x3;
     for(uint32_t i = 0; i < 256; ++i){
         *page_table_ptr = phys;
 
-        phys += paging::PAGE_SIZE;
+        phys += PAGE_SIZE;
 
         //A page entry is 64 bit in size
         page_table_ptr += 2;
@@ -135,6 +142,9 @@ void pm_main(){
 
     //Setup paging
     setup_paging();
+
+    // TODO This will need to be computed from the init loader
+    early::kernel_mib(1);
 
     //Enable long mode by setting the EFER.LME flag
     enable_long_mode();

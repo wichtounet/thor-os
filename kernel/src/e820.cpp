@@ -6,17 +6,23 @@
 //=======================================================================
 
 #include "e820.hpp"
+#include "early_memory.hpp"
+#include "logging.hpp"
 
 namespace {
 
 e820::mmapentry e820_mmap[e820::MAX_E820_ENTRIES];
 size_t _available_memory;
+size_t e820_entries = 0;
 
 } //end of namespace anonymous
 
 void e820::finalize_memory_detection(){
+    e820_entries = early::e820_entry_count();
+
     auto t = mmap_entry_count();;
-    auto smap = bios_e820_entries;
+
+    auto* smap = reinterpret_cast<e820::bios_e820_entry*>(early::e820_entry_address);
 
     if(t > 0){
         for(size_t i = 0; i < t; ++i){
@@ -42,7 +48,7 @@ void e820::finalize_memory_detection(){
 }
 
 uint64_t e820::mmap_entry_count(){
-    return bios_e820_entry_count;
+    return e820_entries;
 }
 
 bool e820::mmap_failed(){
