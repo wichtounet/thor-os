@@ -18,11 +18,11 @@ size_t e820_entries = 0;
 } //end of namespace anonymous
 
 void e820::finalize_memory_detection(){
-    e820_entries = e820_entry_count();
+    e820_entries = early::e820_entry_count();
 
     auto t = mmap_entry_count();;
 
-    auto* smap = reinterpret_cast<e820::bios_e820_entry*>(e820_entry_address);
+    auto* smap = reinterpret_cast<e820::bios_e820_entry*>(early::e820_entry_address);
 
     if(t > 0){
         for(size_t i = 0; i < t; ++i){

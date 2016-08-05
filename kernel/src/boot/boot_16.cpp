@@ -31,8 +31,8 @@ vesa::mode_info_block_t mode_info_block;
 
 #define early_write_32(ADDRESS, VALUE) \
 { \
-    auto seg = early_base / 0x10; \
-    auto offset = ADDRESS - early_base; \
+    auto seg = early::early_base / 0x10; \
+    auto offset = ADDRESS - early::early_base; \
     asm volatile("mov fs, %[seg]; mov eax, %[offset]; mov [fs:0x0 + eax], %[value]; xor eax, eax; mov fs, eax;" \
         : /* nothing */ \
         : [seg] "r" (seg), [offset] "r" (offset), [value] "r" (VALUE) \
@@ -42,8 +42,8 @@ vesa::mode_info_block_t mode_info_block;
 #define early_read_32(ADDRESS, VALUE) \
 {\
     uint32_t temp_value; \
-    auto seg = early_base / 0x10; \
-    auto offset = ADDRESS - early_base; \
+    auto seg = early::early_base / 0x10; \
+    auto offset = ADDRESS - early::early_base; \
     asm volatile("mov fs, %[seg]; mov eax, %[offset]; mov %[value], [fs:0x0 + eax]; xor eax, eax; mov fs, eax;" \
         : [value] "=r" (temp_value) \
         : [seg] "r" (seg), [offset] "r" (offset) \
@@ -56,9 +56,9 @@ vesa::mode_info_block_t mode_info_block;
 #define early_log(STRING)                                                      \
   {                                                                            \
     uint32_t c;                                                                \
-    early_read_32(early_logs_count_address, c);                                \
-    early_write_32(early_logs_address + c * 4, STRING);                        \
-    early_write_32(early_logs_count_address, c + 1);                           \
+    early_read_32(early::early_logs_count_address, c);                                \
+    early_write_32(early::early_logs_address + c * 4, STRING);                        \
+    early_write_32(early::early_logs_count_address, c + 1);                           \
   }
 
 /* VESA */
@@ -128,17 +128,17 @@ uint32_t detect_memory_e820(){
 
 void detect_memory(){
     // Init it to 0
-    early_write_32(e820_entry_count_address, 0);
+    early_write_32(early::e820_entry_count_address, 0);
 
     auto entry_count = detect_memory_e820();
-    early_write_32(e820_entry_count_address, entry_count);
+    early_write_32(early::e820_entry_count_address, entry_count);
 
     auto smap = reinterpret_cast<uint32_t*>((&bios_e820_entries[0]));
 
     // Copy to early memory
     for(uint16_t i = 0; i < entry_count; ++i){
         for(uint16_t j = 0; j < 5; ++j){
-            early_write_32(e820_entry_address + (i * 5 + j) * 4, *smap);
+            early_write_32(early::e820_entry_address + (i * 5 + j) * 4, *smap);
             ++smap;
         }
     }
@@ -225,10 +225,10 @@ void setup_vesa(){
             }
         }
 
-        early_write_32(vesa_enabled_address, 0);
+        early_write_32(early::vesa_enabled_address, 0);
 
         if(!one || best_mode == 0xFFFF){
-            early_write_32(vesa_enabled_address, 0);
+            early_write_32(early::vesa_enabled_address, 0);
         } else {
             best_mode = best_mode | 0x4000;
 
@@ -242,16 +242,16 @@ void setup_vesa(){
                     : "=a"(return_code)
                     : "a"(0x4F02), "b"(best_mode));
 
-                early_write_32(vesa_enabled_address, return_code == 0x4F ? 1 : 0);
+                early_write_32(early::vesa_enabled_address, return_code == 0x4F ? 1 : 0);
 
                 auto value = reinterpret_cast<uint32_t*>(&mode_info_block);
 
                 // Copy to early memory
                 for(uint16_t i = 0; i < 256 / 4; ++i){
-                    early_write_32(vesa_mode_info_address + i * 4, *value++);
+                    early_write_32(early::vesa_mode_info_address + i * 4, *value++);
                 }
             } else {
-                early_write_32(vesa_enabled_address, 0);
+                early_write_32(early::vesa_enabled_address, 0);
             }
         }
     }
@@ -410,7 +410,7 @@ void setup_gdt(){
 
     //2. Init TSS Descriptor
 
-    uint32_t base = tss_address;;
+    uint32_t base = early::tss_address;
     uint32_t limit = base + sizeof(gdt::task_state_segment_t);
 
     auto tss_selector = reinterpret_cast<gdt::tss_descriptor_t*>(&gdt[6]);
@@ -441,7 +441,7 @@ void setup_gdt(){
 
     //5. Zero-out the TSS
     for(uint16_t i = 0; i < 128; i += 4){
-        early_write_32(tss_address + i * 4, 0);
+        early_write_32(early::tss_address + i * 4, 0);
     }
 }
 
@@ -466,7 +466,7 @@ void  __attribute__ ((noreturn)) rm_main(){
     reset_segments();
 
     // Initialize the number of early logs
-    early_write_32(early_logs_count_address, 0);
+    early_write_32(early::early_logs_count_address, 0);
 
     //Enable VESA
     setup_vesa();

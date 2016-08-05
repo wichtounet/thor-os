@@ -39,15 +39,15 @@ size_t green_shift;
 } //end of anonymous namespace
 
 bool vesa::enabled(){
-    return vesa_enabled();
+    return early::vesa_enabled();
 }
 
 void vesa::disable(){
-    vesa_enabled(false);
+    early::vesa_enabled(false);
 }
 
 bool vesa::init(){
-    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(vesa_mode_info_address);
+    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
 
     size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
 

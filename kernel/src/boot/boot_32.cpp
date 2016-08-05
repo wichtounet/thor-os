@@ -19,10 +19,10 @@ namespace {
 constexpr const size_t PAGE_SIZE = 4096;
 
 void early_log(const char* s){
-    auto c = early_logs_count();
-    auto table = reinterpret_cast<uint32_t*>(early_logs_address);
+    auto c = early::early_logs_count();
+    auto table = reinterpret_cast<uint32_t*>(early::early_logs_address);
     table[c] = reinterpret_cast<uint32_t>(s);
-    early_logs_count(c + 1);
+    early::early_logs_count(c + 1);
 }
 
 typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
@@ -144,7 +144,7 @@ void pm_main(){
     setup_paging();
 
     // TODO This will need to be computed from the init loader
-    kernel_mib(1);
+    early::kernel_mib(1);
 
     //Enable long mode by setting the EFER.LME flag
     enable_long_mode();

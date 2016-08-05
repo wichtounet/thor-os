@@ -12,6 +12,8 @@
 #ifndef EARLY_MEMORY_H
 #define EARLY_MEMORY_H
 
+namespace early {
+
 // The address of the kernel
 constexpr const uint32_t kernel_address = 0x100000;  //1Mib aligned size (kernel_mib)
 
@@ -66,5 +68,7 @@ inline void vesa_enabled(bool value){
 }
 
 constexpr const uint32_t tss_address = 0x904A0; // 104 bytes (aligned to 128)
+
+} // end of namespace early
 
 #endif

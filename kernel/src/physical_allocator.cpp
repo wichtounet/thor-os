@@ -81,14 +81,14 @@ void physical_allocator::early_init(){
     for(uint64_t i = 0; i < e820::mmap_entry_count(); ++i){
         auto& entry = e820::mmap_entry(i);
 
-        if(entry.type == 1 && entry.base == kernel_address){
-            if(entry.size < kernel_mib() * 0x100000){
+        if(entry.type == 1 && entry.base == early::kernel_address){
+            if(entry.size < early::kernel_mib() * 0x100000){
                 break;
             }
 
             current_mmap_entry = &entry;
-            current_mmap_entry_position = entry.base + kernel_mib() * 0x100000;
-            allocated_memory += kernel_mib() * 0x100000;
+            current_mmap_entry_position = entry.base + early::kernel_mib() * 0x100000;
+            allocated_memory += early::kernel_mib() * 0x100000;
 
             found = true;
 

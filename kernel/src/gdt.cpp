@@ -13,5 +13,5 @@ void gdt::flush_tss(){
 }
 
 gdt::task_state_segment_t& gdt::tss(){
-    return *reinterpret_cast<task_state_segment_t*>(tss_address);
+    return *reinterpret_cast<task_state_segment_t*>(early::tss_address);
 }

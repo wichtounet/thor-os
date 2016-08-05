@@ -69,11 +69,11 @@ void logging::finalize(){
     //Starting from there, the messages will be sent to the terminal
     early_mode = false;
 
-    logf(log_level::TRACE, "%u early logs \n", early_logs_count());
+    logf(log_level::TRACE, "%u early logs \n", early::early_logs_count());
 
-    auto table_address = early_logs_address;
+    auto table_address = early::early_logs_address;
 
-    for(size_t i = 0; i < early_logs_count(); ++i){
+    for(size_t i = 0; i < early::early_logs_count(); ++i){
         auto string_address = size_t(*reinterpret_cast<uint32_t*>(table_address + i * 4));
 
         // Print to the virtual debugger

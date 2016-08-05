@@ -121,7 +121,7 @@ void paging::early_init(){
     paging::virtual_early_page = 0x100000;
 
     // The paging structures lies in memory just after the kernel code itself
-    paging::virtual_paging_start = kernel_address + 0x100000 * kernel_mib();
+    paging::virtual_paging_start = early::kernel_address + 0x100000 * early::kernel_mib();
 
     //Compute the start address of each structure
     paging::virtual_pml4t_start = virtual_paging_start;
@@ -195,7 +195,7 @@ void paging::init(){
     virt = early_map_page_clear(current_pt_phys);
     auto page_table_ptr = reinterpret_cast<uint64_t*>(virt);
     auto phys = PRESENT | WRITE;
-    for(size_t i = 0; i < 256 + 256 * kernel_mib(); ++i){
+    for(size_t i = 0; i < 256 + 256 * early::kernel_mib(); ++i){
         *page_table_ptr = phys;
 
         phys += paging::PAGE_SIZE;
