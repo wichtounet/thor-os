@@ -16,5 +16,12 @@ std::string vsprintf(const std::string& format, va_list va);
 void printf(const std::string& format, ...);
 void vprintf(const std::string& format, va_list va);
 
-//Definition of this function must be provided
+void sprintf_raw(char* buffer, size_t n, const char* format, ...);
+void vsprintf_raw(char* buffer, size_t n, const char* format, va_list va);
+
+void printf_raw(const char* format, ...);
+void vprintf_raw(const char* format, va_list va);
+
+//Definition of these functions must be provided
 void __printf(const std::string& formatted);
+void __printf_raw(const char* formatted);

@@ -142,15 +142,15 @@ second_step:
         je .end_of_directory
 
         mov ax, [gs:si]
-        cmp ax, 0x454B ; EK
+        cmp ax, 0x4E49 ; NI
         jne .continue
 
         mov ax, [gs:(si+2)]
-        cmp ax, 0x4E52 ; NR
+        cmp ax, 0x5449 ; TI
         jne .continue
 
         mov ax, [gs:(si+4)]
-        cmp ax, 0x4C45 ; LE
+        cmp ax, 0x2020 ; space space
         jne .continue
 
         mov ax, [gs:(si+6)]

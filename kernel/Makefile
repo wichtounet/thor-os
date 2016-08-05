@@ -5,7 +5,7 @@ include ../cpp.mk
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-O_FILES=boot_16_64.o boot_32_64.o src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
+O_FILES=src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
 
 # Ask GCC for the crtbegin and crtend files
 CRTBEGIN_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtbegin.o)

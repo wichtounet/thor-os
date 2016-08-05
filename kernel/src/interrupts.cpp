@@ -12,11 +12,11 @@
 #include "kernel_utils.hpp"
 #include "gdt.hpp"
 #include "scheduler.hpp"
+#include "logging.hpp"
 
 #include "isrs.hpp"
 #include "irqs.hpp"
 #include "syscalls.hpp"
-#include "logging.hpp"
 
 namespace {
 
@@ -93,6 +93,8 @@ void install_idt(){
 
     //Give the IDTR address to the CPU
     asm volatile("lidt [%0]" : : "m" (idtr_64));
+
+    logging::logf(logging::log_level::TRACE, "int: IDT installed %h (base:%h)\n", reinterpret_cast<size_t>(&idtr_64), reinterpret_cast<size_t>(&idt_64[0]));
 }
 
 void install_isrs(){

@@ -7,6 +7,7 @@
 
 #include "vesa_console.hpp"
 #include "vesa.hpp"
+#include "early_memory.hpp"
 
 namespace {
 
@@ -22,7 +23,7 @@ uint32_t _color;
 } //end of anonymous namespace
 
 void vesa_console::init(){
-    auto& block = vesa::mode_info_block;
+    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
 
     _columns = (block.width - (MARGIN + PADDING) * 2) / 8;
     _lines = (block.height - TOP - MARGIN - PADDING) / 16;

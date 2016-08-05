@@ -6,10 +6,10 @@
 //=======================================================================
 
 #include "logging.hpp"
-#include "early_logging.hpp"
 #include "assert.hpp"
 #include "console.hpp"
 #include "virtual_debug.hpp"
+#include "early_memory.hpp"
 #include "vfs/vfs.hpp"
 
 #include <flags.hpp>
@@ -20,14 +20,9 @@ namespace {
 bool early_mode = true;
 bool file = false;
 
-constexpr const size_t MAX_EARLY = 128;
-
-size_t current_early = 0;
-const char* early_logs[MAX_EARLY];
-
 std::string buffer;
 
-const char* level_to_string(logging::log_level level){
+inline const char* level_to_string(logging::log_level level){
     switch(level){
         case logging::log_level::TRACE:
             return "TRACE";
@@ -73,31 +68,34 @@ bool logging::is_file(){
 void logging::finalize(){
     //Starting from there, the messages will be sent to the terminal
     early_mode = false;
-}
 
-void logging::to_file(){
-    //Starting from there, the messages will be sent to the log file
-    file = true;
+    logf(log_level::TRACE, "%u early logs \n", early::early_logs_count());
 
-    for(size_t i = 0; i < early::early_logs_count; ++i){
-        auto early_log = early::early_logs[i];
+    auto table_address = early::early_logs_address;
 
-        auto early_log_str = reinterpret_cast<const char*>(static_cast<size_t>(early_log));
+    for(size_t i = 0; i < early::early_logs_count(); ++i){
+        auto string_address = size_t(*reinterpret_cast<uint32_t*>(table_address + i * 4));
 
-        append_to_file(early_log_str, std::str_len(early_log_str));
+        // Print to the virtual debugger
+        virtual_debug("EARLY: ");
+        virtual_debug(reinterpret_cast<const char*>(string_address));
+        virtual_debug("\n");
     }
 }
 
+void logging::to_file(){
+    thor_assert(false, "logging to file needs revision");
+
+    //Starting from there, the messages will be sent to the log file
+    file = true;
+}
+
 void logging::log(log_level level, const char* s){
-    //First, print to the virtual debugger
-    virtual_debug(level_to_string(level));
-    virtual_debug(": ");
-    virtual_debug(s);
-
-    if(is_early()){
-        thor_assert(current_early < MAX_EARLY, "early log buffer is full");
-
-        early_logs[current_early++] = s;
+    if(!is_early()){
+        // Print to the virtual debugger
+        virtual_debug(level_to_string(level));
+        virtual_debug(": ");
+        virtual_debug(s);
     }
 
     if(is_file()){
@@ -112,19 +110,18 @@ void logging::log(log_level level, const std::string& s){
 }
 
 void logging::logf(log_level level, const char* s, va_list va){
-    thor_assert(!is_early(), "logf(level,string,...) is not valid in early mode");
-
-    auto formatted = vsprintf(s, va);
-    log(level, formatted.c_str());
+    char buffer[1024];
+    vsprintf_raw(buffer, 1024, s, va);
+    log(level, buffer);
 }
 
 void logging::logf(log_level level, const char* s, ...){
-    thor_assert(!is_early(), "logf(level,string,...) is not valid in early mode");
-
     va_list va;
     va_start(va, s);
-    auto formatted = vsprintf(s, va);
-    va_end(va);
 
-    log(level, formatted.c_str());
+    char buffer[1024];
+    vsprintf_raw(buffer, 1024, s, va);
+    log(level, buffer);
+
+    va_end(va);
 }
