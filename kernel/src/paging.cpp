@@ -116,6 +116,8 @@ size_t early_map_page_clear(size_t physical){
 } //end of anonymous namespace
 
 void paging::early_init(){
+    logging::logf(logging::log_level::TRACE, "Kernel occupies %u MiB from %h\n", uint64_t(early::kernel_mib()), uint64_t(early::kernel_address));
+
     // This page is used for mapping the physical address of the paging structure before
     // paging is completely initialized. It won't be used after final paging is setup
     paging::virtual_early_page = 0x100000;
