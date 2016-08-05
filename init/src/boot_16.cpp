@@ -396,9 +396,9 @@ gdt::gdt_descriptor_t user_data_descriptor(){
 }
 
 //TODO On some machines, this should be aligned to 16 bits
-static gdt::gdt_descriptor_t gdt[8];
+gdt::gdt_descriptor_t gdt[8];
 
-static gdt::gdt_ptr gdtr;
+gdt::gdt_ptr gdtr;
 
 void setup_gdt(){
     //1. Init GDT descriptor
