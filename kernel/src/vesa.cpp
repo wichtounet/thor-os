@@ -10,7 +10,7 @@
 #include "vesa.hpp"
 #include "paging.hpp"
 #include "virtual_allocator.hpp"
-
+#include "early_memory.hpp"
 #include "console.hpp"
 #include "kernel.hpp"
 
@@ -38,8 +38,16 @@ size_t green_shift;
 
 } //end of anonymous namespace
 
+bool vesa::enabled(){
+    return vesa_enabled();
+}
+
+void vesa::disable(){
+    vesa_enabled(false);
+}
+
 bool vesa::init(){
-    auto& block = vesa::mode_info_block;
+    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(vesa_mode_info_address);
 
     size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
 

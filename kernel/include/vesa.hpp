@@ -94,11 +94,9 @@ struct mode_info_block_t {
 
 static_assert(sizeof(mode_info_block_t) == 256, "The size of a mode info block is 256 bytes");
 
-extern vbe_info_block_t vbe_info_block;
-extern bool vesa_enabled;
-extern mode_info_block_t mode_info_block;
-
 bool init();
+bool enabled();
+void disable();
 
 uint32_t make_color(uint8_t r, uint8_t g, uint8_t b);
 

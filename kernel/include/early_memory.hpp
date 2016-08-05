@@ -54,4 +54,15 @@ inline void e820_entry_count(uint32_t value){
     *reinterpret_cast<uint32_t*>(e820_entry_count_address) = value;
 }
 
+constexpr const uint32_t vesa_enabled_address = 0x9039C;   // 4 bytes (32 bits)
+constexpr const uint32_t vesa_mode_info_address = 0x903A0; // 256 bytes
+
+inline bool vesa_enabled(){
+    return static_cast<bool>(*reinterpret_cast<uint32_t*>(vesa_enabled_address));
+}
+
+inline void vesa_enabled(bool value){
+    *reinterpret_cast<uint32_t*>(vesa_enabled_address) = value ? 1 : 0;
+}
+
 #endif

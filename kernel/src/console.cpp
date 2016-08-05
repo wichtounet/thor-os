@@ -84,7 +84,7 @@ void print_signed(D number){
 } //end of anonymous namespace
 
 void init_console(){
-    text = !vesa::vesa_enabled;
+    text = !vesa::enabled();
 
     if(text){
         t_console.init();

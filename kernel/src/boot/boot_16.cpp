@@ -11,8 +11,8 @@
 #include "boot/boot_32.hpp"
 
 #include "gdt.hpp"
-#include "e820.hpp" //Just for the address of the e820 map
-#include "vesa.hpp"
+#include "e820.hpp" // For the types
+#include "vesa.hpp" // For the types
 #include "early_memory.hpp"
 
 //The Task State Segment
@@ -20,11 +20,10 @@ gdt::task_state_segment_t gdt::tss;
 
 e820::bios_e820_entry bios_e820_entries[e820::MAX_E820_ENTRIES];
 
-vesa::vbe_info_block_t vesa::vbe_info_block;
-vesa::mode_info_block_t vesa::mode_info_block;
-bool vesa::vesa_enabled = false;
-
 namespace {
+
+vesa::vbe_info_block_t vbe_info_block;
+vesa::mode_info_block_t mode_info_block;
 
 // Note: it seems to be impossible to pass parameters > 16 bit to
 // functions, thus the macros. This should be fixable by
@@ -152,8 +151,8 @@ uint16_t read_mode(uint16_t i){
     uint16_t mode;
     asm volatile("mov gs, %2; mov si, %1; add si, %3; mov %0, gs:[si]"
         : "=a" (mode)
-        : "rm" (vesa::vbe_info_block.video_modes_ptr[0]),
-          "rm" (vesa::vbe_info_block.video_modes_ptr[1]),
+        : "rm" (vbe_info_block.video_modes_ptr[0]),
+          "rm" (vbe_info_block.video_modes_ptr[1]),
           "rm" (i));
     return mode;
 }
@@ -172,15 +171,15 @@ constexpr bool bit_set(const T& value, uint8_t bit){
 }
 
 void setup_vesa(){
-    vesa::vbe_info_block.signature[0] = 'V';
-    vesa::vbe_info_block.signature[1] = 'B';
-    vesa::vbe_info_block.signature[2] = 'E';
-    vesa::vbe_info_block.signature[3] = '2';
+    vbe_info_block.signature[0] = 'V';
+    vbe_info_block.signature[1] = 'B';
+    vbe_info_block.signature[2] = 'E';
+    vbe_info_block.signature[3] = '2';
 
     uint16_t return_code;
     asm volatile ("int 0x10"
         : "=a"(return_code)
-        : "a"(0x4F00), "D"(&vesa::vbe_info_block)
+        : "a"(0x4F00), "D"(&vbe_info_block)
         : "memory");
 
     if(return_code == 0x4F){
@@ -192,7 +191,7 @@ void setup_vesa(){
         for(uint16_t i = 0, mode = read_mode(i); mode != 0xFFFF; mode = read_mode(2 * ++i)){
             asm volatile ("int 0x10"
                 : "=a"(return_code)
-                : "a"(0x4F01), "c"(mode), "D"(&vesa::mode_info_block)
+                : "a"(0x4F01), "c"(mode), "D"(&mode_info_block)
                 : "memory");
 
             //Make sure the mode is supported by get mode info function
@@ -201,23 +200,23 @@ void setup_vesa(){
             }
 
             //Check that the mode support Linear Frame Buffer
-            if(!bit_set(vesa::mode_info_block.mode_attributes, 7)){
+            if(!bit_set(mode_info_block.mode_attributes, 7)){
                 continue;
             }
 
             //Make sure it is a packed pixel or direct color model
-            if(vesa::mode_info_block.memory_model != 4 && vesa::mode_info_block.memory_model != 6){
+            if(mode_info_block.memory_model != 4 && mode_info_block.memory_model != 6){
                 continue;
             }
 
-            if(vesa::mode_info_block.bpp != DEFAULT_BPP){
+            if(mode_info_block.bpp != DEFAULT_BPP){
                 continue;
             }
 
             one = true;
 
-            auto x_res = vesa::mode_info_block.width;
-            auto y_res = vesa::mode_info_block.height;
+            auto x_res = mode_info_block.width;
+            auto y_res = mode_info_block.height;
 
             auto size_diff = abs_diff(x_res, DEFAULT_WIDTH) + abs_diff(y_res, DEFAULT_HEIGHT);
 
@@ -227,14 +226,16 @@ void setup_vesa(){
             }
         }
 
+        early_write_32(vesa_enabled_address, 0);
+
         if(!one || best_mode == 0xFFFF){
-            vesa::vesa_enabled = false;
+            early_write_32(vesa_enabled_address, 0);
         } else {
             best_mode = best_mode | 0x4000;
 
             asm volatile ("int 0x10"
                 : "=a"(return_code)
-                : "a"(0x4F01), "c"(best_mode), "D"(&vesa::mode_info_block)
+                : "a"(0x4F01), "c"(best_mode), "D"(&mode_info_block)
                 : "memory");
 
             if(return_code == 0x4F){
@@ -242,9 +243,16 @@ void setup_vesa(){
                     : "=a"(return_code)
                     : "a"(0x4F02), "b"(best_mode));
 
-                vesa::vesa_enabled = return_code == 0x4F;
+                early_write_32(vesa_enabled_address, return_code == 0x4F ? 1 : 0);
+
+                auto value = reinterpret_cast<uint32_t*>(&mode_info_block);
+
+                // Copy to early memory
+                for(uint16_t i = 0; i < 256 / 4; ++i){
+                    early_write_32(vesa_mode_info_address + i * 4, *value++);
+                }
             } else {
-                vesa::vesa_enabled = false;
+                early_write_32(vesa_enabled_address, 0);
             }
         }
     }

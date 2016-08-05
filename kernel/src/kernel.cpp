@@ -76,8 +76,8 @@ void  kernel_main(){
     _init();
 
     //Try to init VESA
-    if(vesa::vesa_enabled && !vesa::init()){
-        vesa::vesa_enabled = false;
+    if(vesa::enabled() && !vesa::init()){
+        vesa::disable();
 
         //Unfortunately, we are in long mode, we cannot go back
         //to text mode for now
