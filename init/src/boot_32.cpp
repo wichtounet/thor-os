@@ -37,7 +37,7 @@ void early_log(const char* s){
     early::early_logs_count(c + 1);
 }
 
-void virtual_debug(const uint32_t& value){
+void virtual_debug(uint32_t value){
     char buffer[32];
 
     if(value == 0){
@@ -64,6 +64,12 @@ void virtual_debug(const uint32_t& value){
     buffer[j] = '\0';
 
     ::virtual_debug(buffer);
+}
+
+void virtual_debug_var(const char* message, uint32_t value){
+    ::virtual_debug(message);
+    virtual_debug(value);
+    ::virtual_debug("\n");
 }
 
 const uint32_t PML4T = 0x70000;
@@ -121,6 +127,32 @@ void setup_paging(){
     }
 
     early_log("Paging configured");
+}
+
+void setup_kernel_paging(uint32_t kernel_mib){
+    static_assert(early::kernel_address == 0x100000, "Only 0x100000 has been implemented");
+
+    //Map all the kernel
+
+    auto current_pt = 0;
+
+    auto page_table_ptr = reinterpret_cast<uint32_t*>(PML4T + 3 * PAGE_SIZE + 256 * 8);
+    auto phys = 0x1000003;
+    for(uint32_t i = 256; i < (1 + kernel_mib) * 256; ++i){
+        *page_table_ptr = phys;
+
+        phys += PAGE_SIZE;
+
+        //A page entry is 64 bit in size
+        page_table_ptr += 2;
+
+        if(i % 512 == 0){
+            ++current_pt;
+
+            //PD[current_pt] -> PT
+            *reinterpret_cast<uint32_t*>(PML4T + 2 * PAGE_SIZE + current_pt * 8) = PML4T + (3 + current_pt) * PAGE_SIZE + 0x7;
+        }
+    }
 }
 
 void enable_long_mode(){
@@ -270,6 +302,16 @@ bool read_sector(uint64_t start, void* data){
     return true;
 }
 
+bool read_cluster(uint64_t start, char* data, uint16_t sectors_per_cluster){
+    for(uint16_t i = 0; i < sectors_per_cluster; ++i){
+        if(!read_sector(start + i, data + i * 512)){
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void suspend_init(const char* message){
     early_log(message);
     asm volatile("cli; hlt");
@@ -296,7 +338,127 @@ void detect_disks(){
     }
 
     // Extract the start of the partition
-    uint16_t partition_start = *reinterpret_cast<uint16_t*>(block_buffer + 0x1be);
+    uint16_t partition_start = *reinterpret_cast<uint16_t*>(block_buffer + 0x1be + 8);
+
+    virtual_debug_var("partition_start: ", partition_start);
+
+    // Read the VBR
+    if(!read_sector(partition_start, block_buffer)){
+        suspend_init("Unable to read VBR");
+    }
+
+    // Extract FAT informations
+    auto sectors_per_cluster = *reinterpret_cast<uint8_t*>(block_buffer + 13);
+    auto reserved_sectors = *reinterpret_cast<uint16_t*>(block_buffer + 14);
+    auto number_of_fat = *reinterpret_cast<uint8_t*>(block_buffer + 16);
+    auto sectors_per_fat = *reinterpret_cast<uint32_t*>(block_buffer + 36);
+    auto root_dir_start = *reinterpret_cast<uint16_t*>(block_buffer + 44);
+
+    uint16_t fat_begin = partition_start + reserved_sectors;
+    uint32_t cluster_begin = number_of_fat * sectors_per_fat + fat_begin;
+    uint16_t entries_per_sector = 512 / 32;
+    uint16_t entries_per_cluster = entries_per_sector * sectors_per_cluster;
+
+    virtual_debug_var("sectors_per_cluster: ", sectors_per_cluster);
+    virtual_debug_var("reserved_sectors: ", reserved_sectors);
+    virtual_debug_var("number_of_fat: ", number_of_fat);
+    virtual_debug_var("sectors_per_fat: ", sectors_per_fat);
+    virtual_debug_var("root_dir_start: ", root_dir_start);
+    virtual_debug_var("fat_begin: ", fat_begin);
+    virtual_debug_var("cluster_begin: ", cluster_begin);
+    virtual_debug_var("entries_per_cluster: ", entries_per_cluster);
+
+    auto root_lba = (root_dir_start - 2) * sectors_per_cluster + cluster_begin;
+
+    if(!read_sector(root_lba, block_buffer)){
+        suspend_init("Unable to read root directory");
+    }
+
+    uint16_t cluster_low = 0;
+    uint16_t cluster_high = 0;
+    uint32_t kernel_size = 0;
+
+    for(size_t i = 0; i < entries_per_cluster; ++i){
+        auto sector_index = i % entries_per_sector;
+
+        if(*reinterpret_cast<uint8_t*>(block_buffer + sector_index * 32) == 0x0){
+            suspend_init("Kernel executable not found");
+        }
+
+        if(*reinterpret_cast<uint32_t*>(block_buffer + sector_index * 32) == 0x4E52454B){ //NREK
+            if(*reinterpret_cast<uint32_t*>(block_buffer + sector_index * 32 + 4) == 0x20204C45){ //spspLE
+                if(*reinterpret_cast<uint32_t*>(block_buffer + sector_index * 32 + 6) == 0x49422020){ //IBspsp
+                    if(*reinterpret_cast<uint8_t*>(block_buffer + sector_index * 32 + 10) == 0x4E){ //N
+                        cluster_high = *reinterpret_cast<uint16_t*>(block_buffer + sector_index * 32 + 20);
+                        cluster_low = *reinterpret_cast<uint16_t*>(block_buffer + sector_index * 32 + 26);
+                        kernel_size = *reinterpret_cast<uint32_t*>(block_buffer + sector_index * 32 + 28);
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Read the next sector
+        if(i > 0 && i % entries_per_sector == 0){
+            if(!read_sector(root_lba + i / entries_per_sector, block_buffer)){
+                suspend_init("Unable to read root directory");
+            }
+        }
+    }
+
+    auto kernel_cluster = (uint32_t(cluster_high) << 16) + cluster_low;
+
+    virtual_debug_var("kernel_cluster_first: ", kernel_cluster);
+    virtual_debug_var("kernel_size: ", kernel_size);
+
+    auto kernel_mib = kernel_size / 0x100000 + kernel_size % 0x100000 == 0 ? 0 : 1;
+    early::kernel_mib(kernel_mib);
+
+    setup_kernel_paging(kernel_mib);
+
+    auto current_address = early::kernel_address;
+    uint16_t clusters_read = 0;
+
+    while(true){
+        auto kernel_lba = (kernel_cluster - 2) * sectors_per_cluster + cluster_begin;
+        if(!read_cluster(kernel_lba, reinterpret_cast<char*>(current_address), sectors_per_cluster)){
+            suspend_init("Failed to read cluster from disk");
+        }
+
+        ++clusters_read;
+
+        auto fat_sector = fat_begin + (kernel_cluster * 4) / 512;
+
+        if(!read_sector(fat_sector, block_buffer)){
+            suspend_init("Unable to read FAT sector");
+        }
+
+        auto* fat_table = reinterpret_cast<uint32_t*>(block_buffer);
+
+        uint32_t next_cluster = fat_table[kernel_cluster % 128] & 0x0FFFFFFF;
+
+        if(next_cluster == 0x0){
+            suspend_init("Invalid FAT cluster: next cluster is free");
+        }
+
+        if(next_cluster == 0x1){
+            suspend_init("Invalid FAT cluster: next cluster is reserved");
+        }
+
+        if(next_cluster == 0x0FFFFFF7){
+            suspend_init("Invalid FAT cluster: next cluster is corrupted");
+        }
+
+        if(next_cluster == 0x0FFFFFF8 || next_cluster == 0x0FFFFFFF){
+            break;
+        }
+
+        kernel_cluster = next_cluster;
+        current_address += 512 * sectors_per_cluster;
+    }
+
+    virtual_debug_var("Number of clusters read for kernel: ", clusters_read);
 
     // Reset interrupt status
     out_byte(ATA_PRIMARY + ATA_DEV_CTL, 0);
@@ -329,9 +491,6 @@ void pm_main(){
 
     // Initialize serial transmission (for debugging in Qemu)
     serial_init();
-
-    // TODO This will need to be computed from the init loader
-    early::kernel_mib(1);
 
     //Enable long mode by setting the EFER.LME flag
     enable_long_mode();
