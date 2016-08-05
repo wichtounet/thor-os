@@ -187,7 +187,7 @@ void __attribute__((noreturn)) lm_jump(){
     //place and then call the function
     asm volatile("jmp 0x18:fake_label; fake_label:");
 
-    //TODO kernel_main();
+    reinterpret_cast<void (*)()>(early::kernel_address)();
 
     __builtin_unreachable();
 }
@@ -502,9 +502,6 @@ void pm_main(){
     enable_paging();
 
     detect_disks();
-
-    asm volatile("cli; hlt");
-    __builtin_unreachable();
 
     //long mode jump
     lm_jump();
