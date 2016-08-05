@@ -11,6 +11,7 @@
 namespace hpet {
 
 bool install();
+void late_install();
 
 } //end of namespace hpet
 

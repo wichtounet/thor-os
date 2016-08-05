@@ -25,5 +25,13 @@ bool hpet::install(){
 
     logging::logf(logging::log_level::TRACE, "hpet: Found ACPI HPET table\n");
 
-    return false;
+    return true;
+}
+
+void hpet::late_install(){
+    if(hpet::install()){
+        logging::logf(logging::log_level::TRACE, "hpet: Late install suceeded\n");
+
+        //TODO Register the timer to the timer system
+    }
 }

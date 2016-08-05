@@ -16,6 +16,8 @@
 #include "arch.hpp"
 #include "assert.hpp"
 
+#include "drivers/hpet.hpp"
+
 namespace {
 
 // This is copied from acexcep.h
@@ -104,6 +106,11 @@ void initialize_acpica(){
     acpi_initialized = true;
 
     logging::logf(logging::log_level::DEBUG, "acpi:: Finished initialization of ACPICA\n");
+
+    // Here we initialize the drivers that need ACPI
+    // TODO This is not good coupling: Find a better solution
+
+    hpet::late_install();
 }
 
 uint64_t acpi_read(const ACPI_GENERIC_ADDRESS& address){
