@@ -9,10 +9,12 @@
 
 #include "boot/boot_32.hpp"
 #include "kernel.hpp"
-#include "paging.hpp"
 #include "early_memory.hpp"
 
 namespace {
+
+//The size of page in memory
+constexpr const size_t PAGE_SIZE = 4096;
 
 void early_log(const char* s){
     auto c = early_logs_count();
@@ -64,22 +66,22 @@ void setup_paging(){
     //Link tables (0x3 means Writeable and Supervisor)
 
     //PML4T[0] -> PDPT
-    *reinterpret_cast<uint32_t*>(PML4T) = PML4T + paging::PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T) = PML4T + PAGE_SIZE + 0x7;
 
     //PDPT[0] -> PDT
-    *reinterpret_cast<uint32_t*>(PML4T + 1 * paging::PAGE_SIZE) = PML4T + 2 * paging::PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T + 1 * PAGE_SIZE) = PML4T + 2 * PAGE_SIZE + 0x7;
 
     //PD[0] -> PT
-    *reinterpret_cast<uint32_t*>(PML4T + 2 * paging::PAGE_SIZE) = PML4T + 3 * paging::PAGE_SIZE + 0x7;
+    *reinterpret_cast<uint32_t*>(PML4T + 2 * PAGE_SIZE) = PML4T + 3 * PAGE_SIZE + 0x7;
 
     //Map the first MiB
 
-    auto page_table_ptr = reinterpret_cast<uint32_t*>(PML4T + 3 * paging::PAGE_SIZE);
+    auto page_table_ptr = reinterpret_cast<uint32_t*>(PML4T + 3 * PAGE_SIZE);
     auto phys = 0x3;
     for(uint32_t i = 0; i < 256; ++i){
         *page_table_ptr = phys;
 
-        phys += paging::PAGE_SIZE;
+        phys += PAGE_SIZE;
 
         //A page entry is 64 bit in size
         page_table_ptr += 2;
