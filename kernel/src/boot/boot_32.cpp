@@ -7,6 +7,8 @@
 
 #define CODE_32
 
+#include <types.hpp>
+
 #include "boot/boot_32.hpp"
 #include "kernel.hpp"
 #include "early_memory.hpp"
