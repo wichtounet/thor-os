@@ -14,6 +14,12 @@
 #include "kernel.hpp"
 #include "early_memory.hpp"
 #include "virtual_debug.hpp"
+#include "ata_constants.hpp"
+
+static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
+static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
+static_assert(sizeof(uint32_t) == 4, "uint32_t must be 4 bytes long");
+static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes long");
 
 namespace {
 
@@ -31,15 +37,34 @@ void early_log(const char* s){
     early::early_logs_count(c + 1);
 }
 
-typedef unsigned int uint8_t __attribute__((__mode__(__QI__)));
-typedef unsigned int uint16_t __attribute__ ((__mode__ (__HI__)));
-typedef unsigned int uint32_t __attribute__ ((__mode__ (__SI__)));
-typedef unsigned int uint64_t __attribute__ ((__mode__ (__DI__)));
+void virtual_debug(const uint32_t& value){
+    char buffer[32];
 
-static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
-static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
-static_assert(sizeof(uint32_t) == 4, "uint32_t must be 4 bytes long");
-static_assert(sizeof(uint64_t) == 8, "uint64_t must be 8 bytes long");
+    if(value == 0){
+        ::virtual_debug("0");
+        return;
+    }
+
+    char int_buffer[20];
+    int i = 0;
+    auto rem = value;
+
+    while(rem != 0){
+        int_buffer[i++] = '0' + rem  % 10;
+        rem /= 10;
+    }
+
+    --i;
+
+    size_t j = 0;
+    for(; i >= 0; --i){
+        buffer[j++] = int_buffer[i];
+    }
+
+    buffer[j] = '\0';
+
+    ::virtual_debug(buffer);
+}
 
 const uint32_t PML4T = 0x70000;
 
@@ -145,6 +170,139 @@ void serial_init() {
     out_byte(COM1_PORT + 4, 0x0B);    // IRQs enabled, RTS/DSR set
 }
 
+inline void ata_400ns_delay(uint16_t controller){
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+    in_byte(controller + ATA_STATUS);
+}
+
+uint8_t wait_for_controller(uint16_t controller, uint8_t mask, uint8_t value, uint16_t timeout){
+    uint8_t status;
+    do {
+        // Sleep at least 400ns before reading the status register
+        ata_400ns_delay(controller);
+
+        // Final read of the controller status
+        status = in_byte(controller + ATA_STATUS);
+    } while ((status & mask) != value && --timeout);
+
+    return timeout;
+}
+
+bool ata_select_device(){
+    auto wait_mask = ATA_STATUS_BSY | ATA_STATUS_DRQ;
+
+    if(!wait_for_controller(ATA_PRIMARY, wait_mask, 0, 10000)){
+        return false;
+    }
+
+    //Indicate the selected device
+    out_byte(ATA_PRIMARY + ATA_DRV_HEAD, 0xA0 | (MASTER_BIT << 4));
+
+    if(!wait_for_controller(ATA_PRIMARY, wait_mask, 0, 10000)){
+        return false;
+    }
+
+    return true;
+}
+
+bool read_sector(uint64_t start, void* data){
+    //Select the device
+    if(!ata_select_device()){
+        return false;
+    }
+
+    uint8_t sc = start & 0xFF;
+    uint8_t cl = (start >> 8) & 0xFF;
+    uint8_t ch = (start >> 16) & 0xFF;
+    uint8_t hd = (start >> 24) & 0x0F;
+
+    //Process the command
+    out_byte(ATA_PRIMARY + ATA_NSECTOR, 1);
+    out_byte(ATA_PRIMARY + ATA_SECTOR, sc);
+    out_byte(ATA_PRIMARY + ATA_LCYL, cl);
+    out_byte(ATA_PRIMARY + ATA_HCYL, ch);
+    out_byte(ATA_PRIMARY + ATA_DRV_HEAD, (1 << 6) | (MASTER_BIT << 4) | hd);
+    out_byte(ATA_PRIMARY + ATA_COMMAND, ATA_READ_BLOCK);
+
+    //Wait at most 30 seconds for BSY flag to be cleared
+    if(!wait_for_controller(ATA_PRIMARY, ATA_STATUS_BSY, 0, 30000)){
+        return false;
+    }
+
+    //Verify if there are errors
+    if(in_byte(ATA_PRIMARY + ATA_STATUS) & ATA_STATUS_ERR){
+        return false;
+    }
+
+    // Polling
+
+    while(true){
+        ata_400ns_delay(ATA_PRIMARY);
+
+        auto status = in_byte(ATA_PRIMARY + ATA_STATUS);
+
+        if(status & ATA_STATUS_BSY){
+            continue;
+        }
+
+        if(status & ATA_STATUS_ERR || status & ATA_STATUS_DF){
+            return false;
+        }
+
+        if(status & ATA_STATUS_DRQ){
+            break;
+        }
+    }
+
+    //Read the disk sectors
+    uint16_t* buffer = reinterpret_cast<uint16_t*>(data);
+    for(int i = 0; i < 256; ++i){
+        *buffer++ = in_word(ATA_PRIMARY + ATA_DATA);
+    }
+
+    return true;
+}
+
+void suspend_init(const char* message){
+    early_log(message);
+    asm volatile("cli; hlt");
+    __builtin_unreachable();
+}
+
+void detect_disks(){
+    // Disable all interrupts
+    out_byte(ATA_PRIMARY + ATA_DEV_CTL, ATA_CTL_nIEN);
+    out_byte(ATA_SECONDARY + ATA_DEV_CTL, ATA_CTL_nIEN);
+
+    // Make sure the primary controller is enabled
+
+    out_byte(ATA_PRIMARY + ATA_NSECTOR, 0xAB);
+    if(in_byte(ATA_PRIMARY + ATA_NSECTOR) != 0xAB){
+        suspend_init("The primary ATA controller is not enabled");
+    }
+
+    char block_buffer[512];
+
+    // Read the MBR
+    if(!read_sector(0, block_buffer)){
+        suspend_init("Unable to read MBR");
+    }
+
+    // Extract the start of the partition
+    uint16_t partition_start = *reinterpret_cast<uint16_t*>(block_buffer + 0x1be);
+
+    // Reset interrupt status
+    out_byte(ATA_PRIMARY + ATA_DEV_CTL, 0);
+    out_byte(ATA_SECONDARY + ATA_DEV_CTL, 0);
+}
+
 } //end of anonymous namespace
 
 bool serial_is_transmit_buffer_empty() {
@@ -183,6 +341,8 @@ void pm_main(){
 
     //Enable paging
     enable_paging();
+
+    detect_disks();
 
     asm volatile("cli; hlt");
     __builtin_unreachable();
