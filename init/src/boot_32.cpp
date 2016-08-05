@@ -137,7 +137,7 @@ void setup_kernel_paging(uint32_t kernel_mib){
     auto current_pt = 0;
 
     auto page_table_ptr = reinterpret_cast<uint32_t*>(PML4T + 3 * PAGE_SIZE + 256 * 8);
-    auto phys = 0x1000003;
+    auto phys = 0x100003;
     for(uint32_t i = 256; i < (1 + kernel_mib) * 256; ++i){
         *page_table_ptr = phys;
 
@@ -146,7 +146,7 @@ void setup_kernel_paging(uint32_t kernel_mib){
         //A page entry is 64 bit in size
         page_table_ptr += 2;
 
-        if(i % 512 == 0){
+        if(i % 511 == 0){
             ++current_pt;
 
             //PD[current_pt] -> PT
