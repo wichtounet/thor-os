@@ -590,7 +590,7 @@ template<>
 inline std::string to_string<int64_t>(const int64_t& value){
     if(value < 0){
         std::string s("-");
-        s += to_string(static_cast<uint64_t>(value));
+        s += to_string(static_cast<uint64_t>(-value));
         return std::move(s);
     } else {
         return to_string(static_cast<uint64_t>(value));
@@ -666,7 +666,7 @@ template<>
 inline void to_raw_string<int64_t>(const int64_t& value, char* buffer, size_t n){
     if(value < 0){
         *buffer = '-';
-        to_raw_string(static_cast<uint64_t>(value), buffer + 1, n - 1);
+        to_raw_string(static_cast<uint64_t>(-value), buffer + 1, n - 1);
     } else {
         to_raw_string(static_cast<uint64_t>(value), buffer, n);
     }
