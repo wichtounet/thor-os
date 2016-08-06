@@ -87,3 +87,29 @@ D_FILES := $(D_FILES) $$(acpica_folder_d_files)
 O_FILES := $(O_FILES) $$(acpica_folder_o_files)
 
 endef
+
+# Generate the rules for the CPP files of a directory
+define program_compile_cpp_folder
+
+debug/$(1)/%.cpp.o: $(1)/%.cpp
+	@ mkdir -p debug/$(1)/
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
+	@ $(CXX) -c $$< -o $$@ $(PROGRAM_FLAGS)
+
+folder_cpp_files := $(wildcard $(1)/*.cpp)
+folder_o_files   := $$(folder_cpp_files:%.cpp=debug/%.cpp.o)
+
+O_FILES := $(O_FILES) $$(folder_o_files)
+
+endef
+
+define program_link_executable
+
+debug/$(1): $(O_FILES)
+	@ mkdir -p debug/
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link $(FILE_COLOR)$$@$(NO_COLOR)"
+	@ $(CXX) -o debug/$(1) $(O_FILES) $(PROGRAM_LINK_FLAGS)
+
+link: debug/$(1)
+
+endef
