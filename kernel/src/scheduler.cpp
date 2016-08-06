@@ -953,3 +953,16 @@ void scheduler::queue_system_process(scheduler::pid_t pid){
 void scheduler::queue_async_init_task(void (*fun)()){
     init_tasks.emplace_back(fun);
 }
+
+void scheduler::frequency_updated(uint64_t old_frequency, uint64_t new_frequency){
+    // Cannot be interrupted during frequency update
+    direct_int_lock lock;
+
+    double ratio = old_frequency / double(new_frequency);
+
+    for(auto& process : pcb){
+        if(process.state == process_state::SLEEPING){
+            process.sleep_timeout *= ratio;
+        }
+    }
+}

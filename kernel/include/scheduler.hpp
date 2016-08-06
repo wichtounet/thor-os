@@ -64,6 +64,11 @@ void queue_system_process(pid_t pid);
  */
 void queue_async_init_task(void (*fun)());
 
+/*!
+ * \brief Lets the scheduler know that the timer frequency has been updated
+ */
+void frequency_updated(uint64_t old_frequency, uint64_t new_frequency);
+
 } //end of namespace scheduler
 
 #endif

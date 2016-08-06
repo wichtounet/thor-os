@@ -75,7 +75,11 @@ uint64_t timer::frequency(){
 }
 
 void timer::frequency(uint64_t freq){
+    auto old_frequency = _timer_frequency;
+
     _timer_frequency = freq;
 
     logging::logf(logging::log_level::DEBUG, "timer: Frequency set to %u Hz\n", freq);
+
+    scheduler::frequency_updated(old_frequency, _timer_frequency);
 }
