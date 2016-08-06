@@ -13,6 +13,7 @@
 #include "acpi.hpp"
 #include "rtc.hpp"
 #include "kernel_utils.hpp"
+#include "vesa.hpp"
 #include "vfs/vfs.hpp"
 
 namespace {
@@ -219,6 +220,38 @@ void sc_datetime(interrupt::syscall_regs* regs){
     *date = rtc::all_data();
 }
 
+void sc_vesa_width(interrupt::syscall_regs* regs){
+    regs->rax = vesa::get_width();
+}
+
+void sc_vesa_height(interrupt::syscall_regs* regs){
+    regs->rax = vesa::get_height();
+}
+
+void sc_vesa_shift_x(interrupt::syscall_regs* regs){
+    regs->rax = vesa::get_x_shift();
+}
+
+void sc_vesa_shift_y(interrupt::syscall_regs* regs){
+    regs->rax = vesa::get_y_shift();
+}
+
+void sc_vesa_bpsl(interrupt::syscall_regs* regs){
+    regs->rax = vesa::get_bytes_per_scan_line();
+}
+
+void sc_vesa_red_shift(interrupt::syscall_regs* regs){
+    regs->rax = vesa::get_red_shift();
+}
+
+void sc_vesa_green_shift(interrupt::syscall_regs* regs){
+    regs->rax = vesa::get_green_shift();
+}
+
+void sc_vesa_blue_shift(interrupt::syscall_regs* regs){
+    regs->rax = vesa::get_blue_shift();
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -340,6 +373,38 @@ void system_call_entry(interrupt::syscall_regs* regs){
         case 0x666:
             //TODO Do something with return code
             scheduler::kill_current_process();
+            break;
+
+        case 0x1000:
+            sc_vesa_width(regs);
+            break;
+
+        case 0x1001:
+            sc_vesa_height(regs);
+            break;
+
+        case 0x1002:
+            sc_vesa_shift_x(regs);
+            break;
+
+        case 0x1003:
+            sc_vesa_shift_y(regs);
+            break;
+
+        case 0x1004:
+            sc_vesa_bpsl(regs);
+            break;
+
+        case 0x1005:
+            sc_vesa_red_shift(regs);
+            break;
+
+        case 0x1006:
+            sc_vesa_green_shift(regs);
+            break;
+
+        case 0x1007:
+            sc_vesa_blue_shift(regs);
             break;
 
         default:

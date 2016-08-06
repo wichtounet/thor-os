@@ -48,8 +48,8 @@ void mouse_handler(interrupt::syscall_regs*, void*){
         position_y = std::max(int16_t(position_y) + delta_y, 0);
 
         if(vesa::enabled()){
-            position_x = std::min(position_x, uint16_t(vesa::width()));
-            position_y = std::min(position_y, uint16_t(vesa::height()));
+            position_x = std::min(position_x, uint16_t(vesa::get_width()));
+            position_y = std::min(position_y, uint16_t(vesa::get_height()));
         }
 
         logging::logf(logging::log_level::TRACE, "mouse: interrupt %d:%d \n", int64_t(position_x), int64_t(position_y));

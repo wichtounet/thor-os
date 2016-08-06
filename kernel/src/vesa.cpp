@@ -61,8 +61,7 @@ bool vesa::init(){
 
     //Make sure only complete pages are allocated
     if(bytes % paging::PAGE_SIZE != 0){
-        bytes += paging::PAGE_SIZE - (bytes % paging::PAGE_SIZE);
-    }
+        bytes += paging::PAGE_SIZE - (bytes % paging::PAGE_SIZE); }
 
     auto pages = bytes / paging::PAGE_SIZE;
 
@@ -92,14 +91,39 @@ bool vesa::init(){
     return true;
 }
 
-uint64_t vesa::width(){
+uint64_t vesa::get_width(){
     auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
     return block.width;
 }
 
-uint64_t vesa::height(){
+uint64_t vesa::get_height(){
     auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
     return block.height;
+}
+
+uint64_t vesa::get_x_shift(){
+    return x_shift;
+}
+
+uint64_t vesa::get_y_shift(){
+    return y_shift;
+}
+
+uint64_t vesa::get_bytes_per_scan_line(){
+    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
+    return block.bytes_per_scan_line;
+}
+
+uint64_t vesa::get_red_shift(){
+    return red_shift;
+}
+
+uint64_t vesa::get_green_shift(){
+    return green_shift;
+}
+
+uint64_t vesa::get_blue_shift(){
+    return blue_shift;
 }
 
 uint32_t vesa::make_color(uint8_t r, uint8_t g, uint8_t b){

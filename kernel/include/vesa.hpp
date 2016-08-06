@@ -35,8 +35,17 @@ void draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b);
 
 void move_lines_up(size_t y, size_t x, size_t w, size_t lines, size_t n);
 
-uint64_t width();
-uint64_t height();
+uint64_t get_width();
+uint64_t get_height();
+
+uint64_t get_x_shift();
+uint64_t get_y_shift();
+
+uint64_t get_bytes_per_scan_line();
+
+uint64_t get_red_shift();
+uint64_t get_green_shift();
+uint64_t get_blue_shift();
 
 } //end of vesa namespace
 
