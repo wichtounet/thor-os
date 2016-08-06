@@ -32,7 +32,7 @@ bool pit::install(){
     timer::frequency(1000);
 
     if(!interrupt::register_irq_handler(0, timer_handler, nullptr)){
-        logging::logf(logging::log_level::ERROR, "Unable to register PIT 0\n");
+        logging::logf(logging::log_level::ERROR, "Unable to register PIT IRQ handler 0\n");
 
         return false;
     }
@@ -40,4 +40,12 @@ bool pit::install(){
     logging::logf(logging::log_level::TRACE, "PIT Driver Installed\n");
 
     return true;
+}
+
+void pit::remove(){
+    if(!interrupt::unregister_irq_handler(0, timer_handler)){
+        logging::logf(logging::log_level::ERROR, "Unable to unregister PIT IRQ handler 0\n");
+    }
+
+    logging::logf(logging::log_level::TRACE, "PIT Driver Removed\n");
 }

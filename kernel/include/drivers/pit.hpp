@@ -11,6 +11,7 @@
 namespace pit {
 
 bool install();
+void remove();
 
 } //end of namespace pit
 
