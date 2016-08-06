@@ -63,7 +63,7 @@ void timer::tick(){
 
     scheduler::tick();
 
-    if(_timer_ticks % 1000 == 0){
+    if(_timer_ticks % frequency() == 0){
         ++_timer_seconds;
     }
 }
