@@ -17,6 +17,9 @@
 
 #include "drivers/pit.hpp" // For uninstalling it
 
+// TODO Ideally, we should run in periodic mode
+// However, I've not been able to make it work (no interrupt are generated)
+
 namespace {
 
 // Offset of the registers inside the hpet memory
@@ -32,6 +35,8 @@ constexpr const size_t CAPABILITIES_LEGACY = 1 << 15;
 constexpr const size_t CAPABILITIES_64 = 1 << 13;
 
 constexpr const size_t TIMER_CONFIG_ENABLE = 1 << 2;
+constexpr const size_t TIMER_CONFIG_PERIODIC = 1 << 3;
+constexpr const size_t TIMER_CONFIG_PERIODIC_CAP = 1 << 5;
 constexpr const size_t TIMER_CONFIG_64 = 1 << 5;
 
 constexpr const size_t FREQUENCY_GOAL = 1000000; // 1 tick every microseconds
@@ -78,7 +83,6 @@ void timer_handler(interrupt::syscall_regs*, void*){
     // Sets the next event to fire an IRQ
     write_register(timer_comparator_reg(0), read_register(MAIN_COUNTER) + comparator_update);
 }
-
 } //End of anonymous namespace
 
 void hpet::init(){
@@ -164,6 +168,7 @@ void hpet::late_install(){
         write_register(MAIN_COUNTER, 0);
 
         // Initialize timer #0
+        clear_register_bits(timer_configuration_reg(0), TIMER_CONFIG_PERIODIC);
         set_register_bits(timer_configuration_reg(0), TIMER_CONFIG_ENABLE);
         write_register(timer_comparator_reg(0), comparator_update);
 

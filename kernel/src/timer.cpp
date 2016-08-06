@@ -21,6 +21,7 @@ uint64_t _timer_ticks = 0;
 uint64_t _timer_seconds = 0;
 uint64_t _timer_frequency = 0;
 
+//TODO The uptime in seconds with HPET is not correct
 std::string sysfs_uptime(){
     return std::to_string(timer::seconds());
 }
