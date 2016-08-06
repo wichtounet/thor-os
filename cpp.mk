@@ -93,7 +93,7 @@ define program_compile_cpp_folder
 
 debug/$(1)/%.cpp.o: $(1)/%.cpp
 	@ mkdir -p debug/$(1)/
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (program) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
 	@ $(CXX) -c $$< -o $$@ $(PROGRAM_FLAGS)
 
 folder_cpp_files := $(wildcard $(1)/*.cpp)
@@ -107,7 +107,7 @@ define program_link_executable
 
 debug/$(1): $(O_FILES)
 	@ mkdir -p debug/
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link $(FILE_COLOR)$$@$(NO_COLOR)"
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link (program) $(FILE_COLOR)$$@$(NO_COLOR)"
 	@ $(CXX) -o debug/$(1) $(O_FILES) $(PROGRAM_LINK_FLAGS)
 
 link: debug/$(1)
