@@ -28,6 +28,7 @@
 #include "network.hpp"
 #include "vfs/vfs.hpp"
 #include "fs/sysfs.hpp"
+#include "drivers/hpet.hpp"
 
 extern "C" {
 
@@ -100,6 +101,7 @@ void kernel_main(){
 
     // Asynchronously initialized drivers
     acpi::init();
+    hpet::init();
 
     //Install drivers
     timer::install();

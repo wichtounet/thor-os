@@ -11,6 +11,7 @@
 #include "logging.hpp"
 #include "mmap.hpp"
 #include "arch.hpp"
+#include "scheduler.hpp" // For async init
 
 namespace {
 
@@ -42,6 +43,11 @@ void clear_register_bits(size_t reg, uint64_t bits){
 }
 
 } //End of anonymous namespace
+
+void hpet::init(){
+    // HPET needs ACPI
+    scheduler::queue_async_init_task(hpet::late_install);
+}
 
 bool hpet::install(){
     // Find the HPET table

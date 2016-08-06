@@ -13,6 +13,8 @@ namespace hpet {
 bool install();
 void late_install();
 
+void init();
+
 } //end of namespace hpet
 
 #endif
