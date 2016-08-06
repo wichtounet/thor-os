@@ -21,8 +21,6 @@ uint64_t _timer_ticks = 0;
 uint64_t _timer_seconds = 0;
 uint64_t _timer_frequency = 0;
 
-volatile uint64_t _timer_countdown = 0;
-
 std::string sysfs_uptime(){
     return std::to_string(timer::seconds());
 }
@@ -56,10 +54,6 @@ void timer::install(){
 
 void timer::tick(){
     ++_timer_ticks;
-
-    if(_timer_countdown != 0){
-        --_timer_countdown;
-    }
 
     scheduler::tick();
 
