@@ -27,6 +27,7 @@
 #include "kernel_utils.hpp"
 #include "logging.hpp"
 #include "int_lock.hpp"
+#include "timer.hpp"
 
 //Provided by task_switch.s
 extern "C" {
@@ -752,6 +753,7 @@ void scheduler::tick(){
 
     ++current_ticks;
 
+    // Update sleep timeouts
     for(auto& process : pcb){
         if(process.state == process_state::SLEEPING){
             --process.sleep_timeout;
@@ -856,7 +858,10 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     logging::logf(logging::log_level::DEBUG, "Put %u to sleep\n", pid);
 
     pcb[pid].state = process_state::SLEEPING;
-    pcb[pid].sleep_timeout = time;
+
+    // Compute the amount of ticks to sleep
+    auto sleep_ticks = (time * 1000) / timer::frequency() + (time * 1000) % timer::frequency() == 0 ? 0 : 1;
+    pcb[pid].sleep_timeout = sleep_ticks;
 
     reschedule();
 }
