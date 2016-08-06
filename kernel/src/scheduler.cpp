@@ -966,3 +966,9 @@ void scheduler::frequency_updated(uint64_t old_frequency, uint64_t new_frequency
         }
     }
 }
+
+void scheduler::fault(){
+    logging::logf(logging::log_level::DEBUG, "Fault in %u kill it\n", current_pid);
+
+    kill_current_process();
+}

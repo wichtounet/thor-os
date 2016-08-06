@@ -36,6 +36,11 @@ void sbrk(size_t inc);
 void tick();
 void reschedule();
 
+/*!
+ * \brief Indicates a fault in the current process
+ */
+void fault();
+
 void sleep_ms(size_t time);
 void sleep_ms(pid_t pid, size_t time);
 

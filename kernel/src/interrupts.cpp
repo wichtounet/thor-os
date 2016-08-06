@@ -246,9 +246,7 @@ void _fault_handler(interrupt::fault_regs regs){
     double_printf("cr2=%h\n", get_cr2());
     double_printf("cr3=%h\n", get_cr3());
 
-    //TODO Improve that with kind of blue screen
-
-    asm volatile("hlt" : : );
+    scheduler::fault();
 }
 
 void _irq_handler(interrupt::syscall_regs* regs){
