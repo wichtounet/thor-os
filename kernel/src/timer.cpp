@@ -19,6 +19,7 @@ namespace {
 
 uint64_t _timer_ticks = 0;
 uint64_t _timer_seconds = 0;
+uint64_t _timer_frequency = 0;
 
 volatile uint64_t _timer_countdown = 0;
 
@@ -73,4 +74,14 @@ uint64_t timer::ticks(){
 
 uint64_t timer::seconds(){
     return _timer_seconds;
+}
+
+uint64_t timer::frequency(){
+    return _timer_frequency;
+}
+
+void timer::frequency(uint64_t freq){
+    _timer_frequency = freq;
+
+    logging::logf(logging::log_level::DEBUG, "timer: Frequency set to %u Hz\n", freq);
 }

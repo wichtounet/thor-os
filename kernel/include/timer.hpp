@@ -19,6 +19,16 @@ uint64_t seconds();
 
 void tick();
 
+/*!
+ * \brief Return the frequency in Hz of the current timer system.
+ */
+uint64_t frequency();
+
+/*!
+ * \brief Sets the frequency in Hz of the current timer system.
+ */
+void frequency(uint64_t freq);
+
 } //end of timer namespace
 
 #endif
