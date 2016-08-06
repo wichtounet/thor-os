@@ -8,7 +8,7 @@ kernel/debug/kernel.bin: force_look
 init/debug/init.bin: force_look
 	cd init; $(MAKE)
 
-tlib/libtlib.a: force_look
+tlib/debug/libtlib.a: force_look
 	cd tlib; $(MAKE)
 
 bootloader/stage1.bin: force_look
@@ -17,7 +17,7 @@ bootloader/stage1.bin: force_look
 bootloader/stage2.bin: force_look
 	cd bootloader; $(MAKE) stage2.bin
 
-programs: force_look tlib/libtlib.a
+programs: force_look tlib/debug/libtlib.a
 	cd programs/; ${MAKE} dist
 
 compile: bootloader/stage1.bin bootloader/stage2.bin init/debug/init.bin kernel/debug/kernel.bin programs
