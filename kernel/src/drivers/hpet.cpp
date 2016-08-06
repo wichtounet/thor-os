@@ -10,21 +10,48 @@
 #include "acpica.hpp"
 #include "logging.hpp"
 #include "mmap.hpp"
-#include "arch.hpp"
+#include "int_lock.hpp"
+#include "kernel.hpp" // For suspend_kernel
 #include "scheduler.hpp" // For async init
+#include "timer.hpp"     // For setting the frequency
+
+#include "drivers/pit.hpp" // For uninstalling it
 
 namespace {
-
-ACPI_TABLE_HPET* hpet_table;
-uint64_t* hpet_map;
 
 // Offset of the registers inside the hpet memory
 constexpr const size_t CAPABILITIES_REGISTER = 0x0;
 constexpr const size_t GENERAL_CONFIG_REGISTER = 0x10 / 8;
+constexpr const size_t GENERAL_INTERRUPT_REGISTER = 0x20 / 8;
 constexpr const size_t MAIN_COUNTER = 0xF0 / 8;
 
 constexpr const size_t GENERAL_CONFIG_ENABLE = 1 << 0;
 constexpr const size_t GENERAL_CONFIG_LEGACY = 1 << 1;
+
+constexpr const size_t CAPABILITIES_LEGACY = 1 << 15;
+constexpr const size_t CAPABILITIES_64 = 1 << 13;
+
+constexpr const size_t TIMER_CONFIG_ENABLE = 1 << 2;
+constexpr const size_t TIMER_CONFIG_64 = 1 << 5;
+
+constexpr const size_t FREQUENCY_GOAL = 1000000; // 1 tick every microseconds
+
+ACPI_TABLE_HPET* hpet_table;
+uint64_t* hpet_map;
+uint64_t current_frequency;
+volatile uint64_t comparator_update;
+
+uint64_t timer_configuration_reg(uint64_t n){
+    return (0x100 + 0x20 * n) / 8;
+}
+
+uint64_t timer_comparator_reg(uint64_t n){
+    return (0x108 + 0x20 * n) / 8;
+}
+
+uint64_t timer_interrupt_reg(uint64_t n){
+    return (0x110 + 0x20 * n) / 8;
+}
 
 uint64_t read_register(size_t reg){
     return hpet_map[reg];
@@ -40,6 +67,16 @@ void set_register_bits(size_t reg, uint64_t bits){
 
 void clear_register_bits(size_t reg, uint64_t bits){
     write_register(reg, read_register(reg) & ~bits);
+}
+
+void timer_handler(interrupt::syscall_regs*, void*){
+    timer::tick();
+
+    // Clears Tn_INT_STS
+    set_register_bits(GENERAL_INTERRUPT_REGISTER, 1 << 0);
+
+    // Sets the next event to fire an IRQ
+    write_register(timer_comparator_reg(0), read_register(MAIN_COUNTER) + comparator_update);
 }
 
 } //End of anonymous namespace
@@ -70,16 +107,67 @@ void hpet::late_install(){
         hpet_map = static_cast<uint64_t*>(mmap_phys(hpet_table->Address.Address, 1024)); //TODO Check the size
 
         // Disable interrupts: We should not be interrupted from this point on
-        size_t rflags;
-        arch::disable_hwint(rflags);
+        direct_int_lock lock;
 
         // Disable before configuration
         clear_register_bits(GENERAL_CONFIG_REGISTER, GENERAL_CONFIG_ENABLE);
 
+        if(!(read_register(CAPABILITIES_REGISTER) & CAPABILITIES_LEGACY)){
+            logging::logf(logging::log_level::TRACE, "hpet: HPET is not able to handle legacy replacement mode\n");
+            return;
+        }
+
+        if(!(read_register(CAPABILITIES_REGISTER) & CAPABILITIES_64)){
+             logging::logf(logging::log_level::TRACE, "hpet: HPET is not able to handle 64-bit counter\n");
+            return;
+        }
+
+        if(!(read_register(timer_configuration_reg(0)) & TIMER_CONFIG_64)){
+             logging::logf(logging::log_level::TRACE, "hpet: HPET Timer #0 is not 64-bit\n");
+            return;
+        }
+
+        // Get the frequency of the main counter
+
+        auto hpet_period = read_register(CAPABILITIES_REGISTER) >> 32;
+        auto hpet_frequency = 1000000000000000 / hpet_period;
+
+        if(hpet_frequency >= FREQUENCY_GOAL){
+            current_frequency = FREQUENCY_GOAL;
+        } else {
+            current_frequency = hpet_frequency;
+        }
+
+        comparator_update = hpet_frequency / current_frequency;
+
+        logging::logf(logging::log_level::TRACE, "hpet: period %u\n", hpet_period);
+        logging::logf(logging::log_level::TRACE, "hpet: frequency %uHz\n", hpet_frequency);
+        logging::logf(logging::log_level::TRACE, "hpet: IRQ frequency %uHz\n", current_frequency);
+        logging::logf(logging::log_level::TRACE, "hpet: Comparator update %u\n", comparator_update);
+
+        // Update the current frequency (this will update the sleeping task as well)
+
+        timer::frequency(current_frequency);
+
+        // Uninstall the PIT driver
+        pit::remove();
+
+        // Register the IRQ handler
+        if(!interrupt::register_irq_handler(0, timer_handler, nullptr)){
+            logging::logf(logging::log_level::ERROR, "Unable to register HPET IRQ handler 0\n");
+            // TODO At this point, we should reinstall the PIT driver
+            suspend_kernel();
+            return;
+        }
+
         // Clear the main counter
         write_register(MAIN_COUNTER, 0);
 
-        // Enable interrupts again
-        arch::enable_hwint(rflags);
+        // Initialize timer #0
+        set_register_bits(timer_configuration_reg(0), TIMER_CONFIG_ENABLE);
+        write_register(timer_comparator_reg(0), comparator_update);
+
+        // Enable HPET in legacy mode
+        set_register_bits(GENERAL_CONFIG_REGISTER, GENERAL_CONFIG_LEGACY | GENERAL_CONFIG_ENABLE);
     }
 }
