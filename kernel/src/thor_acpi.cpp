@@ -166,10 +166,9 @@ void AcpiOsSleep(UINT64 ms){
  * \brief Active sleep for the given number of microseconds
  */
 void AcpiOsStall(UINT32 us){
-    //TODO Need a real micro seconds clock
-
     auto ticks = timer::ticks();
-    auto wait = 1 + us / 1000;
+    auto wait = us * (timer::frequency() / 1000000);
+    wait = !wait ? 1 : wait;
 
     while(timer::ticks() != ticks + wait){
         asm volatile("nop");
