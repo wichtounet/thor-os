@@ -1,15 +1,14 @@
 .PHONY: default clean
 
-default: longtwo
+EXEC_NAME=longtwo
+
+default: link
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
-
-longtwo: main.cpp.o
-	$(CXX) -o longtwo main.cpp.o $(PROGRAM_LINK_FLAGS)
+$(eval $(call program_compile_cpp_folder,src))
+$(eval $(call program_link_executable,$(EXEC_NAME)))
 
 clean:
-	rm -f *.cpp.o
-	rm -rf longtwo
+	@ echo -e "Remove compiled files"
+	@ rm -rf debug

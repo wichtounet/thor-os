@@ -1,15 +1,14 @@
 .PHONY: default clean
 
-default: stat
+EXEC_NAME=stat
+
+default: link
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
-
-stat: main.cpp.o
-	$(CXX) -o stat main.cpp.o $(PROGRAM_LINK_FLAGS)
+$(eval $(call program_compile_cpp_folder,src))
+$(eval $(call program_link_executable,$(EXEC_NAME)))
 
 clean:
-	rm -f *.cpp.o
-	rm -rf stat
+	@ echo -e "Remove compiled files"
+	@ rm -rf debug

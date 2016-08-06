@@ -1,15 +1,14 @@
 .PHONY: default clean
 
-default: readelf
+EXEC_NAME=readelf
+
+default: link
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
-
-readelf: main.cpp.o
-	$(CXX) -o readelf main.cpp.o $(PROGRAM_LINK_FLAGS)
+$(eval $(call program_compile_cpp_folder,src))
+$(eval $(call program_link_executable,$(EXEC_NAME)))
 
 clean:
-	rm -f *.cpp.o
-	rm -rf readelf
+	@ echo -e "Remove compiled files"
+	@ rm -rf debug

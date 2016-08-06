@@ -1,15 +1,14 @@
 .PHONY: default clean
 
-default: cpuid
+EXEC_NAME=cpuid
+
+default: link
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
-
-cpuid: main.cpp.o
-	$(CXX) -o cpuid main.cpp.o $(PROGRAM_LINK_FLAGS)
+$(eval $(call program_compile_cpp_folder,src))
+$(eval $(call program_link_executable,$(EXEC_NAME)))
 
 clean:
-	rm -f *.cpp.o
-	rm -rf cpuid
+	@ echo -e "Remove compiled files"
+	@ rm -rf debug

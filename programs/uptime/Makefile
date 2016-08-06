@@ -1,15 +1,14 @@
 .PHONY: default clean
 
-default: uptime
+EXEC_NAME=uptime
+
+default: link
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
-
-uptime: main.cpp.o
-	$(CXX) -o uptime main.cpp.o $(PROGRAM_LINK_FLAGS)
+$(eval $(call program_compile_cpp_folder,src))
+$(eval $(call program_link_executable,$(EXEC_NAME)))
 
 clean:
-	rm -f *.cpp.o
-	rm -rf uptime
+	@ echo -e "Remove compiled files"
+	@ rm -rf debug

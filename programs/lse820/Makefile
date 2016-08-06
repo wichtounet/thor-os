@@ -1,15 +1,14 @@
 .PHONY: default clean
 
-default: lse820
+EXEC_NAME=lse820
+
+default: link
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
-
-lse820: main.cpp.o
-	$(CXX) -o lse820 main.cpp.o $(PROGRAM_LINK_FLAGS)
+$(eval $(call program_compile_cpp_folder,src))
+$(eval $(call program_link_executable,$(EXEC_NAME)))
 
 clean:
-	rm -f *.cpp.o
-	rm -rf lspci
+	@ echo -e "Remove compiled files"
+	@ rm -rf debug

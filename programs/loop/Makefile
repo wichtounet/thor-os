@@ -1,15 +1,14 @@
 .PHONY: default clean
 
-default: loop
+EXEC_NAME=loop
+
+default: link
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) $(PROGRAM_FLAGS) $(CPP_FLAGS_64) $(WARNING_FLAGS) -c $< -o $@
-
-loop: main.cpp.o
-	$(CXX) $(PROGRAM_LINK_FLAGS) $(CPP_FLAGS_64) -o loop main.cpp.o
+$(eval $(call program_compile_cpp_folder,src))
+$(eval $(call program_link_executable,$(EXEC_NAME)))
 
 clean:
-	rm -f *.cpp.o
-	rm -rf loop
+	@ echo -e "Remove compiled files"
+	@ rm -rf debug

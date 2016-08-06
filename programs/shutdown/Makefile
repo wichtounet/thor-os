@@ -1,15 +1,14 @@
 .PHONY: default clean
 
-default: shutdown
+EXEC_NAME=shutdown
+
+default: link
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
-
-shutdown: main.cpp.o
-	$(CXX) -o shutdown main.cpp.o $(PROGRAM_LINK_FLAGS)
+$(eval $(call program_compile_cpp_folder,src))
+$(eval $(call program_link_executable,$(EXEC_NAME)))
 
 clean:
-	rm -f *.cpp.o
-	rm -rf shutdown
+	@ echo -e "Remove compiled files"
+	@ rm -rf debug
