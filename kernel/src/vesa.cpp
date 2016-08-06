@@ -92,6 +92,16 @@ bool vesa::init(){
     return true;
 }
 
+uint64_t vesa::width(){
+    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
+    return block.width;
+}
+
+uint64_t vesa::height(){
+    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
+    return block.height;
+}
+
 uint32_t vesa::make_color(uint8_t r, uint8_t g, uint8_t b){
     return (r << red_shift) + (g << green_shift) + (b << blue_shift);
 }
