@@ -12,6 +12,7 @@
 #include "kalloc.hpp"
 #include "timer.hpp"
 #include "keyboard.hpp"
+#include "mouse.hpp"
 #include "serial.hpp"
 #include "disks.hpp"
 #include "pci.hpp"
@@ -106,6 +107,7 @@ void kernel_main(){
     //Install drivers
     timer::install();
     keyboard::install_driver();
+    mouse::install();
     disks::detect_disks();
     pci::detect_devices();
     network::init();
