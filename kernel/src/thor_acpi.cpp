@@ -186,7 +186,7 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE /*type*/, ACPI_OSD_EXEC_CALLBACK fun
     auto* user_stack = new char[scheduler::user_stack_size];
     auto* kernel_stack = new char[scheduler::kernel_stack_size];
 
-    auto& process = scheduler::create_kernel_task_args(user_stack, kernel_stack, function, context);
+    auto& process = scheduler::create_kernel_task_args("acpi", user_stack, kernel_stack, function, context);
     process.ppid = scheduler::get_pid();
 
     logging::logf(logging::log_level::DEBUG, "ACPICA new process %u\n", process.pid);

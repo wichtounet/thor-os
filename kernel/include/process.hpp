@@ -68,6 +68,8 @@ struct process_t {
     volatile interrupt::syscall_regs* context;
 
     std::vector<segment_t> segments;
+
+    std::string name;
 };
 
 constexpr const size_t program_base = 0x8000000000;

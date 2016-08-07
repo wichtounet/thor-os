@@ -229,7 +229,7 @@ void queue_process(scheduler::pid_t pid){
 }
 
 void create_idle_task(){
-    auto& idle_process = scheduler::create_kernel_task(new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &idle_task);
+    auto& idle_process = scheduler::create_kernel_task("idle", new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &idle_task);
 
     idle_process.ppid = 0;
     idle_process.priority = scheduler::MIN_PRIORITY;
@@ -240,7 +240,7 @@ void create_idle_task(){
 }
 
 void create_init_task(){
-    auto& init_process = scheduler::create_kernel_task(new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &init_task);
+    auto& init_process = scheduler::create_kernel_task("init", new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &init_task);
 
     init_process.ppid = 0;
     init_process.priority = scheduler::MIN_PRIORITY + 1;
@@ -249,7 +249,7 @@ void create_init_task(){
 }
 
 void create_gc_task(){
-    auto& gc_process = scheduler::create_kernel_task(new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &gc_task);
+    auto& gc_process = scheduler::create_kernel_task("gc", new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &gc_task);
 
     gc_process.ppid = 1;
     gc_process.priority = scheduler::MIN_PRIORITY + 1;
@@ -260,7 +260,7 @@ void create_gc_task(){
 }
 
 void create_post_init_task(){
-    auto& post_init_process = scheduler::create_kernel_task(new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &post_init_task);
+    auto& post_init_process = scheduler::create_kernel_task("post_init", new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &post_init_task);
 
     post_init_process.ppid = 1;
     post_init_process.priority = scheduler::MAX_PRIORITY;
@@ -632,6 +632,8 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
 
     auto& process = new_process();
 
+    process.name = file;
+
     if(!create_paging(buffer, process)){
         logging::log(logging::log_level::DEBUG, "scheduler:exec: Impossible to create paging\n");
 
@@ -896,12 +898,13 @@ void scheduler::set_working_directory(const std::vector<std::string>& directory)
     pcb[current_pid].working_directory = directory;
 }
 
-scheduler::process_t& scheduler::create_kernel_task(char* user_stack, char* kernel_stack, void (*fun)()){
+scheduler::process_t& scheduler::create_kernel_task(const char* name, char* user_stack, char* kernel_stack, void (*fun)()){
     auto& process = new_process();
 
     process.system = true;
     process.physical_cr3 = paging::get_physical_pml4t();
     process.paging_size = 0;
+    process.name = name;
 
     // Directly uses memory of the executable
     process.physical_user_stack = 0;
@@ -931,8 +934,8 @@ scheduler::process_t& scheduler::create_kernel_task(char* user_stack, char* kern
     return process;
 }
 
-scheduler::process_t& scheduler::create_kernel_task_args(char* user_stack, char* kernel_stack, void (*fun)(void*), void* data){
-    auto& process = scheduler::create_kernel_task(user_stack, kernel_stack, reinterpret_cast<void(*)()>(fun));
+scheduler::process_t& scheduler::create_kernel_task_args(const char* name, char* user_stack, char* kernel_stack, void (*fun)(void*), void* data){
+    auto& process = scheduler::create_kernel_task(name, user_stack, kernel_stack, reinterpret_cast<void(*)()>(fun));
 
     // rdi is the first register used for integers parameter passing
     process.context->rdi = reinterpret_cast<size_t>(data);

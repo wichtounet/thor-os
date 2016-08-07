@@ -107,8 +107,8 @@ void network::finalize(){
             auto* tx_user_stack = new char[scheduler::user_stack_size];
             auto* tx_kernel_stack = new char[scheduler::kernel_stack_size];
 
-            auto& rx_process = scheduler::create_kernel_task_args(rx_user_stack, rx_kernel_stack, &rx_thread, &interface);
-            auto& tx_process = scheduler::create_kernel_task_args(tx_user_stack, tx_kernel_stack, &tx_thread, &interface);
+            auto& rx_process = scheduler::create_kernel_task_args("net_rx", rx_user_stack, rx_kernel_stack, &rx_thread, &interface);
+            auto& tx_process = scheduler::create_kernel_task_args("net_tx", tx_user_stack, tx_kernel_stack, &tx_thread, &interface);
 
             rx_process.ppid = 1;
             tx_process.ppid = 1;

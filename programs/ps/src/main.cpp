@@ -58,7 +58,7 @@ const char* state_str(uint64_t state){
         case 1:
             return "NEW";
         case 2:
-            return "READ";
+            return "READY";
         case 3:
             return "RUNNING";
         case 4:
@@ -78,6 +78,8 @@ const char* state_str(uint64_t state){
 
 int main(int /*argc*/, char* /*argv*/[]){
     auto fd = open("/proc/");
+
+    printf("PID PPID Pri State      Name\n");
 
     if(fd.valid()){
         auto info = stat(*fd);
@@ -101,11 +103,12 @@ int main(int /*argc*/, char* /*argv*/[]){
                     auto system = read_file(base_path + entry_name + "/system") == "true";
                     auto priority = parse(read_file(base_path + entry_name + "/priority"));
                     auto state = parse(read_file(base_path + entry_name + "/state"));
+                    auto name = read_file(base_path + entry_name + "/name");
 
                     if(system){
-                        printf("%u %u %u %s [kernel]\n", pid, ppid, priority, state_str(state));
+                        printf("%3u %4u %3u %10s %s [kernel]\n", pid, ppid, priority, state_str(state), name.c_str());
                     } else {
-                        printf("%u %u %u %s \n", pid, ppid, priority, state_str(state));
+                        printf("%3u %4u %3u %10s %s \n", pid, ppid, priority, state_str(state), name.c_str());
                     }
 
                     if(!entry->offset_next){
