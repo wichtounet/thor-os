@@ -702,6 +702,26 @@ inline void to_raw_string<int32_t>(const int32_t& value, char* buffer, size_t n)
     to_raw_string(static_cast<uint64_t>(value), buffer, n);
 }
 
+uint64_t atoui(const std::string& s){
+    uint64_t value = 0;
+    uint64_t mul = 1;
+
+    for(size_t i = s.size(); i > 0; --i){
+        auto c = s[i - 1];
+
+        if(c < '0' || c  > '9'){
+            return value;
+        }
+
+        value += mul * (c - '0');
+
+        mul *= 10;
+    }
+
+    return value;
+}
+
+
 } //end of namespace std
 
 #endif

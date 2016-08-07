@@ -9,6 +9,7 @@
 #include <unique_ptr.hpp>
 #include <algorithms.hpp>
 #include <errors.hpp>
+#include <string.hpp>
 
 #include "fs/procfs.hpp"
 
@@ -20,26 +21,6 @@ namespace {
 const scheduler::process_control_t* pcb = nullptr;
 
 std::vector<vfs::file> standard_contents;
-
-//TODO Move into tstl
-uint64_t atoui(const std::string& s){
-    uint64_t value = 0;
-    uint64_t mul = 1;
-
-    for(size_t i = s.size(); i > 0; --i){
-        auto c = s[i - 1];
-
-        if(c < '0' || c  > '9'){
-            return value;
-        }
-
-        value += mul * (c - '0');
-
-        mul *= 10;
-    }
-
-    return value;
-}
 
 size_t read(const std::string& value, char* buffer, size_t count, size_t offset, size_t& read){
     if(offset > value.size()){
