@@ -27,6 +27,10 @@ struct file {
     //File system specific
     size_t location;
     size_t position;
+
+    file(){};
+    file(std::string file_name, bool directory, bool hidden, bool system, uint64_t size)
+        : file_name(file_name), directory(directory), hidden(hidden), system(system), size(size) {};
 };
 
 } //end of namespace vfs
