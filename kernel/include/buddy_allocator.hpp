@@ -49,11 +49,12 @@ public:
     size_t allocate(size_t pages){
         if(pages > max_block){
             if(pages > max_block * static_bitmap::bits_per_word){
-                logging::logf(logging::log_level::ERROR, "buddy: Impossible to allocate mor than 33M block:%u\n", pages);
+                logging::logf(logging::log_level::ERROR, "buddy: Impossible to allocate more than 33M block:%u\n", pages);
                 //TODO Implement larger allocation
                 return 0;
             } else {
-                auto l = bitmaps.size() - 1;
+                // Select a level for which a whole word can hold the necessary pages
+                auto l = word_level(pages);
                 auto index = bitmaps[l].free_word();
                 auto address = block_start(l, index);
 
@@ -136,6 +137,20 @@ private:
         } else {
             return 0;
         }
+    }
+
+    size_t word_level(size_t pages){
+        size_t size = 1;
+
+        for(size_t i = 0; i < levels; ++i){
+            if(size * 64 >= pages){
+                return i;
+            }
+
+            size *= 2;
+        }
+
+        return levels;
     }
 
     void mark_used(size_t l, size_t index){
