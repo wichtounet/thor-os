@@ -662,12 +662,13 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     return process.pid;
 }
 
-//TODO This will not work several times (brk_start/brk_end)
 void scheduler::sbrk(size_t inc){
     auto& process = pcb[current_pid].process;
 
     size_t size = (inc + paging::PAGE_SIZE - 1) & ~(paging::PAGE_SIZE - 1);
     size_t pages = size / paging::PAGE_SIZE;
+
+    logging::logf(logging::log_level::DEBUG, "sbrk: Add %u pages to process %u heap\n", pages, process.pid);
 
     //Get some physical memory
     auto physical = physical_allocator::allocate(pages);
@@ -676,7 +677,7 @@ void scheduler::sbrk(size_t inc){
         return;
     }
 
-    auto virtual_start = process.brk_start;
+    auto virtual_start = process.brk_end;
 
     logging::logf(logging::log_level::DEBUG, "Map(p%u) virtual:%h into phys: %h\n", process.pid, virtual_start, physical);
 
