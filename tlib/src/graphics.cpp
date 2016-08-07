@@ -51,3 +51,10 @@ uint64_t graphics::get_green_shift(){
 uint64_t graphics::get_blue_shift(){
     return syscall_get(0x1007);
 }
+
+void graphics::redraw(char* buffer){
+    asm volatile("mov rax, 0x1008; mov rbx, %[buffer]; int 50;"
+        :
+        : [buffer] "g" (buffer)
+        : "rax", "rbx");
+}

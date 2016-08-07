@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include <types.hpp>
+#include <algorithms.hpp>
 
 #include "vesa.hpp"
 #include "paging.hpp"
@@ -210,4 +211,11 @@ void vesa::move_lines_up(size_t y, size_t x, size_t w, size_t lines, size_t n){
             destination[j] = source[j];
         }
     }
+}
+
+void vesa::redraw(const char* buffer){
+    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
+    size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
+
+    std::copy_n(reinterpret_cast<char*>(screen), buffer, total_size);
 }

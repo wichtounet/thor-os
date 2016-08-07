@@ -47,6 +47,8 @@ uint64_t get_red_shift();
 uint64_t get_green_shift();
 uint64_t get_blue_shift();
 
+void redraw(const char* buffer);
+
 } //end of vesa namespace
 
 #endif

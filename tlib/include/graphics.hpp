@@ -24,6 +24,8 @@ uint64_t get_red_shift();
 uint64_t get_green_shift();
 uint64_t get_blue_shift();
 
+void redraw(char* buffer);
+
 } // end of namespace graphics
 
 #endif

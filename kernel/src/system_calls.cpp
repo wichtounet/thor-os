@@ -223,7 +223,6 @@ void sc_datetime(interrupt::syscall_regs* regs){
 void sc_vesa_width(interrupt::syscall_regs* regs){
     regs->rax = vesa::get_width();
 }
-
 void sc_vesa_height(interrupt::syscall_regs* regs){
     regs->rax = vesa::get_height();
 }
@@ -250,6 +249,12 @@ void sc_vesa_green_shift(interrupt::syscall_regs* regs){
 
 void sc_vesa_blue_shift(interrupt::syscall_regs* regs){
     regs->rax = vesa::get_blue_shift();
+}
+
+void sc_vesa_redraw(interrupt::syscall_regs* regs){
+    auto new_buffer = reinterpret_cast<const char*>(regs->rbx);
+
+    vesa::redraw(new_buffer);
 }
 
 } //End of anonymous namespace
@@ -405,6 +410,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x1007:
             sc_vesa_blue_shift(regs);
+            break;
+
+        case 0x1008:
+            sc_vesa_redraw(regs);
             break;
 
         default:
