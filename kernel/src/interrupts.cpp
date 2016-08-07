@@ -246,7 +246,11 @@ void _fault_handler(interrupt::fault_regs regs){
     double_printf("cr2=%h\n", get_cr2());
     double_printf("cr3=%h\n", get_cr3());
 
-    scheduler::fault();
+    if(scheduler::is_started()){
+        scheduler::fault();
+    } else {
+        asm volatile ("cli; hlt;");
+    }
 }
 
 void _irq_handler(interrupt::syscall_regs* regs){
