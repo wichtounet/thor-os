@@ -280,15 +280,14 @@ void switch_to_process(size_t pid){
     auto old_pid = current_pid;
     current_pid = pid;
 
-    auto& process = pcb[current_pid];
+    auto& process = pcb[pid];
+    process.state = scheduler::process_state::RUNNING;
 
     if(process.process.system){
         logging::logf(logging::log_level::DEBUG, "Switch from %u to %u (rip:%u)\n", old_pid, current_pid, process.process.context->rip);
     } else {
         logging::logf(logging::log_level::DEBUG, "Switch from %u to %u\n", old_pid, current_pid);
     }
-
-    process.state = scheduler::process_state::RUNNING;
 
     gdt::tss().rsp0_low = process.process.kernel_rsp & 0xFFFFFFFF;
     gdt::tss().rsp0_high = process.process.kernel_rsp >> 32;
@@ -762,6 +761,7 @@ void scheduler::tick(){
             --process.sleep_timeout;
 
             if(process.sleep_timeout == 0){
+                logging::logf(logging::log_level::DEBUG, "Process %u finished sleeping, is ready\n", process.process.pid);
                 process.state = process_state::READY;
             }
         }
@@ -779,6 +779,7 @@ void scheduler::tick(){
 
             //If it is the same, no need to go to the switching process
             if(pid == current_pid){
+                process.state = process_state::RUNNING;
                 return;
             }
 
@@ -818,6 +819,12 @@ scheduler::process_t& scheduler::get_process(pid_t pid){
     return pcb[pid].process;
 }
 
+scheduler::process_state scheduler::get_process_state(pid_t pid){
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+
+    return pcb[pid].state;
+}
+
 void scheduler::block_process_light(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
@@ -850,8 +857,7 @@ void scheduler::unblock_process(pid_t pid){
 }
 
 void scheduler::sleep_ms(size_t time){
-    auto pid = get_pid();
-    sleep_ms(pid, time);
+    sleep_ms(current_pid, time);
 }
 
 void scheduler::sleep_ms(pid_t pid, size_t time){
