@@ -64,7 +64,7 @@ struct static_bitmap {
             }
         }
 
-        thor_unreachable("static_bitmap has not free bit");
+        thor_unreachable("static_bitmap has no free bit");
     }
 
     size_t free_word() const {
