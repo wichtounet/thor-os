@@ -79,7 +79,7 @@ const char* state_str(uint64_t state){
 int main(int /*argc*/, char* /*argv*/[]){
     auto fd = open("/proc/");
 
-    printf("PID PPID Pri State      Name\n");
+    printf("PID PPID Pri State      Memory Name\n");
 
     if(fd.valid()){
         auto info = stat(*fd);
@@ -104,11 +104,12 @@ int main(int /*argc*/, char* /*argv*/[]){
                     auto priority = parse(read_file(base_path + entry_name + "/priority"));
                     auto state = parse(read_file(base_path + entry_name + "/state"));
                     auto name = read_file(base_path + entry_name + "/name");
+                    auto memory = parse(read_file(base_path + entry_name + "/memory"));
 
                     if(system){
-                        printf("%3u %4u %3u %10s %s [kernel]\n", pid, ppid, priority, state_str(state), name.c_str());
+                        printf("%3u %4u %3u %10s %6m %s [kernel]\n", pid, ppid, priority, state_str(state), memory, name.c_str());
                     } else {
-                        printf("%3u %4u %3u %10s %s \n", pid, ppid, priority, state_str(state), name.c_str());
+                        printf("%3u %4u %3u %10s %6m %s \n", pid, ppid, priority, state_str(state), memory, name.c_str());
                     }
 
                     if(!entry->offset_next){

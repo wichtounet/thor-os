@@ -48,6 +48,8 @@ std::string get_value(uint64_t pid, const std::string& name){
         return std::to_string(process.process.priority);
     } else if(name == "name"){
         return process.process.name;
+    } else if(name == "memory"){
+        return std::to_string(process.process.brk_end - process.process.brk_start);
     } else {
         return "";
     }
@@ -60,12 +62,14 @@ void procfs::set_pcb(const scheduler::process_control_t* pcb_ptr){
 }
 
 procfs::procfs_file_system::procfs_file_system(std::string mp) : mount_point(mp) {
+    standard_contents.reserve(7);
     standard_contents.emplace_back("pid", false, false, false, 0);
     standard_contents.emplace_back("ppid", false, false, false, 0);
     standard_contents.emplace_back("state", false, false, false, 0);
     standard_contents.emplace_back("system", false, false, false, 0);
     standard_contents.emplace_back("priority", false, false, false, 0);
     standard_contents.emplace_back("name", false, false, false, 0);
+    standard_contents.emplace_back("memory", false, false, false, 0);
 }
 
 procfs::procfs_file_system::~procfs_file_system(){
