@@ -674,6 +674,7 @@ void scheduler::sbrk(size_t inc){
     auto physical = physical_allocator::allocate(pages);
 
     if(!physical){
+        logging::logf(logging::log_level::DEBUG, "sbrk: Impossible to allocate %u pages for process %u\n", pages, process.pid);
         return;
     }
 

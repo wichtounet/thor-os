@@ -119,14 +119,17 @@ size_t physical_allocator::early_allocate(size_t blocks){
 }
 
 void physical_allocator::init(){
-    auto size = current_mmap_entry->size;
-    auto managed_space = size - (current_mmap_entry_position -  current_mmap_entry->base);
-
     //Make sure to start with an aligned address
     if((current_mmap_entry_position % paging::PAGE_SIZE) != 0){
         allocated_memory += current_mmap_entry_position % paging::PAGE_SIZE;
         current_mmap_entry_position = current_mmap_entry_position + current_mmap_entry_position % paging::PAGE_SIZE;
     }
+
+    // Compute the size of the managed space
+    auto size = current_mmap_entry->size;
+    auto managed_space = size - (current_mmap_entry_position -  current_mmap_entry->base);
+
+    logging::logf(logging::log_level::ERROR, "palloc: Managed space %h\n", size_t(managed_space));
 
     auto data_bitmap_1 = create_array(managed_space, 1);
     auto data_bitmap_2 = create_array(managed_space, 2);
