@@ -58,3 +58,11 @@ void graphics::redraw(char* buffer){
         : [buffer] "g" (buffer)
         : "rax", "rbx");
 }
+
+uint64_t graphics::mouse_x(){
+    return syscall_get(0x1100);
+}
+
+uint64_t graphics::mouse_y(){
+    return syscall_get(0x1101);
+}

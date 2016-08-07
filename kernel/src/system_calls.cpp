@@ -14,6 +14,7 @@
 #include "rtc.hpp"
 #include "kernel_utils.hpp"
 #include "vesa.hpp"
+#include "mouse.hpp"
 #include "vfs/vfs.hpp"
 
 namespace {
@@ -257,6 +258,14 @@ void sc_vesa_redraw(interrupt::syscall_regs* regs){
     vesa::redraw(new_buffer);
 }
 
+void sc_mouse_x(interrupt::syscall_regs* regs){
+    regs->rax = mouse::x();
+}
+
+void sc_mouse_y(interrupt::syscall_regs* regs){
+    regs->rax = mouse::y();
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -414,6 +423,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x1008:
             sc_vesa_redraw(regs);
+            break;
+
+        case 0x1100:
+            sc_mouse_x(regs);
+            break;
+
+        case 0x1101:
+            sc_mouse_y(regs);
             break;
 
         default:
