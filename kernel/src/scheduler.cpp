@@ -28,6 +28,7 @@
 #include "logging.hpp"
 #include "int_lock.hpp"
 #include "timer.hpp"
+#include "fs/procfs.hpp"
 
 //Provided by task_switch.s
 extern "C" {
@@ -37,17 +38,8 @@ extern void init_task_switch(size_t current) __attribute__((noreturn));
 
 namespace {
 
-struct process_control_t {
-    scheduler::process_t process;
-    scheduler::process_state state;
-    size_t rounds;
-    size_t sleep_timeout;
-    std::vector<std::vector<std::string>> handles;
-    std::vector<std::string> working_directory;
-};
-
 //The Process Control Block
-std::array<process_control_t, scheduler::MAX_PROCESS> pcb;
+std::array<scheduler::process_control_t, scheduler::MAX_PROCESS> pcb;
 
 //Define one run queue for each priority level
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
@@ -593,6 +585,8 @@ void scheduler::init(){
     create_post_init_task();
 
     current_ticks = 0;
+
+    procfs::set_pcb(pcb.data());
 }
 
 void scheduler::start(){

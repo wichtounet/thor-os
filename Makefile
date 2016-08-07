@@ -36,6 +36,7 @@ thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin init/debug/init.bi
 	sudo mkdir mnt/fake/bin/
 	sudo mkdir mnt/fake/sys/
 	sudo mkdir mnt/fake/dev/
+	sudo mkdir mnt/fake/proc/
 	sudo /bin/cp init/debug/init.bin mnt/fake/
 	sudo /bin/cp kernel/debug/kernel.bin mnt/fake/
 	sudo /bin/cp programs/dist/* mnt/fake/bin/

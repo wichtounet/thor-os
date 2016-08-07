@@ -18,6 +18,7 @@
 #include "fs/fat32.hpp"
 #include "fs/sysfs.hpp"
 #include "fs/devfs.hpp"
+#include "fs/procfs.hpp"
 
 #include "scheduler.hpp"
 #include "flags.hpp"
@@ -51,6 +52,8 @@ std::string partition_type_to_string(vfs::partition_type type){
             return "sysfs";
         case vfs::partition_type::DEVFS:
             return "devfs";
+        case vfs::partition_type::PROCFS:
+            return "procfs";
         case vfs::partition_type::UNKNOWN:
             return "Unknown";
         default:
@@ -71,6 +74,10 @@ void mount_sys(){
 
 void mount_dev(){
     mount(vfs::partition_type::DEVFS, "/dev/", "none");
+}
+
+void mount_proc(){
+    mount(vfs::partition_type::PROCFS, "/proc/", "none");
 }
 
 std::vector<std::string> get_path(const char* file_path){
@@ -140,6 +147,7 @@ void vfs::init(){
     mount_root();
     mount_sys();
     mount_dev();
+    mount_proc();
 
     //Finish initilization of the file systems
     for(auto& mp : mount_point_list){
@@ -163,6 +171,11 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
 
         case vfs::partition_type::DEVFS:
             fs = new devfs::devfs_file_system(mount_point);
+
+            break;
+
+        case vfs::partition_type::PROCFS:
+            fs = new procfs::procfs_file_system(mount_point);
 
             break;
 
