@@ -2,7 +2,7 @@
 
 include ../cpp.mk
 
-PROGRAMS=long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which readelf touch mkdir rm date ls lspci lse820 mount df uptime writer divzero
+PROGRAMS=long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which readelf touch mkdir rm date ls lspci lse820 mount df uptime writer divzero odin
 
 default: dist
 
