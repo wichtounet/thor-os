@@ -17,6 +17,7 @@
 #include "errors.hpp"
 #include "disks.hpp"
 #include "mutex.hpp"
+#include "block_cache.hpp"
 
 namespace {
 
@@ -28,6 +29,8 @@ mutex<> ata_lock;
 
 mutex<> primary_lock;
 mutex<> secondary_lock;
+
+block_cache cache;
 
 volatile bool primary_invoked = false;
 volatile bool secondary_invoked = false;
@@ -331,6 +334,9 @@ void ata::detect_disks(){
     primary_lock.set_name("ata_primary_lock");
     secondary_lock.set_name("ata_secondary_lock");
 
+    // Init the cache with 256 blocks
+    cache.init(BLOCK_SIZE, 256);
+
     drives = new drive_descriptor[4];
 
     drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, false, "", "", ""};
@@ -457,9 +463,17 @@ size_t ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count,
     auto buffer = reinterpret_cast<uint8_t*>(destination);
 
     for(size_t i = 0; i < count; ++i){
-        if(!read_write_sector(drive, start + i, buffer, true)){
-            return std::ERROR_FAILED;
+        bool valid;
+        auto block = cache.block((drive.controller << 8) + drive.drive, start + i, valid);
+
+        if(!valid){
+            if(!read_write_sector(drive, start + i, block, true)){
+                return std::ERROR_FAILED;
+            }
         }
+
+        // Copy the block to the output buffer
+        std::copy_n(buffer, block, BLOCK_SIZE);
 
         buffer += BLOCK_SIZE;
         read += BLOCK_SIZE;
