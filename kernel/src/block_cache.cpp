@@ -48,6 +48,32 @@ void block_cache::init(uint64_t payload_size, uint64_t blocks){
     rear = previous;
 }
 
+char* block_cache::block_if_present(uint16_t device, uint64_t sector){
+    return block_if_present((uint64_t(device) << 16) + sector);
+}
+
+char* block_cache::block_if_present(uint64_t orig_key){
+    auto key = orig_key % (blocks * 2);
+
+    if(hash_table[key]){
+        auto* entry = static_cast<uint64_t*>(hash_table[key]);
+
+        if(entry[0] == orig_key){
+            return reinterpret_cast<char*>(reinterpret_cast<size_t>(hash_table[key]) + 4 * sizeof(uint64_t));
+        } else {
+            while(entry[1]){
+               entry = reinterpret_cast<uint64_t*>(entry[1]);
+
+               if(entry[0] == orig_key){
+                   return reinterpret_cast<char*>(reinterpret_cast<size_t>(entry) + 4 * sizeof(uint64_t));
+               }
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 char* block_cache::block(uint16_t device, uint64_t sector, bool& valid){
     return block((uint64_t(device) << 16) + sector, valid);
 }
@@ -57,22 +83,11 @@ char* block_cache::block(uint64_t orig_key, bool& valid){
 
     // First, try to get it directly from the hash table
 
-    if(hash_table[key]){
-        auto* entry = static_cast<uint64_t*>(hash_table[key]);
+    auto direct = block_if_present(orig_key);
 
-        if(entry[0] == orig_key){
-            valid = true;
-            return reinterpret_cast<char*>(reinterpret_cast<size_t>(hash_table[key]) + 4 * sizeof(uint64_t));
-        } else {
-            while(entry[1]){
-               entry = reinterpret_cast<uint64_t*>(entry[1]);
-
-               if(entry[0] == orig_key){
-                   valid = true;
-                   return reinterpret_cast<char*>(reinterpret_cast<size_t>(entry) + 4 * sizeof(uint64_t));
-               }
-            }
-        }
+    if(direct){
+        valid = true;
+        return direct;
     }
 
     // At this point, we will allocate a new block
