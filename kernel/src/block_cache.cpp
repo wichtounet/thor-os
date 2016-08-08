@@ -47,7 +47,10 @@ void block_cache::init(uint64_t payload_size, uint64_t blocks){
 }
 
 char* block_cache::block(uint16_t device, uint64_t sector, bool& valid){
-    auto orig_key = (uint64_t(device) << 16) + sector;
+    return block((uint64_t(device) << 16) + sector, valid);
+}
+
+char* block_cache::block(uint64_t orig_key, bool& valid){
     auto key = orig_key % (blocks * 2);
 
     // First, try to get it directly from the hash table
