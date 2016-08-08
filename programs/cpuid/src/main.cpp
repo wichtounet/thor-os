@@ -172,24 +172,33 @@ void get_cache_info() {
             continue;
         }
 
-        if ( descriptor[i] ==  0x01)
+        if ( descriptor[i] ==  0x01){
             print_line("  Instruction TLB ...   4 kb pages, 4-way associative, 32 entries");
-        if ( descriptor[i] ==  0x02)
+        }
+        if ( descriptor[i] ==  0x02){
             print_line("  Instruction TLB ...   4 Mb pages, 4-way associative, 2 entries");
-        if ( descriptor[i] ==  0x03)
+        }
+        if ( descriptor[i] ==  0x03){
             print_line("  Data TLB ..........   4 kb pages, 4-way associative, 64 entries");
-        if ( descriptor[i] ==  0x04)
+        }
+        if ( descriptor[i] ==  0x04){
             print_line("  Data TLB ..........   4 Mb pages, 4-way associative, 8 entries");
-        if ( descriptor[i] ==  0x06)
+        }
+        if ( descriptor[i] ==  0x06){
             print_line("  L1 instruction cache  8 kb, 4-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x08)
+        }
+        if ( descriptor[i] ==  0x08){
             print_line("  L1 instruction cache 16 kb, 4-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x0A)
+        }
+        if ( descriptor[i] ==  0x0A){
             print_line("  L1 data cache .....   8 kb, 2-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x0B)
+        }
+        if ( descriptor[i] ==  0x0B){
             print_line("  Instruction TLB ...   4 Mb pages, 4-way associative, 4 entries");
-        if ( descriptor[i] ==  0x0C)
+        }
+        if ( descriptor[i] ==  0x0C){
             print_line("  L1 data cache .....  16 kb, 4-way associative, 32 byte line size");
+        }
         if ( descriptor[i] ==  0x22){
             print_line("  L3 cache:     512K Bytes, 4-way associative, 64 byte line size, ");
             print_line("                       128 byte sector size" );
@@ -206,94 +215,138 @@ void get_cache_info() {
             print_line("  L3 cache:     4M Bytes, 8-way associative, 64 byte line size, ");
             print_line("                       128 byte sector size" );
         }
-        if ( descriptor[i] ==  0x2C)
+        if ( descriptor[i] ==  0x2C){
             print_line("  1st-level D-cache:   32K Bytes, 8-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x30)
+        }
+        if ( descriptor[i] ==  0x30){
             print_line("  1st-level I-cache:   32K Bytes, 8-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x40)
+        }
+        if ( descriptor[i] ==  0x40){
             print_line("  No L2 cache OR if there is an L2 cache, then no L3 cache");
-        if ( descriptor[i] ==  0x41)
+        }
+        if ( descriptor[i] ==  0x41){
             print_line("  L2 cache .......... 128 kb, 4-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x42)
+        }
+        if ( descriptor[i] ==  0x42){
             print_line("  L2 cache .......... 256 kb, 4-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x43)
+        }
+        if ( descriptor[i] ==  0x43){
             print_line("  L2 cache .......... 512 kb, 4-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x44)
+        }
+        if ( descriptor[i] ==  0x44){
             print_line("  L2 cache ..........   1 Mb, 4-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x45)
+        }
+        if ( descriptor[i] ==  0x45){
             print_line("  L2 cache ..........   2 Mb, 4-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x46)
+        }
+        if ( descriptor[i] ==  0x46){
             print_line("  L3 cache ..........   4 Mb, 4-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x47)
+        }
+        if ( descriptor[i] ==  0x47){
             print_line("  L3 cache ..........   8 Mb, 8-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x49)
+        }
+        if ( descriptor[i] ==  0x49){
             print_line("  L2 cache ..........   4 Mb, 16-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x50)
+        }
+        if ( descriptor[i] ==  0x50){
             print_line("  Instruction TLB ...   4 kb and 2 Mb or 4 Mb pages, 64 entries");
-        if ( descriptor[i] ==  0x51)
+        }
+        if ( descriptor[i] ==  0x51){
             print_line("  Instruction TLB ...   4 kb and 2 Mb or 4 Mb pages, 128 entries");
-        if ( descriptor[i] ==  0x52)
+        }
+        if ( descriptor[i] ==  0x52){
             print_line("  Instruction TLB ...   4 kb and 2 Mb or 4 Mb pages, 256 entries");
-        if ( descriptor[i] ==  0x56)
+        }
+        if ( descriptor[i] ==  0x56){
             print_line("  Data TLB ..........   4 Mb pages, 4-way associative,  16 entries");
-        if ( descriptor[i] ==  0x57)
+        }
+        if ( descriptor[i] ==  0x57){
             print_line("  Data TLB ..........   4 Kb pages, 4-way associative,  16 entries");
-        if ( descriptor[i] ==  0x5B)
+        }
+        if ( descriptor[i] ==  0x5B){
             print_line("  Data TLB ..........   4 kb and 4 Mb pages,  64 entries");
-        if ( descriptor[i] ==  0x5C)
+        }
+        if ( descriptor[i] ==  0x5C){
             print_line("  Data TLB ..........   4 kb and 4 Mb pages, 128 entries");
-        if ( descriptor[i] ==  0x5D)
+        }
+        if ( descriptor[i] ==  0x5D){
             print_line("  Data TLB ..........   4 kb and 4 Mb pages, 256 entries");
-        if ( descriptor[i] ==  0x60)
+        }
+        if ( descriptor[i] ==  0x60){
             print_line("  L1 data cache .....  16 kb, 8-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x66)
+        }
+        if ( descriptor[i] ==  0x66){
             print_line("  L1 data cache .....   8 kb, 4-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x67)
+        }
+        if ( descriptor[i] ==  0x67){
             print_line("  L1 data cache .....  16 kb, 4-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x68)
+        }
+        if ( descriptor[i] ==  0x68){
             print_line("  L1 data cache .....  32 kb, 4-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x70)
+        }
+        if ( descriptor[i] ==  0x70){
             print_line("  Trace cache ......  12k uop, 8-way associative");
-        if ( descriptor[i] ==  0x71)
+        }
+        if ( descriptor[i] ==  0x71){
             print_line("  Trace cache ......  16k uop, 8-way associative");
-        if ( descriptor[i] ==  0x72)
+        }
+        if ( descriptor[i] ==  0x72){
             print_line("  Trace cache ......  32k uop, 8-way associative");
-        if ( descriptor[i] ==  0x78)
+        }
+        if ( descriptor[i] ==  0x78){
             print_line("  L2 cache .......... 1 MB   , 8-way associative, 64byte line size");
-        if ( descriptor[i] ==  0x79)
+        }
+        if ( descriptor[i] ==  0x79){
             print_line("  L2 cache .......... 128 kb, 8-way associative, sectored, 64 byte line size");
-        if ( descriptor[i] ==  0x7A)
+        }
+        if ( descriptor[i] ==  0x7A){
             print_line("  L2 cache .......... 256 kb, 8-way associative, sectored, 64 byte line size");
-        if ( descriptor[i] ==  0x7B)
+        }
+        if ( descriptor[i] ==  0x7B){
             print_line("  L2 cache .......... 512 kb, 8-way associative, sectored, 64 byte line size");
-        if ( descriptor[i] ==  0x7C)
+        }
+        if ( descriptor[i] ==  0x7C){
             print_line("  L2 cache .......... 1M Byte, 8-way associative, sectored, 64 byte line size");
-        if ( descriptor[i] ==  0x7D)
+        }
+        if ( descriptor[i] ==  0x7D){
             print_line("  L2 cache .......... 2M Byte, 8-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x7F)
+        }
+        if ( descriptor[i] ==  0x7F){
             print_line("  L2 cache .........512K Byte, 2-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x82)
+        }
+        if ( descriptor[i] ==  0x82){
             print_line("  L2 cache .......... 256 kb, 8-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x83)
+        }
+        if ( descriptor[i] ==  0x83){
             print_line("  L2 cache .......... 512K Byte, 8-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x84)
+        }
+        if ( descriptor[i] ==  0x84){
             print_line("  L2 cache ..........   1 Mb, 8-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x85)
+        }
+        if ( descriptor[i] ==  0x85){
             print_line("  L2 cache ..........   2 Mb, 8-way associative, 32 byte line size");
-        if ( descriptor[i] ==  0x86)
+        }
+        if ( descriptor[i] ==  0x86){
             print_line("  L2 cache ..........   512K Byte, 4-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0x87)
+        }
+        if ( descriptor[i] ==  0x87){
             print_line("  L2 cache ..........   1M Byte, 8-way associative, 64 byte line size");
-        if ( descriptor[i] ==  0xB0)
+        }
+        if ( descriptor[i] ==  0xB0){
             print_line("  Instruction TLB       4K-Byte Pages, 4-way associative, 128 entries");
-        if ( descriptor[i] ==  0xB3)
+        }
+        if ( descriptor[i] ==  0xB3){
             print_line("  Data TLB               4K-Byte Pages, 4-way associative, 128 entries");
-        if ( descriptor[i] ==  0xB4)
+        }
+        if ( descriptor[i] ==  0xB4){
             print_line("  Data TLB               4K-Byte Pages, 4-way associative, 256 entries");
-        if ( descriptor[i] ==  0xF0)
+        }
+        if ( descriptor[i] ==  0xF0){
             print_line("  64-byte prefetching");
-        if ( descriptor[i] ==  0xF1)
+        }
+        if ( descriptor[i] ==  0xF1){
             print_line("  128-byte prefetching");
+        }
     }
 }
 
