@@ -207,9 +207,7 @@ void vesa::move_lines_up(size_t y, size_t x, size_t w, size_t lines, size_t n){
         auto destination = reinterpret_cast<size_t*>(screen + (y - n + i) * y_shift + x);
         auto source = reinterpret_cast<size_t*>(screen + (y + i) * y_shift + x);
 
-        for(size_t j = 0; j < w / 2; ++j){
-            destination[j] = source[j];
-        }
+        std::copy_n(destination, source, w / 2);
     }
 }
 
