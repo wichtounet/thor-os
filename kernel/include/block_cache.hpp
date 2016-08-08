@@ -22,7 +22,7 @@ struct block_cache {
 
     void init(uint64_t payload_size, uint64_t blocks);
 
-    char* block(uint16_t device, uint64_t sector);
+    char* block(uint16_t device, uint64_t sector, bool& valid);
 };
 
 #endif
