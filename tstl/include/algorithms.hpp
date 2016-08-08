@@ -10,8 +10,8 @@
 
 #include <type_traits.hpp>
 #include <utility.hpp>
-
 #include <types.hpp>
+#include <enable_if.hpp>
 
 namespace std {
 
@@ -26,7 +26,7 @@ void copy(OutputIterator out, InputIterator it, InputIterator end){
     }
 }
 
-template<typename InputIterator, typename OutputIterator>
+template<typename InputIterator, typename OutputIterator, std::enable_if_t<!__has_trivial_assign(OutputIterator), int> = 42>
 void copy_n(OutputIterator out, InputIterator in, size_t n){
     if(n > 0){
         *out = *in;
@@ -35,6 +35,37 @@ void copy_n(OutputIterator out, InputIterator in, size_t n){
             *++out = *++in;
         }
     }
+}
+
+inline void memcpy(char* out, const char* in, size_t bytes){
+    if(!bytes){
+        return;
+    }
+
+    // Copy as much as possible 64 bits at at time
+    if(bytes >= 8){
+        auto* out64 = reinterpret_cast<uint64_t*>(out);
+        auto* in64 = reinterpret_cast<const uint64_t*>(in);
+
+        size_t l = 1 + bytes / 8;
+
+        while(--l){
+            *out64++ = *in64++;
+        }
+
+        bytes -= l * 8;
+    }
+
+    // Finish up byte by byte
+    while(bytes >= 1){
+        *out++ = *in++;
+        --bytes;
+    }
+}
+
+template<typename InputIterator, typename OutputIterator, std::enable_if_t<__has_trivial_assign(OutputIterator), int> = 42>
+void copy_n(OutputIterator out, InputIterator in, size_t n){
+    memcpy(reinterpret_cast<char*>(out), reinterpret_cast<const char*>(in), n * sizeof(decltype(*out)));
 }
 
 template<typename InputIterator, typename OutputIterator>
