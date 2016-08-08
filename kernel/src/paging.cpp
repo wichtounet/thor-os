@@ -108,7 +108,7 @@ size_t early_map_page_clear(size_t physical){
 
     //Clear the new allocated block of memory
     auto it = reinterpret_cast<size_t*>(virt);
-    std::fill(it, it + paging::PAGE_SIZE / sizeof(size_t), 0);
+    std::fill_n(it, paging::PAGE_SIZE / sizeof(size_t), 0);
 
     return virt;
 }
