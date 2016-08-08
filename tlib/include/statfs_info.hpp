@@ -11,8 +11,8 @@
 #include <types.hpp>
 
 struct statfs_info {
-	size_t total_size;
-	size_t free_size;
+    size_t total_size;
+    size_t free_size;
 };
 
 #endif

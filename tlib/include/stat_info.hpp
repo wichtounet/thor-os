@@ -16,7 +16,7 @@ constexpr const size_t STAT_FLAG_HIDDEN = 0x2;
 constexpr const size_t STAT_FLAG_SYSTEM = 0x2;
 
 struct stat_info {
-	size_t flags;
+    size_t flags;
     size_t size;
     datetime created;
     datetime modified;
