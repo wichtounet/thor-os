@@ -10,15 +10,24 @@
 
 #include <types.hpp>
 
+struct block_t {
+    uint64_t key;
+    block_t* hash_next;
+    block_t* free_next;
+    block_t* free_prev;
+    char payload;
+} __attribute__((packed));
+
 struct block_cache {
     uint64_t payload_size;
     uint64_t blocks;
 
-    uint64_t** hash_table;
     void* blocks_memory;
 
-    void* front;
-    void* rear;
+    block_t** hash_table;
+
+    block_t* front;
+    block_t* rear;
 
     void init(uint64_t payload_size, uint64_t blocks);
 
