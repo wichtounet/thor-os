@@ -13,7 +13,7 @@ void block_cache::init(uint64_t payload_size, uint64_t blocks){
     this->payload_size = payload_size;
     this->blocks = blocks;
 
-    auto block_size = payload_size + 4 * 8;
+    auto block_size = payload_size + 4 * sizeof(uint64_t);
 
     this->hash_table = new uint64_t*[blocks * 2];
     this->blocks_memory = kalloc::k_malloc(blocks * block_size);
@@ -31,14 +31,16 @@ void block_cache::init(uint64_t payload_size, uint64_t blocks){
 
         block[0] = 0; // The key
         block[1] = 0; // The hash pointer
-        block[2] = reinterpret_cast<size_t>(previous); // The previous block in the free list
 
         // The next block in the free list
         if(i < blocks - 1){
-            block[3] = reinterpret_cast<size_t>(blocks_memory) + (i + 1) * block_size;
+            block[2] = reinterpret_cast<size_t>(blocks_memory) + (i + 1) * block_size;
         } else {
-            block[3] = 0;
+            block[2] = 0;
         }
+
+        // The previous block in the free list
+        block[3] = reinterpret_cast<size_t>(previous);
 
         previous = block;
     }
@@ -60,14 +62,14 @@ char* block_cache::block(uint64_t orig_key, bool& valid){
 
         if(entry[0] == orig_key){
             valid = true;
-            return reinterpret_cast<char*>(reinterpret_cast<size_t>(hash_table[key]) + 4 * 8);
+            return reinterpret_cast<char*>(reinterpret_cast<size_t>(hash_table[key]) + 4 * sizeof(uint64_t));
         } else {
             while(entry[1]){
                entry = reinterpret_cast<uint64_t*>(entry[1]);
 
                if(entry[0] == orig_key){
                    valid = true;
-                   return reinterpret_cast<char*>(reinterpret_cast<size_t>(entry) + 4 * 8);
+                   return reinterpret_cast<char*>(reinterpret_cast<size_t>(entry) + 4 * sizeof(uint64_t));
                }
             }
         }
@@ -80,7 +82,7 @@ char* block_cache::block(uint64_t orig_key, bool& valid){
 
     // If the block was used, remove it from the hash table
     if(block[0]){
-        auto previous_key = block[0];
+        auto previous_key = block[0] % (blocks * 2);
 
         if(hash_table[previous_key] == block){
             // Use the next block in the bucket list as the first block in the chain
@@ -128,11 +130,12 @@ char* block_cache::block(uint64_t orig_key, bool& valid){
 
     // Puts the block at the bottom of the free
 
-    front = reinterpret_cast<void*>(block[2]);
+    front = reinterpret_cast<void*>(reinterpret_cast<uint64_t*>(front)[2]);
     reinterpret_cast<uint64_t*>(front)[3] = 0;
 
+    reinterpret_cast<uint64_t*>(rear)[2] = reinterpret_cast<uint64_t>(block);
     block[3] = reinterpret_cast<uint64_t>(rear);
     rear = block;
 
-    return reinterpret_cast<char*>(block + 4 * 8);
+    return reinterpret_cast<char*>(reinterpret_cast<uint64_t>(block) + 4 * sizeof(uint64_t));
 }
