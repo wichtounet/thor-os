@@ -486,6 +486,12 @@ size_t ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count
     auto buffer = reinterpret_cast<uint8_t*>(const_cast<void*>(source));
 
     for(size_t i = 0; i < count; ++i){
+        // If the block is in cache, simply update the cache and write through the disk
+        auto block = cache.block_if_present((drive.controller << 8) + drive.drive, start + i);
+        if(block){
+            std::copy_n(block, buffer, BLOCK_SIZE);
+        }
+
         if(!read_write_sector(drive, start + i, buffer, false)){
             return std::ERROR_FAILED;
         }
