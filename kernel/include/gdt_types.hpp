@@ -50,18 +50,18 @@ struct gdt_ptr {
 } __attribute__ ((packed));
 
 struct gdt_descriptor_t {
-	unsigned int limit_low      : 16;
-	unsigned int base_low       : 24;
+    unsigned int limit_low      : 16;
+    unsigned int base_low       : 24;
     uint8_t type                : 4;
-	unsigned int always_1       : 1;
-	unsigned int dpl            : 2;
-	unsigned int present        : 1;
-	unsigned int limit_high     : 4;
-	unsigned int avl            : 1;
-	unsigned int long_mode      : 1;
-	unsigned int big            : 1;
-	unsigned int granularity    : 1;
-	unsigned int base_high      : 8;
+    unsigned int always_1       : 1;
+    unsigned int dpl            : 2;
+    unsigned int present        : 1;
+    unsigned int limit_high     : 4;
+    unsigned int avl            : 1;
+    unsigned int long_mode      : 1;
+    unsigned int big            : 1;
+    unsigned int granularity    : 1;
+    unsigned int base_high      : 8;
 } __attribute__((packed));
 
 static_assert(sizeof(gdt_descriptor_t) == 8, "GDT selector in long mode is 8 bytes long");
