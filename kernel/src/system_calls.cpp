@@ -8,6 +8,7 @@
 #include "system_calls.hpp"
 #include "console.hpp"
 #include "scheduler.hpp"
+#include "timer.hpp"
 #include "keyboard.hpp"
 #include "terminal.hpp"
 #include "acpi.hpp"
@@ -221,6 +222,14 @@ void sc_datetime(interrupt::syscall_regs* regs){
     *date = rtc::all_data();
 }
 
+void sc_time_seconds(interrupt::syscall_regs* regs){
+    regs->rax = timer::seconds();
+}
+
+void sc_time_milliseconds(interrupt::syscall_regs* regs){
+    regs->rax = timer::milliseconds();
+}
+
 void sc_vesa_width(interrupt::syscall_regs* regs){
     regs->rax = vesa::get_width();
 }
@@ -380,8 +389,16 @@ void system_call_entry(interrupt::syscall_regs* regs){
             sc_truncate(regs);
             break;
 
-        case 400:
+        case 0x400:
             sc_datetime(regs);
+            break;
+
+        case 0x401:
+            sc_time_seconds(regs);
+            break;
+
+        case 0x402:
+            sc_time_milliseconds(regs);
             break;
 
         case 0x666:

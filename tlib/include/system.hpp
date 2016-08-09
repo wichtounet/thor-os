@@ -28,4 +28,7 @@ datetime local_date();
 void reboot();
 void shutdown();
 
+uint64_t s_time();
+uint64_t ms_time();
+
 #endif

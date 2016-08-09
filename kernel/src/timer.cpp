@@ -19,6 +19,7 @@ namespace {
 
 uint64_t _timer_ticks = 0;
 uint64_t _timer_seconds = 0;
+uint64_t _timer_milliseconds = 0;
 uint64_t _timer_frequency = 0;
 
 //TODO The uptime in seconds with HPET is not correct
@@ -61,6 +62,10 @@ void timer::tick(){
     if(_timer_ticks % frequency() == 0){
         ++_timer_seconds;
     }
+
+    if(_timer_ticks % (frequency() / 1000) == 0){
+        ++_timer_milliseconds;
+    }
 }
 
 uint64_t timer::ticks(){
@@ -69,6 +74,10 @@ uint64_t timer::ticks(){
 
 uint64_t timer::seconds(){
     return _timer_seconds;
+}
+
+uint64_t timer::milliseconds(){
+    return _timer_milliseconds;
 }
 
 uint64_t timer::frequency(){

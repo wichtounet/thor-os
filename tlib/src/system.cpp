@@ -7,6 +7,19 @@
 
 #include <system.hpp>
 
+namespace {
+
+uint64_t syscall_get(uint64_t call){
+    size_t value;
+    asm volatile("mov rax, %[call]; int 50; mov %[value], rax"
+        : [value] "=m" (value)
+        : [call] "r" (call)
+        : "rax");
+    return value;
+}
+
+} // end of anonymous namespace
+
 void exit(size_t return_code) {
     asm volatile("mov rax, 0x666; mov rbx, %[ret]; int 50"
         : //No outputs
@@ -60,12 +73,20 @@ void sleep_ms(size_t ms){
 datetime local_date(){
     datetime date_s;
 
-    asm volatile("mov rax, 400; mov rbx, %[buffer]; int 50; "
+    asm volatile("mov rax, 0x400; mov rbx, %[buffer]; int 50; "
         : /* No outputs */
         : [buffer] "g" (reinterpret_cast<size_t>(&date_s))
         : "rax", "rbx");
 
     return date_s;
+}
+
+uint64_t s_time(){
+    return syscall_get(0x401);
+}
+
+uint64_t ms_time(){
+    return syscall_get(0x402);
 }
 
 std::expected<size_t> exec_and_wait(const char* executable, const std::vector<std::string>& params){

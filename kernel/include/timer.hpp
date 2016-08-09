@@ -12,11 +12,29 @@
 
 namespace timer {
 
+/*!
+ * \brief Install the system timer
+ */
 void install();
 
+/*!
+ * \brief Returns a up-counter in timer ticks
+ */
 uint64_t ticks();
+
+/*!
+ * \brief Returns a up-counter in seconds
+ */
 uint64_t seconds();
 
+/*!
+ * \brief Returns a up-counter in milliseconds
+ */
+uint64_t milliseconds();
+
+/*!
+ * \brief Let the timer know of a new tick
+ */
 void tick();
 
 /*!
