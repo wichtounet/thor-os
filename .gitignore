@@ -11,7 +11,7 @@ kernel/debug
 init/debug
 programs/*/debug
 programs/dist/
-tstl/tester
+tstl/debug
 
 # Ignore the generated log (Qemu)
 *.log
