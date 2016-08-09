@@ -87,7 +87,7 @@ int main(int /*argc*/, char* /*argv*/[]){
         paint_cursor();
 
         graphics::redraw(buffer);
-        sleep_ms(10);
+        sleep_ms(5);
     }
 
     delete[] buffer;
