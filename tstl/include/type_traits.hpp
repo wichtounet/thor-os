@@ -13,6 +13,16 @@
 
 namespace std {
 
+template <typename T>
+struct iterator_traits {
+    using value_type = typename T::value_type;
+};
+
+template <typename T>
+struct iterator_traits <T*> {
+    using value_type = T;
+};
+
 template<class T>
 struct remove_reference {
     typedef T type;
@@ -93,6 +103,13 @@ struct conditional<false, T, F> {
 template<typename T>
 struct is_trivially_destructible {
     static constexpr const bool value = __has_trivial_destructor(T);
+};
+
+/* is_trivially_destructible */
+
+template<typename T>
+struct has_trivial_assign {
+    static constexpr const bool value = __has_trivial_assign(T);
 };
 
 /* is_reference */
