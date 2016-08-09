@@ -1,8 +1,12 @@
-default: tester
+default: debug/bin/tester
 
 include ../cpp.mk
 
 TESTSUITE_CPP_FILES=$(wildcard test_suite/*.cpp)
 
-tester: $(TESTSUITE_CPP_FILES)
-	g++ $(WARNING_FLAGS) --std=c++11 -Iinclude -o tester -g $(TESTSUITE_CPP_FILES)
+debug/bin/tester: $(TESTSUITE_CPP_FILES)
+	@ mkdir -p debug/bin/
+	g++ $(WARNING_FLAGS) --std=c++11 -Iinclude -o debug/bin/tester -g $(TESTSUITE_CPP_FILES)
+
+test: debug/bin/tester
+	./debug/bin/tester
