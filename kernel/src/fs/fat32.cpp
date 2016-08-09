@@ -528,8 +528,10 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
         return std::ERROR_DISK_FULL;
     }
 
+#ifdef THOR_CONFIG_DEBUG_FAT32
     logging::logf(logging::log_level::TRACE, "fat32: mkdir: free_cluster:%u\n", size_t(cluster));
     logging::logf(logging::log_level::TRACE, "fat32: mkdir: parent_cluster:%u\n", size_t(parent_cluster));
+#endif
 
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
     if(!read_sectors(cluster_lba(parent_cluster), fat_bs->sectors_per_cluster, directory_cluster.get())){
@@ -582,8 +584,10 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
         return std::ERROR_FAILED;
     }
 
+#ifdef THOR_CONFIG_DEBUG_FAT32
     logging::logf(logging::log_level::TRACE, "fat32: mkdir: special entry . -> %u\n", size_t(new_directory_cluster[0].cluster_low));
     logging::logf(logging::log_level::TRACE, "fat32: mkdir: special entry . -> %u\n", size_t(new_directory_cluster[1].cluster_low));
+#endif
 
     return 0;
 }
