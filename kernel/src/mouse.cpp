@@ -27,19 +27,29 @@ uint16_t position_y = 0;
 void mouse_handler(interrupt::syscall_regs*, void*){
     mouse_packet[cycle++] = in_byte(DATA_PORT);
 
+    if(cycle == 1){ // was 0
+        int8_t flags = mouse_packet[0];
+
+        // If bit 3 is not set, drop the packet
+        if((flags & (1 << 3)) == 0){
+            cycle = 0;
+            return;
+        }
+    }
+
     if(cycle == 3){
         cycle = 0;
 
-        auto state = mouse_packet[0];
+        int8_t flags = mouse_packet[0];
 
         // Discard overflow packets
-        if(state & ((1 << 6) | (1 << 7))){
+        if(flags & ((1 << 6) | (1 << 7))){
             return;
         }
 
         // Compute the 9bit delta values
-        int16_t delta_x = mouse_packet[1] - ((state << 4) & 0x100);
-        int16_t delta_y = mouse_packet[2] - ((state << 3) & 0x100);
+        int16_t delta_x = mouse_packet[1] - ((flags << 4) & 0x100);
+        int16_t delta_y = mouse_packet[2] - ((flags << 3) & 0x100);
 
         // Reverse the y direction
         delta_y = -delta_y;
