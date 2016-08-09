@@ -88,6 +88,14 @@ void gc_task(){
 
                 logging::logf(logging::log_level::DEBUG, "Clean process %u\n", prev_pid);
 
+                // 0. Notify parent if still waiting
+                auto ppid = desc.ppid;
+                for(auto& parent_process : pcb){
+                    if(parent_process.process.pid == ppid && parent_process.state == scheduler::process_state::WAITING){
+                        scheduler::unblock_process(parent_process.process.pid);
+                    }
+                }
+
                 // 1. Release physical memory of PML4T (if not system task)
 
                 if(!desc.system){
@@ -645,14 +653,14 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
 
     init_context(process, buffer, file, params);
 
-    queue_process(process.pid);
-
     pcb[process.pid].working_directory.clear();
     for(auto& p : pcb[current_pid].working_directory){
         pcb[process.pid].working_directory.push_back(p);
     }
 
     logging::logf(logging::log_level::DEBUG, "Exec process pid=%u, ppid=%u\n", process.pid, process.ppid);
+
+    queue_process(process.pid);
 
     return process.pid;
 }
@@ -697,7 +705,8 @@ void scheduler::await_termination(pid_t pid){
         bool found = false;
         for(auto& process : pcb){
             if(process.process.ppid == current_pid && process.process.pid == pid){
-                if(process.state == process_state::KILLED){
+        logging::logf(logging::log_level::DEBUG, "Process %u waits for %u %u\n", current_pid, pid, size_t(process.state));
+                if(process.state == process_state::KILLED || process.state == process_state::EMPTY){
                     lock.release();
                     return;
                 }
@@ -725,20 +734,25 @@ void scheduler::await_termination(pid_t pid){
 void scheduler::kill_current_process(){
     logging::logf(logging::log_level::DEBUG, "Kill %u\n", current_pid);
 
-    //Notify parent if waiting
-    auto ppid = pcb[current_pid].process.ppid;
-    for(auto& process : pcb){
-        if(process.process.pid == ppid && process.state == process_state::WAITING){
-            unblock_process(process.process.pid);
+    {
+        direct_int_lock lock;
+
+        // The process is now considered killed
+        pcb[current_pid].state = scheduler::process_state::KILLED;
+
+        //Notify parent if waiting
+        auto ppid = pcb[current_pid].process.ppid;
+        for(auto& process : pcb){
+            if(process.process.pid == ppid && process.state == process_state::WAITING){
+                unblock_process(process.process.pid);
+            }
+        }
+
+        //The GC thread will clean the resources eventually
+        if(pcb[gc_pid].state == process_state::BLOCKED){
+            unblock_process(gc_pid);
         }
     }
-
-    //The GC thread will clean the resources eventually
-    if(pcb[gc_pid].state == process_state::BLOCKED){
-        unblock_process(gc_pid);
-    }
-
-    pcb[current_pid].state = scheduler::process_state::KILLED;
 
     //Run another process
     reschedule();
