@@ -15,6 +15,46 @@
 
 namespace {
 
+void test_copy(){
+    char a[25];
+    const char* b = "Hello,Thor.OS.OS";
+
+    a[0] = 'a';
+    a[3] = 'b';
+    a[20] = 'd';
+    a[24] = 'e';
+
+    std::copy(a + 4, b, b + 16);
+
+    check(a[0] == 'a', "Invalid copy");
+    check(a[3] == 'b', "Invalid copy");
+    for(size_t i = 4; i < 20; ++i){
+        check(a[i] == b[i - 4], "Invalid copy");
+    }
+    check(a[20] == 'd', "Invalid copy");
+    check(a[24] == 'e', "Invalid copy");
+}
+
+void test_copy_n(){
+    char a[25];
+    const char* b = "hELLO,tHOR.os.os";
+
+    a[0] = 'a';
+    a[3] = 'b';
+    a[20] = 'd';
+    a[24] = 'e';
+
+    std::copy_n(a + 4, b, 16);
+
+    check(a[0] == 'a', "Invalid copy_n");
+    check(a[3] == 'b', "Invalid copy_n");
+    for(size_t i = 4; i < 20; ++i){
+        check(a[i] == b[i - 4], "Invalid copy_n");
+    }
+    check(a[20] == 'd', "Invalid copy_n");
+    check(a[24] == 'e', "Invalid copy_n");
+}
+
 void test_fill_n(){
     char test[25];
 
@@ -94,6 +134,8 @@ void test_clear(){
 } //end of anonymous namespace
 
 void algorithms_tests(){
+    test_copy();
+    test_copy_n();
     test_fill();
     test_fill_n();
     test_clear();
