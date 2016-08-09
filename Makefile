@@ -64,7 +64,11 @@ mount_fat:
 	sudo /bin/mount -t vfat /dev/loop0 mnt/fake/
 
 check_fat:
-	sudo fsck.fat -n /dev/loop0
+	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
+	sudo /bin/mount -t vfat /dev/loop0 mnt/fake/
+	sudo fsck.fat -n /dev/loop0 || true
+	sudo /bin/umount mnt/fake/
+	sudo /sbin/losetup -d /dev/loop0
 
 umount_fat:
 	sudo /bin/umount mnt/fake/
