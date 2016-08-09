@@ -22,7 +22,7 @@ bool display_result(const char* name, uint64_t duration){
         return false;
     }
 
-    uint64_t throughput = 1000 * ((PAGES * 4096) / duration);
+    uint64_t throughput = 1000 * ((repeat * PAGES * 4096) / duration);
 
     if(throughput > (1024 * 1024)){
         printf("%s: %ums bandwith: %uMiB/s\n", name, duration, throughput / (1024 * 1024));
@@ -40,6 +40,8 @@ bool display_result(const char* name, uint64_t duration){
 int main(){
     char* buffer_one = new char[PAGES * 4096];
     char* buffer_two = new char[PAGES * 4096];
+
+    printf("Start benchmark...\n");
 
     uint64_t start = 0, end = 0;
 
