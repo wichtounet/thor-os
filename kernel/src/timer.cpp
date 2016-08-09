@@ -17,9 +17,9 @@
 
 namespace {
 
-uint64_t _timer_ticks = 0;
-uint64_t _timer_seconds = 0;
-uint64_t _timer_milliseconds = 0;
+volatile uint64_t _timer_ticks = 0;
+volatile uint64_t _timer_seconds = 0;
+volatile uint64_t _timer_milliseconds = 0;
 uint64_t _timer_frequency = 0;
 
 //TODO The uptime in seconds with HPET is not correct
