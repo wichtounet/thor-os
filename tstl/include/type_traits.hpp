@@ -201,6 +201,18 @@ struct decay {
     >::type type;
 };
 
+/* is_same */
+
+template<typename T1, typename T2>
+struct is_same {
+    static constexpr const bool value = false;
+};
+
+template<typename T1>
+struct is_same <T1, T1> {
+    static constexpr const bool value = true;
+};
+
 } //end of namespace std
 
 #endif
