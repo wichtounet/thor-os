@@ -14,6 +14,7 @@
 
 #include "console.hpp"
 #include "rtc.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -517,7 +518,7 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
         return std::ERROR_NOT_EXISTS;
     }
 
-    auto parent_cluster_number = cluster_number.second;
+    auto parent_cluster = cluster_number.second;
 
     //Find a free cluster to hold the directory entries
     auto cluster = find_free_cluster();
@@ -525,25 +526,28 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
         return std::ERROR_DISK_FULL;
     }
 
+    logging::logf(logging::log_level::TRACE, "mkdir: free_cluster:%u\n", size_t(cluster));
+    logging::logf(logging::log_level::TRACE, "mkdir: parent_cluster:%u\n", size_t(parent_cluster));
+
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
-    if(!read_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!read_sectors(cluster_lba(parent_cluster), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
     auto& directory = file_path.back();
 
     auto entries = number_of_entries(directory);
-    auto new_directory_entry = find_free_entry(directory_cluster, entries, parent_cluster_number);
+    auto new_directory_entry = find_free_entry(directory_cluster, entries, parent_cluster);
 
     init_directory_entry<true>(new_directory_entry, directory.c_str(), cluster);
 
     //Write back the parent directory cluster
-    if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!write_sectors(cluster_lba(parent_cluster), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
     //This cluster is the end of the chain
-    if(!write_fat_value(cluster, 0x0FFFFFF8)){
+    if(!write_fat_value(cluster, CLUSTER_END)){
         return std::ERROR_FAILED;
     }
 
@@ -560,7 +564,7 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
     init_directory_entry<false>(dot_entry, ".", cluster);
 
     auto dot_dot_entry = &new_directory_cluster[1];
-    init_directory_entry<false>(dot_dot_entry, "..", file_path.empty() ? 0 : parent_cluster_number);
+    init_directory_entry<false>(dot_dot_entry, "..", parent_cluster);
 
     //Mark everything as unused
     for(size_t j = 2; j < new_directory_cluster.size() - 1; ++j){
@@ -1218,19 +1222,22 @@ uint32_t fat32::fat32_file_system::next_cluster(uint32_t cluster){
 uint32_t fat32::fat32_file_system::find_free_cluster(){
     uint64_t fat_begin = fat_bs->reserved_sectors;
 
-    auto entries_per_sector = 512 / sizeof(uint32_t);
+    static constexpr const auto entries_per_sector = 512 / sizeof(uint32_t);
 
     std::unique_heap_array<uint32_t> fat_table(entries_per_sector);
 
-    auto fat_size = fat_bs->sectors_per_fat_long + fat_bs->sectors_per_fat;
+    const auto fat_sectors = fat_bs->sectors_per_fat_long + fat_bs->sectors_per_fat;
 
-    for(size_t j = 0; j < fat_size; ++j){
-        uint64_t fat_sector = fat_begin + j * fat_bs->sectors_per_cluster;
+    // Iterate over each sector of the FAT
+    for(size_t j = 0; j < fat_sectors; ++j){
+        uint64_t fat_sector = fat_begin + j;
 
+        // Read one sector of the FAT
         if(!read_sectors(fat_sector, 1, fat_table.get())){
             return 0; //0 is not a valid cluster number, indicates failure
         }
 
+        // Check all cluster
         for(size_t i = 0; i < fat_table.size(); ++i){
             //Cluster 0 and 1 are not valid cluster
             if(j == 0 && i < 2){
