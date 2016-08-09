@@ -205,6 +205,8 @@ void fat32::fat32_file_system::init(){
     } else {
         fat_is = nullptr;
     }
+
+    logging::logf(logging::log_level::TRACE, "fat32: Number of fat:%u\n", uint64_t(fat_bs->number_of_fat));
 }
 
 size_t fat32::fat32_file_system::get_file(const std::vector<std::string>& file_path, vfs::file& file){
@@ -1189,21 +1191,33 @@ uint32_t fat32::fat32_file_system::read_fat_value(uint32_t cluster){
 
 //Write a value to the FAT for the given cluster
 bool fat32::fat32_file_system::write_fat_value(uint32_t cluster, uint32_t value){
-    uint64_t fat_begin = fat_bs->reserved_sectors;
-    uint64_t fat_sector = fat_begin + (cluster * sizeof(uint32_t)) / 512;
+    const auto fat_sectors = fat_bs->sectors_per_fat_long + fat_bs->sectors_per_fat;
 
-    //Read the cluster we need to alter
-    std::unique_heap_array<uint32_t> fat_table(512 / sizeof(uint32_t));
-    if(!read_sectors(fat_sector, 1, fat_table.get())){
-        return false;
+    uint64_t fat_begin = fat_bs->reserved_sectors;
+
+    for(size_t f = 0; f < fat_bs->number_of_fat; ++f){
+        uint64_t fat_sector = fat_begin + (cluster * sizeof(uint32_t)) / 512;
+
+        //Read the cluster we need to alter
+        std::unique_heap_array<uint32_t> fat_table(512 / sizeof(uint32_t));
+        if(!read_sectors(fat_sector, 1, fat_table.get())){
+            return false;
+        }
+
+        //Set the entry to the given value
+        uint64_t entry_offset = cluster % (512 / sizeof(uint32_t));
+        fat_table[entry_offset] = value;
+
+        //Write back the cluster
+        if(!write_sectors(fat_sector, 1, fat_table.get())){
+            return false;
+        }
+
+        // Switch to the next FAT
+        fat_begin += fat_sectors;
     }
 
-    //Set the entry to the given value
-    uint64_t entry_offset = cluster % (512 / sizeof(uint32_t));
-    fat_table[entry_offset] = value;
-
-    //Write back the cluster
-    return write_sectors(fat_sector, 1, fat_table.get());
+    return true;
 }
 
 //Return the next cluster in the chain for the give cluster
