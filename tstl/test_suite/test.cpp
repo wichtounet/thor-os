@@ -12,10 +12,12 @@
 
 void string_tests();
 void traits_tests();
+void algorithms_tests();
 
 int main(){
     string_tests();
     traits_tests();
+    algorithms_tests();
 
     printf("All tests finished\n");
 
