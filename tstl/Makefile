@@ -10,3 +10,6 @@ debug/bin/tester: $(TESTSUITE_CPP_FILES)
 
 test: debug/bin/tester
 	./debug/bin/tester
+
+clean:
+	rm -rf debug
