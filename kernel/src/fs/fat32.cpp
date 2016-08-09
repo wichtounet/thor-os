@@ -1086,8 +1086,12 @@ std::vector<vfs::file> fat32::fat32_file_system::files(uint32_t cluster_number){
                 file.size = entry.file_size;
             }
 
-            file.location = entry.cluster_low + (entry.cluster_high << 16);
+            file.location = (uint32_t(entry.cluster_high) << 16) + uint32_t(entry.cluster_low);
             file.position = cluster_position * cluster.size() + (position - 1);
+
+            if(file.location == 0){
+                file.location = fat_bs->root_directory_cluster_start;
+            }
 
             files.push_back(file);
         }
