@@ -10,18 +10,7 @@
 
 #include <string.hpp>
 
-void check(bool condition, const char* message){
-    if(!condition){
-        printf("Check failed: \"%s\"\n", message);
-    }
-}
-
-void check_equals(long value, long expected, const char* message){
-    if(value != expected){
-        printf("Check failed: \"%s\"\n", message);
-        printf("\t expected: %ld was: %ld\n", expected, value);
-    }
-}
+#include "test.hpp"
 
 namespace {
 
