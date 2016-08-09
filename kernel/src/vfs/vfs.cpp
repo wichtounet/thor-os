@@ -24,6 +24,7 @@
 #include "flags.hpp"
 
 #include "console.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -251,6 +252,18 @@ int64_t vfs::mkdir(const char* file_path){
     auto path = get_path(file_path);
     auto& fs = get_fs(path);
     auto fs_path = get_fs_path(path, fs);
+
+#ifdef THOR_CONFIG_DEBUG_VFS
+    logging::logf(logging::log_level::TRACE, "vfs: mkdir: %s \n", file_path);
+
+    for(auto& p : path){
+        logging::logf(logging::log_level::TRACE, "vfs: mkdir path: %s\n", p.c_str());
+    }
+
+    for(auto& p : fs_path){
+        logging::logf(logging::log_level::TRACE, "vfs: mkdir fs_path: %s\n", p.c_str());
+    }
+#endif
 
     return fs.file_system->mkdir(fs_path);
 }
