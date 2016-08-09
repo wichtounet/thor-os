@@ -520,16 +520,16 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
         return std::ERROR_NOT_EXISTS;
     }
 
-    auto parent_cluster = cluster_number.second;
+    const auto parent_cluster = cluster_number.second;
 
     //Find a free cluster to hold the directory entries
-    auto cluster = find_free_cluster();
+    const auto cluster = find_free_cluster();
     if(cluster == 0){
         return std::ERROR_DISK_FULL;
     }
 
-    logging::logf(logging::log_level::TRACE, "mkdir: free_cluster:%u\n", size_t(cluster));
-    logging::logf(logging::log_level::TRACE, "mkdir: parent_cluster:%u\n", size_t(parent_cluster));
+    logging::logf(logging::log_level::TRACE, "fat32: mkdir: free_cluster:%u\n", size_t(cluster));
+    logging::logf(logging::log_level::TRACE, "fat32: mkdir: parent_cluster:%u\n", size_t(parent_cluster));
 
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
     if(!read_sectors(cluster_lba(parent_cluster), fat_bs->sectors_per_cluster, directory_cluster.get())){
@@ -538,13 +538,14 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
 
     auto& directory = file_path.back();
 
+    auto parent_cluster_number = parent_cluster; // This may change if full
     auto entries = number_of_entries(directory);
-    auto new_directory_entry = find_free_entry(directory_cluster, entries, parent_cluster);
+    auto new_directory_entry = find_free_entry(directory_cluster, entries, parent_cluster_number);
 
     init_directory_entry<true>(new_directory_entry, directory.c_str(), cluster);
 
     //Write back the parent directory cluster
-    if(!write_sectors(cluster_lba(parent_cluster), fat_bs->sectors_per_cluster, directory_cluster.get())){
+    if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
         return std::ERROR_FAILED;
     }
 
@@ -566,7 +567,7 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
     init_directory_entry<false>(dot_entry, ".", cluster);
 
     auto dot_dot_entry = &new_directory_cluster[1];
-    init_directory_entry<false>(dot_dot_entry, "..", parent_cluster);
+    init_directory_entry<false>(dot_dot_entry, "..", parent_cluster == fat_bs->root_directory_cluster_start ? 0 : parent_cluster);
 
     //Mark everything as unused
     for(size_t j = 2; j < new_directory_cluster.size() - 1; ++j){
@@ -580,6 +581,9 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
     if(!write_sectors(cluster_lba(cluster), fat_bs->sectors_per_cluster, new_directory_cluster.get())){
         return std::ERROR_FAILED;
     }
+
+    logging::logf(logging::log_level::TRACE, "fat32: mkdir: special entry . -> %u\n", size_t(new_directory_cluster[0].cluster_low));
+    logging::logf(logging::log_level::TRACE, "fat32: mkdir: special entry . -> %u\n", size_t(new_directory_cluster[1].cluster_low));
 
     return 0;
 }
