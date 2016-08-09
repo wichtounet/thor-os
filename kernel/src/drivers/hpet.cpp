@@ -75,14 +75,15 @@ void clear_register_bits(size_t reg, uint64_t bits){
 }
 
 void timer_handler(interrupt::syscall_regs*, void*){
-    timer::tick();
-
     // Clears Tn_INT_STS
     set_register_bits(GENERAL_INTERRUPT_REGISTER, 1 << 0);
 
     // Sets the next event to fire an IRQ
     write_register(timer_comparator_reg(0), read_register(MAIN_COUNTER) + comparator_update);
+
+    timer::tick();
 }
+
 } //End of anonymous namespace
 
 void hpet::init(){
