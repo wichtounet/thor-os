@@ -9,61 +9,84 @@
 #include <system.hpp>
 #include <datetime.hpp>
 
-constexpr const size_t PAGES = 256;
+constexpr const size_t PAGES = 512;
+
+namespace {
+
+size_t repeat = 1;
+
+bool display_result(const char* name, uint64_t duration){
+    if(!duration){
+        repeat *= 2;
+        printf("%s was too fast (duration=0) increasing repeat to %u\n", name, repeat);
+        return false;
+    }
+
+    uint64_t throughput = 1000 * ((PAGES * 4096) / duration);
+
+    if(throughput > (1024 * 1024)){
+        printf("%s: %ums bandwith: %uMiB/s\n", name, duration, throughput / (1024 * 1024));
+    } else if(throughput > 1024){
+        printf("%s: %ums bandwith: %uKiB/s\n", name, duration, throughput / 1024);
+    } else {
+        printf("%s: %ums bandwith: %uB/s\n", name, duration, throughput);
+    }
+
+    return true;
+}
+
+} // end of anonymous namespace
 
 int main(){
     char* buffer_one = new char[PAGES * 4096];
     char* buffer_two = new char[PAGES * 4096];
 
-    auto start = ms_time();
+    uint64_t start = 0, end = 0;
 
-    std::copy_n(buffer_one, buffer_two, PAGES * 4096);
+    while(repeat < 100){
+        start = ms_time();
 
-    auto end = ms_time();
+        for(size_t i = 0; i < repeat; ++i){
+            std::copy_n(buffer_one, buffer_two, PAGES * 4096);
+        }
 
-    auto copy_duration = end - start;
-    auto copy_throughput = 1000 * (PAGES * 4096) / copy_duration;
+        end = ms_time();
 
-    if(copy_throughput > 1024 * 1024){
-        printf("copy: %ums bandwith: %uMiB/s\n", copy_duration, copy_throughput / 1024 * 1024);
-    } else if(copy_throughput > 1024){
-        printf("copy: %ums bandwith: %uKiB/s\n", copy_duration, copy_throughput / 1024);
-    } else {
-        printf("copy: %ums bandwith: %uB/s\n", copy_duration, copy_throughput);
+        if(display_result("copy", end - start)){
+            break;
+        }
     }
 
-    start = ms_time();
+    repeat = 1;
 
-    std::fill_n(buffer_two, PAGES * 4096, 'Z');
+    while(repeat < 100){
+        start = ms_time();
 
-    end = ms_time();
+        for(size_t i = 0; i < repeat; ++i){
+            std::fill_n(buffer_two, PAGES * 4096, 'Z');
+        }
 
-    auto fill_duration = end - start;
-    auto fill_throughput = 1000 * (PAGES * 4096) / fill_duration;
+        end = ms_time();
 
-    if(fill_throughput > 1024 * 1024){
-        printf("fill: %ums bandwith: %uMiB/s\n", fill_duration, fill_throughput / 1024 * 1024);
-    } else if(fill_throughput > 1024){
-        printf("fill: %ums bandwith: %uKiB/s\n", fill_duration, fill_throughput / 1024);
-    } else {
-        printf("fill: %ums bandwith: %uB/s\n", fill_duration, fill_throughput);
+        if(display_result("fill", end - start)){
+            break;
+        }
     }
 
-    start = ms_time();
+    repeat = 1;
 
-    std::fill_n(buffer_two, PAGES * 4096, 0);
+    while(repeat < 100){
+        start = ms_time();
 
-    end = ms_time();
+        for(size_t i = 0; i < repeat; ++i){
+            std::fill_n(buffer_two, PAGES * 4096, 0);
+        }
 
-    auto clear_duration = end - start;
-    auto clear_throughput = 1000 * (PAGES * 4096) / clear_duration;
+        end = ms_time();
 
-    if(clear_throughput > 1024 * 1024){
-        printf("clear: %ums bandwith: %uMiB/s\n", clear_duration, clear_throughput / 1024 * 1024);
-    } else if(clear_throughput > 1024){
-        printf("clear: %ums bandwith: %uKiB/s\n", clear_duration, clear_throughput / 1024);
-    } else {
-        printf("clear: %ums bandwith: %uB/s\n", clear_duration, clear_throughput);
+        if(display_result("clear", end - start)){
+            break;
+        }
     }
 
     exit(0);
