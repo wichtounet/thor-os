@@ -39,7 +39,7 @@ constexpr const size_t TIMER_CONFIG_PERIODIC = 1 << 3;
 constexpr const size_t TIMER_CONFIG_PERIODIC_CAP = 1 << 5;
 constexpr const size_t TIMER_CONFIG_64 = 1 << 5;
 
-constexpr const size_t FREQUENCY_GOAL = 1000000; // 1 tick every microseconds
+constexpr const size_t FREQUENCY_GOAL = 100000; // 1 tick every 10 microseconds
 
 ACPI_TABLE_HPET* hpet_table;
 uint64_t* hpet_map;
