@@ -874,15 +874,17 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
-    logging::logf(logging::log_level::DEBUG, "Put %u to sleep\n", pid);
-
-    pcb[pid].state = process_state::SLEEPING;
-
     // Compute the amount of ticks to sleep
     auto sleep_ticks = time * (timer::frequency() / 1000);
     sleep_ticks = !sleep_ticks ? 1 : sleep_ticks;
-    pcb[pid].sleep_timeout = sleep_ticks;
 
+    logging::logf(logging::log_level::DEBUG, "Put %u to sleep for %u ticks\n", pid, sleep_ticks);
+
+    // Put the process to sleep
+    pcb[pid].sleep_timeout = sleep_ticks;
+    pcb[pid].state = process_state::SLEEPING;
+
+    // Run another process
     reschedule();
 }
 
