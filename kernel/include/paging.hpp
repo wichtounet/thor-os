@@ -83,6 +83,8 @@ void early_init();
 void init();
 void finalize();
 
+size_t pages(size_t size);
+
 size_t physical_address(size_t virt);
 bool page_present(size_t virt);
 bool page_free_or_set(size_t virt, size_t physical);

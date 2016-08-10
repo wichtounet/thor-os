@@ -272,6 +272,10 @@ void paging::finalize(){
     sysfs::set_constant_value("/sys/", "/paging/physical_size", std::to_string(paging::physical_memory_pages * paging::PAGE_SIZE));
 }
 
+size_t paging::pages(size_t size){
+    return size / PAGE_SIZE + size % PAGE_SIZE == 0 ? 0 : 1;
+}
+
 //TODO Improve to support a status
 size_t paging::physical_address(size_t virt){
     if(!page_present(virt)){
