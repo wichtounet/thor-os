@@ -23,6 +23,8 @@ uint64_t red_shift = 0;
 uint64_t green_shift = 0;
 uint64_t blue_shift = 0;
 
+#include "Liberation.c"
+
 uint32_t make_color(uint8_t r, uint8_t g, uint8_t b){
     return (r << red_shift) + (g << green_shift) + (b << blue_shift);
 }
@@ -38,6 +40,18 @@ void fill_buffer(uint32_t color){
     }
 }
 
+void draw_pixel(size_t x, size_t y, uint32_t color){
+    z_buffer[x + y * y_shift] = color;
+}
+
+void draw_hline(size_t x, size_t y, size_t w, uint32_t color){
+    auto where = x + y * y_shift;
+
+    for(size_t i = 0; i < w; ++i){
+        z_buffer[where + i] = color;
+    }
+}
+
 void draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
     auto where = x + y * y_shift;
 
@@ -50,13 +64,58 @@ void draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
     }
 }
 
+void draw_char(size_t x, size_t y, char c, uint32_t color){
+    auto where = x + y * y_shift;
+
+    auto font_char = &Liberation_VESA_data[c * 16];
+
+    for(size_t i = 0; i < 16; ++i){
+        for(size_t j = 0; j < 8; ++j){
+            if(font_char[i] & (1 << (8 - j))){
+                z_buffer[where+j] = color;
+            }
+        }
+
+        where += y_shift;
+    }
+}
+
+void draw_string(size_t x, size_t y, const char* s, uint32_t color){
+    while(*s){
+        draw_char(x, y, *s, color);
+        ++s;
+        x += 8;
+    }
+}
+
 void paint_cursor(){
     auto x = graphics::mouse_x();
     auto y = graphics::mouse_y();
 
-    auto color = make_color(255, 0, 0);
+    auto color = make_color(20, 20, 20);
 
-    draw_rect(x, y, 5, 5, color);
+    draw_pixel(x, y, color);
+    draw_hline(x, y+1, 2, color);
+    draw_hline(x, y+2, 3, color);
+    draw_hline(x, y+3, 4, color);
+    draw_hline(x, y+4, 5, color);
+    draw_hline(x, y+5, 4, color);
+    draw_pixel(x, y+6, color);
+    draw_hline(x+2, y+6, 2, color);
+    draw_hline(x+3, y+7, 2, color);
+    draw_hline(x+3, y+8, 2, color);
+}
+
+void paint_top_bar(){
+    draw_rect(0, 0, width, 18, make_color(51, 51, 51));
+    draw_rect(0, 18, width, 2, make_color(25, 25, 25));
+
+    auto date = local_date();
+
+    auto date_str = sprintf("%u.%u.%u %u:%u", size_t(date.day), size_t(date.month), size_t(date.year), size_t(date.hour), size_t(date.minutes));
+
+    draw_char(2, 2, 'T', make_color(30, 30, 30));
+    draw_string(width - 128, 2, date_str.c_str(), make_color(200, 200, 200));
 }
 
 } // end of anonnymous namespace
@@ -79,10 +138,12 @@ int main(int /*argc*/, char* /*argv*/[]){
 
     z_buffer = reinterpret_cast<uint32_t*>(buffer);
 
-    auto white = make_color(255, 255, 255);
+    auto background = make_color(211, 211, 211);
 
     while(true){
-        fill_buffer(white);
+        fill_buffer(background);
+
+        paint_top_bar();
 
         paint_cursor();
 
