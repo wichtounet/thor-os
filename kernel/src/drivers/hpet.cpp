@@ -39,7 +39,7 @@ constexpr const size_t TIMER_CONFIG_PERIODIC = 1 << 3;
 constexpr const size_t TIMER_CONFIG_PERIODIC_CAP = 1 << 5;
 constexpr const size_t TIMER_CONFIG_64 = 1 << 5;
 
-constexpr const size_t FREQUENCY_GOAL = 10000; // 1 tick every 100 microseconds
+constexpr const size_t TIMER_FREQUENCY_GOAL = 10000; // 1 tick every 100 microseconds
 
 ACPI_TABLE_HPET* hpet_table;
 uint64_t* hpet_map;
@@ -137,8 +137,8 @@ void hpet::late_install(){
         auto hpet_frequency = 1000000000000000 / hpet_period;
 
         uint64_t current_frequency;
-        if(hpet_frequency >= FREQUENCY_GOAL){
-            current_frequency = FREQUENCY_GOAL;
+        if(hpet_frequency >= TIMER_FREQUENCY_GOAL){
+            current_frequency = TIMER_FREQUENCY_GOAL;
         } else {
             current_frequency = hpet_frequency;
         }
