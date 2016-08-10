@@ -21,7 +21,8 @@ namespace disks {
 
 enum class disk_type {
     ATA,
-    ATAPI
+    ATAPI,
+    RAM
 };
 
 struct disk_descriptor {

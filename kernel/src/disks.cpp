@@ -10,17 +10,21 @@
 #include <string.hpp>
 
 #include "disks.hpp"
-#include "ata.hpp"
 #include "thor.hpp"
 #include "console.hpp"
+#include "logging.hpp"
+
+// The disks implementation
+#include "ata.hpp"
+#include "ramdisk.hpp"
 
 #include "fs/devfs.hpp"
 #include "fs/sysfs.hpp"
 
 namespace {
 
-//For now, 4 is enough as only the ata driver is implemented
-std::array<disks::disk_descriptor, 4> _disks;
+//For now, 5 is enough as only the ata driver and ramdisk are implemented
+std::array<disks::disk_descriptor, 5> _disks;
 
 uint64_t number_of_disks = 0;
 
@@ -45,10 +49,26 @@ static_assert(sizeof(boot_record_t) == 512, "The boot record is 512 bytes long")
 
 ata::ata_driver ata_driver_impl;
 ata::ata_part_driver ata_part_driver_impl;
+ramdisk::ramdisk_driver ramdisk_driver_impl;
 
 devfs::dev_driver* ata_driver = &ata_driver_impl;
 devfs::dev_driver* ata_part_driver = &ata_part_driver_impl;
+devfs::dev_driver* ramdisk_driver = &ramdisk_driver_impl;
 devfs::dev_driver* atapi_driver = nullptr;
+
+void make_ram_disk(){
+    auto* descriptor = ramdisk::make_disk();
+
+    if(!descriptor){
+        logging::logf(logging::log_level::ERROR, "disks: failed to created /dev/ram0");
+        return;
+    }
+
+    _disks[number_of_disks] = {number_of_disks, disks::disk_type::RAM, &descriptor};
+    ++number_of_disks;
+
+    devfs::register_device("/dev/", "ram0", devfs::device_type::BLOCK_DEVICE, ramdisk_driver, &_disks[number_of_disks]);
+}
 
 } //end of anonymous namespace
 
@@ -96,6 +116,8 @@ void disks::detect_disks(){
             ++number_of_disks;
         }
     }
+
+    make_ram_disk();
 }
 
 disks::disk_descriptor& disks::disk_by_index(uint64_t index){
@@ -113,6 +135,11 @@ disks::disk_descriptor& disks::disk_by_uuid(uint64_t uuid){
 }
 
 std::unique_heap_array<disks::partition_descriptor> disks::partitions(disk_descriptor& disk){
+    // A RAM disk has no partition
+    if(disk.type == disk_type::RAM){
+        return {};
+    }
+
     std::unique_ptr<boot_record_t> boot_record(new boot_record_t());
 
     size_t read;
