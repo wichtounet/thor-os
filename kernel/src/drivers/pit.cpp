@@ -15,7 +15,11 @@
 
 namespace {
 
+size_t pit_counter = 0;
+
 void timer_handler(interrupt::syscall_regs*, void*){
+    ++pit_counter;
+
     timer::tick();
 }
 
@@ -37,6 +41,9 @@ bool pit::install(){
         return false;
     }
 
+    // Let the timer know how to query the counter
+    timer::counter_fun(pit::counter);
+
     logging::logf(logging::log_level::TRACE, "PIT Driver Installed\n");
 
     return true;
@@ -48,4 +55,8 @@ void pit::remove(){
     }
 
     logging::logf(logging::log_level::TRACE, "PIT Driver Removed\n");
+}
+
+uint64_t pit::counter(){
+    return pit_counter;
 }
