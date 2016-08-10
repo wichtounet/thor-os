@@ -47,6 +47,26 @@ uint64_t timer_frequency();
  */
 void timer_frequency(uint64_t freq);
 
+/*!
+ * \brief Returns a up-counter based on the counter frequency
+ */
+uint64_t counter();
+
+/*!
+ * \brief Return the frequency in Hz of the current counter system.
+ */
+uint64_t counter_frequency();
+
+/*!
+ * \brief Sets the frequency in Hz of the current counter system.
+ */
+void counter_frequency(uint64_t freq);
+
+/*!
+ * \brief Sets the function to use to get the counter value;
+ */
+void counter_fun(uint64_t (*fun)());
+
 } //end of timer namespace
 
 #endif

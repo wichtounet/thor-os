@@ -22,6 +22,9 @@ volatile uint64_t _timer_seconds = 0;
 volatile uint64_t _timer_milliseconds = 0;
 uint64_t _timer_frequency = 0;
 
+uint64_t (*_counter_fun)() = nullptr;
+uint64_t _counter_frequency = 0;
+
 //TODO The uptime in seconds with HPET is not correct
 std::string sysfs_uptime(){
     return std::to_string(timer::seconds());
@@ -92,4 +95,20 @@ void timer::timer_frequency(uint64_t freq){
     logging::logf(logging::log_level::DEBUG, "timer: Frequency set to %u Hz\n", freq);
 
     scheduler::frequency_updated(old_frequency, _timer_frequency);
+}
+
+uint64_t timer::counter(){
+    return _counter_fun();
+}
+
+uint64_t timer::counter_frequency(){
+    return _counter_frequency;
+}
+
+void timer::counter_frequency(uint64_t freq){
+    _counter_frequency = freq;
+}
+
+void timer::counter_fun(uint64_t (*fun)()){
+    _counter_fun = fun;
 }
