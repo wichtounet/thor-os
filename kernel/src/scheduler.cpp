@@ -36,6 +36,12 @@ extern void task_switch(size_t current, size_t next);
 extern void init_task_switch(size_t current) __attribute__((noreturn));
 }
 
+#ifdef THOR_CONFIG_SCHED_VERBOSE
+#define verbose_logf(...) logging::logf(__VA_ARGS__)
+#else
+#define verbose_logf(...)
+#endif
+
 namespace {
 
 constexpr const size_t STACK_ALIGNMENT = 16;     ///< In bytes
@@ -764,7 +770,7 @@ void scheduler::tick(){
             --process.sleep_timeout;
 
             if(process.sleep_timeout == 0){
-                logging::logf(logging::log_level::TRACE, "scheduler: Process %u finished sleeping, is ready\n", process.process.pid);
+                verbose_logf(logging::log_level::TRACE, "scheduler: Process %u finished sleeping, is ready\n", process.process.pid);
                 process.state = process_state::READY;
             }
         }
@@ -785,7 +791,7 @@ void scheduler::tick(){
             return;
         }
 
-        logging::logf(logging::log_level::DEBUG, "scheduler: Preempt %u to %u\n", current_pid, pid);
+        verbose_logf(logging::log_level::DEBUG, "scheduler: Preempt %u to %u\n", current_pid, pid);
 
         switch_to_process(pid);
     } else {
