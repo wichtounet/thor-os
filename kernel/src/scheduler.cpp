@@ -60,8 +60,6 @@ volatile bool started = false;
 
 volatile size_t rr_quantum = 0;
 
-size_t current_ticks = 0;
-
 volatile size_t current_pid;
 size_t next_pid = 0;
 
@@ -592,8 +590,6 @@ void scheduler::init(){
     create_gc_task();
     create_post_init_task();
 
-    current_ticks = 0;
-
     procfs::set_pcb(pcb.data());
 }
 
@@ -762,8 +758,6 @@ void scheduler::tick(){
     if(!started){
         return;
     }
-
-    ++current_ticks;
 
     // Update sleep timeouts
     for(auto& process : pcb){
