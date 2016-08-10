@@ -18,11 +18,6 @@ namespace timer {
 void install();
 
 /*!
- * \brief Returns a up-counter in timer ticks
- */
-uint64_t ticks();
-
-/*!
  * \brief Returns a up-counter in seconds
  */
 uint64_t seconds();

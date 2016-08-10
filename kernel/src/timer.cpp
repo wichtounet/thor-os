@@ -58,29 +58,16 @@ void timer::install(){
 }
 
 void timer::tick(){
-    ++_timer_ticks;
-
+    // Simply let the scheduler know about the tick
     scheduler::tick();
-
-    if(_timer_ticks % timer_frequency() == 0){
-        ++_timer_seconds;
-    }
-
-    if(_timer_ticks % (timer_frequency() / 1000) == 0){
-        ++_timer_milliseconds;
-    }
-}
-
-uint64_t timer::ticks(){
-    return _timer_ticks;
 }
 
 uint64_t timer::seconds(){
-    return _timer_seconds;
+    return counter() / counter_frequency();
 }
 
 uint64_t timer::milliseconds(){
-    return _timer_milliseconds;
+    return counter() / (counter_frequency() / 1000);
 }
 
 uint64_t timer::timer_frequency(){
