@@ -15,6 +15,8 @@
 
 namespace {
 
+constexpr const uint64_t PIT_FREQUENCY = 1000;
+
 size_t pit_counter = 0;
 
 void timer_handler(interrupt::syscall_regs*, void*){
@@ -26,14 +28,14 @@ void timer_handler(interrupt::syscall_regs*, void*){
 } //End of anonymous namespace
 
 bool pit::install(){
-    uint64_t divisor = 1193180 / 1000;
+    uint64_t divisor = 1193180 / PIT_FREQUENCY;
 
     out_byte(0x43, 0x36);
     out_byte(0x40, static_cast<uint8_t>(divisor));
     out_byte(0x40, static_cast<uint8_t>(divisor >> 8));
 
     // Indicate the timer frequency
-    timer::timer_frequency(1000);
+    timer::timer_frequency(PIT_FREQUENCY);
 
     if(!interrupt::register_irq_handler(0, timer_handler, nullptr)){
         logging::logf(logging::log_level::ERROR, "Unable to register PIT IRQ handler 0\n");
@@ -41,8 +43,9 @@ bool pit::install(){
         return false;
     }
 
-    // Let the timer know how to query the counter
+    // Let the timer know about the counter
     timer::counter_fun(pit::counter);
+    timer::counter_frequency(PIT_FREQUENCY);
 
     logging::logf(logging::log_level::TRACE, "PIT Driver Installed\n");
 
