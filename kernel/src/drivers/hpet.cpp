@@ -151,8 +151,11 @@ void hpet::late_install(){
         logging::logf(logging::log_level::TRACE, "hpet: Comparator update %u\n", comparator_update);
 
         // Update the current frequency (this will update the sleeping task as well)
-
         timer::timer_frequency(current_frequency);
+
+        // Give information about the counter
+        timer::counter_fun(hpet::counter);
+        timer::counter_frequency(current_frequency);
 
         // Uninstall the PIT driver
         pit::remove();
@@ -176,4 +179,8 @@ void hpet::late_install(){
         // Enable HPET in legacy mode
         set_register_bits(GENERAL_CONFIG_REGISTER, GENERAL_CONFIG_LEGACY | GENERAL_CONFIG_ENABLE);
     }
+}
+
+uint64_t hpet::counter(){
+    return read_register(MAIN_COUNTER);
 }

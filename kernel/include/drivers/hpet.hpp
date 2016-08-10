@@ -8,12 +8,16 @@
 #ifndef DRIVER_HPET_H
 #define DRIVER_HPET_H
 
+#include <types.hpp>
+
 namespace hpet {
 
 bool install();
 void late_install();
 
 void init();
+
+uint64_t counter();
 
 } //end of namespace hpet
 
