@@ -167,7 +167,7 @@ void AcpiOsSleep(UINT64 ms){
  */
 void AcpiOsStall(UINT32 us){
     auto ticks = timer::ticks();
-    auto wait = us * (timer::frequency() / 1000000);
+    auto wait = us * (timer::timer_frequency() / 1000000);
     wait = !wait ? 1 : wait;
 
     while(timer::ticks() != ticks + wait){

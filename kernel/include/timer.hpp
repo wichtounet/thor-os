@@ -40,12 +40,12 @@ void tick();
 /*!
  * \brief Return the frequency in Hz of the current timer system.
  */
-uint64_t frequency();
+uint64_t timer_frequency();
 
 /*!
  * \brief Sets the frequency in Hz of the current timer system.
  */
-void frequency(uint64_t freq);
+void timer_frequency(uint64_t freq);
 
 } //end of timer namespace
 

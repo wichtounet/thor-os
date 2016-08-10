@@ -875,7 +875,7 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     thor_assert(pcb[pid].state == process_state::RUNNING, "Only RUNNING processes can sleep");
 
     // Compute the amount of ticks to sleep
-    auto sleep_ticks = time * (timer::frequency() / 1000);
+    auto sleep_ticks = time * (timer::timer_frequency() / 1000);
     sleep_ticks = !sleep_ticks ? 1 : sleep_ticks;
 
     logging::logf(logging::log_level::DEBUG, "Put %u to sleep for %u ticks\n", pid, sleep_ticks);

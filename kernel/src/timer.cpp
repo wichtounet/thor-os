@@ -59,11 +59,11 @@ void timer::tick(){
 
     scheduler::tick();
 
-    if(_timer_ticks % frequency() == 0){
+    if(_timer_ticks % timer_frequency() == 0){
         ++_timer_seconds;
     }
 
-    if(_timer_ticks % (frequency() / 1000) == 0){
+    if(_timer_ticks % (timer_frequency() / 1000) == 0){
         ++_timer_milliseconds;
     }
 }
@@ -80,11 +80,11 @@ uint64_t timer::milliseconds(){
     return _timer_milliseconds;
 }
 
-uint64_t timer::frequency(){
+uint64_t timer::timer_frequency(){
     return _timer_frequency;
 }
 
-void timer::frequency(uint64_t freq){
+void timer::timer_frequency(uint64_t freq){
     auto old_frequency = _timer_frequency;
 
     _timer_frequency = freq;

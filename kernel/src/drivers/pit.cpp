@@ -29,7 +29,7 @@ bool pit::install(){
     out_byte(0x40, static_cast<uint8_t>(divisor >> 8));
 
     // Indicate the timer frequency
-    timer::frequency(1000);
+    timer::timer_frequency(1000);
 
     if(!interrupt::register_irq_handler(0, timer_handler, nullptr)){
         logging::logf(logging::log_level::ERROR, "Unable to register PIT IRQ handler 0\n");

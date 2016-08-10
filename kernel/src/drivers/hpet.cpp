@@ -152,7 +152,7 @@ void hpet::late_install(){
 
         // Update the current frequency (this will update the sleeping task as well)
 
-        timer::frequency(current_frequency);
+        timer::timer_frequency(current_frequency);
 
         // Uninstall the PIT driver
         pit::remove();
