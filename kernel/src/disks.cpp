@@ -57,7 +57,7 @@ devfs::dev_driver* ramdisk_driver = &ramdisk_driver_impl;
 devfs::dev_driver* atapi_driver = nullptr;
 
 void make_ram_disk(){
-    auto* descriptor = ramdisk::make_disk();
+    auto* descriptor = ramdisk::make_disk(1024 * 1024); //1MiB
 
     if(!descriptor){
         logging::logf(logging::log_level::ERROR, "disks: failed to created /dev/ram0");

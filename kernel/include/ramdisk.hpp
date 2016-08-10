@@ -16,10 +16,12 @@ namespace ramdisk {
 
 struct disk_descriptor {
     uint64_t id;
-    //TODO
+    uint64_t max_size;
+    uint64_t pages;
+    char** allocated;
 };
 
-disk_descriptor* make_disk();
+disk_descriptor* make_disk(uint64_t max_size);
 
 struct ramdisk_driver : devfs::dev_driver {
     size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read);
