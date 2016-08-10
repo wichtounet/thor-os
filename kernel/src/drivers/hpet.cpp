@@ -155,7 +155,7 @@ void hpet::late_install(){
 
         // Give information about the counter
         timer::counter_fun(hpet::counter);
-        timer::counter_frequency(current_frequency);
+        timer::counter_frequency(hpet_frequency);
 
         // Uninstall the PIT driver
         pit::remove();
