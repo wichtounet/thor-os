@@ -38,6 +38,9 @@ extern void init_task_switch(size_t current) __attribute__((noreturn));
 
 namespace {
 
+constexpr const size_t STACK_ALIGNMENT = 16;     ///< In bytes
+constexpr const size_t ROUND_ROBIN_QUANTUM = 25; ///< In milliseconds
+
 //The Process Control Block
 std::array<scheduler::process_control_t, scheduler::MAX_PROCESS> pcb;
 
@@ -55,10 +58,7 @@ mutex<>& run_queue_lock(size_t priority){
 
 volatile bool started = false;
 
-constexpr const size_t STACK_ALIGNMENT = 16;
-
-constexpr const size_t TURNOVER = 5;
-constexpr const size_t QUANTUM_SIZE = 50;
+volatile size_t rr_quantum = 0;
 
 size_t current_ticks = 0;
 
@@ -777,28 +777,26 @@ void scheduler::tick(){
         }
     }
 
-    if(current_ticks % QUANTUM_SIZE == 0){
-        auto& process = pcb[current_pid];
+    auto& process = pcb[current_pid];
 
-        if(process.rounds == TURNOVER){
-            process.rounds = 0;
+    if(process.rounds == rr_quantum){
+        process.rounds = 0;
 
-            process.state = process_state::READY;
+        process.state = process_state::READY;
 
-            auto pid = select_next_process();
+        auto pid = select_next_process();
 
-            //If it is the same, no need to go to the switching process
-            if(pid == current_pid){
-                process.state = process_state::RUNNING;
-                return;
-            }
-
-            logging::logf(logging::log_level::DEBUG, "Preempt %u to %u\n", current_pid, pid);
-
-            switch_to_process(pid);
-        } else {
-            ++process.rounds;
+        //If it is the same, no need to go to the switching process
+        if(pid == current_pid){
+            process.state = process_state::RUNNING;
+            return;
         }
+
+        logging::logf(logging::log_level::DEBUG, "Preempt %u to %u\n", current_pid, pid);
+
+        switch_to_process(pid);
+    } else {
+        ++process.rounds;
     }
 
     //At this point we just have to return to the current process
@@ -980,6 +978,8 @@ void scheduler::frequency_updated(uint64_t old_frequency, uint64_t new_frequency
     // Cannot be interrupted during frequency update
     direct_int_lock lock;
 
+    rr_quantum = ROUND_ROBIN_QUANTUM * (double(new_frequency) / double(1000));
+
     double ratio = old_frequency / double(new_frequency);
 
     for(auto& process : pcb){
@@ -987,6 +987,8 @@ void scheduler::frequency_updated(uint64_t old_frequency, uint64_t new_frequency
             process.sleep_timeout *= ratio;
         }
     }
+
+    logging::logf(logging::log_level::DEBUG, "scheduler:: Frequency updated. New Round Robin quantum: %u\n", rr_quantum);
 }
 
 void scheduler::fault(){
