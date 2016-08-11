@@ -32,6 +32,10 @@ ramdisk::disk_descriptor* ramdisk::make_disk(uint64_t max_size){
     ramdisks[current].pages = pages;
     ramdisks[current].allocated = new char*[pages];
 
+    for(size_t i = 0; i < pages; ++i){
+        ramdisks[current].allocated[i] = nullptr;
+    }
+
     ++current;
     return &ramdisks[current - 1];
 }
@@ -51,7 +55,7 @@ size_t ramdisk::ramdisk_driver::read(void* data, char* destination, size_t count
         auto page = offset / paging::PAGE_SIZE;
         auto page_offset = offset % paging::PAGE_SIZE;
 
-        auto to_read = std::min(paging::PAGE_SIZE, count - read) - page_offset;
+        auto to_read = std::min(paging::PAGE_SIZE - page_offset, count - read);
 
         // If the page is not allocated, we simply consider it full of zero
         if(!disk->allocated[page]){
@@ -89,14 +93,14 @@ size_t ramdisk::ramdisk_driver::write(void* data, const char* source, size_t cou
             std::fill_n(disk->allocated[page], paging::PAGE_SIZE, 0);
         }
 
-        auto to_write = std::min(paging::PAGE_SIZE, count - written) - page_offset;
+        uint64_t to_write = std::min(paging::PAGE_SIZE - page_offset, count - written);
         std::copy_n(disk->allocated[page] + page_offset, source, to_write);
         written += to_write;
 
         offset += to_write;
     }
 
-    return std::ERROR_INVALID_COUNT;
+    return 0;
 }
 
 size_t ramdisk::ramdisk_driver::size(void* data){
