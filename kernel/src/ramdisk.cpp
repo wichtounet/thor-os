@@ -49,17 +49,18 @@ size_t ramdisk::ramdisk_driver::read(void* data, char* destination, size_t count
 
     while(read != count){
         auto page = offset / paging::PAGE_SIZE;
+        auto page_offset = offset % paging::PAGE_SIZE;
 
         if(!disk->allocated[page]){
             disk->allocated[page] = new char[paging::PAGE_SIZE];
             std::fill_n(disk->allocated[page], paging::PAGE_SIZE, 0);
         }
 
-        auto to_read = std::min(paging::PAGE_SIZE, count - read);
-        std::copy_n(destination, disk->allocated[page], to_read);
+        auto to_read = std::min(paging::PAGE_SIZE, count - read) - page_offset;
+        std::copy_n(destination, disk->allocated[page] + page_offset, to_read);
         read += to_read;
 
-        offset += paging::PAGE_SIZE;
+        offset += to_read;
     }
 
     return 0;
@@ -78,17 +79,18 @@ size_t ramdisk::ramdisk_driver::write(void* data, const char* source, size_t cou
 
     while(written != count){
         auto page = offset / paging::PAGE_SIZE;
+        auto page_offset = offset % paging::PAGE_SIZE;
 
         if(!disk->allocated[page]){
             disk->allocated[page] = new char[paging::PAGE_SIZE];
             std::fill_n(disk->allocated[page], paging::PAGE_SIZE, 0);
         }
 
-        auto to_write = std::min(paging::PAGE_SIZE, count - written);
-        std::copy_n(disk->allocated[page], source, to_write);
+        auto to_write = std::min(paging::PAGE_SIZE, count - written) - page_offset;
+        std::copy_n(disk->allocated[page] + page_offset, source, to_write);
         written += to_write;
 
-        offset += paging::PAGE_SIZE;
+        offset += to_write;
     }
 
     return std::ERROR_INVALID_COUNT;
