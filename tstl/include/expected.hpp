@@ -254,7 +254,7 @@ public:
     ~expected() = default;
 
     /* Operators */
-expected& operator=(const expected& rhs){
+    expected& operator=(const expected& rhs){
         this_type(rhs).swap(*this);
         return *this;
     }
