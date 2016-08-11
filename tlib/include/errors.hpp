@@ -29,6 +29,7 @@ constexpr const size_t ERROR_PERMISSION_DENIED = 13;
 constexpr const size_t ERROR_INVALID_OFFSET = 14;
 constexpr const size_t ERROR_UNSUPPORTED = 15;
 constexpr const size_t ERROR_INVALID_COUNT = 16;
+constexpr const size_t ERROR_INVALID_REQUEST = 17;
 
 inline const char* error_message(size_t error){
     switch(error){

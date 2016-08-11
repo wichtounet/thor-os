@@ -17,6 +17,9 @@
 #include "vesa.hpp"
 #include "mouse.hpp"
 #include "vfs/vfs.hpp"
+#include "ioctl.hpp"
+
+//TODO Split this file
 
 namespace {
 
@@ -275,6 +278,14 @@ void sc_mouse_y(interrupt::syscall_regs* regs){
     regs->rax = mouse::y();
 }
 
+void sc_ioctl(interrupt::syscall_regs* regs){
+    auto device = reinterpret_cast<const char*>(regs->rbx);
+    auto request = regs->rcx;
+    auto data = reinterpret_cast<void*>(regs->rdx);
+
+    regs->rax = ioctl(device, static_cast<ioctl_request>(request), data);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -448,6 +459,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x1101:
             sc_mouse_y(regs);
+            break;
+
+        case 0x2000:
+            sc_ioctl(regs);
             break;
 
         default:
