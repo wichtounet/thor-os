@@ -83,6 +83,8 @@ size_t ramdisk::ramdisk_driver::write(void* data, const char* source, size_t cou
         auto page_offset = offset % paging::PAGE_SIZE;
 
         if(!disk->allocated[page]){
+            logging::logf(logging::log_level::TRACE, "ramdisk: Disk %u Allocated page %u \n", disk->id, page);
+
             disk->allocated[page] = new char[paging::PAGE_SIZE];
             std::fill_n(disk->allocated[page], paging::PAGE_SIZE, 0);
         }
