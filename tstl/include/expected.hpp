@@ -260,7 +260,7 @@ public:
     }
 
     expected& operator=(expected&& rhs){
-        this_type(std::forward(rhs)).swap(*this);
+        this_type(std::move(rhs)).swap(*this);
         return *this;
     }
 
@@ -270,7 +270,7 @@ public:
     }
 
     expected& operator=(value_type&& v){
-        this_type(std::forward(v)).swap(*this);
+        this_type(std::move(v)).swap(*this);
         return *this;
     }
 
