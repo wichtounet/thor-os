@@ -413,6 +413,21 @@ size_t ata::ata_driver::write(void* data, const char* source, size_t count, size
     return ata::write_sectors(*disk, start, sectors, source, written);
 }
 
+size_t ata::ata_driver::size(void* data){
+    auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
+    auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
+
+    //TODO Get the size
+
+    return 0;
+}
+
+size_t ata::ata_part_driver::size(void* data){
+    auto part_descriptor = reinterpret_cast<disks::partition_descriptor*>(data);
+
+    return part_descriptor->sectors * BLOCK_SIZE;
+}
+
 size_t ata::ata_part_driver::read(void* data, char* destination, size_t count, size_t offset, size_t& read){
     if(count % BLOCK_SIZE != 0){
         return std::ERROR_INVALID_COUNT;

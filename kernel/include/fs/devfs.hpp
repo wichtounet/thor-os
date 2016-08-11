@@ -23,6 +23,7 @@ enum class device_type {
 struct dev_driver {
     virtual size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read) = 0;
     virtual size_t write(void* data, const char* buffer, size_t count, size_t offset, size_t& written) = 0;
+    virtual size_t size(void* data) = 0;
 };
 
 struct devfs_file_system : vfs::file_system {
@@ -47,6 +48,8 @@ public:
 void register_device(const std::string& mp, const std::string& name, device_type type, dev_driver* driver, void* data);
 void deregister_device(const std::string& mp, const std::string& name);
 
-}
+uint64_t get_device_size(const std::string& device_name, size_t& size);
+
+} //end of namespace devfs
 
 #endif

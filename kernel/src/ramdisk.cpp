@@ -96,3 +96,9 @@ size_t ramdisk::ramdisk_driver::write(void* data, const char* source, size_t cou
 
     return std::ERROR_INVALID_COUNT;
 }
+
+size_t ramdisk::ramdisk_driver::size(void* data){
+    auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
+    auto disk = reinterpret_cast<ramdisk::disk_descriptor*>(descriptor->descriptor);
+    return disk->max_size;
+}

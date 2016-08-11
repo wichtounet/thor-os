@@ -30,6 +30,7 @@ constexpr const size_t ERROR_INVALID_OFFSET = 14;
 constexpr const size_t ERROR_UNSUPPORTED = 15;
 constexpr const size_t ERROR_INVALID_COUNT = 16;
 constexpr const size_t ERROR_INVALID_REQUEST = 17;
+constexpr const size_t ERROR_INVALID_DEVICE = 18;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -65,6 +66,10 @@ inline const char* error_message(size_t error){
             return "Unsupported operation: May not be implemented yet";
         case ERROR_INVALID_COUNT:
             return "The count is not valid";
+        case ERROR_INVALID_REQUEST:
+            return "The request is not valid";
+        case ERROR_INVALID_DEVICE:
+            return "The device is not valid for this request";
         default:
             return "Unknonwn error";
     }
