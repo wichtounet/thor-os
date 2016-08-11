@@ -12,6 +12,7 @@
 #include <algorithms.hpp>
 #include <vector.hpp>
 #include <unique_ptr.hpp>
+#include <iterator.hpp>
 
 namespace std {
 
@@ -162,6 +163,26 @@ public:
         }
 
         (*this)[0] = '\0';
+    }
+
+    template <typename It>
+    basic_string(It it, It end) {
+        _size = std::distance(it, end);
+
+        auto capacity = size() + 1;
+
+        set_small(capacity <= 16);
+
+        if(!is_small()){
+            new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
+        }
+
+        auto oit = begin();
+        while(it != end){
+            *oit++ = *it++;
+        }
+
+        (*this)[_size] = '\0';
     }
 
     //Copy
@@ -385,10 +406,10 @@ public:
         return *(data_ptr() + i);
     }
 
-    size_t find(char c) const {
-        for(size_t i = 0; i < size(); ++i){
-            if((*this)[i] == c){
-                return i;
+    size_t find(char c, size_t pos = 0) const {
+        for(; pos < size(); ++pos){
+            if((*this)[pos] == c){
+                return pos;
             }
         }
 

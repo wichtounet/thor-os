@@ -13,6 +13,7 @@
 #include "fs/devfs.hpp"
 
 #include "console.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -204,16 +205,29 @@ void devfs::deregister_device(const std::string& mp, const std::string& name){
 }
 
 uint64_t devfs::get_device_size(const std::string& device_name, size_t& size){
+    if(device_name[0] != '/'){
+        return std::ERROR_INVALID_DEVICE;
+    }
+
+    if(device_name.find('/', 1) == std::string::npos){
+        return std::ERROR_INVALID_DEVICE;
+    }
+
+    std::string mp(device_name.begin(), device_name.begin() + device_name.find('/', 1) + 1);
+    std::string name(device_name.begin() + device_name.find('/', 1) + 1, device_name.end());
+
     for(auto& device_list : devices){
-        for(auto& device : device_list.devices){
-            if(device.name == device_name){
-                if(device.type == device_type::BLOCK_DEVICE){
-                    size = device.driver->size(device.data);
+        if(device_list.name == mp){
+            for(auto& device : device_list.devices){
+                if(device.name == name){
+                    if(device.type == device_type::BLOCK_DEVICE){
+                        size = device.driver->size(device.data);
 
-                    return 0;
+                        return 0;
+                    }
+
+                    return std::ERROR_INVALID_DEVICE;
                 }
-
-                return std::ERROR_INVALID_DEVICE;
             }
         }
     }

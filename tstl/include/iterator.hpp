@@ -5,14 +5,22 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "ioctl.hpp"
-#include "errors.hpp"
-#include "fs/devfs.hpp"
+#ifndef ITERATOR_HPP
+#define ITERATOR_HPP
 
-int64_t ioctl(const std::string& device, ioctl_request request, void* data){
-    if(request == ioctl_request::GET_BLK_SIZE){
-        return devfs::get_device_size(device, *reinterpret_cast<size_t*>(data));
-    }
+#include <type_traits.hpp>
+#include <utility.hpp>
+#include <types.hpp>
+#include <enable_if.hpp>
 
-    return std::ERROR_INVALID_REQUEST;
+namespace std {
+
+template<typename Iterator>
+size_t distance(Iterator it, Iterator end){
+    // For now, we only have random access iterator
+    return end - it;
 }
+
+} //end of namespace std
+
+#endif
