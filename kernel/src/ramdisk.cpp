@@ -51,15 +51,16 @@ size_t ramdisk::ramdisk_driver::read(void* data, char* destination, size_t count
         auto page = offset / paging::PAGE_SIZE;
         auto page_offset = offset % paging::PAGE_SIZE;
 
+        auto to_read = std::min(paging::PAGE_SIZE, count - read) - page_offset;
+
+        // If the page is not allocated, we simply consider it full of zero
         if(!disk->allocated[page]){
-            disk->allocated[page] = new char[paging::PAGE_SIZE];
-            std::fill_n(disk->allocated[page], paging::PAGE_SIZE, 0);
+            std::fill_n(destination, to_read, 0);
+        } else {
+            std::copy_n(destination, disk->allocated[page] + page_offset, to_read);
         }
 
-        auto to_read = std::min(paging::PAGE_SIZE, count - read) - page_offset;
-        std::copy_n(destination, disk->allocated[page] + page_offset, to_read);
         read += to_read;
-
         offset += to_read;
     }
 
