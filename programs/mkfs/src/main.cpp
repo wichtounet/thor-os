@@ -29,13 +29,25 @@ int main(int argc, char* argv[]){
     std::string fs(fs_str);
 
     if(fs == "fat32"){
+        // Open the device file
+        auto fd = open(device_str);
+
+        if(!fd.valid()){
+            printf("mkfs: open error: %s\n", std::error_message(fd.error()));
+            exit(1);
+        }
+
+        // Get the size of the device
+
         uint64_t size = 0;
         auto code = ioctl(device_str, ioctl_request::GET_BLK_SIZE, &size);
 
         if(code){
-            printf("mkfs: error: %s\n", std::error_message(code));
+            printf("mkfs: ioctl error: %s\n", std::error_message(code));
             exit(1);
         }
+
+        // Start computing and writing the FAT32 values
 
         printf("mkfs: Creating Fat32 filesystem on %s\n", device_str);
         printf("mkfs: Device size: %m\n", size);
@@ -79,6 +91,14 @@ int main(int argc, char* argv[]){
         std::copy_n(&fat_bs->file_system_type[0], "FAT32", 5);
         fat_bs->signature = 0xAA55;
 
+        // Write the FAT BS
+        auto status = write(*fd, reinterpret_cast<const char*>(fat_bs), sector_size, 0);
+
+        if(!status.valid()){
+            printf("mkfs: write error: %s\n", std::error_message(status.error()));
+            exit(1);
+        }
+
         // TODO Write fat_bs to write
 
         auto* fat_is = new fat32::fat_is_t();
@@ -89,7 +109,13 @@ int main(int argc, char* argv[]){
         fat_is->signature_middle = 0x72724161;
         fat_is->signature_end = 0x000055AA;
 
-        // TODO Write fat_bs
+        // Write the FAT IS
+        status = write(*fd, reinterpret_cast<const char*>(fat_is), sector_size, sector_size);
+
+        if(!status.valid()){
+            printf("mkfs: write error: %s\n", std::error_message(status.error()));
+            exit(1);
+        }
 
         //TODO Write FAT
 
