@@ -201,7 +201,7 @@ size_t procfs::procfs_file_system::statfs(statfs_info& file){
     return 0;
 }
 
-size_t procfs::procfs_file_system::write(const std::vector<std::string>& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
+size_t procfs::procfs_file_system::write(const std::vector<std::string>&, const char*, size_t, size_t, size_t&){
     return std::ERROR_PERMISSION_DENIED;
 }
 
