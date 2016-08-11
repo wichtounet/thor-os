@@ -24,6 +24,7 @@ struct drive_descriptor {
     std::string model;
     std::string serial;
     std::string firmware;
+    size_t size;
 };
 
 void detect_disks();

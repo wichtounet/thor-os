@@ -320,6 +320,12 @@ void identify(ata::drive_descriptor& drive){
     ide_string_into(drive.model, info, 27, 40);
     ide_string_into(drive.serial, info, 10, 20);
     ide_string_into(drive.firmware, info, 23, 8);
+
+    // Get the size of the disk
+    size_t sectors = *reinterpret_cast<uint32_t*>(reinterpret_cast<size_t>(&info[0]) + 114);
+    drive.size = sectors * BLOCK_SIZE;
+
+    logging::logf(logging::log_level::TRACE, "ata: Identified disk of size: %u \n", drive.size);
 }
 
 } //end of anonymous namespace
@@ -339,10 +345,10 @@ void ata::detect_disks(){
 
     drives = new drive_descriptor[4];
 
-    drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, false, "", "", ""};
-    drives[1] = {ATA_PRIMARY, 0xF0, false, SLAVE_BIT, false, "", "", ""};
-    drives[2] = {ATA_SECONDARY, 0xE0, false, MASTER_BIT, false, "", "", ""};
-    drives[3] = {ATA_SECONDARY, 0xF0, false, SLAVE_BIT, false, "", "", ""};
+    drives[0] = {ATA_PRIMARY, 0xE0, false, MASTER_BIT, false, "", "", "", 0};
+    drives[1] = {ATA_PRIMARY, 0xF0, false, SLAVE_BIT, false, "", "", "", 0};
+    drives[2] = {ATA_SECONDARY, 0xE0, false, MASTER_BIT, false, "", "", "", 0};
+    drives[3] = {ATA_SECONDARY, 0xF0, false, SLAVE_BIT, false, "", "", "", 0};
 
     out_byte(ATA_PRIMARY + ATA_DEV_CTL, ATA_CTL_nIEN);
     out_byte(ATA_SECONDARY + ATA_DEV_CTL, ATA_CTL_nIEN);
@@ -417,15 +423,7 @@ size_t ata::ata_driver::size(void* data){
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
 
-    //TODO Get the size
-
-    return 0;
-}
-
-size_t ata::ata_part_driver::size(void* data){
-    auto part_descriptor = reinterpret_cast<disks::partition_descriptor*>(data);
-
-    return part_descriptor->sectors * BLOCK_SIZE;
+    return disk->size;;
 }
 
 size_t ata::ata_part_driver::read(void* data, char* destination, size_t count, size_t offset, size_t& read){
@@ -516,4 +514,10 @@ size_t ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count
     }
 
     return 0;
+}
+
+size_t ata::ata_part_driver::size(void* data){
+    auto part_descriptor = reinterpret_cast<disks::partition_descriptor*>(data);
+
+    return part_descriptor->sectors * BLOCK_SIZE;
 }
