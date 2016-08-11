@@ -64,10 +64,11 @@ void make_ram_disk(){
         return;
     }
 
-    _disks[number_of_disks] = {number_of_disks, disks::disk_type::RAM, &descriptor};
-    ++number_of_disks;
+    _disks[number_of_disks] = {number_of_disks, disks::disk_type::RAM, descriptor};
 
     devfs::register_device("/dev/", "ram0", devfs::device_type::BLOCK_DEVICE, ramdisk_driver, &_disks[number_of_disks]);
+
+    ++number_of_disks;
 }
 
 } //end of anonymous namespace
