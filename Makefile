@@ -31,7 +31,7 @@ thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin init/debug/init.bi
 	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
 	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
 	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
-	sudo /usr/sbin/mkdosfs -F32 /dev/loop0
+	sudo /usr/sbin/mkdosfs -v -F32 /dev/loop0
 	sudo /bin/mount -t vfat /dev/loop0 mnt/fake/
 	sudo mkdir mnt/fake/bin/
 	sudo mkdir mnt/fake/sys/
