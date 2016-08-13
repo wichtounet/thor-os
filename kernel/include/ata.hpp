@@ -38,12 +38,14 @@ size_t clear_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, siz
 struct ata_driver : devfs::dev_driver {
     size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read);
     size_t write(void* data, const char* buffer, size_t count, size_t offset, size_t& written);
+    size_t clear(void* data, size_t count, size_t offset, size_t& written);
     size_t size(void* data);
 };
 
 struct ata_part_driver : devfs::dev_driver {
     size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read);
     size_t write(void* data, const char* buffer, size_t count, size_t offset, size_t& written);
+    size_t clear(void* data, size_t count, size_t offset, size_t& written);
     size_t size(void* data);
 };
 

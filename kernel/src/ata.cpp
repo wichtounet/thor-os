@@ -430,6 +430,26 @@ size_t ata::ata_driver::write(void* data, const char* source, size_t count, size
     return ata::write_sectors(*disk, start, sectors, source, written);
 }
 
+size_t ata::ata_driver::clear(void* data, size_t count, size_t offset, size_t& written){
+    if(count % BLOCK_SIZE != 0){
+        return std::ERROR_INVALID_COUNT;
+    }
+
+    if(offset % BLOCK_SIZE != 0){
+        return std::ERROR_INVALID_OFFSET;
+    }
+
+    written = 0;
+
+    auto sectors = count / BLOCK_SIZE;
+    auto start = offset / BLOCK_SIZE;
+
+    auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
+    auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
+
+    return ata::clear_sectors(*disk, start, sectors, written);
+}
+
 size_t ata::ata_driver::size(void* data){
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
@@ -481,6 +501,29 @@ size_t ata::ata_part_driver::write(void* data, const char* source, size_t count,
     start += part_descriptor->start;
 
     return ata::write_sectors(*disk, start, sectors, source, written);
+}
+
+size_t ata::ata_part_driver::clear(void* data, size_t count, size_t offset, size_t& written){
+    if(count % BLOCK_SIZE != 0){
+        return std::ERROR_INVALID_COUNT;
+    }
+
+    if(offset % BLOCK_SIZE != 0){
+        return std::ERROR_INVALID_OFFSET;
+    }
+
+    written = 0;
+
+    auto sectors = count / BLOCK_SIZE;
+    auto start = offset / BLOCK_SIZE;
+
+    auto part_descriptor = reinterpret_cast<disks::partition_descriptor*>(data);
+    auto descriptor = part_descriptor->disk;
+    auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
+
+    start += part_descriptor->start;
+
+    return ata::clear_sectors(*disk, start, sectors, written);
 }
 
 size_t ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination, size_t& read){

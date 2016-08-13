@@ -103,6 +103,36 @@ size_t ramdisk::ramdisk_driver::write(void* data, const char* source, size_t cou
     return 0;
 }
 
+size_t ramdisk::ramdisk_driver::clear(void* data, size_t count, size_t offset, size_t& written){
+    written = 0;
+
+    auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
+    auto disk = reinterpret_cast<ramdisk::disk_descriptor*>(descriptor->descriptor);
+
+    if(offset + count >= disk->max_size){
+        logging::logf(logging::log_level::ERROR, "ramdisk: Tried to write too far\n");
+        return std::ERROR_INVALID_OFFSET;
+    }
+
+    while(written != count){
+        auto page = offset / paging::PAGE_SIZE;
+        auto page_offset = offset % paging::PAGE_SIZE;
+
+        uint64_t to_write = std::min(paging::PAGE_SIZE - page_offset, count - written);
+
+        // No need to allocate page, they are filled with zeros the
+        // first time they are allocated
+        if(disk->allocated[page]){
+            std::fill_n(disk->allocated[page] + page_offset, to_write, 0);
+        }
+
+        written += to_write;
+        offset += to_write;
+    }
+
+    return 0;
+}
+
 size_t ramdisk::ramdisk_driver::size(void* data){
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ramdisk::disk_descriptor*>(descriptor->descriptor);
