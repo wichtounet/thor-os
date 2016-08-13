@@ -99,8 +99,6 @@ int main(int argc, char* argv[]){
             exit(1);
         }
 
-        // TODO Write fat_bs to write
-
         auto* fat_is = new fat32::fat_is_t();
 
         fat_is->allocated_clusters = 1;
