@@ -33,6 +33,7 @@ drive_descriptor& drive(uint8_t disk);
 
 size_t read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination, size_t& read);
 size_t write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, const void* source, size_t& written);
+size_t clear_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, size_t& written);
 
 struct ata_driver : devfs::dev_driver {
     size_t read(void* data, char* buffer, size_t count, size_t offset, size_t& read);

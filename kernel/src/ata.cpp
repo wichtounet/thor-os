@@ -127,7 +127,13 @@ bool select_device(ata::drive_descriptor& drive){
     return true;
 }
 
-bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data, bool read){
+enum class sector_operation {
+    READ,
+    WRITE,
+    CLEAR
+};
+
+bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data, sector_operation operation){
     std::lock_guard<decltype(ata_lock)> lock(ata_lock);
 
     //Select the device
@@ -142,7 +148,7 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
     uint8_t ch = (start >> 16) & 0xFF;
     uint8_t hd = (start >> 24) & 0x0F;
 
-    auto command = read ? ATA_READ_BLOCK : ATA_WRITE_BLOCK;
+    auto command = operation == sector_operation::READ ? ATA_READ_BLOCK : ATA_WRITE_BLOCK;
 
     //Process the command
     out_byte(controller + ATA_NSECTOR, 1);
@@ -164,10 +170,15 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
 
     uint16_t* buffer = reinterpret_cast<uint16_t*>(data);
 
-    if(!read){
+    if(operation == sector_operation::WRITE){
         //Send the data to the controller
         for(int i = 0; i < 256; ++i){
             out_word(controller + ATA_DATA, *buffer++);
+        }
+    } else if(operation == sector_operation::CLEAR){
+        //Send the data to the controller
+        for(int i = 0; i < 256; ++i){
+            out_word(controller + ATA_DATA, 0);
         }
     }
 
@@ -183,7 +194,7 @@ bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data,
         return false;
     }
 
-    if(read){
+    if(operation == sector_operation::READ){
         //Read the disk sectors
         for(int i = 0; i < 256; ++i){
             *buffer++ = in_word(controller + ATA_DATA);
@@ -480,7 +491,7 @@ size_t ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count,
         auto block = cache.block((drive.controller << 8) + drive.drive, start + i, valid);
 
         if(!valid){
-            if(!read_write_sector(drive, start + i, block, true)){
+            if(!read_write_sector(drive, start + i, block, sector_operation::READ)){
                 return std::ERROR_FAILED;
             }
         }
@@ -505,11 +516,29 @@ size_t ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count
             std::copy_n(block, buffer, BLOCK_SIZE);
         }
 
-        if(!read_write_sector(drive, start + i, buffer, false)){
+        if(!read_write_sector(drive, start + i, buffer, sector_operation::WRITE)){
             return std::ERROR_FAILED;
         }
 
         buffer += BLOCK_SIZE;
+        written += BLOCK_SIZE;
+    }
+
+    return 0;
+}
+
+size_t ata::clear_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, size_t& written){
+    for(size_t i = 0; i < count; ++i){
+        // If the block is in cache, simply update the cache and write through the disk
+        auto block = cache.block_if_present((drive.controller << 8) + drive.drive, start + i);
+        if(block){
+            std::fill_n(block, BLOCK_SIZE, 0);
+        }
+
+        if(!read_write_sector(drive, start + i, nullptr, sector_operation::CLEAR)){
+            return std::ERROR_FAILED;
+        }
+
         written += BLOCK_SIZE;
     }
 
