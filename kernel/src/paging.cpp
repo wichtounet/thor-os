@@ -7,6 +7,7 @@
 
 #include <types.hpp>
 #include <algorithms.hpp>
+#include <math.hpp>
 
 #include "paging.hpp"
 #include "kernel.hpp"
@@ -273,7 +274,7 @@ void paging::finalize(){
 }
 
 size_t paging::pages(size_t size){
-    return size / PAGE_SIZE + (size % PAGE_SIZE == 0 ? 0 : 1);
+    return std::ceil_divide(size, PAGE_SIZE);
 }
 
 //TODO Improve to support a status
