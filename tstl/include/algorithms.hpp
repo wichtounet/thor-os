@@ -88,10 +88,10 @@ inline void memclr(char* out, size_t bytes){
     if(bytes >= 8){
         auto* out64 = reinterpret_cast<uint64_t*>(out);
 
-        size_t l = 1 + bytes / 8;
+        const size_t l = bytes / 8;
 
-        while(--l){
-            *out64++ = 0;
+        for(size_t i = 0; i < l; ++i){
+            out64[i] = 0;
         }
 
         bytes -= l * 8;
