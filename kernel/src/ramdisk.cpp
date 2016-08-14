@@ -36,6 +36,8 @@ ramdisk::disk_descriptor* ramdisk::make_disk(uint64_t max_size){
         ramdisks[current].allocated[i] = nullptr;
     }
 
+    logging::logf(logging::log_level::ERROR, "ramdisk: Created ramdisk %u of size %m with %u pages\n", current, max_size, pages);
+
     ++current;
     return &ramdisks[current - 1];
 }
