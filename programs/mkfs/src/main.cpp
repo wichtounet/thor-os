@@ -11,6 +11,8 @@
 #include <io.hpp>
 #include <print.hpp>
 #include <math.hpp>
+#include <array.hpp>
+#include <unique_ptr.hpp>
 
 #include "fat32_specs.hpp"
 
@@ -75,11 +77,11 @@ int main(int argc, char* argv[]){
         printf("mkfs: Free sectors : %u\n", free_sectors);
         printf("mkfs: Free clusters : %u\n", free_clusters);
 
-        auto* fat_bs = new fat32::fat_bs_t();
+        auto fat_bs = std::make_unique<fat32::fat_bs_t>();
 
         fat_bs->bytes_per_sector = sector_size;
         fat_bs->sectors_per_cluster = sectors_per_cluster;
-        fat_bs->reserved_sectors = sectors_per_cluster - 2;
+        fat_bs->reserved_sectors = sectors_per_cluster;
         fat_bs->number_of_fat = 1;
         fat_bs->root_directories_entries = 0;
         fat_bs->total_sectors = 0;
@@ -92,14 +94,14 @@ int main(int argc, char* argv[]){
         fat_bs->signature = 0xAA55;
 
         // Write the FAT BS
-        auto status = write(*fd, reinterpret_cast<const char*>(fat_bs), sector_size, 0);
+        auto status = write(*fd, reinterpret_cast<const char*>(fat_bs.get()), sector_size, 0);
 
         if(!status.valid()){
             printf("mkfs: write error: %s\n", std::error_message(status.error()));
             exit(1);
         }
 
-        auto* fat_is = new fat32::fat_is_t();
+        auto fat_is = std::make_unique<fat32::fat_is_t>();
 
         fat_is->allocated_clusters = 1;
         fat_is->free_clusters = free_clusters;
@@ -108,19 +110,49 @@ int main(int argc, char* argv[]){
         fat_is->signature_end = 0x000055AA;
 
         // Write the FAT IS
-        status = write(*fd, reinterpret_cast<const char*>(fat_is), sector_size, sector_size);
+        status = write(*fd, reinterpret_cast<const char*>(fat_is.get()), sector_size, sector_size);
 
         if(!status.valid()){
             printf("mkfs: write error: %s\n", std::error_message(status.error()));
             exit(1);
         }
 
-        //TODO Write FAT
+        // Clear the FAT
 
-        //TODO Write Root Cluster
+        auto fat_begin = fat_bs->reserved_sectors;
+        status = clear(*fd, fat_begin * sector_size, fat_size_sectors * sector_size);
 
-        delete fat_is;
-        delete fat_bs;
+        if(!status.valid()){
+            printf("mkfs: clear error: %s\n", std::error_message(status.error()));
+            exit(1);
+        }
+
+        // Write end of chain for cluster 2 (root)
+        uint32_t end_of_cluster_chain = 0x0FFFFFF8;
+        status = write(*fd, reinterpret_cast<char*>(&end_of_cluster_chain), 4, fat_begin * sector_size + 2 * 4);
+
+        if(!status.valid()){
+            printf("mkfs: write error: %s\n", std::error_message(status.error()));
+            exit(1);
+        }
+
+        // Write the root cluster
+
+        std::unique_heap_array<fat32::cluster_entry> root_cluster_entries(16 * fat_bs->sectors_per_cluster);
+
+        //Mark everything as unused
+        for(size_t j = 0; j < root_cluster_entries.size() - 1; ++j){
+            root_cluster_entries[j].name[0] = 0xE5;
+        }
+
+        //End of directory
+        root_cluster_entries[root_cluster_entries.size() - 1].name[0] = 0x0;
+
+        //Write the directory entries to the disk
+        auto root_sector = fat_begin + (fat_bs->number_of_fat * fat_bs->sectors_per_fat_long);
+        if(!write(*fd, reinterpret_cast<char*>(root_cluster_entries.get()), sector_size * fat_bs->sectors_per_cluster, root_sector * sector_size)){
+            return std::ERROR_FAILED;
+        }
 
         exit(0);
     }
