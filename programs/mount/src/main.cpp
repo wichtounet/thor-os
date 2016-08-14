@@ -13,36 +13,59 @@
 
 static constexpr const size_t BUFFER_SIZE = 4096;
 
-int main(int, char*[]){
-    //TODO Add support to mount new directories
+int main(int argc, char* argv[]){
+    if(argc == 1){
+        auto buffer = new char[BUFFER_SIZE];
 
-    auto buffer = new char[BUFFER_SIZE];
+        auto mp_result = mounts(buffer, BUFFER_SIZE);
 
-    auto mp_result = mounts(buffer, BUFFER_SIZE);
+        if(mp_result.valid()){
+            size_t position = 0;
 
-    if(mp_result.valid()){
-        size_t position = 0;
+            while(true){
+                auto entry = reinterpret_cast<mount_point*>(buffer + position);
 
-        while(true){
-            auto entry = reinterpret_cast<mount_point*>(buffer + position);
+                auto mount_point = &entry->name;
+                auto device = mount_point + entry->length_mp + 1;
+                auto type = device + entry->length_dev + 1;
 
-            auto mount_point = &entry->name;
-            auto device = mount_point + entry->length_mp + 1;
-            auto type = device + entry->length_dev + 1;
+                printf("%s %s %s\n", mount_point, device, type);
 
-            printf("%s %s %s\n", mount_point, device, type);
+                if(!entry->offset_next){
+                    break;
+                }
 
-            if(!entry->offset_next){
-                break;
+                position += entry->offset_next;
             }
-
-            position += entry->offset_next;
+        } else {
+            printf("mount: error: %s\n", std::error_message(mp_result.error()));
         }
-    } else {
-        printf("mount: error: %s\n", std::error_message(mp_result.error()));
+
+        delete[] buffer;
+
+        exit(0);
     }
 
-    delete[] buffer;
+    if(argc < 4){
+        printf("usage: mount fs device mountpoint\n");
+
+        exit(1);
+    }
+
+    auto fs_str = argv[1];
+    auto device_str = argv[2];
+    auto mount_point_str = argv[3];
+
+    std::string fs(fs_str);
+
+    if(fs == "fat32"){
+        printf("mkfs: Mounting %s fat32 filesystem on %s\n", mount_point_str, device_str);
+
+        //TODO Mount new directory
+    } else {
+        printf("mkfs: Unsupported filesystem %s\n", fs_str);
+        exit(1);
+    }
 
     exit(0);
 }
