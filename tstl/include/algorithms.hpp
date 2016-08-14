@@ -47,13 +47,15 @@ inline void memcpy(char* out, const char* in, size_t bytes){
         auto* out64 = reinterpret_cast<uint64_t*>(out);
         auto* in64 = reinterpret_cast<const uint64_t*>(in);
 
-        size_t l = 1 + bytes / 8;
+        const size_t l = bytes / 8;
 
-        while(--l){
-            *out64++ = *in64++;
+        for(size_t i = 0; i < l; ++i){
+            out64[i] = in64[i];
         }
 
         bytes -= l * 8;
+        out += l * 8;
+        in += l * 8;
     }
 
     // Finish up byte by byte
@@ -95,6 +97,7 @@ inline void memclr(char* out, size_t bytes){
         }
 
         bytes -= l * 8;
+        out += l * 8;
     }
 
     // Finish up byte by byte
