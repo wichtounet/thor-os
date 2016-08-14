@@ -59,9 +59,9 @@ size_t ramdisk::ramdisk_driver::read(void* data, char* destination, size_t count
 
         // If the page is not allocated, we simply consider it full of zero
         if(!disk->allocated[page]){
-            std::fill_n(destination, to_read, 0);
+            std::fill_n(destination + read, to_read, 0);
         } else {
-            std::copy_n(destination, disk->allocated[page] + page_offset, to_read);
+            std::copy_n(destination + read, disk->allocated[page] + page_offset, to_read);
         }
 
         read += to_read;
