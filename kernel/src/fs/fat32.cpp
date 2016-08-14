@@ -1265,7 +1265,7 @@ uint64_t fat32::fat32_file_system::cluster_lba(uint64_t cluster){
     uint64_t fat_begin = fat_bs->reserved_sectors;
     uint64_t cluster_begin = fat_begin + (fat_bs->number_of_fat * fat_bs->sectors_per_fat_long);
 
-    return cluster_begin + (cluster - 2 ) * fat_bs->sectors_per_cluster;
+    return cluster_begin + (cluster - 2) * fat_bs->sectors_per_cluster;
 }
 
 //Return the value of the fat for the given cluster
