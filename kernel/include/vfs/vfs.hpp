@@ -32,6 +32,7 @@ int64_t mkdir(const char* file);
 int64_t rm(const char* file);
 int64_t read(size_t fd, char* buffer, size_t count, size_t offset = 0);
 int64_t write(size_t fd, const char* buffer, size_t count, size_t offset = 0);
+int64_t clear(size_t fd, size_t count, size_t offset = 0);
 int64_t truncate(size_t fd, size_t size);
 int64_t entries(size_t fd, char* buffer, size_t size);
 int64_t mounts(char* buffer, size_t size);

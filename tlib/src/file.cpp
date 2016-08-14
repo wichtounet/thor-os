@@ -106,6 +106,20 @@ std::expected<size_t> write(size_t fd, const char* buffer, size_t max, size_t of
     }
 }
 
+std::expected<size_t> clear(size_t fd, size_t max, size_t offset){
+    int64_t code;
+    asm volatile("mov rax, 313; mov rbx, %[fd]; mov rcx, %[max]; mov rdx, %[offset]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [fd] "g" (fd), [max] "g" (max), [offset] "g" (offset)
+        : "rax", "rbx", "rcx", "rdx");
+
+    if(code < 0){
+        return std::make_expected_from_error<size_t, size_t>(-code);
+    } else {
+        return std::make_expected<size_t>(code);
+    }
+}
+
 std::expected<size_t> truncate(size_t fd, size_t size){
     int64_t code;
     asm volatile("mov rax, 312; mov rbx, %[fd]; mov rcx, %[size]; int 50; mov %[code], rax"

@@ -129,6 +129,29 @@ size_t devfs::devfs_file_system::write(const std::vector<std::string>& file_path
     return std::ERROR_NOT_EXISTS;
 }
 
+size_t devfs::devfs_file_system::clear(const std::vector<std::string>& file_path, size_t count, size_t offset, size_t& written){
+    //Cannot access the root for writing
+    if(file_path.empty()){
+        return std::ERROR_PERMISSION_DENIED;
+    }
+
+    for(auto& device_list : devices){
+        if(device_list.name == mount_point){
+            for(auto& device : device_list.devices){
+                if(device.name == file_path.back()){
+                    if(!device.driver){
+                        return std::ERROR_UNSUPPORTED;
+                    }
+
+                    return device.driver->clear(device.data, count, offset, written);
+                }
+            }
+        }
+    }
+
+    return std::ERROR_NOT_EXISTS;
+}
+
 size_t devfs::devfs_file_system::truncate(const std::vector<std::string>&, size_t){
     return std::ERROR_PERMISSION_DENIED;
 }

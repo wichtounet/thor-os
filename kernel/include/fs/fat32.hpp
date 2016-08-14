@@ -38,6 +38,7 @@ public:
     size_t statfs(statfs_info& file);
     size_t read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read);
     size_t write(const std::vector<std::string>& file_path, const char* buffer, size_t count, size_t offset, size_t& written);
+    size_t clear(const std::vector<std::string>& file_path, size_t count, size_t offset, size_t& written);
     size_t truncate(const std::vector<std::string>& file_path, size_t size);
     size_t get_file(const std::vector<std::string>& file_path, vfs::file& file);
     size_t ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents);

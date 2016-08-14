@@ -92,7 +92,7 @@ void sc_get_rows(interrupt::syscall_regs* regs){
     regs->rax = get_rows();
 }
 
-void sc_clear(interrupt::syscall_regs*){
+void sc_clear_screen(interrupt::syscall_regs*){
     wipeout();
 }
 
@@ -157,6 +157,14 @@ void sc_write(interrupt::syscall_regs* regs){
     auto offset = regs->rsi;
 
     regs->rax = vfs::write(fd, buffer, max, offset);
+}
+
+void sc_clear(interrupt::syscall_regs* regs){
+    auto fd = regs->rbx;
+    auto max = regs->rcx;
+    auto offset = regs->rdx;
+
+    regs->rax = vfs::clear(fd, max, offset);
 }
 
 void sc_truncate(interrupt::syscall_regs* regs){
@@ -329,7 +337,7 @@ void system_call_entry(interrupt::syscall_regs* regs){
             break;
 
         case 100:
-            sc_clear(regs);
+            sc_clear_screen(regs);
             break;
 
         case 101:
@@ -398,6 +406,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 312:
             sc_truncate(regs);
+            break;
+
+        case 313:
+            sc_clear(regs);
             break;
 
         case 0x400:

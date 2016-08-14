@@ -393,6 +393,30 @@ int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
     return written;
 }
 
+int64_t vfs::clear(size_t fd, size_t count, size_t offset){
+    if(!scheduler::has_handle(fd)){
+        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+    }
+
+    auto path = scheduler::get_handle(fd);
+
+    if(path.empty()){
+        return -std::ERROR_INVALID_FILE_PATH;
+    }
+
+    auto& fs = get_fs(path);
+    auto fs_path = get_fs_path(path, fs);
+
+    size_t written = 0;
+    auto result = fs.file_system->clear(fs_path, count, offset, written);
+
+    if(result > 0){
+        return -result;
+    }
+
+    return written;
+}
+
 int64_t vfs::direct_write(const char* file, const char* buffer, size_t count, size_t offset){
     auto path = get_path(file);
     auto& fs = get_fs(path);
