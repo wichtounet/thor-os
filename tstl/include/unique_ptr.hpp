@@ -200,7 +200,7 @@ static_assert(sizeof(unique_ptr<long[]>) == sizeof(long), "unique_ptr must have 
 
 template <typename T, typename... Args>
 std::unique_ptr<T> make_unique(Args&&... args){
-    return std::unique_ptr<T>(std::forward<Args>(args)...);
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
 } //end of namespace std
