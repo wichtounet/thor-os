@@ -273,7 +273,7 @@ void paging::finalize(){
 }
 
 size_t paging::pages(size_t size){
-    return size / PAGE_SIZE + size % PAGE_SIZE == 0 ? 0 : 1;
+    return size / PAGE_SIZE + (size % PAGE_SIZE == 0 ? 0 : 1);
 }
 
 //TODO Improve to support a status
