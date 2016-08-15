@@ -59,7 +59,7 @@ int main(int argc, char* argv[]){
     std::string fs(fs_str);
 
     if(fs == "fat32"){
-        printf("mkfs: Mounting %s fat32 filesystem on %s\n", mount_point_str, device_str);
+        printf("mkfs: Mounting %s fat32 filesystem on %s\n", device_str, mount_point_str);
 
         auto device_fd = open(device_str);
 
