@@ -184,8 +184,8 @@ int64_t vfs::mount(partition_type type, size_t mp_fd, size_t dev_fd){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto mp_path = scheduler::get_handle(mp_fd);
-    auto dev_path = scheduler::get_handle(dev_fd);
+    auto& mp_path = scheduler::get_handle(mp_fd);
+    auto& dev_path = scheduler::get_handle(dev_fd);
 
     std::string mp("/");
 
@@ -331,7 +331,7 @@ int64_t vfs::stat(size_t fd, stat_info& info){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto path = scheduler::get_handle(fd);
+    auto& path = scheduler::get_handle(fd);
     auto& fs = get_fs(path);
     auto fs_path = get_fs_path(path, fs);
 
@@ -378,7 +378,7 @@ int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto path = scheduler::get_handle(fd);
+    auto& path = scheduler::get_handle(fd);
 
     if(path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
@@ -417,7 +417,7 @@ int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto path = scheduler::get_handle(fd);
+    auto& path = scheduler::get_handle(fd);
 
     if(path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
@@ -441,7 +441,7 @@ int64_t vfs::clear(size_t fd, size_t count, size_t offset){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto path = scheduler::get_handle(fd);
+    auto& path = scheduler::get_handle(fd);
 
     if(path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
@@ -480,7 +480,7 @@ int64_t vfs::truncate(size_t fd, size_t size){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto path = scheduler::get_handle(fd);
+    auto& path = scheduler::get_handle(fd);
 
     if(path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
@@ -525,7 +525,7 @@ int64_t vfs::entries(size_t fd, char* buffer, size_t size){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto path = scheduler::get_handle(fd);
+    auto& path = scheduler::get_handle(fd);
     auto& fs = get_fs(path);
     auto fs_path = get_fs_path(path, fs);
 

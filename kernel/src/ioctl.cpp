@@ -16,7 +16,7 @@ int64_t ioctl(size_t device_fd, ioctl_request request, void* data){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto device = scheduler::get_handle(device_fd);
+    auto& device = scheduler::get_handle(device_fd);
 
     for(auto& part : device){
         logging::logf(logging::log_level::TRACE, "part: %s\n", part.c_str());
