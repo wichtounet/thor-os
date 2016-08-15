@@ -287,7 +287,7 @@ void sc_mouse_y(interrupt::syscall_regs* regs){
 }
 
 void sc_ioctl(interrupt::syscall_regs* regs){
-    auto device = reinterpret_cast<const char*>(regs->rbx);
+    auto device = regs->rbx;
     auto request = regs->rcx;
     auto data = reinterpret_cast<void*>(regs->rdx);
 

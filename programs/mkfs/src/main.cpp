@@ -42,7 +42,7 @@ int main(int argc, char* argv[]){
         // Get the size of the device
 
         uint64_t size = 0;
-        auto code = ioctl(device_str, ioctl_request::GET_BLK_SIZE, &size);
+        auto code = ioctl(*fd, ioctl_request::GET_BLK_SIZE, &size);
 
         if(code){
             printf("mkfs: ioctl error: %s\n", std::error_message(code));

@@ -50,7 +50,7 @@ public:
 void register_device(const std::string& mp, const std::string& name, device_type type, dev_driver* driver, void* data);
 void deregister_device(const std::string& mp, const std::string& name);
 
-uint64_t get_device_size(const std::string& device_name, size_t& size);
+uint64_t get_device_size(const std::vector<std::string>& device_name, size_t& size);
 
 } //end of namespace devfs
 

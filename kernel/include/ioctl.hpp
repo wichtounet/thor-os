@@ -9,10 +9,9 @@
 #define IOCTL_HPP
 
 #include <types.hpp>
-#include <string.hpp>
 
 #include "ioctl_codes.hpp"
 
-int64_t ioctl(const std::string& device, ioctl_request request, void* data);
+int64_t ioctl(size_t device_fd, ioctl_request request, void* data);
 
 #endif

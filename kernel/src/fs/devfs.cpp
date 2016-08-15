@@ -227,22 +227,18 @@ void devfs::deregister_device(const std::string& mp, const std::string& name){
     }
 }
 
-uint64_t devfs::get_device_size(const std::string& device_name, size_t& size){
-    if(device_name[0] != '/'){
+uint64_t devfs::get_device_size(const std::vector<std::string>& device_name, size_t& size){
+    if(device_name.size() != 2){
         return std::ERROR_INVALID_DEVICE;
     }
 
-    if(device_name.find('/', 1) == std::string::npos){
-        return std::ERROR_INVALID_DEVICE;
-    }
-
-    std::string mp(device_name.begin(), device_name.begin() + device_name.find('/', 1) + 1);
-    std::string name(device_name.begin() + device_name.find('/', 1) + 1, device_name.end());
+    // TODO store the mount point with the slash
+    std::string mp("/" + device_name[0] + "/");
 
     for(auto& device_list : devices){
         if(device_list.name == mp){
             for(auto& device : device_list.devices){
-                if(device.name == name){
+                if(device.name == device_name[1]){
                     if(device.type == device_type::BLOCK_DEVICE){
                         size = device.driver->size(device.data);
 
