@@ -15,7 +15,7 @@ void* mmap_phys(size_t phys, size_t size){
     auto aligned_phys = phys - offset;
 
     auto real_length = offset + size;
-    auto pages = real_length / paging::PAGE_SIZE + (real_length % paging::PAGE_SIZE == 0) ? 0 : 1;
+    auto pages = paging::pages(real_length);
 
     // Allocate pages of virtual memory
 
@@ -43,7 +43,7 @@ bool munmap_phys(void* virt_ptr, size_t size){
     auto aligned_virt = virt - offset;
 
     auto real_length = offset + size;
-    auto pages = real_length / paging::PAGE_SIZE + (real_length % paging::PAGE_SIZE == 0) ? 0 : 1;
+    auto pages = paging::pages(real_length);
 
     // Release the virtual memory
 

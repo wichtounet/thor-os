@@ -239,7 +239,7 @@ void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys, ACPI_SIZE length){
     auto offset = phys % paging::PAGE_SIZE;
 
     auto real_length = offset + length;
-    size_t pages = real_length / paging::PAGE_SIZE + (real_length % paging::PAGE_SIZE == 0 ? 0 : 1);
+    auto pages = paging::pages(real_length);
 
     auto virt_aligned = virtual_allocator::allocate(pages);
 
@@ -266,7 +266,7 @@ void AcpiOsUnmapMemory(void* virt_raw, ACPI_SIZE length){
 
     auto offset = virt % paging::PAGE_SIZE;
     auto real_length = offset + length;
-    size_t pages = real_length / paging::PAGE_SIZE + (real_length % paging::PAGE_SIZE == 0 ? 0 : 1);
+    auto pages = paging::pages(real_length);
 
     auto virt_aligned = virt - offset;
 

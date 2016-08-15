@@ -40,7 +40,7 @@ size_t array_size(size_t managed_space, size_t block){
 
 uint64_t* create_array(size_t managed_space, size_t block){
     auto size = array_size(managed_space, block) * sizeof(uint64_t);
-    auto pages = size % paging::PAGE_SIZE == 0 ? size / paging::PAGE_SIZE : size / paging::PAGE_SIZE + 1;
+    auto pages = paging::pages(size);
 
     auto physical_address = current_mmap_entry_position;
 

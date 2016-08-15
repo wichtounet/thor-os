@@ -59,12 +59,7 @@ bool vesa::init(){
     auto left_padding = static_cast<uintptr_t>(physical) - first_page;
 
     auto bytes = left_padding + total_size;
-
-    //Make sure only complete pages are allocated
-    if(bytes % paging::PAGE_SIZE != 0){
-        bytes += paging::PAGE_SIZE - (bytes % paging::PAGE_SIZE); }
-
-    auto pages = bytes / paging::PAGE_SIZE;
+    auto pages = paging::pages(bytes);
 
     auto virt = virtual_allocator::allocate(pages);
 

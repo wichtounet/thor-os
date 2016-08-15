@@ -361,13 +361,7 @@ bool allocate_user_memory(scheduler::process_t& process, size_t address, size_t 
     auto left_padding = address - first_page;
 
     auto bytes = left_padding + size;
-
-    //Make sure only complete pages are allocated
-    if(bytes % paging::PAGE_SIZE != 0){
-        bytes += paging::PAGE_SIZE - (bytes % paging::PAGE_SIZE);
-    }
-
-    auto pages = bytes / paging::PAGE_SIZE;
+    auto pages = paging::pages(bytes);
 
     //2. Get enough physical memory
     auto physical_memory = physical_allocator::allocate(pages);
