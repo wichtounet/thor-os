@@ -15,6 +15,7 @@
  * \brief Structure to represent a path on the file system
  */
 struct path {
+    path();
     path(const std::string& path);
 
     path(const path& rhs) = default;

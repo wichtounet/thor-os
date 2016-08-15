@@ -7,6 +7,10 @@
 
 #include "vfs/path.hpp"
 
+path::path(){
+    //Nothing to init
+}
+
 path::path(const std::string& path){
     auto parts = std::split(path, '/');
     names.reserve(parts.size());
