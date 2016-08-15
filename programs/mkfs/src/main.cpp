@@ -22,7 +22,7 @@ int main(int argc, char* argv[]){
     if(argc < 3){
         printf("usage: mkfs fs device \n");
 
-        exit(1);
+        return 1;
     }
 
     auto fs_str = argv[1];
@@ -36,7 +36,7 @@ int main(int argc, char* argv[]){
 
         if(!fd.valid()){
             printf("mkfs: open error: %s\n", std::error_message(fd.error()));
-            exit(1);
+            return 1;
         }
 
         // Get the size of the device
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]){
 
         if(code){
             printf("mkfs: ioctl error: %s\n", std::error_message(code));
-            exit(1);
+            return 1;
         }
 
         // Start computing and writing the FAT32 values
@@ -98,7 +98,7 @@ int main(int argc, char* argv[]){
 
         if(!status.valid()){
             printf("mkfs: write error: %s\n", std::error_message(status.error()));
-            exit(1);
+            return 1;
         }
 
         auto fat_is = std::make_unique<fat32::fat_is_t>();
@@ -114,7 +114,7 @@ int main(int argc, char* argv[]){
 
         if(!status.valid()){
             printf("mkfs: write error: %s\n", std::error_message(status.error()));
-            exit(1);
+            return 1;
         }
 
         // Clear the FAT
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]){
 
         if(!status.valid()){
             printf("mkfs: clear error: %s\n", std::error_message(status.error()));
-            exit(1);
+            return 1;
         }
 
         // Write end of chain for cluster 2 (root)
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]){
 
         if(!status.valid()){
             printf("mkfs: write error: %s\n", std::error_message(status.error()));
-            exit(1);
+            return 1;
         }
 
         // Write the root cluster
@@ -154,10 +154,10 @@ int main(int argc, char* argv[]){
             return std::ERROR_FAILED;
         }
 
-        exit(0);
+        return 0;
     }
 
     printf("mkfs: Unsupported filesystem %s\n", fs_str);
 
-    exit(0);
+    return 1;
 }

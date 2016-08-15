@@ -14,7 +14,7 @@
 int main(int argc, char* argv[]){
     if(argc == 1){
         print_line("Usage: mkdir file_path");
-        exit(1);
+        return 1;
     }
 
     auto result = mkdir(argv[1]);
@@ -23,5 +23,5 @@ int main(int argc, char* argv[]){
         printf("mkdir: error: %s\n", std::error_message(-result));
     }
 
-    exit(0);
+    return 0;
 }

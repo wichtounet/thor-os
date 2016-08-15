@@ -26,5 +26,5 @@ int main(){
         print_line(message);
     }
 
-    exit(0);
+    return 0;
 }

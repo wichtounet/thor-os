@@ -13,7 +13,7 @@
 int main(int argc, char* argv[]){
     if(argc == 1){
         print_line("Usage: stat file_path");
-        exit(1);
+        return 1;
     }
 
     auto fd = open(argv[1]);
@@ -93,5 +93,5 @@ int main(int argc, char* argv[]){
         printf("stat: error: %s\n", std::error_message(fd.error()));
     }
 
-    exit(0);
+    return 0;
 }

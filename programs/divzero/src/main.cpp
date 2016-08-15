@@ -12,5 +12,5 @@ volatile int a = 0;
 int main(int /*argc*/, char* /*argv*/[]){
     a = 42 / a;
 
-    exit(a);
+    return a;
 }

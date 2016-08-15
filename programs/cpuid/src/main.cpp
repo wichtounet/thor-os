@@ -403,5 +403,5 @@ int main(){
     get_cache_info();
     get_deterministic_cache_parameters();
 
-    exit(0);
+    return 0;
 }

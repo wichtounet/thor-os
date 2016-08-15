@@ -9,5 +9,5 @@
 
 int main(){
     reboot();
-    exit(0);
+    return 0;
 }

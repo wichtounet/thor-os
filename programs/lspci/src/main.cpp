@@ -137,5 +137,5 @@ int main(int /*argc*/, char* /*argv*/[]){
         printf("ls: error: %s\n", std::error_message(fd.error()));
     }
 
-    exit(0);
+    return 0;
 }

@@ -23,5 +23,5 @@ int main(int, char*[]){
     print(date.minutes);
     print_line();
 
-    exit(0);
+    return 0;
 }

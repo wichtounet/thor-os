@@ -30,5 +30,5 @@ int main(){
 
     print_line("END");
 
-    exit(0);
+    return 0;
 }

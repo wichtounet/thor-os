@@ -19,5 +19,5 @@ int main(){
         print(buffer);
     }
 
-    exit(0);
+    return 0;
 }

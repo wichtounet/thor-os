@@ -69,5 +69,5 @@ int main(int argc, char* argv[]){
         ls_files(argv[1]);
     }
 
-    exit(0);
+    return 0;
 }

@@ -14,7 +14,7 @@
 int main(int argc, char* argv[]){
     if(argc == 1){
         print_line("Usage: touch file_path");
-        exit(1);
+        return 1;
     }
 
     auto fd = open(argv[1], std::OPEN_CREATE);
@@ -25,5 +25,5 @@ int main(int argc, char* argv[]){
         printf("touch: error: %s\n", std::error_message(fd.error()));
     }
 
-    exit(0);
+    return 0;
 }

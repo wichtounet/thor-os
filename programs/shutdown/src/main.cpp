@@ -10,5 +10,5 @@
 
 int main(){
     shutdown();
-    exit(0);
+    return 0;
 }

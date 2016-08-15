@@ -13,7 +13,7 @@
 int main(int argc, char* argv[]){
     if(argc == 1){
         print_line("Usage: which executable_path");
-        exit(1);
+        return 1;
     }
 
     std::string path(argv[1]);
@@ -36,5 +36,5 @@ int main(int argc, char* argv[]){
         }
     }
 
-    exit(0);
+    return 0;
 }

@@ -43,13 +43,13 @@ int main(int argc, char* argv[]){
 
         delete[] buffer;
 
-        exit(0);
+        return 0;
     }
 
     if(argc < 4){
         printf("usage: mount fs device mountpoint\n");
 
-        exit(1);
+        return 1;
     }
 
     auto fs_str = argv[1];
@@ -64,8 +64,8 @@ int main(int argc, char* argv[]){
         //TODO Mount new directory
     } else {
         printf("mkfs: Unsupported filesystem %s\n", fs_str);
-        exit(1);
+        return 1;
     }
 
-    exit(0);
+    return 0;
 }

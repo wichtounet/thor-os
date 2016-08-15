@@ -42,5 +42,5 @@ int main(int, char*[]){
         printf("uptime: error: %s\n", std::error_message(fd.error()));
     }
 
-    exit(0);
+    return 0;
 }

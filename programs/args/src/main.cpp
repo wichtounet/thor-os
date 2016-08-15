@@ -12,5 +12,6 @@ int main(int argc, char* argv[]){
     for(size_t i = 0; i < size_t(argc); ++i){
         print_line(argv[i]);
     }
-    exit(0);
+
+    return 0;
 }
