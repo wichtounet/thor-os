@@ -18,10 +18,6 @@ int64_t ioctl(size_t device_fd, ioctl_request request, void* data){
 
     auto& device = scheduler::get_handle(device_fd);
 
-    for(auto& part : device){
-        logging::logf(logging::log_level::TRACE, "part: %s\n", part.c_str());
-    }
-
     if(request == ioctl_request::GET_BLK_SIZE){
         return devfs::get_device_size(device, *reinterpret_cast<size_t*>(data));
     }
