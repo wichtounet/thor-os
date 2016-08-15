@@ -14,11 +14,11 @@
 namespace vfs {
 
 enum class partition_type {
-    FAT32,
-    SYSFS,
-    DEVFS,
-    PROCFS,
-    UNKNOWN
+    FAT32 = 1,
+    SYSFS = 2,
+    DEVFS = 3,
+    PROCFS = 4,
+    UNKNOWN = 100
 };
 
 void init();

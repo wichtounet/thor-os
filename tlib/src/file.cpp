@@ -162,7 +162,7 @@ std::expected<size_t> mounts(char* buffer, size_t max){
     }
 }
 
-std::expected<void> mounts(size_t type, size_t dev_fd, size_t mp_fd){
+std::expected<void> mount(size_t type, size_t dev_fd, size_t mp_fd){
     int64_t code;
     asm volatile("mov rax, 314; mov rbx, %[type]; mov rcx, %[mp]; mov rdx, %[dev]; int 50; mov %[code], rax"
         : [code] "=m" (code)

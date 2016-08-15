@@ -61,7 +61,25 @@ int main(int argc, char* argv[]){
     if(fs == "fat32"){
         printf("mkfs: Mounting %s fat32 filesystem on %s\n", mount_point_str, device_str);
 
-        //TODO Mount new directory
+        auto device_fd = open(device_str);
+
+        if(!device_fd.valid()){
+            printf("mount: open error: %s\n", std::error_message(device_fd.error()));
+            return 1;
+        }
+
+        auto mp_fd = open(mount_point_str);
+
+        if(!mp_fd.valid()){ printf("mount: open error: %s\n", std::error_message(mp_fd.error()));
+            return 1;
+        }
+
+        auto mount_result = mount(1, *device_fd, *mp_fd);
+
+        if(!mount_result.valid()){
+            printf("mount: mount error: %s\n", std::error_message(mount_result.error()));
+            return 1;
+        }
     } else {
         printf("mkfs: Unsupported filesystem %s\n", fs_str);
         return 1;
