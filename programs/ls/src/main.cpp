@@ -30,18 +30,20 @@ void ls_files(const char* file_path){
                 auto entries_result = entries(*fd, buffer, BUFFER_SIZE);
 
                 if(entries_result.valid()){
-                    size_t position = 0;
+                    if(*entries_result){
+                        size_t position = 0;
 
-                    while(true){
-                        auto entry = reinterpret_cast<directory_entry*>(buffer + position);
+                        while(true){
+                            auto entry = reinterpret_cast<directory_entry*>(buffer + position);
 
-                        print_line(&entry->name);
+                            print_line(&entry->name);
 
-                        if(!entry->offset_next){
-                            break;
+                            if(!entry->offset_next){
+                                break;
+                            }
+
+                            position += entry->offset_next;
                         }
-
-                        position += entry->offset_next;
                     }
                 } else {
                     printf("ls: entries error: %s\n", std::error_message(entries_result.error()));

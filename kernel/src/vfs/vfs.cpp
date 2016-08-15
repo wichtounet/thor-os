@@ -256,7 +256,7 @@ int64_t vfs::open(const char* file_path, size_t flags){
     auto fs_path = get_fs_path(path, fs);
 
     //Special handling for opening the root
-    if(path.empty()){
+    if(fs_path.empty()){
         return scheduler::register_new_handle(path);
     }
 
@@ -332,18 +332,17 @@ int64_t vfs::stat(size_t fd, stat_info& info){
     }
 
     auto path = scheduler::get_handle(fd);
+    auto& fs = get_fs(path);
+    auto fs_path = get_fs_path(path, fs);
 
     //Special handling for root
-    if(path.empty()){
+    if(fs_path.empty()){
         //TODO Add file system support for stat of the root directory
         info.size = 4096;
         info.flags = STAT_FLAG_DIRECTORY;
 
         return 0;
     }
-
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
 
     vfs::file f;
     auto result = fs.file_system->get_file(fs_path, f);
