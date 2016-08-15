@@ -24,7 +24,7 @@ struct path {
     path& operator=(const path& rhs) = default;
     path& operator=(path&& rhs) = default;
 
-    bool empty();
+    bool empty() const;
 
     private:
         std::vector<std::string> names;

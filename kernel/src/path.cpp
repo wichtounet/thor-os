@@ -19,6 +19,6 @@ path::path(const std::string& path){
     }
 }
 
-bool path::empty(){
+bool path::empty() const {
     return names.empty();
 }
