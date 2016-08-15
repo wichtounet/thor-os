@@ -58,6 +58,24 @@ union trivial_expected_storage {
     ~trivial_expected_storage() = default;
 };
 
+template<typename E>
+union trivial_expected_storage <void, E> {
+    typedef void value_type;
+    typedef E error_type;
+
+    error_type error;
+
+    constexpr trivial_expected_storage() {
+        //Nothing else to init
+    }
+
+    constexpr trivial_expected_storage(const exceptional<error_type>& e) : error(e.error){
+        //Nothing else to init
+    }
+
+    ~trivial_expected_storage() = default;
+};
+
 template<typename T, typename E>
 union non_trivial_expected_storage {
     typedef T value_type;
@@ -76,6 +94,24 @@ union non_trivial_expected_storage {
 
     template<typename... Args>
     constexpr non_trivial_expected_storage(Args&&... args): value(std::forward<Args>(args)...){
+        //Nothing else to init
+    }
+
+    ~non_trivial_expected_storage() {};
+};
+
+template<typename E>
+union non_trivial_expected_storage <void, E> {
+    typedef void value_type;
+    typedef E error_type;
+
+    error_type error;
+
+    constexpr non_trivial_expected_storage(){
+        //Nothing else to init
+    }
+
+    constexpr non_trivial_expected_storage(exceptional<error_type>& e) : error(e.error){
         //Nothing else to init
     }
 
@@ -103,6 +139,28 @@ struct trivial_expected_base {
     }
 
     trivial_expected_base(value_type&& v) : has_value(true), storage(std::forward<value_type>(v)){
+        //Nothing else to init
+    }
+
+    trivial_expected_base(const exceptional<error_type>& e) : has_value(false), storage(e) {
+        //Nothing else to init
+    }
+
+    ~trivial_expected_base() = default;
+};
+
+template<typename E>
+struct trivial_expected_base <void, E> {
+    typedef E error_type;
+
+    bool has_value;
+    trivial_expected_storage<void, E> storage;
+
+    trivial_expected_base() : has_value(true), storage(){
+        //Nothing else to init
+    }
+
+    trivial_expected_base(only_set_valid_t, bool hv) : has_value(hv){
         //Nothing else to init
     }
 
@@ -145,6 +203,32 @@ struct non_trivial_expected_base {
         if(has_value){
             storage.error.~value_type();
         } else {
+            storage.error.~error_type();
+        }
+    }
+};
+
+template<typename E>
+struct non_trivial_expected_base <void, E> {
+    typedef E error_type;
+
+    bool has_value;
+    trivial_expected_storage<void, E> storage;
+
+    non_trivial_expected_base() : has_value(true), storage(){
+        //Nothing else to init
+    }
+
+    non_trivial_expected_base(only_set_valid_t, bool hv) : has_value(hv){
+        //Nothing else to init
+    }
+
+    non_trivial_expected_base(const exceptional<error_type>& e) : has_value(false), storage(e) {
+        //Nothing else to init
+    }
+
+    ~non_trivial_expected_base(){
+        if(!has_value){
             storage.error.~error_type();
         }
     }
@@ -338,6 +422,119 @@ public:
     }
 };
 
+template<typename E>
+struct expected <void, E> : expected_base<void, E> {
+    typedef void value_type;
+    typedef E error_type;
+
+    typedef expected<void, E> this_type;
+    typedef expected_base<void, E> base_type;
+
+private:
+    error_type* error_ptr() {
+        return std::addressof(base_type::storage.error);
+    }
+
+    constexpr const error_type* error_ptr() const {
+        return static_addressof(base_type::storage.error);
+    }
+
+    constexpr const bool& contained_has_value() const& {
+        return base_type::has_value;
+    }
+
+    bool& contained_has_value() & {
+        return base_type::has_value;
+    }
+
+    bool&& contained_has_value() && {
+        return std::move(base_type::has_value);
+    }
+
+    constexpr const error_type& contained_error() const& {
+        return base_type::storage.error;
+    }
+
+    error_type& contained_error() & {
+        return base_type::storage.error;
+    }
+
+    error_type&& contained_error() && {
+        return std::move(base_type::storage.error);
+    }
+
+public:
+    /* Constructors */
+
+    expected(const expected& rhs) : base_type(only_set_valid, rhs.valid()) {
+        if(!rhs.valid()){
+            ::new (error_ptr()) error_type(rhs.contained_error());
+        }
+    }
+
+    expected(expected&& rhs) : base_type(only_set_valid, rhs.valid()) {
+        if(!rhs.valid()){
+            new (error_ptr()) error_type(std::move(rhs.contained_error()));
+        }
+    }
+
+    expected(const exceptional<error_type>& e) : base_type(e) {
+        //Nothing else to init
+    }
+
+    expected() : base_type() {}
+
+    ~expected() = default;
+
+    /* Operators */
+    expected& operator=(const expected& rhs){
+        this_type(rhs).swap(*this);
+        return *this;
+    }
+
+    expected& operator=(expected&& rhs){
+        this_type(std::move(rhs)).swap(*this);
+        return *this;
+    }
+
+    /* Swap */
+
+    void swap(expected& rhs){
+        if (valid()){
+            if (!rhs.valid()){
+                error_type t = std::move(rhs.contained_error());
+                new (error_ptr()) error_type(t);
+            }
+        } else {
+            if (!rhs.valid()){
+                std::swap(contained_error(), rhs.contained_error());
+            }
+        }
+    }
+
+    /* Accessors */
+
+    constexpr bool valid() const {
+        return contained_has_value();
+    }
+
+    constexpr explicit operator bool() const {
+        return valid();
+    }
+
+    constexpr const error_type& error() const {
+        return contained_error();
+    }
+
+    constexpr bool has_error(const error_type& e) const {
+        return contained_error() == e;
+    }
+
+    constexpr exceptional<error_type> get_exceptional() const {
+        return exceptional<error_type>(contained_error());
+    }
+};
+
 template<typename T>
 inline expected<T> make_expected(T&& v){
     return expected<T>(std::forward<T>(v));
@@ -356,6 +553,10 @@ inline expected<T, U> make_expected_from_error(E v){
 template<typename T, typename E>
 inline expected<T, E> make_expected_from_error(E v){
     return expected<T, E>(exceptional<E>(v));
+}
+
+inline expected<void> make_expected(){
+    return expected<void>();
 }
 
 } //end of namespace std
