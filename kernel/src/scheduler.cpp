@@ -649,10 +649,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
 
     init_context(process, buffer, file, params);
 
-    pcb[process.pid].working_directory.clear();
-    for(auto& p : pcb[current_pid].working_directory){
-        pcb[process.pid].working_directory.push_back(p);
-    }
+    pcb[process.pid].working_directory = pcb[current_pid].working_directory;
 
     logging::logf(logging::log_level::DEBUG, "scheduler: Exec process pid=%u, ppid=%u\n", process.pid, process.ppid);
 
@@ -897,11 +894,11 @@ const std::vector<std::string>& scheduler::get_handle(size_t fd){
     return pcb[current_pid].handles[fd];
 }
 
-const std::vector<std::string>& scheduler::get_working_directory(){
+const path& scheduler::get_working_directory(){
     return pcb[current_pid].working_directory;
 }
 
-void scheduler::set_working_directory(const std::vector<std::string>& directory){
+void scheduler::set_working_directory(const path& directory){
     pcb[current_pid].working_directory = directory;
 }
 

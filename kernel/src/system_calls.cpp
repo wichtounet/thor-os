@@ -199,27 +199,19 @@ void sc_mount(interrupt::syscall_regs* regs){
 
 void sc_pwd(interrupt::syscall_regs* regs){
     auto& wd = scheduler::get_working_directory();
-
-    std::string path;
-    path += '/';
-
-    for(auto& part : wd){
-        path += part;
-        path += '/';
-    }
+    auto p = wd.string();
 
     auto buffer = reinterpret_cast<char*>(regs->rbx);
-    for(size_t i = 0; i < path.size(); ++i){
-        buffer[i] = path[i];
+    for(size_t i = 0; i < p.size(); ++i){
+        buffer[i] = p[i];
     }
-    buffer[path.size()] = '\0';
+    buffer[p.size()] = '\0';
 }
 
 void sc_cwd(interrupt::syscall_regs* regs){
     auto p = reinterpret_cast<const char*>(regs->rbx);
-    std::string path(p);
 
-    auto cwd = std::split(path, '/');
+    path cwd(p);
     scheduler::set_working_directory(cwd);
 }
 

@@ -14,6 +14,8 @@
 #include "paging.hpp"
 #include "interrupts.hpp"
 
+#include "vfs/path.hpp"
+
 namespace scheduler {
 
 constexpr const size_t MAX_PRIORITY = 4;
@@ -87,7 +89,7 @@ struct process_control_t {
     size_t rounds;
     size_t sleep_timeout;
     std::vector<std::vector<std::string>> handles;
-    std::vector<std::string> working_directory;
+    path working_directory;
 };
 
 } //end of namespace scheduler

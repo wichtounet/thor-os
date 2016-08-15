@@ -13,6 +13,8 @@
 
 #include "process.hpp"
 
+#include "vfs/path.hpp"
+
 namespace scheduler {
 
 constexpr const size_t MAX_PROCESS = 128;
@@ -50,8 +52,8 @@ const std::vector<std::string>& get_handle(size_t fd);
 bool has_handle(size_t fd);
 void release_handle(size_t fd);
 
-const std::vector<std::string>& get_working_directory();
-void set_working_directory(const std::vector<std::string>& directory);
+const path& get_working_directory();
+void set_working_directory(const path& directory);
 
 void block_process_light(pid_t pid);
 //TODO Maybe do that for unblock as well!

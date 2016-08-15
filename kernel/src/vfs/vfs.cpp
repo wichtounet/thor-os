@@ -14,6 +14,7 @@
 
 #include "vfs/vfs.hpp"
 #include "vfs/file_system.hpp"
+#include "vfs/path.hpp"
 
 #include "fs/fat32.hpp"
 #include "fs/sysfs.hpp"
@@ -87,6 +88,7 @@ std::vector<std::string> get_path(const char* file_path){
     std::vector<std::string> path;
 
     if(file[0] != '/'){
+        // TODO Review that construction
         for(auto& part : scheduler::get_working_directory()){
             path.push_back(part);
         }
