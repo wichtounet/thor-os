@@ -216,6 +216,8 @@ int64_t vfs::mount(partition_type type, size_t mp_fd, size_t dev_fd){
     mount_point_list.emplace_back(type, device, mp, fs);
     fs->init();
 
+    logging::logf(logging::log_level::TRACE, "vfs: mounted file system %s at %s \n", device.c_str(), mp.c_str());
+
     return 0;
 }
 

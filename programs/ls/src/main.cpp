@@ -44,18 +44,18 @@ void ls_files(const char* file_path){
                         position += entry->offset_next;
                     }
                 } else {
-                    printf("ls: error: %s\n", std::error_message(entries_result.error()));
+                    printf("ls: entries error: %s\n", std::error_message(entries_result.error()));
                 }
 
                 delete[] buffer;
             }
         } else {
-            printf("ls: error: %s\n", std::error_message(info.error()));
+            printf("ls: stat error: %s\n", std::error_message(info.error()));
         }
 
         close(*fd);
     } else {
-        printf("ls: error: %s\n", std::error_message(fd.error()));
+        printf("ls: open error: %s\n", std::error_message(fd.error()));
     }
 }
 
