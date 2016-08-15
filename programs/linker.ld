@@ -1,10 +1,11 @@
-ENTRY(main)
+ENTRY(_start)
 
 SECTIONS {
 	. = 0x8000400000;
 
 	.text BLOCK(4096) : ALIGN(4096)
 	{
+        *(.start)
 		*(.text)
 		*(.text*)
 	}
