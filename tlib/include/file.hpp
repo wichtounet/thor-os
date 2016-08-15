@@ -26,6 +26,7 @@ void close(size_t fd);
 std::expected<stat_info> stat(size_t fd);
 std::expected<statfs_info> statfs(const char* file);
 std::expected<size_t> mounts(char* buffer, size_t max);
+std::expected<void> mount(size_t type, size_t dev_fd, size_t mp_fd);
 
 std::string current_working_directory();
 void set_current_working_directory(const std::string& directory);
