@@ -38,7 +38,7 @@ struct mounted_fs {
 
     mounted_fs() = default;
 
-    mounted_fs(vfs::partition_type type, const char* dev, const char* mp, vfs::file_system* fs) :
+    mounted_fs(vfs::partition_type type, std::string dev, std::string mp, vfs::file_system* fs) :
         fs_type(type), device(dev), mount_point(mp), file_system(fs)
     {
         mp_vec = std::split(mount_point, '/');
@@ -142,6 +142,25 @@ std::vector<std::string> get_fs_path(const std::vector<std::string>& path, const
     return std::move(fs_path);
 }
 
+vfs::file_system* get_new_fs(vfs::partition_type type, const std::string& mount_point, const std::string& device){
+    switch(type){
+        case vfs::partition_type::FAT32:
+            return new fat32::fat32_file_system(mount_point, device);
+
+        case vfs::partition_type::SYSFS:
+            return new sysfs::sysfs_file_system(mount_point);
+
+        case vfs::partition_type::DEVFS:
+            return new devfs::devfs_file_system(mount_point);
+
+        case vfs::partition_type::PROCFS:
+            return new procfs::procfs_file_system(mount_point);
+
+        default:
+            return nullptr;
+    }
+}
+
 } //end of anonymous namespace
 
 void vfs::init(){
@@ -156,32 +175,55 @@ void vfs::init(){
     }
 }
 
+int64_t vfs::mount(partition_type type, size_t mp_fd, size_t dev_fd){
+    if(!scheduler::has_handle(mp_fd)){
+        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+    }
+
+    if(!scheduler::has_handle(dev_fd)){
+        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+    }
+
+    auto mp_path = scheduler::get_handle(mp_fd);
+    auto dev_path = scheduler::get_handle(dev_fd);
+
+    std::string mp("/");
+
+    for(auto& p : mp_path){
+        mp += p;
+        mp += "/";
+    }
+
+    std::string device("/");
+
+    for(auto& p : dev_path){
+        device += p;
+        device += "/";
+    }
+
+    for(auto& m : mount_point_list){
+        if(m.mount_point == mp){
+            return -std::ERROR_ALREADY_MOUNTED;
+        }
+    }
+
+    auto fs = get_new_fs(type, mp, device);
+
+    if(!fs){
+        return -std::ERROR_INVALID_FILE_SYSTEM;
+    }
+
+    mount_point_list.emplace_back(type, device, mp, fs);
+    fs->init();
+
+    return 0;
+}
+
 int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){
-    file_system* fs = nullptr;
+    auto fs = get_new_fs(type, mount_point, device);
 
-    switch(type){
-        case vfs::partition_type::FAT32:
-            fs = new fat32::fat32_file_system(mount_point, device);
-
-            break;
-
-        case vfs::partition_type::SYSFS:
-            fs = new sysfs::sysfs_file_system(mount_point);
-
-            break;
-
-        case vfs::partition_type::DEVFS:
-            fs = new devfs::devfs_file_system(mount_point);
-
-            break;
-
-        case vfs::partition_type::PROCFS:
-            fs = new procfs::procfs_file_system(mount_point);
-
-            break;
-
-        default:
-            return -std::ERROR_INVALID_FILE_SYSTEM;
+    if(!fs){
+        return -std::ERROR_INVALID_FILE_SYSTEM;
     }
 
     mount_point_list.emplace_back(type, device, mount_point, fs);

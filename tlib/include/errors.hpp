@@ -31,6 +31,7 @@ constexpr const size_t ERROR_UNSUPPORTED = 15;
 constexpr const size_t ERROR_INVALID_COUNT = 16;
 constexpr const size_t ERROR_INVALID_REQUEST = 17;
 constexpr const size_t ERROR_INVALID_DEVICE = 18;
+constexpr const size_t ERROR_ALREADY_MOUNTED = 19;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -70,6 +71,8 @@ inline const char* error_message(size_t error){
             return "The request is not valid";
         case ERROR_INVALID_DEVICE:
             return "The device is not valid for this request";
+        case ERROR_ALREADY_MOUNTED:
+            return "Something is already mounted";
         default:
             return "Unknonwn error";
     }

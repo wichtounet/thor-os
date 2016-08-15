@@ -37,6 +37,7 @@ int64_t truncate(size_t fd, size_t size);
 int64_t entries(size_t fd, char* buffer, size_t size);
 int64_t mounts(char* buffer, size_t size);
 
+int64_t mount(partition_type type, size_t mp_fd, size_t dev_fd);
 int64_t mount(partition_type type, const char* mount_point, const char* device);
 
 //Used only inside kernel as a easy way to read a complete file

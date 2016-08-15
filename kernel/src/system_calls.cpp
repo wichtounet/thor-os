@@ -189,6 +189,14 @@ void sc_mounts(interrupt::syscall_regs* regs){
     regs->rax = vfs::mounts(buffer, max);
 }
 
+void sc_mount(interrupt::syscall_regs* regs){
+    auto type = static_cast<vfs::partition_type>(regs->rbx);
+    auto mp_fd = regs->rcx;
+    auto dev_fd = regs->rdx;
+
+    regs->rax = vfs::mount(type, mp_fd, dev_fd);
+}
+
 void sc_pwd(interrupt::syscall_regs* regs){
     auto& wd = scheduler::get_working_directory();
 
@@ -410,6 +418,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 313:
             sc_clear(regs);
+            break;
+
+        case 314:
+            sc_mount(regs);
             break;
 
         case 0x400:
