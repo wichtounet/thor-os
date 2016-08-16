@@ -613,7 +613,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     std::string content;
     auto result = vfs::direct_read(file, content);
     if(result < 0){
-        logging::logf(logging::log_level::DEBUG, "scheduler: %s\n", std::error_message(-result));
+        logging::logf(logging::log_level::DEBUG, "scheduler: direct_read error: %s\n", std::error_message(-result));
 
         return result;
     }
@@ -876,21 +876,21 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
     reschedule();
 }
 
-size_t scheduler::register_new_handle(const std::vector<std::string>& path){
-    pcb[current_pid].handles.push_back(path);
+size_t scheduler::register_new_handle(const path& p){
+    pcb[current_pid].handles.push_back(p);
 
     return pcb[current_pid].handles.size() - 1;
 }
 
 void scheduler::release_handle(size_t fd){
-    pcb[current_pid].handles[fd].clear();
+    pcb[current_pid].handles[fd].invalidate();
 }
 
 bool scheduler::has_handle(size_t fd){
-    return fd < pcb[current_pid].handles.size();
+    return fd < pcb[current_pid].handles.size() && pcb[current_pid].handles[fd].is_valid();
 }
 
-const std::vector<std::string>& scheduler::get_handle(size_t fd){
+const path& scheduler::get_handle(size_t fd){
     return pcb[current_pid].handles[fd];
 }
 

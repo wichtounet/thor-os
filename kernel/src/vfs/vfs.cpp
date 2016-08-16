@@ -82,31 +82,19 @@ void mount_proc(){
     mount(vfs::partition_type::PROCFS, "/proc/", "none");
 }
 
-std::vector<std::string> get_path(const char* file_path){
-    std::string file(file_path);
-
-    std::vector<std::string> path;
-
-    if(file[0] != '/'){
-        // TODO Review that construction
-        for(auto& part : scheduler::get_working_directory()){
-            path.push_back(part);
-        }
+path get_path(const char* file_path){
+    if(file_path[0] != '/'){
+        return {scheduler::get_working_directory(), file_path};
+    } else {
+        return {file_path};
     }
-
-    auto parts = std::split(file, '/');
-    for(auto& part : parts){
-        path.push_back(part);
-    }
-
-    return std::move(path);
 }
 
-mounted_fs& get_fs(const std::vector<std::string>& path){
+mounted_fs& get_fs(const path& base_path){
     size_t best = 0;
     size_t best_match = 0;
 
-    if(path.empty()){
+    if(base_path.is_root()){
         for(auto& mp : mount_point_list){
             if(mp.mp_vec.empty()){
                 return mp;
@@ -118,8 +106,8 @@ mounted_fs& get_fs(const std::vector<std::string>& path){
         auto& mp = mount_point_list[i];
 
         bool match = true;
-        for(size_t j = 0; j < mp.mp_vec.size() && j < path.size() ; ++j){
-            if(mp.mp_vec[j] != path[j]){
+        for(size_t j = 0; j < mp.mp_vec.size() && j < base_path.size() ; ++j){
+            if(mp.mp_vec[j] != base_path[j]){
                 match = false;
                 break;
             }
@@ -134,14 +122,8 @@ mounted_fs& get_fs(const std::vector<std::string>& path){
     return mount_point_list[best_match];;
 }
 
-std::vector<std::string> get_fs_path(const std::vector<std::string>& path, const mounted_fs& fs){
-    std::vector<std::string> fs_path;
-
-    for(size_t i = fs.mp_vec.size(); i < path.size(); ++i){
-        fs_path.push_back(path[i]);
-    }
-
-    return std::move(fs_path);
+path get_fs_path(const path& base_path, const mounted_fs& fs){
+    return base_path.sub_path(fs.mp_vec.size());
 }
 
 vfs::file_system* get_new_fs(vfs::partition_type type, const std::string& mount_point, const std::string& device){
@@ -240,8 +222,8 @@ int64_t vfs::statfs(const char* mount_point, statfs_info& info){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto path = get_path(mount_point);
-    auto& fs = get_fs(path);
+    auto base_path = get_path(mount_point);
+    auto& fs = get_fs(base_path);
 
     return fs.file_system->statfs(info);
 }
@@ -253,13 +235,13 @@ int64_t vfs::open(const char* file_path, size_t flags){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto path = get_path(file_path);
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto base_path = get_path(file_path);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     //Special handling for opening the root
-    if(fs_path.empty()){
-        return scheduler::register_new_handle(path);
+    if(fs_path.is_root()){
+        return scheduler::register_new_handle(base_path);
     }
 
     int64_t sub_result;
@@ -278,7 +260,7 @@ int64_t vfs::open(const char* file_path, size_t flags){
     if(sub_result > 0){
         return -sub_result;
     } else {
-        return scheduler::register_new_handle(path);
+        return scheduler::register_new_handle(base_path);
     }
 }
 
@@ -295,15 +277,15 @@ int64_t vfs::mkdir(const char* file_path){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto path = get_path(file_path);
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto base_path = get_path(file_path);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
 #ifdef THOR_CONFIG_DEBUG_VFS
     logging::logf(logging::log_level::TRACE, "vfs: mkdir: %s \n", file_path);
 
-    for(auto& p : path){
-        logging::logf(logging::log_level::TRACE, "vfs: mkdir path: %s\n", p.c_str());
+    for(auto& p : base_path){
+        logging::logf(logging::log_level::TRACE, "vfs: mkdir base_path: %s\n", p.c_str());
     }
 
     for(auto& p : fs_path){
@@ -321,9 +303,9 @@ int64_t vfs::rm(const char* file_path){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto path = get_path(file_path);
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto base_path = get_path(file_path);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     return fs.file_system->rm(fs_path);
 }
@@ -333,9 +315,9 @@ int64_t vfs::stat(size_t fd, stat_info& info){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto& path = scheduler::get_handle(fd);
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto& base_path = scheduler::get_handle(fd);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     //Special handling for root
     if(fs_path.empty()){
@@ -380,14 +362,14 @@ int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto& path = scheduler::get_handle(fd);
+    auto& base_path = scheduler::get_handle(fd);
 
-    if(path.empty()){
+    if(base_path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     size_t read = 0;
     auto result = fs.file_system->read(fs_path, buffer, count, offset, read);
@@ -400,9 +382,9 @@ int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
 }
 
 int64_t vfs::direct_read(const char* file, char* buffer, size_t count, size_t offset){
-    auto path = get_path(file);
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto base_path = get_path(file);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     size_t read = 0;
     auto result = fs.file_system->read(fs_path, buffer, count, offset, read);
@@ -419,14 +401,14 @@ int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto& path = scheduler::get_handle(fd);
+    auto& base_path = scheduler::get_handle(fd);
 
-    if(path.empty()){
+    if(base_path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     size_t written = 0;
     auto result = fs.file_system->write(fs_path, buffer, count, offset, written);
@@ -443,14 +425,14 @@ int64_t vfs::clear(size_t fd, size_t count, size_t offset){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto& path = scheduler::get_handle(fd);
+    auto& base_path = scheduler::get_handle(fd);
 
-    if(path.empty()){
+    if(base_path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     size_t written = 0;
     auto result = fs.file_system->clear(fs_path, count, offset, written);
@@ -463,9 +445,9 @@ int64_t vfs::clear(size_t fd, size_t count, size_t offset){
 }
 
 int64_t vfs::direct_write(const char* file, const char* buffer, size_t count, size_t offset){
-    auto path = get_path(file);
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto base_path = get_path(file);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     size_t written = 0;
     auto result = fs.file_system->write(fs_path, buffer, count, offset, written);
@@ -482,23 +464,23 @@ int64_t vfs::truncate(size_t fd, size_t size){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto& path = scheduler::get_handle(fd);
+    auto& base_path = scheduler::get_handle(fd);
 
-    if(path.empty()){
+    if(base_path.empty()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     auto result = fs.file_system->truncate(fs_path, size);
     return result > 0 ? -result : 0;
 }
 
 int64_t vfs::direct_read(const std::string& file_path, std::string& content){
-    auto path = get_path(file_path.c_str());
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto base_path = get_path(file_path.c_str());
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     vfs::file f;
     auto result = fs.file_system->get_file(fs_path, f);
@@ -527,9 +509,9 @@ int64_t vfs::entries(size_t fd, char* buffer, size_t size){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
 
-    auto& path = scheduler::get_handle(fd);
-    auto& fs = get_fs(path);
-    auto fs_path = get_fs_path(path, fs);
+    auto& base_path = scheduler::get_handle(fd);
+    auto& fs = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
 
     std::vector<vfs::file> files;
     auto result = fs.file_system->ls(fs_path, files);

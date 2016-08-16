@@ -209,10 +209,10 @@ void fat32::fat32_file_system::init(){
     logging::logf(logging::log_level::TRACE, "fat32: Number of fat:%u\n", uint64_t(fat_bs->number_of_fat));
 }
 
-size_t fat32::fat32_file_system::get_file(const std::vector<std::string>& file_path, vfs::file& file){
+size_t fat32::fat32_file_system::get_file(const path& file_path, vfs::file& file){
     auto all_files = files(file_path, 1);
     for(auto& f : all_files){
-        if(f.file_name == file_path.back()){
+        if(f.file_name == file_path.base_name()){
             file = f;
             return 0;
         }
@@ -221,7 +221,7 @@ size_t fat32::fat32_file_system::get_file(const std::vector<std::string>& file_p
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read){
+size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
@@ -297,7 +297,7 @@ size_t fat32::fat32_file_system::read(const std::vector<std::string>& file_path,
     return 0;
 }
 
-size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
+size_t fat32::fat32_file_system::write(const path& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
@@ -380,7 +380,7 @@ size_t fat32::fat32_file_system::write(const std::vector<std::string>& file_path
     return 0;
 }
 
-size_t fat32::fat32_file_system::clear(const std::vector<std::string>& file_path, size_t count, size_t offset, size_t& written){
+size_t fat32::fat32_file_system::clear(const path& file_path, size_t count, size_t offset, size_t& written){
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
@@ -463,7 +463,7 @@ size_t fat32::fat32_file_system::clear(const std::vector<std::string>& file_path
     return 0;
 }
 
-size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_path, size_t file_size){
+size_t fat32::fat32_file_system::truncate(const path& file_path, size_t file_size){
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
@@ -560,14 +560,14 @@ size_t fat32::fat32_file_system::truncate(const std::vector<std::string>& file_p
     return 0;
 }
 
-size_t fat32::fat32_file_system::ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents){
+size_t fat32::fat32_file_system::ls(const path& file_path, std::vector<vfs::file>& contents){
     //TODO Better handling of error inside files()
     contents = files(file_path);
 
     return 0;
 }
 
-size_t fat32::fat32_file_system::touch(const std::vector<std::string>& file_path){
+size_t fat32::fat32_file_system::touch(const path& file_path){
     //Find the cluster number of the parent directory
     auto cluster_number = find_cluster_number(file_path, 1);
     if(!cluster_number.first){
@@ -581,7 +581,7 @@ size_t fat32::fat32_file_system::touch(const std::vector<std::string>& file_path
         return std::ERROR_FAILED;
     }
 
-    auto& file = file_path.back();
+    auto file = file_path.base_name();
 
     auto entries = number_of_entries(file);
     auto new_directory_entry = find_free_entry(directory_cluster, entries, parent_cluster_number);
@@ -596,7 +596,7 @@ size_t fat32::fat32_file_system::touch(const std::vector<std::string>& file_path
     return 0;
 }
 
-size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path){
+size_t fat32::fat32_file_system::mkdir(const path& file_path){
     //Find the cluster number of the parent directory
     auto cluster_number = find_cluster_number(file_path, 1);
     if(!cluster_number.first){
@@ -621,7 +621,7 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
         return std::ERROR_FAILED;
     }
 
-    auto& directory = file_path.back();
+    auto directory = file_path.base_name();
 
     auto parent_cluster_number = parent_cluster; // This may change if full
     auto entries = number_of_entries(directory);
@@ -675,7 +675,7 @@ size_t fat32::fat32_file_system::mkdir(const std::vector<std::string>& file_path
     return 0;
 }
 
-size_t fat32::fat32_file_system::rm(const std::vector<std::string>& file_path){
+size_t fat32::fat32_file_system::rm(const path& file_path){
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
@@ -1201,28 +1201,28 @@ std::vector<vfs::file> fat32::fat32_file_system::files(uint32_t cluster_number){
 
 //TODO use expected here
 //Find the cluster for the given path
-std::pair<bool, uint32_t> fat32::fat32_file_system::find_cluster_number(const std::vector<std::string>& path, size_t last){
+std::pair<bool, uint32_t> fat32::fat32_file_system::find_cluster_number(const path& file_path, size_t last){
     auto cluster_number = fat_bs->root_directory_cluster_start;
 
-    if(path.size() - last == 0){
+    if(file_path.size() - last == 0){
         return std::make_pair(true, cluster_number);
     }
 
-    for(size_t i = 0; i < path.size() - last; ++i){
-        auto& p = path[i];
+    for(size_t i = 0; i < file_path.size() - last; ++i){
+        auto& p = file_path[i];
 
         bool found = false;
 
         auto entries = files(cluster_number);
 
         for(auto& file : entries){
-            if(i == path.size() - 1 - last || file.directory){
+            if(i == file_path.size() - 1 - last || file.directory){
                 if(file.file_name == p){
                     cluster_number = file.location;
 
                     //If it is the last part of the path, just return the
                     //number
-                    if(i == path.size() - 1 - last){
+                    if(i == file_path.size() - 1 - last){
                         return std::make_pair(true, cluster_number);
                     }
 
@@ -1245,8 +1245,8 @@ std::pair<bool, uint32_t> fat32::fat32_file_system::find_cluster_number(const st
 
 //Return all the files in the directory denoted by its path
 //No test is make to verify that the path denotes a directory
-std::vector<vfs::file> fat32::fat32_file_system::files(const std::vector<std::string>& path, size_t last){
-    auto cluster_number_search = find_cluster_number(path, last);
+std::vector<vfs::file> fat32::fat32_file_system::files(const path& file_path, size_t last){
+    auto cluster_number_search = find_cluster_number(file_path, last);
     if(!cluster_number_search.first){
         return {};
     }

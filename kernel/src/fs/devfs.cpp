@@ -48,7 +48,7 @@ devfs::devfs_file_system::~devfs_file_system(){
     //Nothing to delete
 }
 
-size_t devfs::devfs_file_system::get_file(const std::vector<std::string>& file_path, vfs::file& f){
+size_t devfs::devfs_file_system::get_file(const path& file_path, vfs::file& f){
     if(file_path.empty()){
         f.file_name = "/";
         f.directory = true;
@@ -67,7 +67,7 @@ size_t devfs::devfs_file_system::get_file(const std::vector<std::string>& file_p
     for(auto& device_list : devices){
         if(device_list.name == mount_point){
             for(auto& device : device_list.devices){
-                if(device.name == file_path.back()){
+                if(device.name == file_path.base_name()){
                     f.file_name = device.name;
                     f.directory = false;
                     f.hidden = false;
@@ -83,7 +83,7 @@ size_t devfs::devfs_file_system::get_file(const std::vector<std::string>& file_p
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t devfs::devfs_file_system::read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read){
+size_t devfs::devfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
     //Cannot access the root for reading
     if(file_path.empty()){
         return std::ERROR_PERMISSION_DENIED;
@@ -92,7 +92,7 @@ size_t devfs::devfs_file_system::read(const std::vector<std::string>& file_path,
     for(auto& device_list : devices){
         if(device_list.name == mount_point){
             for(auto& device : device_list.devices){
-                if(device.name == file_path.back()){
+                if(device.name == file_path.base_name()){
                     if(!device.driver){
                         return std::ERROR_UNSUPPORTED;
                     }
@@ -106,7 +106,7 @@ size_t devfs::devfs_file_system::read(const std::vector<std::string>& file_path,
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t devfs::devfs_file_system::write(const std::vector<std::string>& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
+size_t devfs::devfs_file_system::write(const path& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
     //Cannot access the root for writing
     if(file_path.empty()){
         return std::ERROR_PERMISSION_DENIED;
@@ -115,7 +115,7 @@ size_t devfs::devfs_file_system::write(const std::vector<std::string>& file_path
     for(auto& device_list : devices){
         if(device_list.name == mount_point){
             for(auto& device : device_list.devices){
-                if(device.name == file_path.back()){
+                if(device.name == file_path.base_name()){
                     if(!device.driver){
                         return std::ERROR_UNSUPPORTED;
                     }
@@ -129,7 +129,7 @@ size_t devfs::devfs_file_system::write(const std::vector<std::string>& file_path
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t devfs::devfs_file_system::clear(const std::vector<std::string>& file_path, size_t count, size_t offset, size_t& written){
+size_t devfs::devfs_file_system::clear(const path& file_path, size_t count, size_t offset, size_t& written){
     //Cannot access the root for writing
     if(file_path.empty()){
         return std::ERROR_PERMISSION_DENIED;
@@ -138,7 +138,7 @@ size_t devfs::devfs_file_system::clear(const std::vector<std::string>& file_path
     for(auto& device_list : devices){
         if(device_list.name == mount_point){
             for(auto& device : device_list.devices){
-                if(device.name == file_path.back()){
+                if(device.name == file_path.base_name()){
                     if(!device.driver){
                         return std::ERROR_UNSUPPORTED;
                     }
@@ -152,11 +152,11 @@ size_t devfs::devfs_file_system::clear(const std::vector<std::string>& file_path
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t devfs::devfs_file_system::truncate(const std::vector<std::string>&, size_t){
+size_t devfs::devfs_file_system::truncate(const path&, size_t){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t devfs::devfs_file_system::ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents){
+size_t devfs::devfs_file_system::ls(const path& file_path, std::vector<vfs::file>& contents){
     //No subfolder support
     if(file_path.size() > 0){
         return std::ERROR_NOT_EXISTS;
@@ -181,15 +181,15 @@ size_t devfs::devfs_file_system::ls(const std::vector<std::string>& file_path, s
     return 0;
 }
 
-size_t devfs::devfs_file_system::touch(const std::vector<std::string>& ){
+size_t devfs::devfs_file_system::touch(const path& ){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t devfs::devfs_file_system::mkdir(const std::vector<std::string>& ){
+size_t devfs::devfs_file_system::mkdir(const path& ){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t devfs::devfs_file_system::rm(const std::vector<std::string>& ){
+size_t devfs::devfs_file_system::rm(const path& ){
     return std::ERROR_PERMISSION_DENIED;
 }
 
@@ -227,7 +227,7 @@ void devfs::deregister_device(const std::string& mp, const std::string& name){
     }
 }
 
-uint64_t devfs::get_device_size(const std::vector<std::string>& device_name, size_t& size){
+uint64_t devfs::get_device_size(const path& device_name, size_t& size){
     if(device_name.size() != 2){
         return std::ERROR_INVALID_DEVICE;
     }

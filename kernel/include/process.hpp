@@ -88,7 +88,7 @@ struct process_control_t {
     scheduler::process_state state;
     size_t rounds;
     size_t sleep_timeout;
-    std::vector<std::vector<std::string>> handles;
+    std::vector<path> handles;
     path working_directory;
 };
 

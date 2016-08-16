@@ -19,6 +19,7 @@ struct path {
 
     path();
     path(const std::string& path);
+    path(const path& base_path, const std::string& path);
 
     path(const path&) = default;
     path(path&&) = default;
@@ -28,9 +29,24 @@ struct path {
 
     // Conversion functions
     std::string string() const;
+    const std::vector<std::string>& vec() const;
+
+    // Modifiers
+    void invalidate();
 
     // Accessors
     bool empty() const;
+    bool is_root() const;
+    bool is_valid() const;
+    size_t size() const;
+    std::string base_name() const;
+
+    // Accessors to sub parts
+    const std::string& name(size_t i) const;
+    const std::string& operator[](size_t i) const;
+
+    // Decomposition functions
+    path sub_path(size_t i) const;
 
     // Iterators
     iterator begin() const ;

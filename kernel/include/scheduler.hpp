@@ -47,8 +47,8 @@ void fault();
 void sleep_ms(size_t time);
 void sleep_ms(pid_t pid, size_t time);
 
-size_t register_new_handle(const std::vector<std::string>& path);
-const std::vector<std::string>& get_handle(size_t fd);
+size_t register_new_handle(const path& p);
+const path& get_handle(size_t fd);
 bool has_handle(size_t fd);
 void release_handle(size_t fd);
 

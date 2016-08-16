@@ -36,21 +36,21 @@ public:
     ~devfs_file_system();
 
     size_t statfs(statfs_info& file);
-    size_t read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read);
-    size_t write(const std::vector<std::string>& file_path, const char* buffer, size_t count, size_t offset, size_t& written);
-    size_t clear(const std::vector<std::string>& file_path, size_t count, size_t offset, size_t& written);
-    size_t truncate(const std::vector<std::string>& file_path, size_t size);
-    size_t get_file(const std::vector<std::string>& file_path, vfs::file& file);
-    size_t ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents);
-    size_t touch(const std::vector<std::string>& file_path);
-    size_t mkdir(const std::vector<std::string>& file_path);
-    size_t rm(const std::vector<std::string>& file_path);
+    size_t read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read);
+    size_t write(const path& file_path, const char* buffer, size_t count, size_t offset, size_t& written);
+    size_t clear(const path& file_path, size_t count, size_t offset, size_t& written);
+    size_t truncate(const path& file_path, size_t size);
+    size_t get_file(const path& file_path, vfs::file& file);
+    size_t ls(const path& file_path, std::vector<vfs::file>& contents);
+    size_t touch(const path& file_path);
+    size_t mkdir(const path& file_path);
+    size_t rm(const path& file_path);
 };
 
 void register_device(const std::string& mp, const std::string& name, device_type type, dev_driver* driver, void* data);
 void deregister_device(const std::string& mp, const std::string& name);
 
-uint64_t get_device_size(const std::vector<std::string>& device_name, size_t& size);
+uint64_t get_device_size(const path& device_name, size_t& size);
 
 } //end of namespace devfs
 

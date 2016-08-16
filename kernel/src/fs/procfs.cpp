@@ -76,7 +76,7 @@ procfs::procfs_file_system::~procfs_file_system(){
     //Nothing to delete
 }
 
-size_t procfs::procfs_file_system::get_file(const std::vector<std::string>& file_path, vfs::file& f){
+size_t procfs::procfs_file_system::get_file(const path& file_path, vfs::file& f){
     // Access the root folder
     if(file_path.empty()){
         f.file_name = "/";
@@ -133,7 +133,7 @@ size_t procfs::procfs_file_system::get_file(const std::vector<std::string>& file
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t procfs::procfs_file_system::read(const std::vector<std::string>& file_path, char* buffer, size_t count, size_t offset, size_t& read){
+size_t procfs::procfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
     //Cannot access the root nor the pid directores for reading
     if(file_path.size() < 2){
         return std::ERROR_PERMISSION_DENIED;
@@ -164,7 +164,7 @@ size_t procfs::procfs_file_system::read(const std::vector<std::string>& file_pat
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t procfs::procfs_file_system::ls(const std::vector<std::string>& file_path, std::vector<vfs::file>& contents){
+size_t procfs::procfs_file_system::ls(const path& file_path, std::vector<vfs::file>& contents){
     logging::logf(logging::log_level::DEBUG, "procfs ls %u\n", file_path.size());
 
     if(file_path.size() == 0){
@@ -201,26 +201,26 @@ size_t procfs::procfs_file_system::statfs(statfs_info& file){
     return 0;
 }
 
-size_t procfs::procfs_file_system::write(const std::vector<std::string>&, const char*, size_t, size_t, size_t&){
+size_t procfs::procfs_file_system::write(const path&, const char*, size_t, size_t, size_t&){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t procfs::procfs_file_system::clear(const std::vector<std::string>&, size_t, size_t, size_t&){
+size_t procfs::procfs_file_system::clear(const path&, size_t, size_t, size_t&){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t procfs::procfs_file_system::truncate(const std::vector<std::string>&, size_t){
+size_t procfs::procfs_file_system::truncate(const path&, size_t){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t procfs::procfs_file_system::touch(const std::vector<std::string>& ){
+size_t procfs::procfs_file_system::touch(const path& ){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t procfs::procfs_file_system::mkdir(const std::vector<std::string>& ){
+size_t procfs::procfs_file_system::mkdir(const path& ){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t procfs::procfs_file_system::rm(const std::vector<std::string>& ){
+size_t procfs::procfs_file_system::rm(const path& ){
     return std::ERROR_PERMISSION_DENIED;
 }
