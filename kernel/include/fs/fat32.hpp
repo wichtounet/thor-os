@@ -24,13 +24,13 @@ typedef const disks::disk_descriptor& dd;
 struct fat32_file_system : vfs::file_system {
 private:
     path mount_point;
-    std::string device;
+    path device;
 
     fat_bs_t* fat_bs = nullptr;
     fat_is_t* fat_is = nullptr;
 
 public:
-    fat32_file_system(path mount_point, std::string device);
+    fat32_file_system(path mount_point, path device);
     ~fat32_file_system();
 
     void init();

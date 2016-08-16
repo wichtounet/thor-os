@@ -14,7 +14,6 @@
 
 #include "vfs/vfs.hpp"
 #include "vfs/file_system.hpp"
-#include "vfs/path.hpp"
 
 #include "fs/fat32.hpp"
 #include "fs/sysfs.hpp"
@@ -32,13 +31,13 @@ namespace {
 
 struct mounted_fs {
     vfs::partition_type fs_type;
-    std::string device;
+    path device;
     path mount_point;
     vfs::file_system* file_system;
 
     mounted_fs() = default;
 
-    mounted_fs(vfs::partition_type type, std::string dev, path mp, vfs::file_system* fs) :
+    mounted_fs(vfs::partition_type type, path dev, path mp, vfs::file_system* fs) :
         fs_type(type), device(dev), mount_point(mp), file_system(fs)
     {
         // Nothing else to init
@@ -134,7 +133,7 @@ path get_fs_path(const path& base_path, const mounted_fs& fs){
     return path("/") / base_path.sub_path(fs.mount_point.size());
 }
 
-vfs::file_system* get_new_fs(vfs::partition_type type, const path& mount_point, const std::string& device){
+vfs::file_system* get_new_fs(vfs::partition_type type, const path& mount_point, const path& device){
     switch(type){
         case vfs::partition_type::FAT32:
             return new fat32::fat32_file_system(mount_point, device);
@@ -201,14 +200,15 @@ int64_t vfs::mount(partition_type type, size_t mp_fd, size_t dev_fd){
 
 int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){
     path mp_path(mount_point);
+    path dev_path(device);
 
-    auto fs = get_new_fs(type, mp_path, device);
+    auto fs = get_new_fs(type, mp_path, dev_path);
 
     if(!fs){
         return -std::ERROR_INVALID_FILE_SYSTEM;
     }
 
-    mount_point_list.emplace_back(type, device, mp_path, fs);
+    mount_point_list.emplace_back(type, dev_path, mp_path, fs);
 
     return 0;
 }
@@ -234,8 +234,6 @@ int64_t vfs::open(const char* file_path, size_t flags){
     auto base_path = get_path(file_path);
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
-
-    logging::logf(logging::log_level::TRACE, "vfs: open %s:%s \n", base_path.string().c_str(), fs_path.string().c_str());
 
     //Special handling for opening the root
     if(fs_path.is_root()){
@@ -379,8 +377,7 @@ int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
     return read;
 }
 
-int64_t vfs::direct_read(const char* file, char* buffer, size_t count, size_t offset){
-    auto base_path = get_path(file);
+int64_t vfs::direct_read(const path& base_path, char* buffer, size_t count, size_t offset){
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
@@ -442,8 +439,7 @@ int64_t vfs::clear(size_t fd, size_t count, size_t offset){
     return written;
 }
 
-int64_t vfs::direct_write(const char* file, const char* buffer, size_t count, size_t offset){
-    auto base_path = get_path(file);
+int64_t vfs::direct_write(const path& base_path, const char* buffer, size_t count, size_t offset){
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
@@ -475,8 +471,7 @@ int64_t vfs::truncate(size_t fd, size_t size){
     return result > 0 ? -result : 0;
 }
 
-int64_t vfs::direct_read(const std::string& file_path, std::string& content){
-    auto base_path = get_path(file_path.c_str());
+int64_t vfs::direct_read(const path& base_path, std::string& content){
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
@@ -559,7 +554,7 @@ int64_t vfs::mounts(char* buffer, size_t size){
     size_t total_size = 0;
 
     for(auto& mp : mount_point_list){
-        total_size += 4 * sizeof(size_t) + 3 + mp.device.size() + mp.mount_point.string().size() + partition_type_to_string(mp.fs_type).size();
+        total_size += 4 * sizeof(size_t) + 3 + mp.device.string().size() + mp.mount_point.string().size() + partition_type_to_string(mp.fs_type).size();
     }
 
     if(size < total_size){
@@ -576,11 +571,11 @@ int64_t vfs::mounts(char* buffer, size_t size){
         auto fs_type = partition_type_to_string(mp.fs_type);
 
         entry->length_mp = mp.mount_point.string().size();
-        entry->length_dev = mp.device.size();
+        entry->length_dev = mp.device.string().size();
         entry->length_type = fs_type.size();
 
         if(i + 1 < mount_point_list.size()){
-            entry->offset_next = 4 * sizeof(size_t) + 3 + mp.device.size() + mp.mount_point.string().size() + fs_type.size();
+            entry->offset_next = 4 * sizeof(size_t) + 3 + mp.device.string().size() + mp.mount_point.string().size() + fs_type.size();
             position += entry->offset_next;
         } else {
             entry->offset_next = 0;
@@ -594,8 +589,9 @@ int64_t vfs::mounts(char* buffer, size_t size){
             name_buffer[str_pos++] = mount_point[j];
         }
         name_buffer[str_pos++] = '\0';
-        for(size_t j = 0; j < mp.device.size(); ++j){
-            name_buffer[str_pos++] = mp.device[j];
+        auto device = mp.device.string();
+        for(size_t j = 0; j < device.size(); ++j){
+            name_buffer[str_pos++] = device[j];
         }
         name_buffer[str_pos++] = '\0';
         for(size_t j = 0; j < fs_type.size(); ++j){

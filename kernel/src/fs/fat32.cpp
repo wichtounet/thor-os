@@ -171,7 +171,7 @@ void init_file_entry(fat32::cluster_entry* entry_ptr, const char* name, uint32_t
 
 } //end of anonymous namespace
 
-fat32::fat32_file_system::fat32_file_system(path mount_point, std::string device) : mount_point(mount_point), device(device) {
+fat32::fat32_file_system::fat32_file_system(path mount_point, path device) : mount_point(mount_point), device(device) {
     //Nothing else to init
 }
 
@@ -1364,11 +1364,11 @@ uint32_t fat32::fat32_file_system::find_free_cluster(){
 }
 
 bool fat32::fat32_file_system::read_sectors(uint64_t start, uint8_t count, void* destination){
-    auto result = vfs::direct_read(device.c_str(), reinterpret_cast<char*>(destination), count * 512, start * 512);
+    auto result = vfs::direct_read(device, reinterpret_cast<char*>(destination), count * 512, start * 512);
     return result > 0 && result == count * 512;
 }
 
 bool fat32::fat32_file_system::write_sectors(uint64_t start, uint8_t count, void* source){
-    auto result = vfs::direct_write(device.c_str(), reinterpret_cast<const char*>(source), count * 512, start * 512);
+    auto result = vfs::direct_write(device, reinterpret_cast<const char*>(source), count * 512, start * 512);
     return result > 0 && result == count * 512;
 }

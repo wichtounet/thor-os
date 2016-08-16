@@ -614,7 +614,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     logging::log(logging::log_level::TRACE, "scheduler:exec: read_file start\n");
 
     std::string content;
-    auto result = vfs::direct_read(file, content);
+    auto result = vfs::direct_read(path(file), content);
     if(result < 0){
         logging::logf(logging::log_level::DEBUG, "scheduler: direct_read error: %s\n", std::error_message(-result));
 

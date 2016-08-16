@@ -11,6 +11,8 @@
 #include <stat_info.hpp>
 #include <statfs_info.hpp>
 
+#include "vfs/path.hpp"
+
 namespace vfs {
 
 enum class partition_type {
@@ -41,11 +43,11 @@ int64_t mount(partition_type type, size_t mp_fd, size_t dev_fd);
 int64_t mount(partition_type type, const char* mount_point, const char* device);
 
 //Used only inside kernel as a easy way to read a complete file
-int64_t direct_read(const std::string& file, std::string& content);
+int64_t direct_read(const path& file, std::string& content);
 
 //Use only inside the kernel for FS to access devices
-int64_t direct_read(const char* file, char* buffer, size_t count, size_t offset = 0);
-int64_t direct_write(const char* file, const char* buffer, size_t count, size_t offset = 0);
+int64_t direct_read(const path& file, char* buffer, size_t count, size_t offset = 0);
+int64_t direct_write(const path& file, const char* buffer, size_t count, size_t offset = 0);
 
 } //end of namespace vfs
 
