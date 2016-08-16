@@ -61,7 +61,7 @@ void procfs::set_pcb(const scheduler::process_control_t* pcb_ptr){
     pcb = pcb_ptr;
 }
 
-procfs::procfs_file_system::procfs_file_system(std::string mp) : mount_point(mp) {
+procfs::procfs_file_system::procfs_file_system(path mp) : mount_point(mp) {
     standard_contents.reserve(7);
     standard_contents.emplace_back("pid", false, false, false, 0);
     standard_contents.emplace_back("ppid", false, false, false, 0);
@@ -78,7 +78,7 @@ procfs::procfs_file_system::~procfs_file_system(){
 
 size_t procfs::procfs_file_system::get_file(const path& file_path, vfs::file& f){
     // Access the root folder
-    if(file_path.empty()){
+    if(file_path.is_root()){
         f.file_name = "/";
         f.directory = true;
         f.hidden = false;
@@ -88,7 +88,7 @@ size_t procfs::procfs_file_system::get_file(const path& file_path, vfs::file& f)
         return 0;
     }
 
-    auto i = atoui(file_path[0]);
+    auto i = atoui(file_path[1]);
 
     // Check the pid folder
     if(i >= scheduler::MAX_PROCESS){
@@ -102,8 +102,8 @@ size_t procfs::procfs_file_system::get_file(const path& file_path, vfs::file& f)
     }
 
     // Access a pid folder
-    if(file_path.size() == 1){
-        f.file_name = file_path[0];
+    if(file_path.size() == 2){
+        f.file_name = file_path[1];
         f.directory = true;
         f.hidden = false;
         f.system = false;
@@ -113,11 +113,11 @@ size_t procfs::procfs_file_system::get_file(const path& file_path, vfs::file& f)
     }
 
     // Access a file directly
-    if(file_path.size() == 2){
-        auto value = get_value(i, file_path[1]);
+    if(file_path.size() == 3){
+        auto value = get_value(i, file_path[2]);
 
         if(value.size()){
-            f.file_name = file_path[1];
+            f.file_name = file_path[2];
             f.directory = false;
             f.hidden = false;
             f.system = false;
@@ -135,12 +135,12 @@ size_t procfs::procfs_file_system::get_file(const path& file_path, vfs::file& f)
 
 size_t procfs::procfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
     //Cannot access the root nor the pid directores for reading
-    if(file_path.size() < 2){
+    if(file_path.size() < 3){
         return std::ERROR_PERMISSION_DENIED;
     }
 
-    if(file_path.size() == 2){
-        auto i = atoui(file_path[0]);
+    if(file_path.size() == 3){
+        auto i = atoui(file_path[1]);
 
         if(i >= scheduler::MAX_PROCESS){
             return std::ERROR_NOT_EXISTS;
@@ -152,7 +152,7 @@ size_t procfs::procfs_file_system::read(const path& file_path, char* buffer, siz
             return std::ERROR_NOT_EXISTS;
         }
 
-        auto value = get_value(i, file_path[1]);
+        auto value = get_value(i, file_path[2]);
 
         if(value.size()){
             return ::read(value, buffer, count, offset, read);
@@ -165,9 +165,7 @@ size_t procfs::procfs_file_system::read(const path& file_path, char* buffer, siz
 }
 
 size_t procfs::procfs_file_system::ls(const path& file_path, std::vector<vfs::file>& contents){
-    logging::logf(logging::log_level::DEBUG, "procfs ls %u\n", file_path.size());
-
-    if(file_path.size() == 0){
+    if(file_path.is_root()){
         for(size_t i = 0; i < scheduler::MAX_PROCESS; ++i){
             auto& process = pcb[i];
 
@@ -185,7 +183,7 @@ size_t procfs::procfs_file_system::ls(const path& file_path, std::vector<vfs::fi
         return 0;
     }
 
-    if(file_path.size() == 1){
+    if(file_path.size() == 2){
         contents = standard_contents;
         return 0;
     }

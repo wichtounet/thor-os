@@ -80,9 +80,9 @@ bool vesa::init(){
 
     screen = reinterpret_cast<uint32_t*>(virt);
 
-    sysfs::set_constant_value("/sys/", "/vesa/enabled", "true");
-    sysfs::set_constant_value("/sys/", "/vesa/resolution/width", std::to_string(block.width));
-    sysfs::set_constant_value("/sys/", "/vesa/resolution/height", std::to_string(block.height));
+    sysfs::set_constant_value(path("/sys"), path("/vesa/enabled"), "true");
+    sysfs::set_constant_value(path("/sys"), path("/vesa/resolution/width"), std::to_string(block.width));
+    sysfs::set_constant_value(path("/sys"), path("/vesa/resolution/height"), std::to_string(block.height));
 
     return true;
 }

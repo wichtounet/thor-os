@@ -29,18 +29,18 @@ struct device {
 };
 
 struct device_list {
-    std::string name;
+    path mount_point;
     std::vector<device> devices;
 
     device_list(){};
-    device_list(std::string name) : name(name){}
+    device_list(path mp) : mount_point(mp){}
 };
 
 std::vector<device_list> devices;
 
 } //end of anonymous namespace
 
-devfs::devfs_file_system::devfs_file_system(std::string mp) : mount_point(mp) {
+devfs::devfs_file_system::devfs_file_system(path mp) : mount_point(mp) {
     //Nothing to init
 }
 
@@ -49,7 +49,7 @@ devfs::devfs_file_system::~devfs_file_system(){
 }
 
 size_t devfs::devfs_file_system::get_file(const path& file_path, vfs::file& f){
-    if(file_path.empty()){
+    if(file_path.is_root()){
         f.file_name = "/";
         f.directory = true;
         f.hidden = false;
@@ -60,12 +60,12 @@ size_t devfs::devfs_file_system::get_file(const path& file_path, vfs::file& f){
     }
 
     //No subfolder support
-    if(file_path.size() > 1){
+    if(file_path.size() > 2){
         return std::ERROR_NOT_EXISTS;
     }
 
     for(auto& device_list : devices){
-        if(device_list.name == mount_point){
+        if(device_list.mount_point == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.base_name()){
                     f.file_name = device.name;
@@ -85,12 +85,12 @@ size_t devfs::devfs_file_system::get_file(const path& file_path, vfs::file& f){
 
 size_t devfs::devfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
     //Cannot access the root for reading
-    if(file_path.empty()){
+    if(file_path.is_root()){
         return std::ERROR_PERMISSION_DENIED;
     }
 
     for(auto& device_list : devices){
-        if(device_list.name == mount_point){
+        if(device_list.mount_point == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.base_name()){
                     if(!device.driver){
@@ -108,12 +108,12 @@ size_t devfs::devfs_file_system::read(const path& file_path, char* buffer, size_
 
 size_t devfs::devfs_file_system::write(const path& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
     //Cannot access the root for writing
-    if(file_path.empty()){
+    if(file_path.is_root()){
         return std::ERROR_PERMISSION_DENIED;
     }
 
     for(auto& device_list : devices){
-        if(device_list.name == mount_point){
+        if(device_list.mount_point == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.base_name()){
                     if(!device.driver){
@@ -131,12 +131,12 @@ size_t devfs::devfs_file_system::write(const path& file_path, const char* buffer
 
 size_t devfs::devfs_file_system::clear(const path& file_path, size_t count, size_t offset, size_t& written){
     //Cannot access the root for writing
-    if(file_path.empty()){
+    if(file_path.is_root()){
         return std::ERROR_PERMISSION_DENIED;
     }
 
     for(auto& device_list : devices){
-        if(device_list.name == mount_point){
+        if(device_list.mount_point == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.base_name()){
                     if(!device.driver){
@@ -158,12 +158,12 @@ size_t devfs::devfs_file_system::truncate(const path&, size_t){
 
 size_t devfs::devfs_file_system::ls(const path& file_path, std::vector<vfs::file>& contents){
     //No subfolder support
-    if(file_path.size() > 0){
+    if(file_path.size() > 1){
         return std::ERROR_NOT_EXISTS;
     }
 
     for(auto& device_list : devices){
-        if(device_list.name == mount_point){
+        if(device_list.mount_point == mount_point){
             for(auto& device : device_list.devices){
                 vfs::file f;
                 f.file_name = device.name;
@@ -202,7 +202,7 @@ size_t devfs::devfs_file_system::statfs(statfs_info& file){
 
 void devfs::register_device(const std::string& mp, const std::string& name, device_type type, dev_driver* driver, void* data){
     for(auto& device_list : devices){
-        if(device_list.name == mp){
+        if(device_list.mount_point == mp){
             device_list.devices.emplace_back(name, type, driver, data);
             return;
         }
@@ -214,7 +214,7 @@ void devfs::register_device(const std::string& mp, const std::string& name, devi
 
 void devfs::deregister_device(const std::string& mp, const std::string& name){
     for(auto& device_list : devices){
-        if(device_list.name == mp){
+        if(device_list.mount_point == mp){
             for(size_t i = 0; i < device_list.devices.size(); ++i){
                 if(device_list.devices[i].name == name){
                     device_list.devices.erase(i);
@@ -228,17 +228,14 @@ void devfs::deregister_device(const std::string& mp, const std::string& name){
 }
 
 uint64_t devfs::get_device_size(const path& device_name, size_t& size){
-    if(device_name.size() != 2){
+    if(device_name.size() != 3){
         return std::ERROR_INVALID_DEVICE;
     }
 
-    // TODO store the mount point with the slash
-    std::string mp("/" + device_name[0] + "/");
-
     for(auto& device_list : devices){
-        if(device_list.name == mp){
+        if(device_list.mount_point == device_name.branch_path()){
             for(auto& device : device_list.devices){
-                if(device.name == device_name[1]){
+                if(device.name == device_name.base_name()){
                     if(device.type == device_type::BLOCK_DEVICE){
                         size = device.driver->size(device.data);
 

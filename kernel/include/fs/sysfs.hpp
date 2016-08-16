@@ -18,10 +18,10 @@ namespace sysfs {
 
 struct sysfs_file_system : vfs::file_system {
 private:
-    std::string mount_point;
+    path mount_point;
 
 public:
-    sysfs_file_system(std::string mount_point);
+    sysfs_file_system(path mount_point);
     ~sysfs_file_system();
 
     size_t statfs(statfs_info& file);
@@ -38,12 +38,12 @@ public:
 
 typedef std::string (*dynamic_fun_t)();
 
-void set_constant_value(const std::string& mount_point, const std::string& path, const std::string& value);
-void set_dynamic_value(const std::string& mount_point, const std::string& path, dynamic_fun_t fun);
+void set_constant_value(const path& mount_point, const path& file_path, const std::string& value);
+void set_dynamic_value(const path& mount_point, const path& file_path, dynamic_fun_t fun);
 
-void delete_value(const std::string& mount_point, const std::string& path);
-void delete_folder(const std::string& mount_point, const std::string& path);
+void delete_value(const path& mount_point, const path& file_path);
+void delete_folder(const path& mount_point, const path& file_path);
 
-}
+} //end of namespace sysfs
 
 #endif

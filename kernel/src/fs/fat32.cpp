@@ -171,7 +171,7 @@ void init_file_entry(fat32::cluster_entry* entry_ptr, const char* name, uint32_t
 
 } //end of anonymous namespace
 
-fat32::fat32_file_system::fat32_file_system(std::string mount_point, std::string device) : mount_point(mount_point), device(device) {
+fat32::fat32_file_system::fat32_file_system(path mount_point, std::string device) : mount_point(mount_point), device(device) {
     //Nothing else to init
 }
 
@@ -1204,11 +1204,11 @@ std::vector<vfs::file> fat32::fat32_file_system::files(uint32_t cluster_number){
 std::pair<bool, uint32_t> fat32::fat32_file_system::find_cluster_number(const path& file_path, size_t last){
     auto cluster_number = fat_bs->root_directory_cluster_start;
 
-    if(file_path.size() - last == 0){
+    if(file_path.size() - last == 1){
         return std::make_pair(true, cluster_number);
     }
 
-    for(size_t i = 0; i < file_path.size() - last; ++i){
+    for(size_t i = 1; i < file_path.size() - last; ++i){
         auto& p = file_path[i];
 
         bool found = false;

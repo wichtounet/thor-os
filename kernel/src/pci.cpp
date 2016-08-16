@@ -86,12 +86,14 @@ std::vector<pci::device_descriptor> devices;
         device_desc.class_type = pci::device_class_type::UNKNOWN;
      }
 
-     std::string path = "/pci/pci:" + std::to_string(bus) + ':' + std::to_string(device) + ':' + std::to_string(function);
+     std::string pci_name = "pci:" + std::to_string(bus) + ':' + std::to_string(device) + ':' + std::to_string(function);
 
-     sysfs::set_constant_value("/sys/", path + "/vendor", std::to_string(vendor_id));
-     sysfs::set_constant_value("/sys/", path + "/device", std::to_string(device_id));
-     sysfs::set_constant_value("/sys/", path + "/class", std::to_string(class_code));
-     sysfs::set_constant_value("/sys/", path + "/subclass", std::to_string(sub_class));
+     auto p = path("/pci") / pci_name;
+
+     sysfs::set_constant_value(path("/sys"), p / "vendor", std::to_string(vendor_id));
+     sysfs::set_constant_value(path("/sys"), p / "device", std::to_string(device_id));
+     sysfs::set_constant_value(path("/sys"), p / "class", std::to_string(class_code));
+     sysfs::set_constant_value(path("/sys"), p / "subclass", std::to_string(sub_class));
  }
 
  void check_device(uint8_t bus, uint8_t device) {

@@ -20,6 +20,7 @@ struct path {
     path();
     path(const std::string& path);
     path(const path& base_path, const std::string& path);
+    path(const path& base_path, const path& p);
 
     path(const path&) = default;
     path(path&&) = default;
@@ -38,8 +39,13 @@ struct path {
     bool empty() const;
     bool is_root() const;
     bool is_valid() const;
+    bool is_sub_root() const;
     size_t size() const;
     std::string base_name() const;
+    std::string root_name() const;
+    std::string sub_root_name() const;
+    bool is_absolute() const;
+    bool is_relative() const;
 
     // Accessors to sub parts
     const std::string& name(size_t i) const;
@@ -47,13 +53,22 @@ struct path {
 
     // Decomposition functions
     path sub_path(size_t i) const;
+    path branch_path() const;
 
     // Iterators
     iterator begin() const ;
     iterator end() const ;
 
+    // relational operators
+    bool operator==(const path& p) const;
+    bool operator!=(const path& p) const;
+
     private:
         std::vector<std::string> names;
 };
+
+path operator/(const path& lhs, const path& rhs);
+path operator/(const path& lhs, const std::string& rhs);
+path operator/(const std::string& lhs, const path& rhs);
 
 #endif

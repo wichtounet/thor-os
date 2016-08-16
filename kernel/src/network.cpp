@@ -84,13 +84,13 @@ void network::init(){
                 rtl8139::init_driver(interface, pci_device);
             }
 
-            std::string path = "/net/" + interface.name;
+            auto p = path("/net") / interface.name;
 
-            sysfs::set_constant_value("/sys/", path + "/name", interface.name);
-            sysfs::set_constant_value("/sys/", path + "/driver", interface.driver);
-            sysfs::set_constant_value("/sys/", path + "/enabled", interface.enabled ? "true" : "false");
-            sysfs::set_constant_value("/sys/", path + "/pci_device", std::to_string(i));
-            sysfs::set_constant_value("/sys/", path + "/mac", std::to_string(interface.mac_address));
+            sysfs::set_constant_value(path("/sys"), p / "name", interface.name);
+            sysfs::set_constant_value(path("/sys"), p / "driver", interface.driver);
+            sysfs::set_constant_value(path("/sys"), p / "enabled", interface.enabled ? "true" : "false");
+            sysfs::set_constant_value(path("/sys"), p / "pci_device", std::to_string(i));
+            sysfs::set_constant_value(path("/sys"), p / "mac", std::to_string(interface.mac_address));
 
             ++index;
         }

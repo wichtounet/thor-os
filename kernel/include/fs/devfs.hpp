@@ -29,10 +29,10 @@ struct dev_driver {
 
 struct devfs_file_system : vfs::file_system {
 private:
-    std::string mount_point;
+    path mount_point;
 
 public:
-    devfs_file_system(std::string mount_point);
+    devfs_file_system(path mount_point);
     ~devfs_file_system();
 
     size_t statfs(statfs_info& file);

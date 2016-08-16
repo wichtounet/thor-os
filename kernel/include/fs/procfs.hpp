@@ -20,10 +20,10 @@ namespace procfs {
 
 struct procfs_file_system : vfs::file_system {
 private:
-    std::string mount_point;
+    path mount_point;
 
 public:
-    procfs_file_system(std::string mount_point);
+    procfs_file_system(path mount_point);
     ~procfs_file_system();
 
     size_t statfs(statfs_info& file);

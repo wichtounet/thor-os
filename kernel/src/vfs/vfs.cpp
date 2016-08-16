@@ -26,23 +26,22 @@
 
 #include "console.hpp"
 #include "logging.hpp"
+#include "assert.hpp"
 
 namespace {
 
 struct mounted_fs {
     vfs::partition_type fs_type;
     std::string device;
-    std::string mount_point;
+    path mount_point;
     vfs::file_system* file_system;
-
-    std::vector<std::string> mp_vec;
 
     mounted_fs() = default;
 
-    mounted_fs(vfs::partition_type type, std::string dev, std::string mp, vfs::file_system* fs) :
+    mounted_fs(vfs::partition_type type, std::string dev, path mp, vfs::file_system* fs) :
         fs_type(type), device(dev), mount_point(mp), file_system(fs)
     {
-        mp_vec = std::split(mount_point, '/');
+        // Nothing else to init
     }
 };
 
@@ -83,11 +82,13 @@ void mount_proc(){
 }
 
 path get_path(const char* file_path){
-    if(file_path[0] != '/'){
-        return {scheduler::get_working_directory(), file_path};
-    } else {
-        return {file_path};
+    path p(file_path);
+
+    if(p.is_relative()){
+        return scheduler::get_working_directory() / p;
     }
+
+    return p;
 }
 
 mounted_fs& get_fs(const path& base_path){
@@ -96,7 +97,7 @@ mounted_fs& get_fs(const path& base_path){
 
     if(base_path.is_root()){
         for(auto& mp : mount_point_list){
-            if(mp.mp_vec.empty()){
+            if(mp.mount_point.is_root()){
                 return mp;
             }
         }
@@ -106,15 +107,15 @@ mounted_fs& get_fs(const path& base_path){
         auto& mp = mount_point_list[i];
 
         bool match = true;
-        for(size_t j = 0; j < mp.mp_vec.size() && j < base_path.size() ; ++j){
-            if(mp.mp_vec[j] != base_path[j]){
+        for(size_t j = 0; j < mp.mount_point.size() && j < base_path.size() ; ++j){
+            if(mp.mount_point[j] != base_path[j]){
                 match = false;
                 break;
             }
         }
 
-        if(match && mp.mp_vec.size() > best){
-            best = mp.mp_vec.size();
+        if(match && mp.mount_point.size() > best){
+            best = mp.mount_point.size();
             best_match = i;
         }
     }
@@ -123,10 +124,17 @@ mounted_fs& get_fs(const path& base_path){
 }
 
 path get_fs_path(const path& base_path, const mounted_fs& fs){
-    return base_path.sub_path(fs.mp_vec.size());
+    thor_assert(base_path.is_absolute(), "Invalid base_path in get_fs_path");
+    thor_assert(fs.mount_point.is_absolute(), "Invalid base_path in get_fs_path");
+
+    if(base_path == fs.mount_point){
+        return path("/");
+    }
+
+    return path("/") / base_path.sub_path(fs.mount_point.size());
 }
 
-vfs::file_system* get_new_fs(vfs::partition_type type, const std::string& mount_point, const std::string& device){
+vfs::file_system* get_new_fs(vfs::partition_type type, const path& mount_point, const std::string& device){
     switch(type){
         case vfs::partition_type::FAT32:
             return new fat32::fat32_file_system(mount_point, device);
@@ -171,48 +179,36 @@ int64_t vfs::mount(partition_type type, size_t mp_fd, size_t dev_fd){
     auto& mp_path = scheduler::get_handle(mp_fd);
     auto& dev_path = scheduler::get_handle(dev_fd);
 
-    std::string mp("/");
-
-    for(auto& p : mp_path){
-        mp += p;
-        mp += "/";
-    }
-
-    std::string device("/");
-
-    for(auto& p : dev_path){
-        device += p;
-        device += "/";
-    }
-
     for(auto& m : mount_point_list){
-        if(m.mount_point == mp){
+        if(m.mount_point == mp_path){
             return -std::ERROR_ALREADY_MOUNTED;
         }
     }
 
-    auto fs = get_new_fs(type, mp, device);
+    auto fs = get_new_fs(type, mp_path, dev_path.string());
 
     if(!fs){
         return -std::ERROR_INVALID_FILE_SYSTEM;
     }
 
-    mount_point_list.emplace_back(type, device, mp, fs);
+    mount_point_list.emplace_back(type, dev_path.string(), mp_path, fs);
     fs->init();
 
-    logging::logf(logging::log_level::TRACE, "vfs: mounted file system %s at %s \n", device.c_str(), mp.c_str());
+    logging::logf(logging::log_level::TRACE, "vfs: mounted file system %s at %s \n", dev_path.string().c_str(), mp_path.string().c_str());
 
     return 0;
 }
 
 int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){
-    auto fs = get_new_fs(type, mount_point, device);
+    path mp_path(mount_point);
+
+    auto fs = get_new_fs(type, mp_path, device);
 
     if(!fs){
         return -std::ERROR_INVALID_FILE_SYSTEM;
     }
 
-    mount_point_list.emplace_back(type, device, mount_point, fs);
+    mount_point_list.emplace_back(type, device, mp_path, fs);
 
     return 0;
 }
@@ -238,6 +234,8 @@ int64_t vfs::open(const char* file_path, size_t flags){
     auto base_path = get_path(file_path);
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
+
+    logging::logf(logging::log_level::TRACE, "vfs: open %s:%s \n", base_path.string().c_str(), fs_path.string().c_str());
 
     //Special handling for opening the root
     if(fs_path.is_root()){
@@ -320,7 +318,7 @@ int64_t vfs::stat(size_t fd, stat_info& info){
     auto fs_path = get_fs_path(base_path, fs);
 
     //Special handling for root
-    if(fs_path.empty()){
+    if(fs_path.is_root()){
         //TODO Add file system support for stat of the root directory
         info.size = 4096;
         info.flags = STAT_FLAG_DIRECTORY;
@@ -364,7 +362,7 @@ int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
 
     auto& base_path = scheduler::get_handle(fd);
 
-    if(base_path.empty()){
+    if(base_path.is_root()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
@@ -403,7 +401,7 @@ int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
 
     auto& base_path = scheduler::get_handle(fd);
 
-    if(base_path.empty()){
+    if(base_path.is_root()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
@@ -427,7 +425,7 @@ int64_t vfs::clear(size_t fd, size_t count, size_t offset){
 
     auto& base_path = scheduler::get_handle(fd);
 
-    if(base_path.empty()){
+    if(base_path.is_root()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
@@ -466,7 +464,7 @@ int64_t vfs::truncate(size_t fd, size_t size){
 
     auto& base_path = scheduler::get_handle(fd);
 
-    if(base_path.empty()){
+    if(base_path.is_root()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
@@ -561,7 +559,7 @@ int64_t vfs::mounts(char* buffer, size_t size){
     size_t total_size = 0;
 
     for(auto& mp : mount_point_list){
-        total_size += 4 * sizeof(size_t) + 3 + mp.device.size() + mp.mount_point.size() + partition_type_to_string(mp.fs_type).size();
+        total_size += 4 * sizeof(size_t) + 3 + mp.device.size() + mp.mount_point.string().size() + partition_type_to_string(mp.fs_type).size();
     }
 
     if(size < total_size){
@@ -577,12 +575,12 @@ int64_t vfs::mounts(char* buffer, size_t size){
 
         auto fs_type = partition_type_to_string(mp.fs_type);
 
-        entry->length_mp = mp.mount_point.size();
+        entry->length_mp = mp.mount_point.string().size();
         entry->length_dev = mp.device.size();
         entry->length_type = fs_type.size();
 
         if(i + 1 < mount_point_list.size()){
-            entry->offset_next = 4 * sizeof(size_t) + 3 + mp.device.size() + mp.mount_point.size() + fs_type.size();
+            entry->offset_next = 4 * sizeof(size_t) + 3 + mp.device.size() + mp.mount_point.string().size() + fs_type.size();
             position += entry->offset_next;
         } else {
             entry->offset_next = 0;
@@ -591,8 +589,9 @@ int64_t vfs::mounts(char* buffer, size_t size){
         char* name_buffer = &(entry->name);
         size_t str_pos = 0;
 
-        for(size_t j = 0; j < mp.mount_point.size(); ++j){
-            name_buffer[str_pos++] = mp.mount_point[j];
+        auto mount_point = mp.mount_point.string();
+        for(size_t j = 0; j < mount_point.size(); ++j){
+            name_buffer[str_pos++] = mount_point[j];
         }
         name_buffer[str_pos++] = '\0';
         for(size_t j = 0; j < mp.device.size(); ++j){

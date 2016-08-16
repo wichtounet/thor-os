@@ -108,11 +108,9 @@ void disks::detect_disks(){
                 }
             }
 
-            std::string path = "/ata/" + name;
-
-            sysfs::set_constant_value("/sys/", path + "/model", descriptor.model);
-            sysfs::set_constant_value("/sys/", path + "/serial", descriptor.serial);
-            sysfs::set_constant_value("/sys/", path + "/firmware", descriptor.firmware);
+            sysfs::set_constant_value(path("/sys"), path("/ata") / name / "model", descriptor.model);
+            sysfs::set_constant_value(path("/sys"), path("/ata") / name / "serial", descriptor.serial);
+            sysfs::set_constant_value(path("/sys"), path("/ata") / name / "firmware", descriptor.firmware);
 
             ++number_of_disks;
         }

@@ -85,19 +85,13 @@ void cd_command(const std::vector<std::string>& params){
             if(!(info->flags & STAT_FLAG_DIRECTORY)){
                 print_line("cat: error: Is not a directory");
             } else {
-                auto cwd = current_working_directory();
-
                 if(path[0] == '/'){
-                    cwd = "/";
-                }
+                    set_current_working_directory(path);
+                } else {
+                    auto cwd = current_working_directory();
 
-                auto parts = std::split(path, '/');
-                for(auto& part : parts){
-                    cwd += part;
-                    cwd += '/';
+                    set_current_working_directory(cwd + "/" + path);
                 }
-
-                set_current_working_directory(cwd);
             }
         } else {
             printf("cd: error: %s\n", std::error_message(info.error()));
