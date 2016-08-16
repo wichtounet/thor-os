@@ -84,17 +84,17 @@ int main(int /*argc*/, char* /*argv*/[]){
                     position += entry->offset_next;
                 }
             } else {
-                printf("lse820: error: %s\n", std::error_message(entries_result.error()));
+                printf("lse820: entries error: %s\n", std::error_message(entries_result.error()));
             }
 
             delete[] entries_buffer;
         } else {
-            printf("lse820: error: %s\n", std::error_message(info.error()));
+            printf("lse820: stat error: %s\n", std::error_message(info.error()));
         }
 
         close(*fd);
     } else {
-        printf("lse820: error: %s\n", std::error_message(fd.error()));
+        printf("lse820: open error: %s\n", std::error_message(fd.error()));
     }
 
     return 0;
