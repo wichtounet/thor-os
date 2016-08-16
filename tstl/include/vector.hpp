@@ -205,6 +205,26 @@ public:
         return const_iterator(&data[_size]);
     }
 
+    // Relational operators
+
+    bool operator==(const vector& rhs) const {
+        if(size() != rhs.size()){
+            return false;
+        }
+
+        for(size_t i = 0; i < size(); ++i){
+            if((*this)[i] != rhs[i]){
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool operator!=(const vector& rhs) const {
+        return !(*this == rhs);
+    }
+
 private:
     void ensure_capacity(size_t new_capacity){
         if(_capacity == 0){
