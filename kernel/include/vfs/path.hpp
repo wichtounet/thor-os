@@ -37,14 +37,32 @@ struct path {
 
     // Accessors
     bool empty() const;
+
+    /*!
+     * \brief Returns true if the path points to the root directory, false
+     * otherwise
+     */
     bool is_root() const;
+
+    /*!
+     * \brief Returns true if the path is valid, false otherwise
+     */
     bool is_valid() const;
+
     bool is_sub_root() const;
     size_t size() const;
     std::string base_name() const;
     std::string root_name() const;
     std::string sub_root_name() const;
+
+    /*!
+     * \brief Returns true if the path is absoluate, false otherwise
+     */
     bool is_absolute() const;
+
+    /*!
+     * \brief Returns true if the path is relaative, false otherwise
+     */
     bool is_relative() const;
 
     // Accessors to sub parts
