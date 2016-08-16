@@ -190,7 +190,7 @@ int64_t vfs::mount(partition_type type, size_t mp_fd, size_t dev_fd){
         return -std::ERROR_INVALID_FILE_SYSTEM;
     }
 
-    mount_point_list.emplace_back(type, dev_path.string(), mp_path, fs);
+    mount_point_list.emplace_back(type, dev_path, mp_path, fs);
     fs->init();
 
     logging::logf(logging::log_level::TRACE, "vfs: mounted file system %s at %s \n", dev_path.string().c_str(), mp_path.string().c_str());
