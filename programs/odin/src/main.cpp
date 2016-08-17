@@ -4,7 +4,6 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
-
 #include <system.hpp>
 #include <graphics.hpp>
 #include <print.hpp>
@@ -140,6 +139,8 @@ int main(int /*argc*/, char* /*argv*/[]){
 
     auto background = make_color(211, 211, 211);
 
+    set_canonical(true);
+
     while(true){
         fill_buffer(background);
 
@@ -150,6 +151,8 @@ int main(int /*argc*/, char* /*argv*/[]){
         graphics::redraw(buffer);
         sleep_ms(5);
     }
+
+    set_canonical(false);
 
     delete[] buffer;
 
