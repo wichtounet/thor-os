@@ -15,7 +15,7 @@
 
 namespace stdio {
 
-constexpr const size_t INPUT_BUFFER_SIZE = 128;
+constexpr const size_t INPUT_BUFFER_SIZE = 256;
 
 struct virtual_terminal {
     size_t id;
@@ -23,7 +23,7 @@ struct virtual_terminal {
     bool canonical;
 
     circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
-    circular_buffer<char, INPUT_BUFFER_SIZE> canonical_buffer;
+    circular_buffer<char, 2 * INPUT_BUFFER_SIZE> canonical_buffer;
 
     sleep_queue input_queue;
 
