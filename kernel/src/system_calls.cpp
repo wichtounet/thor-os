@@ -35,7 +35,7 @@ void sc_get_input(interrupt::syscall_regs* regs){
     auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
     auto& tty = stdio::get_terminal(ttyid);
 
-    regs->rax = tty.read_input(reinterpret_cast<char*>(regs->rbx), regs->rcx);
+    regs->rax = tty.read_input_can(reinterpret_cast<char*>(regs->rbx), regs->rcx);
 }
 
 void sc_sleep_ms(interrupt::syscall_regs* regs){
