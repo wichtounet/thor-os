@@ -55,6 +55,14 @@ void print(int64_t v){
     print(std::to_string(v));
 }
 
+void set_canonical(bool can){
+    size_t value = can;
+    asm volatile("mov rax, 11; mov rbx, %[value]; int 50;"
+        :
+        : [value] "g" (value)
+        : "rax", "rbx");
+}
+
 size_t read_input(char* buffer, size_t max){
     size_t value;
     asm volatile("mov rax, 3; mov rbx, %[buffer]; mov rcx, %[max]; int 50; mov %[read], rax"

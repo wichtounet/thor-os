@@ -45,6 +45,8 @@ struct virtual_terminal {
      */
     size_t read_input_raw();
 
+    void set_canonical(bool can);
+
     virtual_terminal(){}
 
     virtual_terminal(const virtual_terminal& rhs) = delete;

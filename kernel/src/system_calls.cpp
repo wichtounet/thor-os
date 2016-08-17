@@ -45,6 +45,13 @@ void sc_get_input_raw(interrupt::syscall_regs* regs){
     regs->rax = tty.read_input_raw();
 }
 
+void sc_set_canonical(interrupt::syscall_regs* regs){
+    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
+    auto& tty = stdio::get_terminal(ttyid);
+
+    tty.set_canonical(regs->rbx);
+}
+
 void sc_sleep_ms(interrupt::syscall_regs* regs){
     auto time = regs->rbx;
 

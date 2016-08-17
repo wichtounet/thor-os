@@ -11,6 +11,7 @@
 #include "keyboard.hpp"
 #include "console.hpp"
 #include "assert.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -60,9 +61,7 @@ void stdio::virtual_terminal::send_input(char key){
                     if(qwertz_key == '\n'){
                         // Transfer current line to the canonical buffer
                         while(!input_buffer.empty()){
-                            canonical_buffer.push(input_buffer.pop());
-                        }
-
+                            canonical_buffer.push(input_buffer.pop()); }
                         if(!input_queue.empty()){
                             input_queue.wake_up();
                         }
@@ -105,6 +104,12 @@ size_t stdio::virtual_terminal::read_input_raw(){
     }
 
     return raw_buffer.pop();
+}
+
+void stdio::virtual_terminal::set_canonical(bool can){
+    logging::logf(logging::log_level::TRACE, "Switched terminal %u canonical mode from %u to %u\n", id, uint64_t(canonical), uint64_t(canonical));
+
+    canonical = can;
 }
 
 void stdio::init_terminals(){
