@@ -26,7 +26,6 @@
 #include "logging.hpp"
 #include "assert.hpp"
 
-
 namespace {
 
 struct mounted_fs {

@@ -14,8 +14,7 @@
 #include <tlib/errors.hpp>
 #include <tlib/io.hpp>
 #include <tlib/print.hpp>
-
-#include "fat32_specs.hpp"
+#include <tlib/fat32_specs.hpp>
 
 static constexpr const size_t BUFFER_SIZE = 4096;
 
