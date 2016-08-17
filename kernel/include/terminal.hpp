@@ -24,6 +24,7 @@ struct virtual_terminal {
 
     circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
     circular_buffer<char, 2 * INPUT_BUFFER_SIZE> canonical_buffer;
+    circular_buffer<size_t, 3 * INPUT_BUFFER_SIZE> raw_buffer;
 
     sleep_queue input_queue;
 
@@ -37,6 +38,12 @@ struct virtual_terminal {
      * \return The number of characters that have been read
      */
     size_t read_input_can(char* buffer, size_t max);
+
+    /*!
+     * \brief Reads non-canonical input in the given buffer
+     * \return the keyboard scan code
+     */
+    size_t read_input_raw();
 
     virtual_terminal(){}
 

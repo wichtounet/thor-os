@@ -71,7 +71,13 @@ void stdio::virtual_terminal::send_input(char key){
             }
         }
     } else {
-        //TODO
+        // The complete processing of the key will be done by the
+        // userspace program
+        raw_buffer.push(key);
+
+        if(!input_queue.empty()){
+            input_queue.wake_up();
+        }
     }
 }
 
@@ -91,6 +97,14 @@ size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max){
 
         input_queue.sleep();
     }
+}
+
+size_t stdio::virtual_terminal::read_input_raw(){
+    if(raw_buffer.empty()){
+        input_queue.sleep();
+    }
+
+    return raw_buffer.pop();
 }
 
 void stdio::init_terminals(){
