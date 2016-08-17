@@ -20,6 +20,7 @@ constexpr const uint16_t STATUS_PORT = 0x64;
 
 uint8_t cycle = 0; // The interrupt cycles through different information
 
+uint8_t previous_flags = 0;
 uint8_t mouse_packet[3];
 uint16_t position_x = 0;
 uint16_t position_y = 0;
@@ -54,15 +55,35 @@ void mouse_handler(interrupt::syscall_regs*, void*){
         // Reverse the y direction
         delta_y = -delta_y;
 
-        position_x = std::max(int16_t(position_x) + delta_x, 0);
-        position_y = std::max(int16_t(position_y) + delta_y, 0);
+        if(delta_y || delta_x){
+            position_x = std::max(int16_t(position_x) + delta_x, 0);
+            position_y = std::max(int16_t(position_y) + delta_y, 0);
 
-        if(vesa::enabled()){
-            position_x = std::min(position_x, uint16_t(vesa::get_width()));
-            position_y = std::min(position_y, uint16_t(vesa::get_height()));
+            if(vesa::enabled()){
+                position_x = std::min(position_x, uint16_t(vesa::get_width()));
+                position_y = std::min(position_y, uint16_t(vesa::get_height()));
+            }
+
+            logging::logf(logging::log_level::TRACE, "mouse: moved %d:%d \n", int64_t(position_x), int64_t(position_y));
         }
 
-        logging::logf(logging::log_level::TRACE, "mouse: interrupt %d:%d \n", int64_t(position_x), int64_t(position_y));
+        if((flags & (1 << 0)) && !(previous_flags & (1 << 0))){
+            logging::logf(logging::log_level::TRACE, "mouse: left button pressed %d:%d \n", int64_t(position_x), int64_t(position_y));
+        }
+
+        if((flags & (1 << 1)) && !(previous_flags & (1 << 1))){
+            logging::logf(logging::log_level::TRACE, "mouse: right button pressed %d:%d \n", int64_t(position_x), int64_t(position_y));
+        }
+
+        if(!(flags & (1 << 0)) && (previous_flags & (1 << 0))){
+            logging::logf(logging::log_level::TRACE, "mouse: left button released %d:%d \n", int64_t(position_x), int64_t(position_y));
+        }
+
+        if(!(flags & (1 << 1)) && (previous_flags & (1 << 1))){
+            logging::logf(logging::log_level::TRACE, "mouse: right button released %d:%d \n", int64_t(position_x), int64_t(position_y));
+        }
+
+        previous_flags = flags;
     }
 }
 
