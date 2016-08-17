@@ -6,8 +6,9 @@
 //=======================================================================
 
 #include <string.hpp>
-#include <print.hpp>
-#include <system.hpp>
+
+#include <tlib/print.hpp>
+#include <tlib/system.hpp>
 
 namespace {
 

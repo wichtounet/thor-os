@@ -5,12 +5,13 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include <errors.hpp>
 #include <string.hpp>
 #include <algorithms.hpp>
 
-#include <directory_entry.hpp>
-#include <mount_point.hpp>
+#include <tlib/directory_entry.hpp>
+#include <tlib/mount_point.hpp>
+#include <tlib/errors.hpp>
+#include <tlib/flags.hpp>
 
 #include "vfs/vfs.hpp"
 #include "vfs/file_system.hpp"
@@ -21,11 +22,10 @@
 #include "fs/procfs.hpp"
 
 #include "scheduler.hpp"
-#include "flags.hpp"
-
 #include "console.hpp"
 #include "logging.hpp"
 #include "assert.hpp"
+
 
 namespace {
 

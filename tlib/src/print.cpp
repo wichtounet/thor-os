@@ -7,7 +7,7 @@
 
 #include <stdarg.h>
 
-#include "print.hpp"
+#include "tlib/print.hpp"
 
 void print(char c){
     asm volatile("mov rax, 0; mov rbx, %[c]; int 50"

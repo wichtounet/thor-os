@@ -5,10 +5,10 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include <system.hpp>
-#include <graphics.hpp>
-#include <print.hpp>
-#include <malloc.hpp>
+#include <tlib/system.hpp>
+#include <tlib/graphics.hpp>
+#include <tlib/print.hpp>
+#include <tlib/malloc.hpp>
 
 namespace {
 

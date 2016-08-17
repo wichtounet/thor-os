@@ -5,9 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include <print.hpp>
-#include <system.hpp>
-#include <datetime.hpp>
+#include <tlib/print.hpp>
+#include <tlib/system.hpp>
 
 constexpr const size_t PAGES = 512;
 

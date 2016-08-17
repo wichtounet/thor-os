@@ -11,8 +11,9 @@
 #include <types.hpp>
 #include <expected.hpp>
 #include <string.hpp>
-#include <stat_info.hpp>
-#include <statfs_info.hpp>
+
+#include "tlib/stat_info.hpp"
+#include "tlib/statfs_info.hpp"
 
 std::expected<size_t> open(const char* file, size_t flags = 0);
 int64_t mkdir(const char* file);

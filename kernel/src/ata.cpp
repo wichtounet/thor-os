@@ -7,6 +7,8 @@
 
 #include <lock_guard.hpp>
 
+#include <tlib/errors.hpp>
+
 #include "ata.hpp"
 #include "ata_constants.hpp"
 #include "kernel_utils.hpp"
@@ -14,7 +16,6 @@
 #include "thor.hpp"
 #include "interrupts.hpp"
 #include "console.hpp"
-#include "errors.hpp"
 #include "disks.hpp"
 #include "mutex.hpp"
 #include "block_cache.hpp"

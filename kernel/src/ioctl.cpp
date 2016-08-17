@@ -5,8 +5,9 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <tlib/errors.hpp>
+
 #include "ioctl.hpp"
-#include "errors.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
 #include "fs/devfs.hpp"

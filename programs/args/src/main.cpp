@@ -5,8 +5,7 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include <print.hpp>
-#include <system.hpp>
+#include <tlib/print.hpp>
 
 int main(int argc, char* argv[]){
     for(size_t i = 0; i < size_t(argc); ++i){

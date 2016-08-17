@@ -8,8 +8,9 @@
 #include <types.hpp>
 #include <unique_ptr.hpp>
 #include <algorithms.hpp>
-#include <errors.hpp>
 #include <string.hpp>
+
+#include <tlib/errors.hpp>
 
 #include "fs/procfs.hpp"
 

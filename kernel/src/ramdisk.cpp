@@ -5,8 +5,9 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <tlib/errors.hpp>
+
 #include "ramdisk.hpp"
-#include "errors.hpp"
 #include "disks.hpp"
 #include "paging.hpp"
 #include "logging.hpp"

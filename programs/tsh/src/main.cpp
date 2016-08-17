@@ -5,12 +5,13 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include <print.hpp>
-#include <file.hpp>
-#include <system.hpp>
 #include <string.hpp>
 #include <algorithms.hpp>
-#include <errors.hpp>
+
+#include <tlib/print.hpp>
+#include <tlib/file.hpp>
+#include <tlib/system.hpp>
+#include <tlib/errors.hpp>
 
 namespace {
 

@@ -5,11 +5,10 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include <file.hpp>
-#include <system.hpp>
-#include <errors.hpp>
-#include <print.hpp>
-#include <flags.hpp>
+#include <tlib/file.hpp>
+#include <tlib/errors.hpp>
+#include <tlib/print.hpp>
+#include <tlib/flags.hpp>
 
 int main(int argc, char* argv[]){
     if(argc == 1){

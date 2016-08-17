@@ -10,7 +10,9 @@
 #include <optional.hpp>
 #include <string.hpp>
 #include <lock_guard.hpp>
-#include <errors.hpp>
+
+#include <tlib/errors.hpp>
+#include <tlib/elf.hpp>
 
 #include "scheduler.hpp"
 #include "paging.hpp"
@@ -18,7 +20,6 @@
 #include "gdt.hpp"
 #include "terminal.hpp"
 #include "disks.hpp"
-#include "elf.hpp"
 #include "console.hpp"
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
@@ -28,6 +29,7 @@
 #include "logging.hpp"
 #include "int_lock.hpp"
 #include "timer.hpp"
+
 #include "fs/procfs.hpp"
 
 //Provided by task_switch.s

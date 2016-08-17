@@ -8,8 +8,8 @@
 #ifndef VFS_H
 #define VFS_H
 
-#include <stat_info.hpp>
-#include <statfs_info.hpp>
+#include <tlib/stat_info.hpp>
+#include <tlib/statfs_info.hpp>
 
 #include "vfs/path.hpp"
 

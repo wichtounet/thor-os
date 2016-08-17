@@ -5,15 +5,16 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <string.hpp>
+
+#include <tlib/flags.hpp>
+
 #include "logging.hpp"
 #include "assert.hpp"
 #include "console.hpp"
 #include "virtual_debug.hpp"
 #include "early_memory.hpp"
 #include "vfs/vfs.hpp"
-
-#include <flags.hpp>
-#include <string.hpp>
 
 namespace {
 
