@@ -83,6 +83,10 @@ void mount_proc(){
 path get_path(const char* file_path){
     path p(file_path);
 
+    if(!p.is_valid()){
+        return p;
+    }
+
     if(p.is_relative()){
         return scheduler::get_working_directory() / p;
     }
@@ -214,24 +218,24 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
 }
 
 int64_t vfs::statfs(const char* mount_point, statfs_info& info){
-    if(std::str_len(mount_point) == 0){
+    auto base_path = get_path(mount_point);
+
+    if(!base_path.is_valid()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto base_path = get_path(mount_point);
     auto& fs = get_fs(base_path);
 
     return fs.file_system->statfs(info);
 }
 
 int64_t vfs::open(const char* file_path, size_t flags){
-    std::string file(file_path);
+    auto base_path = get_path(file_path);
 
-    if(file.empty()){
+    if(!base_path.is_valid()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto base_path = get_path(file_path);
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
@@ -267,13 +271,12 @@ void vfs::close(size_t fd){
 }
 
 int64_t vfs::mkdir(const char* file_path){
-    std::string file(file_path);
+    auto base_path = get_path(file_path);
 
-    if(file.empty()){
+    if(!base_path.is_valid()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto base_path = get_path(file_path);
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
@@ -293,13 +296,12 @@ int64_t vfs::mkdir(const char* file_path){
 }
 
 int64_t vfs::rm(const char* file_path){
-    std::string file(file_path);
+    auto base_path = get_path(file_path);
 
-    if(file.empty()){
+    if(!base_path.is_valid()){
         return -std::ERROR_INVALID_FILE_PATH;
     }
 
-    auto base_path = get_path(file_path);
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
