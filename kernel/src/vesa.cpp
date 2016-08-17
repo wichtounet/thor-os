@@ -35,7 +35,7 @@ size_t red_shift;
 size_t blue_shift;
 size_t green_shift;
 
-#include "Liberation.c"
+#include <tlib/Liberation.inl>
 
 } //end of anonymous namespace
 

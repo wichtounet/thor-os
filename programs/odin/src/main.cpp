@@ -23,7 +23,7 @@ uint64_t red_shift = 0;
 uint64_t green_shift = 0;
 uint64_t blue_shift = 0;
 
-#include "Liberation.c"
+#include <tlib/Liberation.inl>
 
 uint32_t make_color(uint8_t r, uint8_t g, uint8_t b){
     return (r << red_shift) + (g << green_shift) + (b << blue_shift);
