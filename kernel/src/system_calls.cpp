@@ -38,6 +38,13 @@ void sc_get_input(interrupt::syscall_regs* regs){
     regs->rax = tty.read_input_can(reinterpret_cast<char*>(regs->rbx), regs->rcx);
 }
 
+void sc_get_input_raw(interrupt::syscall_regs* regs){
+    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
+    auto& tty = stdio::get_terminal(ttyid);
+
+    regs->rax = tty.read_input_raw();
+}
+
 void sc_sleep_ms(interrupt::syscall_regs* regs){
     auto time = regs->rbx;
 
@@ -334,6 +341,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 9:
             sc_sbrk(regs);
+            break;
+
+        case 10:
+            sc_get_input_raw(regs);
             break;
 
         case 100:

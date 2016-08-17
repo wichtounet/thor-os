@@ -35,6 +35,7 @@ void print_line(size_t v);
 void print_line(const std::string& s);
 
 size_t read_input(char* buffer, size_t max);
+size_t read_input_raw();
 
 void clear();
 
