@@ -75,7 +75,7 @@ void stdio::virtual_terminal::send_input(char key){
     }
 }
 
-size_t stdio::virtual_terminal::read_input(char* buffer, size_t max){
+size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max){
     size_t read = 0;
 
     while(true){

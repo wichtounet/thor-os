@@ -29,7 +29,14 @@ struct virtual_terminal {
 
     void print(char c);
     void send_input(char c);
-    size_t read_input(char* buffer, size_t max);
+
+    /*!
+     * \brief Reads canonical input in the given buffer
+     * \param buffer The buffer to fill
+     * \param max The max number of characters to read
+     * \return The number of characters that have been read
+     */
+    size_t read_input_can(char* buffer, size_t max);
 
     virtual_terminal(){}
 
