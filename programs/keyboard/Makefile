@@ -1,6 +1,6 @@
 .PHONY: default clean
 
-EXEC_NAME=divzero
+EXEC_NAME=keyboard
 
 default: link
 
