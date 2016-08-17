@@ -169,7 +169,7 @@ size_t read(const sys_folder& folder, const path& file_path, char* buffer, size_
             }
 
             read = std::min(count, value.size() - offset);
-            std::copy_n(buffer, value.c_str() + offset, read);
+            std::copy_n(value.c_str() + offset, read, buffer);
 
             return 0;
         }

@@ -67,7 +67,7 @@ void text_console::scroll_up(){
     auto destination = vga_buffer_fast;
     auto source = &vga_buffer_fast[20];
 
-    std::copy_n(destination, source, 24 * 20);
+    std::copy_n(source, 24 * 20, destination);
 
     auto vga_buffer = reinterpret_cast<uint16_t*>(0x0B8000);
     for(uint64_t i = 0; i < 80; ++i){

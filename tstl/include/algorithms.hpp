@@ -15,28 +15,32 @@
 
 namespace std {
 
+/*!
+ * \brief Copies all elements in the range [first, last).
+ *
+ * The behavior is undefined if d_first is within the range [first, last)
+ *
+ * \param first The beginning of the range
+ * \param last The end of the range
+ * \param d_first The output iterator
+ */
 template<typename InputIterator, typename OutputIterator>
-void copy(OutputIterator out, InputIterator it, InputIterator end){
-    if(it != end){
-        *out = *it;
+void copy(InputIterator first, InputIterator last, OutputIterator d_first){
+    if(first != last){
+        *d_first = *first;
 
-        while(++it != end){
-            *++out = *it;
+        while(++first != last){
+            *++d_first = *first;
         }
     }
 }
 
-template<typename InputIterator, typename OutputIterator, std::enable_if_t<!std::has_trivial_assign<typename std::iterator_traits<OutputIterator>::value_type>::value, int> = 42>
-void copy_n(OutputIterator out, InputIterator in, size_t n){
-    if(n > 0){
-        *out = *in;
-
-        while(--n){
-            *++out = *++in;
-        }
-    }
-}
-
+/*!
+ * \brief Copy bytes bytes of memory from in to out
+ * \param out Pointer to the output
+ * \param in Pointer to the input
+ * \param bytes The number of bytes
+ */
 inline void memcpy(char* out, const char* in, size_t bytes){
     if(!bytes){
         return;
@@ -65,13 +69,42 @@ inline void memcpy(char* out, const char* in, size_t bytes){
     }
 }
 
-template<typename InputIterator, typename OutputIterator, std::enable_if_t<std::has_trivial_assign<typename std::iterator_traits<OutputIterator>::value_type>::value, int> = 42>
-void copy_n(OutputIterator out, InputIterator in, size_t n){
-    memcpy(reinterpret_cast<char*>(out), reinterpret_cast<const char*>(in), n * sizeof(decltype(*out)));
+/*!
+ * \brief Copies exactly count values from the range beginning at first to the range beginning at result, if count>0. Does nothing otherwise.
+ * \param first The beginning of the input range
+ * \param count The number fo elements to copy
+ * \param out The output iterator
+ */
+template<typename InputIterator, typename OutputIterator, std::enable_if_t<!std::has_trivial_assign<typename std::iterator_traits<OutputIterator>::value_type>::value, int> = 42>
+void copy_n(InputIterator first, size_t count, OutputIterator out){
+    if(count > 0){
+        *out = *first;
+
+        while(--count){
+            *++out = *++first;
+        }
+    }
 }
 
+/*!
+ * \brief Copies exactly count values from the range beginning at first to the range beginning at result, if count>0. Does nothing otherwise.
+ * \param first The beginning of the input range
+ * \param count The number fo elements to copy
+ * \param out The output iterator
+ */
+template<typename InputIterator, typename OutputIterator, std::enable_if_t<std::has_trivial_assign<typename std::iterator_traits<OutputIterator>::value_type>::value, int> = 42>
+void copy_n(InputIterator first, size_t count, OutputIterator out){
+    memcpy(reinterpret_cast<char*>(out), reinterpret_cast<const char*>(first), count * sizeof(decltype(*out)));
+}
+
+/*!
+ * \brief Moves exactly count values from the range beginning at first to the range beginning at result, if count>0. Does nothing otherwise.
+ * \param first The beginning of the input range
+ * \param count The number fo elements to move
+ * \param out The output iterator
+ */
 template<typename InputIterator, typename OutputIterator>
-void move_n(OutputIterator out, InputIterator in, size_t n){
+void move_n(InputIterator in, size_t n, OutputIterator out){
     if(n > 0){
         *out = std::move(*in);
 
@@ -81,6 +114,11 @@ void move_n(OutputIterator out, InputIterator in, size_t n){
     }
 }
 
+/*!
+ * \brief Clear bytes bytes of memory from out
+ * \param out Pointer to the output
+ * \param bytes The number of bytes
+ */
 inline void memclr(char* out, size_t bytes){
     if(!bytes){
         return;
@@ -107,47 +145,67 @@ inline void memclr(char* out, size_t bytes){
     }
 }
 
+/*!
+ * \brief Assigns the given value to the elements in the range [first, last).
+ * \param first The beginning of the range
+ * \param last The end of the range
+ * \param value The value to write
+ */
 template<typename ForwardIterator, typename T>
-void fill(ForwardIterator it, ForwardIterator end, const T& value){
-    if(it != end){
-        *it = value;
+void fill(ForwardIterator first, ForwardIterator last, const T& value){
+    if(first != last){
+        *first = value;
 
-        while(++it != end){
-            *it = value;
+        while(++first != last){
+            *first = value;
         }
     }
 }
 
+/*!
+ * \brief Assigns the given value to the first count elements in the range beginning at
+ * first if count > 0. Does nothing otherwise.
+ * \param first The beginning of the range
+ * \param count The number of elements
+ * \param value The value to write
+ */
 template<typename ForwardIterator, typename T, std::enable_if_t<!std::has_trivial_assign<typename std::iterator_traits<ForwardIterator>::value_type>::value, int> = 42>
-void fill_n(ForwardIterator it, size_t n, const T& value){
-    if(n > 0){
-        *it = value;
+void fill_n(ForwardIterator first, size_t count, const T& value){
+    if(count > 0){
+        *first = value;
 
-        while(--n){
-            *++it = value;
+        while(--count){
+            *++first = value;
         }
     }
 }
 
+/*!
+ * \brief Assigns the given value to the first count elements in the range beginning at
+ * first if count > 0. Does nothing otherwise.
+ * \param first The beginning of the range
+ * \param count The number of elements
+ * \param value The value to write
+ */
 template<typename ForwardIterator, typename T, std::enable_if_t<std::has_trivial_assign<typename std::iterator_traits<ForwardIterator>::value_type>::value, int> = 42>
-void fill_n(ForwardIterator it, size_t n, const T& value){
+void fill_n(ForwardIterator first, size_t count, const T& value){
     if(!value){
-        memclr(reinterpret_cast<char*>(it), n * sizeof(decltype(*it)));
+        memclr(reinterpret_cast<char*>(first), count * sizeof(decltype(*first)));
     } else {
-        if(n > 0){
-            *it = value;
+        if(count > 0){
+            *first = value;
 
-            while(--n){
-                *++it = value;
+            while(--count){
+                *++first = value;
             }
         }
     }
 }
 
 template<typename Iterator1, typename Iterator2>
-size_t compare_n(Iterator1 it1, Iterator2 it2, size_t n){
-    if(n > 0){
-        while(n--){
+size_t compare_n(Iterator1 it1, Iterator2 it2, size_t count){
+    if(count > 0){
+        while(count--){
             if(*it1 != *it2){
                 return *it1- *it2;
             } else {

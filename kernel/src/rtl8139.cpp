@@ -125,7 +125,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
 
                 auto packet_buffer = new char[packet_only_length];
 
-                std::copy_n(packet_buffer, packet_payload, packet_only_length);
+                std::copy_n(packet_payload, packet_only_length, packet_buffer);
 
                 network::ethernet::packet packet(packet_buffer, packet_only_length);
 
@@ -194,7 +194,7 @@ void send_packet(const network::interface_descriptor& interface, network::ethern
 
     auto& tx_desc = desc.tx_desc[entry];
 
-    std::copy_n(reinterpret_cast<char*>(tx_desc.buffer_virt), packet.payload, packet.payload_size);
+    std::copy_n(packet.payload, packet.payload_size, reinterpret_cast<char*>(tx_desc.buffer_virt));
 
     out_dword(iobase + TX_ADDR + entry * 4, tx_desc.buffer_phys);
     out_dword(iobase + TX_STATUS + entry * 4, uint32_t(256) << 16 | packet.payload_size);

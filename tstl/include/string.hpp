@@ -152,7 +152,7 @@ public:
             new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
         }
 
-        std::copy_n(begin(), s, capacity);
+        std::copy_n(s, capacity, begin());
     }
 
     explicit basic_string(size_t __capacity) : _size(0) {
@@ -192,7 +192,7 @@ public:
             new (&storage.big) base_long<CharT>(size() + 1, new CharT[size() + 1]);
         }
 
-        std::copy_n(begin(), rhs.begin(), size() + 1);
+        std::copy_n(rhs.begin(), size() + 1, begin());
     }
 
     basic_string& operator=(const basic_string& rhs){
@@ -212,7 +212,7 @@ public:
                 }
             }
 
-            std::copy_n(begin(), rhs.begin(), size() + 1);
+            std::copy_n(rhs.begin(), size() + 1, begin());
         }
 
         return *this;
@@ -251,7 +251,7 @@ public:
         } else if(was_long && small){
             ensure_capacity(rhs.size() + 1);
 
-            std::copy_n(begin(), rhs.begin(), size() + 1);
+            std::copy_n(rhs.begin(), size() + 1, begin());
         }
 
         rhs._size = 0;
@@ -317,7 +317,7 @@ public:
 
             auto new_data = new CharT[new_cap];
 
-            std::copy_n(new_data, begin(), size() + 1);
+            std::copy_n(begin(), size() + 1, new_data);
 
             if(is_small()){
                 new (&storage.big) base_long<CharT>(new_cap, new_data);
@@ -335,7 +335,7 @@ public:
 
         ensure_capacity(size() + len + 1);
 
-        std::copy_n(begin() + size(), rhs, len);
+        std::copy_n(rhs, len, begin() + size());
 
         set_size(size() + len);
 
@@ -347,7 +347,7 @@ public:
     basic_string& operator+=(const basic_string& rhs){
         ensure_capacity(size() + rhs.size() + 1);
 
-        std::copy_n(begin() + size(), rhs.begin(), rhs.size());
+        std::copy_n(rhs.begin(), rhs.size(), begin() + size());
 
         set_size(size() + rhs.size());
 

@@ -149,7 +149,7 @@ const std::string& path::operator[](size_t i) const {
 path path::sub_path(size_t i) const {
     path p;
     p.names.resize(size() - i);
-    std::copy(p.names.begin(), names.begin() + i, names.end());
+    std::copy(names.begin() + i, names.end(), p.names.begin());
     return p;
 }
 
@@ -168,7 +168,7 @@ path path::branch_path() const {
 
     path p;
     p.names.resize(size() - 1);
-    std::copy(p.names.begin(), names.begin(), names.end() - 1);
+    std::copy(names.begin(), names.end() - 1, p.names.begin());
     return p;
 }
 

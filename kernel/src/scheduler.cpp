@@ -458,10 +458,10 @@ bool create_paging(char* buffer, scheduler::process_t& process){
             //In the case of the BSS segment, the segment must be
             //filled with zero
             if(p_header.p_filesize != p_header.p_memsz){
-                std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_filesize);
+                std::copy_n(buffer + p_header.p_offset, p_header.p_filesize, reinterpret_cast<char*>(memory_start));
                 std::fill_n(reinterpret_cast<char*>(memory_start + p_header.p_filesize), p_header.p_memsz - p_header.p_filesize, 0);
             } else {
-                std::copy_n(reinterpret_cast<char*>(memory_start), buffer + p_header.p_offset, p_header.p_memsz);
+                std::copy_n(buffer + p_header.p_offset, p_header.p_memsz, reinterpret_cast<char*>(memory_start));
             }
         }
     }

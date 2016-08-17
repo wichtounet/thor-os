@@ -90,7 +90,7 @@ int main(int argc, char* argv[]){
         fat_bs->sectors_per_fat_long = fat_size_sectors;
         fat_bs->root_directory_cluster_start = 2;
         fat_bs->fs_information_sector = 1;
-        std::copy_n(&fat_bs->file_system_type[0], "FAT32", 5);
+        std::copy_n("FAT32", 5, &fat_bs->file_system_type[0]);
         fat_bs->signature = 0xAA55;
 
         // Write the FAT BS

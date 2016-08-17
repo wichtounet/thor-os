@@ -237,7 +237,7 @@ private:
             }
 
             auto new_data = new T[_capacity];
-            std::move_n(new_data, data, _size);
+            std::move_n(data, _size, new_data);
 
             delete[] data;
             data = new_data;

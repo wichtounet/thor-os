@@ -24,7 +24,7 @@ void test_copy(){
     a[20] = 'd';
     a[24] = 'e';
 
-    std::copy(a + 4, b, b + 16);
+    std::copy(b, b + 16, a + 4);
 
     check(a[0] == 'a', "Invalid copy");
     check(a[3] == 'b', "Invalid copy");
@@ -44,7 +44,7 @@ void test_copy_n(){
     a[20] = 'd';
     a[24] = 'e';
 
-    std::copy_n(a + 4, b, 16);
+    std::copy_n(b, 16, a + 4);
 
     check(a[0] == 'a', "Invalid copy_n");
     check(a[3] == 'b', "Invalid copy_n");

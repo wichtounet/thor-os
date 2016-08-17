@@ -63,7 +63,7 @@ size_t ramdisk::ramdisk_driver::read(void* data, char* destination, size_t count
         if(!disk->allocated[page]){
             std::fill_n(destination + read, to_read, 0);
         } else {
-            std::copy_n(destination + read, disk->allocated[page] + page_offset, to_read);
+            std::copy_n(disk->allocated[page] + page_offset, to_read, destination + read);
         }
 
         read += to_read;
@@ -96,7 +96,7 @@ size_t ramdisk::ramdisk_driver::write(void* data, const char* source, size_t cou
         }
 
         uint64_t to_write = std::min(paging::PAGE_SIZE - page_offset, count - written);
-        std::copy_n(disk->allocated[page] + page_offset, source, to_write);
+        std::copy_n(source, to_write, disk->allocated[page] + page_offset);
         written += to_write;
 
         offset += to_write;

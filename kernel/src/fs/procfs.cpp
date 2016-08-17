@@ -28,7 +28,7 @@ size_t read(const std::string& value, char* buffer, size_t count, size_t offset,
     }
 
     read = std::min(count, value.size() - offset);
-    std::copy_n(buffer, value.c_str() + offset, read);
+    std::copy_n(value.c_str() + offset, read, buffer);
 
     return 0;
 }

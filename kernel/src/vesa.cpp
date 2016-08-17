@@ -202,7 +202,7 @@ void vesa::move_lines_up(size_t y, size_t x, size_t w, size_t lines, size_t n){
         auto destination = reinterpret_cast<size_t*>(screen + (y - n + i) * y_shift + x);
         auto source = reinterpret_cast<size_t*>(screen + (y + i) * y_shift + x);
 
-        std::copy_n(destination, source, w / 2);
+        std::copy_n(source, w / 2, destination);
     }
 }
 
@@ -210,5 +210,5 @@ void vesa::redraw(const char* buffer){
     auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
     size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
 
-    std::copy_n(reinterpret_cast<char*>(screen), buffer, total_size);
+    std::copy_n(buffer, total_size, reinterpret_cast<char*>(screen));
 }

@@ -49,7 +49,7 @@ int main(){
         start = ms_time();
 
         for(size_t i = 0; i < repeat; ++i){
-            std::copy_n(buffer_one, buffer_two, PAGES * 4096);
+            std::copy_n(buffer_two, PAGES * 4096, buffer_one);
         }
 
         end = ms_time();
