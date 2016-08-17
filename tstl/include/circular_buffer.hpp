@@ -51,6 +51,14 @@ public:
         start = (start + 1) % Size;
         return value;
     }
+
+    void pop_last(){
+        if(end == 0){
+            end = Size - 1;
+        } else {
+            --end;
+        }
+    }
 };
 
 #endif
