@@ -12,6 +12,192 @@
 
 namespace {
 
+keycode pressed_codes[128] = {
+    keycode::INVALID
+    , keycode::PRESSED_ESC
+    , keycode::PRESSED_1
+    , keycode::PRESSED_2
+    , keycode::PRESSED_3
+    , keycode::PRESSED_4
+    , keycode::PRESSED_5
+    , keycode::PRESSED_6
+    , keycode::PRESSED_7
+    , keycode::PRESSED_8
+    , keycode::PRESSED_9
+    , keycode::PRESSED_0
+    , keycode::PRESSED_DASH
+    , keycode::PRESSED_EQUALS
+    , keycode::PRESSED_BACKSPACE
+    , keycode::PRESSED_TAB
+    , keycode::PRESSED_Q
+    , keycode::PRESSED_W
+    , keycode::PRESSED_E
+    , keycode::PRESSED_R
+    , keycode::PRESSED_T
+    , keycode::PRESSED_Z
+    , keycode::PRESSED_U
+    , keycode::PRESSED_I
+    , keycode::PRESSED_O
+    , keycode::PRESSED_P
+    , keycode::PRESSED_LEFT_SQUARE_BRACKET
+    , keycode::PRESSED_RIGHT_SQUARE_BRACKET
+    , keycode::PRESSED_ENTER
+    , keycode::PRESSED_CTRL
+    , keycode::PRESSED_A
+    , keycode::PRESSED_S
+    , keycode::PRESSED_D
+    , keycode::PRESSED_F
+    , keycode::PRESSED_G
+    , keycode::PRESSED_H
+    , keycode::PRESSED_J
+    , keycode::PRESSED_K
+    , keycode::PRESSED_L
+    , keycode::PRESSED_SEMICOLON
+    , keycode::PRESSED_QUOTE
+    , keycode::PRESSED_TICK
+    , keycode::PRESSED_LEFT_SHIFT
+    , keycode::PRESSED_BACKSLASH
+    , keycode::PRESSED_Y
+    , keycode::PRESSED_X
+    , keycode::PRESSED_C
+    , keycode::PRESSED_V
+    , keycode::PRESSED_B
+    , keycode::PRESSED_N
+    , keycode::PRESSED_M
+    , keycode::PRESSED_COMMA
+    , keycode::PRESSED_DOT
+    , keycode::PRESSED_SLASH
+    , keycode::PRESSED_RIGHT_SHIFT
+    , keycode::PRESSED_STAR
+    , keycode::PRESSED_ALT
+    , keycode::PRESSED_SPACE
+    , keycode::PRESSED_CAPS_LOCK
+    , keycode::PRESSED_F1
+    , keycode::PRESSED_F2
+    , keycode::PRESSED_F3
+    , keycode::PRESSED_F4
+    , keycode::PRESSED_F5
+    , keycode::PRESSED_F6
+    , keycode::PRESSED_F7
+    , keycode::PRESSED_F8
+    , keycode::PRESSED_F9
+    , keycode::PRESSED_F10
+    , keycode::PRESSED_NUM_LOCK
+    , keycode::PRESSED_SCROLL_LOCK
+    , keycode::PRESSED_KEY_7
+    , keycode::PRESSED_KEY_8
+    , keycode::PRESSED_KEY_9
+    , keycode::PRESSED_KEY_MINUS
+    , keycode::PRESSED_KEY_4
+    , keycode::PRESSED_KEY_5
+    , keycode::PRESSED_KEY_6
+    , keycode::PRESSED_KEY_PLUS
+    , keycode::PRESSED_KEY_1
+    , keycode::PRESSED_KEY_2
+    , keycode::PRESSED_KEY_3
+    , keycode::PRESSED_KEY_0
+    , keycode::PRESSED_KEY_DOT
+    , keycode::INVALID
+    , keycode::INVALID
+    , keycode::INVALID
+    , keycode::PRESSED_F11
+    , keycode::PRESSED_F12
+    , keycode::INVALID
+};
+
+keycode released_codes[128] = {
+    keycode::INVALID
+    , keycode::RELEASED_ESC
+    , keycode::RELEASED_1
+    , keycode::RELEASED_2
+    , keycode::RELEASED_3
+    , keycode::RELEASED_4
+    , keycode::RELEASED_5
+    , keycode::RELEASED_6
+    , keycode::RELEASED_7
+    , keycode::RELEASED_8
+    , keycode::RELEASED_9
+    , keycode::RELEASED_0
+    , keycode::RELEASED_DASH
+    , keycode::RELEASED_EQUALS
+    , keycode::RELEASED_BACKSPACE
+    , keycode::RELEASED_TAB
+    , keycode::RELEASED_Q
+    , keycode::RELEASED_W
+    , keycode::RELEASED_E
+    , keycode::RELEASED_R
+    , keycode::RELEASED_T
+    , keycode::RELEASED_Z
+    , keycode::RELEASED_U
+    , keycode::RELEASED_I
+    , keycode::RELEASED_O
+    , keycode::RELEASED_P
+    , keycode::RELEASED_LEFT_SQUARE_BRACKET
+    , keycode::RELEASED_RIGHT_SQUARE_BRACKET
+    , keycode::RELEASED_ENTER
+    , keycode::RELEASED_CTRL
+    , keycode::RELEASED_A
+    , keycode::RELEASED_S
+    , keycode::RELEASED_D
+    , keycode::RELEASED_F
+    , keycode::RELEASED_G
+    , keycode::RELEASED_H
+    , keycode::RELEASED_J
+    , keycode::RELEASED_K
+    , keycode::RELEASED_L
+    , keycode::RELEASED_SEMICOLON
+    , keycode::RELEASED_QUOTE
+    , keycode::RELEASED_TICK
+    , keycode::RELEASED_LEFT_SHIFT
+    , keycode::RELEASED_BACKSLASH
+    , keycode::RELEASED_Y
+    , keycode::RELEASED_X
+    , keycode::RELEASED_C
+    , keycode::RELEASED_V
+    , keycode::RELEASED_B
+    , keycode::RELEASED_N
+    , keycode::RELEASED_M
+    , keycode::RELEASED_COMMA
+    , keycode::RELEASED_DOT
+    , keycode::RELEASED_SLASH
+    , keycode::RELEASED_RIGHT_SHIFT
+    , keycode::RELEASED_STAR
+    , keycode::RELEASED_ALT
+    , keycode::RELEASED_SPACE
+    , keycode::RELEASED_CAPS_LOCK
+    , keycode::RELEASED_F1
+    , keycode::RELEASED_F2
+    , keycode::RELEASED_F3
+    , keycode::RELEASED_F4
+    , keycode::RELEASED_F5
+    , keycode::RELEASED_F6
+    , keycode::RELEASED_F7
+    , keycode::RELEASED_F8
+    , keycode::RELEASED_F9
+    , keycode::RELEASED_F10
+    , keycode::RELEASED_NUM_LOCK
+    , keycode::RELEASED_SCROLL_LOCK
+    , keycode::RELEASED_KEY_7
+    , keycode::RELEASED_KEY_8
+    , keycode::RELEASED_KEY_9
+    , keycode::RELEASED_KEY_MINUS
+    , keycode::RELEASED_KEY_4
+    , keycode::RELEASED_KEY_5
+    , keycode::RELEASED_KEY_6
+    , keycode::RELEASED_KEY_PLUS
+    , keycode::RELEASED_KEY_1
+    , keycode::RELEASED_KEY_2
+    , keycode::RELEASED_KEY_3
+    , keycode::RELEASED_KEY_0
+    , keycode::RELEASED_KEY_DOT
+    , keycode::INVALID
+    , keycode::INVALID
+    , keycode::INVALID
+    , keycode::RELEASED_F11
+    , keycode::RELEASED_F12
+    , keycode::INVALID
+};
+
 char qwertz[128] = {
     0,  27, '1', '2', '3', '4', '5', '6', '7', '8', /* 9 */
   '9', '0', '-', '=', '\b', /* Backspace */
@@ -118,4 +304,13 @@ char keyboard::key_to_ascii(uint8_t key){
 
 char keyboard::shift_key_to_ascii(uint8_t key){
     return shifted_qwertz[key];
+}
+
+keycode raw_key_to_keycode(uint8_t key){
+    if(key & 0x80){
+        key &= ~(0x80);
+        return released_codes[key];
+    } else {
+        return pressed_codes[key];
+    }
 }

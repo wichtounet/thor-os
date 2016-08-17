@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+#include "keycode.hpp"
+
 namespace keyboard {
 
 const char KEY_ENTER = 0x1C;
@@ -25,6 +27,8 @@ void install_driver();
 char get_char();
 char key_to_ascii(uint8_t key);
 char shift_key_to_ascii(uint8_t key);
+
+keycode raw_key_to_keycode(uint8_t key);
 
 void get_char_blocking();
 
