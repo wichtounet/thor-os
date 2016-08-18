@@ -10,7 +10,7 @@
 
 #include <types.hpp>
 
-#include "keycode.hpp"
+#include <tlib/keycode.hpp>
 
 namespace keyboard {
 
