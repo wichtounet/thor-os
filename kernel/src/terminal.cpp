@@ -61,7 +61,9 @@ void stdio::virtual_terminal::send_input(char key){
                     if(qwertz_key == '\n'){
                         // Transfer current line to the canonical buffer
                         while(!input_buffer.empty()){
-                            canonical_buffer.push(input_buffer.pop()); }
+                            canonical_buffer.push(input_buffer.pop());
+                        }
+
                         if(!input_queue.empty()){
                             input_queue.wake_up();
                         }
