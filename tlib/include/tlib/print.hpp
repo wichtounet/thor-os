@@ -38,6 +38,7 @@ void set_canonical(bool can);
 size_t read_input(char* buffer, size_t max);
 size_t read_input(char* buffer, size_t max, size_t ms);
 size_t read_input_raw();
+size_t read_input_raw(size_t ms);
 
 void clear();
 

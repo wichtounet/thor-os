@@ -90,6 +90,15 @@ size_t read_input_raw(){
     return value;
 }
 
+size_t read_input_raw(size_t ms){
+    size_t value;
+    asm volatile("mov rax, 0x13; mov rbx, %[ms]; int 50; mov %[input], rax"
+        : [input] "=m" (value)
+        : [ms] "g" (ms)
+        : "rax");
+    return value;
+}
+
 void  clear(){
     asm volatile("mov rax, 100; int 50;"
         : //No outputs
