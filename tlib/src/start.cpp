@@ -11,6 +11,8 @@ int main(int argc, char* argv[]);
 
 extern "C" {
 
+void __cxa_finalize(void* f);
+
 void _start(int argc, char* argv[]) __attribute__((section(".start")));
 
 void _start(int argc, char* argv[]){
@@ -21,7 +23,7 @@ void _start(int argc, char* argv[]){
     auto code = main(argc, argv);
 
     // Call the global destructors, if any
-    __cxa_finalize();
+    __cxa_finalize(nullptr);
 
     // Kill the process with the correct exit code
     exit(code);
@@ -51,7 +53,7 @@ int __cxa_atexit(void (*f)(void *), void *objptr, void *dso){
     return 0; /*I would prefer if functions returned 1 on success, but the ABI says...*/
 }
 
-void __cxa_finalize(void *f){
+void __cxa_finalize(void* f){
     int i = __atexit_func_count;
     if (!f){
         while (i--){
