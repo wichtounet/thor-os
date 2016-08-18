@@ -81,22 +81,22 @@ size_t read_input(char* buffer, size_t max, size_t ms){
     return value;
 }
 
-size_t read_input_raw(){
+keycode read_input_raw(){
     size_t value;
     asm volatile("mov rax, 0x12; int 50; mov %[input], rax"
         : [input] "=m" (value)
         :
         : "rax");
-    return value;
+    return static_cast<keycode>(value);
 }
 
-size_t read_input_raw(size_t ms){
+keycode read_input_raw(size_t ms){
     size_t value;
     asm volatile("mov rax, 0x13; mov rbx, %[ms]; int 50; mov %[input], rax"
         : [input] "=m" (value)
         : [ms] "g" (ms)
         : "rax");
-    return value;
+    return static_cast<keycode>(value);
 }
 
 void  clear(){
