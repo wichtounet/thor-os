@@ -80,6 +80,8 @@ void stdio::virtual_terminal::send_input(char key){
         if(!input_queue.empty()){
             input_queue.wake_up();
         }
+
+        thor_assert(!raw_buffer.full(), "raw buffer is full!");
     }
 }
 

@@ -31,6 +31,11 @@ void sc_print_string(interrupt::syscall_regs* regs){
     k_print(reinterpret_cast<const char*>(regs->rbx));
 }
 
+void sc_log_string(interrupt::syscall_regs* regs){
+    auto m = reinterpret_cast<const char*>(regs->rbx);
+    logging::logf(logging::log_level::USER, "%s\n", m);
+}
+
 void sc_get_input(interrupt::syscall_regs* regs){
     auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
     auto& tty = stdio::get_terminal(ttyid);
@@ -334,6 +339,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 1:
             sc_print_string(regs);
+            break;
+
+        case 2:
+            sc_log_string(regs);
             break;
 
         case 4:

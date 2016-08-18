@@ -50,4 +50,6 @@ size_t get_rows();
 
 #include "printf_dec.hpp"
 
+void user_logf(const char* s, ...);
+
 #endif

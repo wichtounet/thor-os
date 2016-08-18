@@ -23,6 +23,13 @@ void print(const char* s){
         : "rax", "rbx");
 }
 
+void log(const char* s){
+    asm volatile("mov rax, 2; mov rbx, %[s]; int 50"
+        : //No outputs
+        : [s] "g" (reinterpret_cast<size_t>(s))
+        : "rax", "rbx");
+}
+
 void print(uint8_t v){
     print(std::to_string(v));
 }
@@ -155,4 +162,15 @@ void __printf(const std::string& formatted){
 
 void __printf_raw(const char* formatted){
     print(formatted);
+}
+
+void user_logf(const char* s, ...){
+    va_list va;
+    va_start(va, s);
+
+    char buffer[512];
+    vsprintf_raw(buffer, 512, s, va);
+    log(buffer);
+
+    va_end(va);
 }
