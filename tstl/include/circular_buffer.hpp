@@ -90,6 +90,37 @@ public:
             --end;
         }
     }
+
+    /*!
+     * \brief Test if the buffer contains the given value.
+     *
+     * This should only be used if the buffer is used by a single
+     * thread.
+     */
+    bool contains(const T& value){
+        for(size_t i = start; i != end; i = (i + 1) % Size){
+            if(buffer[i] == value){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /*!
+     * \brief Replace the searched value by the given value
+     *
+     * This should only be used if the buffer is used by a single
+     * thread.
+     */
+    void replace(const T& value, const T& new_value){
+        for(size_t i = start; i != end; i = (i + 1) % Size){
+            if(buffer[i] == value){
+                buffer[i] = new_value;
+                return;
+            }
+        }
+    }
 };
 
 #endif
