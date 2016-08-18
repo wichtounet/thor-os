@@ -12,6 +12,7 @@
 
 enum class keycode : size_t {
     INVALID = 0
+    , TIMEOUT = 1
     , PRESSED_ESC
     , PRESSED_DASH
     , PRESSED_EQUALS

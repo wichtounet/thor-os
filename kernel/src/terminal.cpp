@@ -137,11 +137,11 @@ size_t stdio::virtual_terminal::read_input_raw(){
 size_t stdio::virtual_terminal::read_input_raw(size_t ms){
     if(raw_buffer.empty()){
         if(!ms){
-            return static_cast<size_t>(keycode::INVALID);
+            return static_cast<size_t>(keycode::TIMEOUT);
         }
 
         if(!input_queue.sleep(ms)){
-            return static_cast<size_t>(keycode::INVALID);
+            return static_cast<size_t>(keycode::TIMEOUT);
         }
     }
 
@@ -149,7 +149,7 @@ size_t stdio::virtual_terminal::read_input_raw(size_t ms){
 }
 
 void stdio::virtual_terminal::set_canonical(bool can){
-    logging::logf(logging::log_level::TRACE, "Switched terminal %u canonical mode from %u to %u\n", id, uint64_t(canonical), uint64_t(canonical));
+    logging::logf(logging::log_level::TRACE, "Switched terminal %u canonical mode from %u to %u\n", id, uint64_t(canonical), uint64_t(can));
 
     canonical = can;
 }

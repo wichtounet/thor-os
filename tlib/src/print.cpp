@@ -57,7 +57,7 @@ void print(int64_t v){
 
 void set_canonical(bool can){
     size_t value = can;
-    asm volatile("mov rax, 11; mov rbx, %[value]; int 50;"
+    asm volatile("mov rax, 0x20; mov rbx, %[value]; int 50;"
         :
         : [value] "g" (value)
         : "rax", "rbx");

@@ -376,6 +376,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
             sc_get_input_raw_timeout(regs);
             break;
 
+        case 0x20:
+            sc_set_canonical(regs);
+            break;
+
         case 100:
             sc_clear_screen(regs);
             break;
