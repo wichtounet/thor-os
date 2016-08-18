@@ -52,9 +52,16 @@ struct virtual_terminal {
 
     /*!
      * \brief Reads non-canonical input in the given buffer
-     * \return the keyboard scan code
+     * \return the keyboard key code
      */
     size_t read_input_raw();
+
+    /*!
+     * \brief Reads non-canonical input in the given buffer, with
+     * a timeout
+     * \return the keyboard key code
+     */
+    size_t read_input_raw(size_t ms);
 
     void set_canonical(bool can);
 

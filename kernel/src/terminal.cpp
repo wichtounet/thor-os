@@ -134,6 +134,20 @@ size_t stdio::virtual_terminal::read_input_raw(){
     return raw_buffer.pop();
 }
 
+size_t stdio::virtual_terminal::read_input_raw(size_t ms){
+    if(raw_buffer.empty()){
+        if(!ms){
+            return static_cast<size_t>(keycode::INVALID);
+        }
+
+        if(!input_queue.sleep(ms)){
+            return static_cast<size_t>(keycode::INVALID);
+        }
+    }
+
+    return raw_buffer.pop();
+}
+
 void stdio::virtual_terminal::set_canonical(bool can){
     logging::logf(logging::log_level::TRACE, "Switched terminal %u canonical mode from %u to %u\n", id, uint64_t(canonical), uint64_t(canonical));
 
