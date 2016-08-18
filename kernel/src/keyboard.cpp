@@ -306,7 +306,7 @@ char keyboard::shift_key_to_ascii(uint8_t key){
     return shifted_qwertz[key];
 }
 
-keycode raw_key_to_keycode(uint8_t key){
+keycode keyboard::raw_key_to_keycode(uint8_t key){
     if(key & 0x80){
         key &= ~(0x80);
         return released_codes[key];

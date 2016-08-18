@@ -72,7 +72,8 @@ void stdio::virtual_terminal::send_input(char key){
     } else {
         // The complete processing of the key will be done by the
         // userspace program
-        raw_buffer.push(key);
+        auto code = keyboard::raw_key_to_keycode(key);
+        raw_buffer.push(static_cast<size_t>(code));
 
         if(!input_queue.empty()){
             input_queue.wake_up();
