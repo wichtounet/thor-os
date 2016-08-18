@@ -135,16 +135,18 @@ public:
         // If the queue still contains our pid, it means a wake up
         // from timeout
 
-        // If the pid is on top, pop it
-        if(queue.top() == pid){
-            obtained = false;
-            queue.pop();
-        }
-        // If the pid is inside the queue, replace it with an invalid pid
-        // If this happens too often, we'll need a better pid queue
-        else if(queue.contains(pid)){
-            obtained = false;
-            queue.replace(pid, scheduler::INVALID_PID);
+        if(!queue.empty()){
+            // If the pid is on top, pop it
+            if(queue.top() == pid){
+                obtained = false;
+                queue.pop();
+            }
+            // If the pid is inside the queue, replace it with an invalid pid
+            // If this happens too often, we'll need a better pid queue
+            else if(queue.contains(pid)){
+                obtained = false;
+                queue.replace(pid, scheduler::INVALID_PID);
+            }
         }
 
         // Final release of the lock
