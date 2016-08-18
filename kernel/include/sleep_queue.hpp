@@ -52,18 +52,24 @@ public:
     scheduler::pid_t wake_up(){
         std::lock_guard<spinlock> l(lock);
 
-        // Get the first process
-        auto pid = queue.top();
+        while(!queue.empty()){
+            // Get the first process
+            auto pid = queue.top();
 
-        // Remove it
-        queue.pop();
+            // Remove it
+            queue.pop();
 
-        logging::logf(logging::log_level::TRACE, "sleep_queue: wake %d\n", pid);
+            if(pid != scheduler::INVALID_PID){
+                logging::logf(logging::log_level::TRACE, "sleep_queue: wake %d\n", pid);
 
-        //Indicate to the scheduler that this process will be able to run
-        scheduler::unblock_process(pid);
+                //Indicate to the scheduler that this process will be able to run
+                scheduler::unblock_process(pid);
 
-        return pid;
+                return pid;
+            }
+        }
+
+        return scheduler::INVALID_PID;
     }
 
     /*!
