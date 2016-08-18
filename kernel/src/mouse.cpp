@@ -15,6 +15,12 @@
 
 namespace {
 
+#ifdef THOR_CONFIG_MOUSE_VERBOSE
+#define verbose_logf(...) logging::logf(__VA_ARGS__)
+#else
+#define verbose_logf(...)
+#endif
+
 constexpr const uint16_t DATA_PORT = 0x60;
 constexpr const uint16_t STATUS_PORT = 0x64;
 
@@ -64,23 +70,23 @@ void mouse_handler(interrupt::syscall_regs*, void*){
                 position_y = std::min(position_y, uint16_t(vesa::get_height()));
             }
 
-            logging::logf(logging::log_level::TRACE, "mouse: moved %d:%d \n", int64_t(position_x), int64_t(position_y));
+            verbose_logf(logging::log_level::TRACE, "mouse: moved %d:%d \n", int64_t(position_x), int64_t(position_y));
         }
 
         if((flags & (1 << 0)) && !(previous_flags & (1 << 0))){
-            logging::logf(logging::log_level::TRACE, "mouse: left button pressed %d:%d \n", int64_t(position_x), int64_t(position_y));
+            verbose_logf(logging::log_level::TRACE, "mouse: left button pressed %d:%d \n", int64_t(position_x), int64_t(position_y));
         }
 
         if((flags & (1 << 1)) && !(previous_flags & (1 << 1))){
-            logging::logf(logging::log_level::TRACE, "mouse: right button pressed %d:%d \n", int64_t(position_x), int64_t(position_y));
+            verbose_logf(logging::log_level::TRACE, "mouse: right button pressed %d:%d \n", int64_t(position_x), int64_t(position_y));
         }
 
         if(!(flags & (1 << 0)) && (previous_flags & (1 << 0))){
-            logging::logf(logging::log_level::TRACE, "mouse: left button released %d:%d \n", int64_t(position_x), int64_t(position_y));
+            verbose_logf(logging::log_level::TRACE, "mouse: left button released %d:%d \n", int64_t(position_x), int64_t(position_y));
         }
 
         if(!(flags & (1 << 1)) && (previous_flags & (1 << 1))){
-            logging::logf(logging::log_level::TRACE, "mouse: right button released %d:%d \n", int64_t(position_x), int64_t(position_y));
+            verbose_logf(logging::log_level::TRACE, "mouse: right button released %d:%d \n", int64_t(position_x), int64_t(position_y));
         }
 
         previous_flags = flags;
