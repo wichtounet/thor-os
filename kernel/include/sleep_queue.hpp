@@ -14,6 +14,7 @@
 #include "spinlock.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
+#include "assert.hpp"
 
 /*!
  * \brief A simple sleep queue
@@ -86,6 +87,8 @@ public:
         //Enqueue the process in the sleep queue
         queue.push(pid);
 
+        thor_assert(!queue.full(), "The sleep_queue queue is full!");
+
         //This process will sleep
         scheduler::block_process_light(pid);
 
@@ -115,6 +118,8 @@ public:
         //Enqueue the process in the sleep queue
         queue.push(pid);
 
+        thor_assert(!queue.full(), "The sleep_queue queue is full!");
+
         //This process will sleep
         scheduler::block_process_timeout_light(pid, ms);
 
@@ -129,7 +134,15 @@ public:
 
         // If the queue still contains our pid, it means a wake up
         // from timeout
-        if(queue.contains(pid)){
+
+        // If the pid is on top, pop it
+        if(queue.top() == pid){
+            obtained = false;
+            queue.pop();
+        }
+        // If the pid is inside the queue, replace it with an invalid pid
+        // If this happens too often, we'll need a better pid queue
+        else if(queue.contains(pid)){
             obtained = false;
             queue.replace(pid, scheduler::INVALID_PID);
         }
