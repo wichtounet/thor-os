@@ -118,9 +118,33 @@ void paint_top_bar(){
     draw_string(width - 128, 2, date_str.c_str(), make_color(200, 200, 200));
 }
 
+struct window {
+    size_t x;
+    size_t y;
+    size_t width;
+    size_t height;
+    uint32_t color;
+
+    // TODO Relax std::vector to allow for non-default-constructible
+    window(){}
+
+    window(size_t x, size_t y, size_t width, size_t height) : x(x), y(y), width(width), height(height) {
+        color = make_color(25, 25, 155);
+    }
+
+    void draw(){
+        draw_rect(x, y, width, height, color);
+    }
+};
+
+std::vector<window> windows;
+
 } // end of anonnymous namespace
 
 int main(int /*argc*/, char* /*argv*/[]){
+    // Create a default window
+    windows.emplace_back(250, 250, 200, 400);
+
     width = graphics::get_width();
     height = graphics::get_height();
     x_shift = graphics::get_x_shift();
@@ -132,28 +156,47 @@ int main(int /*argc*/, char* /*argv*/[]){
 
     size_t total_size = height * bytes_per_scan_line;
 
-    printf("total_size: %u\n",total_size);
-
     auto buffer = new char[total_size];
 
     z_buffer = reinterpret_cast<uint32_t*>(buffer);
 
     auto background = make_color(211, 211, 211);
 
-    set_canonical(true);
+    set_canonical(false);
+
+    static constexpr const size_t sleep_timeout = 50;
 
     while(true){
         fill_buffer(background);
 
         paint_top_bar();
 
+        for(auto& window : windows){
+            window.draw();
+        }
+
         paint_cursor();
 
         graphics::redraw(buffer);
-        sleep_ms(5);
+
+        auto before = ms_time();
+        auto code = read_input_raw(sleep_timeout);
+        auto after = ms_time();
+
+        if(code != keycode::TIMEOUT){
+            // TODO Handle event at this point
+
+            user_logf("odin: %u ", static_cast<size_t>(code));
+
+            auto duration = after - before;
+
+            if(duration < sleep_timeout){
+                sleep_ms(sleep_timeout - duration);
+            }
+        }
     }
 
-    set_canonical(false);
+    set_canonical(true);
 
     delete[] buffer;
 
