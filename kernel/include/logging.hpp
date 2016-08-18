@@ -18,7 +18,8 @@ enum class log_level : char {
     TRACE,
     DEBUG,
     WARNING,
-    ERROR
+    ERROR,
+    USER
 };
 
 bool is_early();

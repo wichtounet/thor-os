@@ -33,6 +33,8 @@ inline const char* level_to_string(logging::log_level level){
             return "WARNING";
         case logging::log_level::ERROR:
             return "ERROR";
+        case logging::log_level::USER:
+            return "USER";
     }
 
     return "UNKNOWN";
