@@ -8,5 +8,6 @@
 #include <cstdio>
 #include <cstring>
 
+void check(bool condition);
 void check(bool condition, const char* message);
 void check_equals(long value, long expected, const char* message);

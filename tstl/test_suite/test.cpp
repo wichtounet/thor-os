@@ -13,15 +13,23 @@
 void string_tests();
 void traits_tests();
 void algorithms_tests();
+void circular_buffer_tests();
 
 int main(){
     string_tests();
     traits_tests();
     algorithms_tests();
+    circular_buffer_tests();
 
     printf("All tests finished\n");
 
     return 0;
+}
+
+void check(bool condition){
+    if(!condition){
+        printf("Check failed\n");
+    }
 }
 
 void check(bool condition, const char* message){
