@@ -42,6 +42,10 @@ LIB_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -
 PROGRAM_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -I../../printf/include/  -static -L../../tlib/debug/ -ltlib -mcmodel=small -fPIC
 PROGRAM_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/debug/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld -Wl,-gc-sections
 
+# Ask GCC for the crtbegin and crtend files
+CRTBEGIN_OBJ:=$(shell $(CXX) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CXX) -print-file-name=crtend.o)
+
 NO_COLOR=\x1b[0m
 MODE_COLOR=\x1b[31;01m
 FILE_COLOR=\x1b[35;01m
