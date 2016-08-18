@@ -762,7 +762,7 @@ void scheduler::tick(){
 
     // Update sleep timeouts
     for(auto& process : pcb){
-        if(process.state == process_state::SLEEPING){
+        if(process.state == process_state::SLEEPING || process.state == process_state::BLOCKED_TIMEOUT){
             --process.sleep_timeout;
 
             if(process.sleep_timeout == 0){
@@ -836,6 +836,21 @@ void scheduler::block_process_light(pid_t pid){
     pcb[pid].state = process_state::BLOCKED;
 }
 
+void scheduler::block_process_timeout_light(pid_t pid, size_t ms){
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+
+    logging::logf(logging::log_level::DEBUG, "scheduler: Block process (light) %u with timeout %u\n", pid, ms);
+
+    pcb[pid].state = process_state::BLOCKED_TIMEOUT;
+
+    // Compute the amount of ticks to sleep
+    auto sleep_ticks = ms * (timer::timer_frequency() / 1000);
+    sleep_ticks = !sleep_ticks ? 1 : sleep_ticks;
+
+    // Put the process to sleep
+    pcb[pid].sleep_timeout = sleep_ticks;
+}
+
 void scheduler::block_process(pid_t pid){
     thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
@@ -854,7 +869,7 @@ void scheduler::unblock_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pid != idle_pid, "No reason to unblock the idle task");
     thor_assert(is_started(), "The scheduler is not started");
-    thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
+    thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::BLOCKED_TIMEOUT || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
 
     pcb[pid].state = process_state::READY;
 }

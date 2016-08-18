@@ -19,6 +19,8 @@ namespace scheduler {
 
 constexpr const size_t MAX_PROCESS = 128;
 
+constexpr const pid_t INVALID_PID = 1024 * 1024 * 1024; //I'm pretty sure we won't violate this limit
+
 pid_t get_pid();
 scheduler::process_t& get_process(pid_t pid);
 scheduler::process_state get_process_state(pid_t pid);
@@ -56,7 +58,7 @@ const path& get_working_directory();
 void set_working_directory(const path& directory);
 
 void block_process_light(pid_t pid);
-//TODO Maybe do that for unblock as well!
+void block_process_timeout_light(pid_t pid, size_t ms);
 
 process_t& create_kernel_task(const char* name, char* user_stack, char* kernel_stack, void (*fun)());
 process_t& create_kernel_task_args(const char* name, char* user_stack, char* kernel_stack, void (*fun)(void*), void* data);
