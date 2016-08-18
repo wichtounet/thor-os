@@ -36,6 +36,7 @@ void print_line(const std::string& s);
 
 void set_canonical(bool can);
 size_t read_input(char* buffer, size_t max);
+size_t read_input(char* buffer, size_t max, size_t ms);
 size_t read_input_raw();
 
 void clear();

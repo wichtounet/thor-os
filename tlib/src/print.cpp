@@ -65,16 +65,25 @@ void set_canonical(bool can){
 
 size_t read_input(char* buffer, size_t max){
     size_t value;
-    asm volatile("mov rax, 3; mov rbx, %[buffer]; mov rcx, %[max]; int 50; mov %[read], rax"
+    asm volatile("mov rax, 0x10; mov rbx, %[buffer]; mov rcx, %[max]; int 50; mov %[read], rax"
         : [read] "=m" (value)
         : [buffer] "g" (buffer), [max] "g" (max)
         : "rax", "rbx", "rcx");
     return value;
 }
 
+size_t read_input(char* buffer, size_t max, size_t ms){
+    size_t value;
+    asm volatile("mov rax, 0x11; mov rbx, %[buffer]; mov rcx, %[max]; mov rdx, %[ms]; int 50; mov %[read], rax"
+        : [read] "=m" (value)
+        : [buffer] "g" (buffer), [max] "g" (max), [ms] "g" (ms)
+        : "rax", "rbx", "rcx");
+    return value;
+}
+
 size_t read_input_raw(){
     size_t value;
-    asm volatile("mov rax, 10; int 50; mov %[input], rax"
+    asm volatile("mov rax, 0x12; int 50; mov %[input], rax"
         : [input] "=m" (value)
         :
         : "rax");

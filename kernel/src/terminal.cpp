@@ -101,6 +101,31 @@ size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max){
     }
 }
 
+// TODO In case of max < read, the timeout is not respected
+size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max, size_t ms){
+    size_t read = 0;
+
+    while(true){
+        while(!canonical_buffer.empty()){
+            auto c = canonical_buffer.pop();
+
+            buffer[read++] = c;
+
+            if(read >= max || c == '\n'){
+                return read;
+            }
+        }
+
+        if(!ms){
+            return read;
+        }
+
+        if(!input_queue.sleep(ms)){
+            return read;
+        }
+    }
+}
+
 size_t stdio::virtual_terminal::read_input_raw(){
     if(raw_buffer.empty()){
         input_queue.sleep();

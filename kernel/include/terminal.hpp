@@ -40,6 +40,17 @@ struct virtual_terminal {
     size_t read_input_can(char* buffer, size_t max);
 
     /*!
+     * \brief Reads canonical input in the given buffer, with a timeout
+     *
+     * \param buffer The buffer to fill
+     * \param max The max number of characters to read
+     * \param ms The maximum time (in ms) to wait
+     *
+     * \return The number of characters that have been read
+     */
+    size_t read_input_can(char* buffer, size_t max, size_t ms);
+
+    /*!
      * \brief Reads non-canonical input in the given buffer
      * \return the keyboard scan code
      */
