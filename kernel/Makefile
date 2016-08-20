@@ -4,6 +4,10 @@ include ../cpp.mk
 
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
+# Ask GCC for the crtbegin and crtend files
+CRTBEGIN_OBJ:=$(shell $(CXX) $(KERNEL_CPP_FLAGS_64) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CXX) $(KERNEL_CPP_FLAGS_64) -print-file-name=crtend.o)
+
 # The link files provided by the compiler
 SPECIAL_O_FILES=$(CRTBEGIN_OBJ) $(CRTEND_OBJ)
 

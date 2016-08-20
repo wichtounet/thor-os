@@ -2,6 +2,10 @@ default: debug/libtlib.a
 
 include ../cpp.mk
 
+# Ask GCC for the crtbegin and crtend files
+CRTBEGIN_OBJ:=$(shell $(CXX) $(LIB_FLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CXX) $(LIB_FLAGS) -print-file-name=crtend.o)
+
 # The files provided directly by the compiler
 SPECIAL_O_FILES=$(CRTBEGIN_OBJ) $(CRTEND_OBJ)
 
