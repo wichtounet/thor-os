@@ -59,7 +59,7 @@ debug/$(1)/%.s.o: $(1)/%.s
 	@ $(AS) -g -c $$< -o $$@
 
 folder_s_files := $(wildcard $(1)/*.s)
-folder_o_files   := $$(folder_s_files:%.cpp=debug/%.s.o)
+folder_o_files := $$(folder_s_files:%.s=debug/%.s.o)
 
 O_FILES := $(O_FILES) $$(folder_o_files)
 

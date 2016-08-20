@@ -4,11 +4,8 @@ include ../cpp.mk
 
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
-#TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-O_FILES=src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
-
-# The final link files
-SPECIAL_O_FILES=src/crti.s.o $(CRTBEGIN_OBJ) $(CRTEND_OBJ) src/crtn.s.o
+# The link files provided by the compiler
+SPECIAL_O_FILES=$(CRTBEGIN_OBJ) $(CRTEND_OBJ)
 
 # Compile the 16-bit and 32-bit parts of the executable
 
@@ -26,8 +23,7 @@ boot_32_64.o: boot_32.o
 
 # Compile the assembly code
 
-src/%.s.o: src/%.s
-	$(AS) -g -c $< -o $@
+$(eval $(call compile_assembly_folder,src))
 
 # Compile all the kernel CPP code
 
