@@ -25,9 +25,10 @@ void _start(int argc, char* argv[]){
     // Execute the main function
     auto code = main(argc, argv);
 
+    // Call the global destructors, if any
     _fini();
 
-    // Call the global destructors, if any
+    // Call the shared library destructors, if any
     __cxa_finalize(nullptr);
 
     // Kill the process with the correct exit code
