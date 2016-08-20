@@ -1,8 +1,6 @@
 *.bin
 *.flp
-*.o
 *.img
-*.d
 *.out
 commands
 mnt
@@ -12,6 +10,7 @@ init/debug
 programs/*/debug
 programs/dist/
 tstl/debug
+tlib/debug
 
 # Ignore the generated log (Qemu)
 *.log
