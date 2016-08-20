@@ -163,6 +163,7 @@ int main(int /*argc*/, char* /*argv*/[]){
     auto background = make_color(211, 211, 211);
 
     set_canonical(false);
+    set_mouse(true);
 
     static constexpr const size_t sleep_timeout = 50;
 
@@ -186,7 +187,26 @@ int main(int /*argc*/, char* /*argv*/[]){
         if(code != keycode::TIMEOUT){
             // TODO Handle event at this point
 
-            user_logf("odin: %u ", static_cast<size_t>(code));
+            switch(code){
+                case keycode::MOUSE_LEFT_PRESS:
+                    user_logf("odin: left press");
+                    break;
+
+                case keycode::MOUSE_LEFT_RELEASE:
+                    user_logf("odin: left release");
+                    break;
+
+                case keycode::MOUSE_RIGHT_PRESS:
+                    user_logf("odin: right press");
+                    break;
+
+                case keycode::MOUSE_RIGHT_RELEASE:
+                    user_logf("odin: right release");
+                    break;
+
+                default:
+                    user_logf("odin: %u ", static_cast<size_t>(code));
+            }
 
             auto duration = after - before;
 
@@ -197,6 +217,7 @@ int main(int /*argc*/, char* /*argv*/[]){
     }
 
     set_canonical(true);
+    set_mouse(false);
 
     delete[] buffer;
 
