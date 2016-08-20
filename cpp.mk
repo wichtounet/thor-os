@@ -50,6 +50,21 @@ NO_COLOR=\x1b[0m
 MODE_COLOR=\x1b[31;01m
 FILE_COLOR=\x1b[35;01m
 
+# Generate the rules for the assembly files of a directory
+define compile_assembly_folder
+
+debug/$(1)/%.s.o: $(1)/%.s
+	@ mkdir -p debug/$(1)/
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (assembly) $(FILE_COLOR)$(1)/$$*.s$(NO_COLOR)"
+	@ $(AS) -g -c $$< -o $$@
+
+folder_s_files := $(wildcard $(1)/*.s)
+folder_o_files   := $$(folder_s_files:%.cpp=debug/%.s.o)
+
+O_FILES := $(O_FILES) $$(folder_o_files)
+
+endef
+
 # Generate the rules for the CPP files of a directory
 define compile_cpp_folder
 

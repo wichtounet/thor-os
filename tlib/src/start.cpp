@@ -15,6 +15,8 @@ void __cxa_finalize(void* f);
 
 void _start(int argc, char* argv[]) __attribute__((section(".start")));
 
+void _init();
+
 void _start(int argc, char* argv[]){
     // Call the global constructors, if any
     _init();
