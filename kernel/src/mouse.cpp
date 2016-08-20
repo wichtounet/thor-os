@@ -12,6 +12,7 @@
 #include "kernel_utils.hpp"
 #include "logging.hpp"
 #include "vesa.hpp"
+#include "terminal.hpp"
 
 namespace {
 
@@ -75,18 +76,26 @@ void mouse_handler(interrupt::syscall_regs*, void*){
 
         if((flags & (1 << 0)) && !(previous_flags & (1 << 0))){
             verbose_logf(logging::log_level::TRACE, "mouse: left button pressed %d:%d \n", int64_t(position_x), int64_t(position_y));
+
+            stdio::get_active_terminal().send_mouse_input(keycode::MOUSE_LEFT_PRESS);
         }
 
         if((flags & (1 << 1)) && !(previous_flags & (1 << 1))){
             verbose_logf(logging::log_level::TRACE, "mouse: right button pressed %d:%d \n", int64_t(position_x), int64_t(position_y));
+
+            stdio::get_active_terminal().send_mouse_input(keycode::MOUSE_RIGHT_PRESS);
         }
 
         if(!(flags & (1 << 0)) && (previous_flags & (1 << 0))){
             verbose_logf(logging::log_level::TRACE, "mouse: left button released %d:%d \n", int64_t(position_x), int64_t(position_y));
+
+            stdio::get_active_terminal().send_mouse_input(keycode::MOUSE_LEFT_RELEASE);
         }
 
         if(!(flags & (1 << 1)) && (previous_flags & (1 << 1))){
             verbose_logf(logging::log_level::TRACE, "mouse: right button released %d:%d \n", int64_t(position_x), int64_t(position_y));
+
+            stdio::get_active_terminal().send_mouse_input(keycode::MOUSE_LEFT_RELEASE);
         }
 
         previous_flags = flags;

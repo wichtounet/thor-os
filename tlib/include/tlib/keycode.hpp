@@ -183,6 +183,10 @@ enum class keycode : size_t {
     , RELEASED_KEY_MINUS
     , RELEASED_KEY_PLUS
     , RELEASED_KEY_DOT
+    , MOUSE_LEFT_PRESS
+    , MOUSE_RIGHT_PRESS
+    , MOUSE_LEFT_RELEASE
+    , MOUSE_RIGHT_RELEASE
 };
 
 #endif

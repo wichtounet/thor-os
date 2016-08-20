@@ -85,6 +85,10 @@ void stdio::virtual_terminal::send_input(char key){
     }
 }
 
+void stdio::virtual_terminal::send_mouse_input(keycode key){
+    //TODO
+}
+
 size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max){
     size_t read = 0;
 

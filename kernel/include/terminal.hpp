@@ -11,6 +11,8 @@
 #include <types.hpp>
 #include <circular_buffer.hpp>
 
+#include <tlib/keycode.hpp>
+
 #include "sleep_queue.hpp"
 
 namespace stdio {
@@ -29,7 +31,16 @@ struct virtual_terminal {
     sleep_queue input_queue;
 
     void print(char c);
+
+    /*!
+     * \brief Send a keyboard input to the terminal (from the keyboard driver)
+     */
     void send_input(char c);
+
+    /*!
+     * \brief Send a mouse input to the terminal (from the keyboard driver)
+     */
+    void send_mouse_input(keycode c);
 
     /*!
      * \brief Reads canonical input in the given buffer
