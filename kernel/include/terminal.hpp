@@ -23,6 +23,7 @@ struct virtual_terminal {
     size_t id;
     bool active;
     bool canonical;
+    bool mouse;
 
     circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
     circular_buffer<char, 2 * INPUT_BUFFER_SIZE> canonical_buffer;
@@ -75,6 +76,7 @@ struct virtual_terminal {
     size_t read_input_raw(size_t ms);
 
     void set_canonical(bool can);
+    void set_mouse(bool m);
 
     virtual_terminal(){}
 

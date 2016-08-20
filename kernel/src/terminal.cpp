@@ -86,7 +86,15 @@ void stdio::virtual_terminal::send_input(char key){
 }
 
 void stdio::virtual_terminal::send_mouse_input(keycode key){
-    //TODO
+    if(!canonical && mouse){
+        raw_buffer.push(static_cast<size_t>(key));
+
+        if(!input_queue.empty()){
+            input_queue.wake_up();
+        }
+
+        thor_assert(!raw_buffer.full(), "raw buffer is full!");
+    }
 }
 
 size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max){
@@ -162,6 +170,12 @@ void stdio::virtual_terminal::set_canonical(bool can){
     canonical = can;
 }
 
+void stdio::virtual_terminal::set_mouse(bool m){
+    logging::logf(logging::log_level::TRACE, "Switched terminal %u mouse handling mode from %u to %u\n", id, uint64_t(mouse), uint64_t(m));
+
+    mouse = m;
+}
+
 void stdio::init_terminals(){
     for(size_t i  = 0; i < MAX_TERMINALS; ++i){
         auto& terminal = terminals[i];
@@ -169,6 +183,7 @@ void stdio::init_terminals(){
         terminal.id = i;
         terminal.active = false;
         terminal.canonical = true;
+        terminal.mouse = false;
     }
 
     active_terminal = 0;
