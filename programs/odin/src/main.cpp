@@ -52,6 +52,15 @@ void draw_hline(size_t x, size_t y, size_t w, uint32_t color){
     }
 }
 
+void draw_vline(size_t x, size_t y, size_t h, uint32_t color){
+    auto where = x + y * y_shift;
+
+    for(size_t j = 0; j < h; ++j){
+        z_buffer[where] = color;
+        where += y_shift;
+    }
+}
+
 void draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
     auto where = x + y * y_shift;
 
@@ -123,17 +132,39 @@ struct window {
     size_t y;
     size_t width;
     size_t height;
+
     uint32_t color;
+    uint32_t border_color;
 
     // TODO Relax std::vector to allow for non-default-constructible
     window(){}
 
     window(size_t x, size_t y, size_t width, size_t height) : x(x), y(y), width(width), height(height) {
-        color = make_color(25, 25, 155);
+        //TODO This shit does not work
+        color = make_color(51, 51, 51);
+        border_color = make_color(250, 250, 250);
     }
 
-    void draw(){
-        draw_rect(x, y, width, height, color);
+    window(const window& rhs) = default;
+    window(window&& rhs) = default;
+
+    window& operator=(const window& rhs) = default;
+    window& operator=(window&& rhs) = default;
+
+    void draw() const {
+        constexpr const size_t border = 2;
+
+        // Draw the background of the window
+        draw_rect(x+2, y+2, width-4, height-4, color);
+
+        // Draw the outer border
+        draw_rect(x, y, width, border, border_color);
+        draw_rect(x, y, border, height, border_color);
+        draw_rect(x, y + height - border, width, border, border_color);
+        draw_rect(x + width - border, y, border, height, border_color);
+
+        // Draw the base line of the title bar
+        draw_rect(x, y + 18, width, border, border_color);
     }
 };
 
@@ -142,9 +173,6 @@ std::vector<window> windows;
 } // end of anonnymous namespace
 
 int main(int /*argc*/, char* /*argv*/[]){
-    // Create a default window
-    windows.emplace_back(250, 250, 200, 400);
-
     width = graphics::get_width();
     height = graphics::get_height();
     x_shift = graphics::get_x_shift();
@@ -160,12 +188,15 @@ int main(int /*argc*/, char* /*argv*/[]){
 
     z_buffer = reinterpret_cast<uint32_t*>(buffer);
 
-    auto background = make_color(211, 211, 211);
+    auto background = make_color(128, 128, 128);
 
     set_canonical(false);
     set_mouse(true);
 
     static constexpr const size_t sleep_timeout = 50;
+
+    // Create a default window
+    windows.emplace_back(250, 250, 200, 400);
 
     while(true){
         fill_buffer(background);
