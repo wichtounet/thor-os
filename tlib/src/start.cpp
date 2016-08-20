@@ -13,9 +13,10 @@ extern "C" {
 
 void __cxa_finalize(void* f);
 
-void _start(int argc, char* argv[]) __attribute__((section(".start")));
-
 void _init();
+void _fini();
+
+void _start(int argc, char* argv[]) __attribute__((section(".start")));
 
 void _start(int argc, char* argv[]){
     // Call the global constructors, if any
@@ -23,6 +24,8 @@ void _start(int argc, char* argv[]){
 
     // Execute the main function
     auto code = main(argc, argv);
+
+    _fini();
 
     // Call the global destructors, if any
     __cxa_finalize(nullptr);
