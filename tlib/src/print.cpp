@@ -70,6 +70,14 @@ void set_canonical(bool can){
         : "rax", "rbx");
 }
 
+void set_mouse(bool m){
+    size_t value = m;
+    asm volatile("mov rax, 0x21; mov rbx, %[value]; int 50;"
+        :
+        : [value] "g" (value)
+        : "rax", "rbx");
+}
+
 size_t read_input(char* buffer, size_t max){
     size_t value;
     asm volatile("mov rax, 0x10; mov rbx, %[buffer]; mov rcx, %[max]; int 50; mov %[read], rax"

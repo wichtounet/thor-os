@@ -71,6 +71,13 @@ void sc_set_canonical(interrupt::syscall_regs* regs){
     tty.set_canonical(regs->rbx);
 }
 
+void sc_set_mouse(interrupt::syscall_regs* regs){
+    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
+    auto& tty = stdio::get_terminal(ttyid);
+
+    tty.set_mouse(regs->rbx);
+}
+
 void sc_sleep_ms(interrupt::syscall_regs* regs){
     auto time = regs->rbx;
 
@@ -387,6 +394,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x20:
             sc_set_canonical(regs);
+            break;
+
+        case 0x21:
+            sc_set_mouse(regs);
             break;
 
         case 100:
