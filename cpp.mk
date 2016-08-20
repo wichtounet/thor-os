@@ -40,7 +40,7 @@ LIB_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC 
 LIB_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -Wl,-gc-sections
 
 PROGRAM_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -I../../printf/include/  -static -L../../tlib/debug/ -ltlib -mcmodel=small -fPIC
-PROGRAM_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/debug/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld -Wl,-gc-sections
+PROGRAM_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/debug/ -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld
 
 NO_COLOR=\x1b[0m
 MODE_COLOR=\x1b[31;01m
@@ -123,8 +123,7 @@ define program_link_executable
 debug/$(1): $(O_FILES)
 	@ mkdir -p debug/
 	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link (program) $(FILE_COLOR)$$@$(NO_COLOR)"
-	@ $(CXX) -o debug/$(1) $(O_FILES) $(PROGRAM_LINK_FLAGS)
-
+	@ $(CXX) -o debug/$(1) $(PROGRAM_LINK_FLAGS) ../../tlib/debug/src/crti.s.o $$(shell $(CXX) -print-file-name=crtbegin.o) $(O_FILES) -ltlib $$(shell $(CXX) -print-file-name=crtend.o) ../../tlib/debug/src/crtn.s.o
 link: debug/$(1)
 
 endef

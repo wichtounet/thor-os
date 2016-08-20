@@ -2,22 +2,18 @@ default: debug/libtlib.a
 
 include ../cpp.mk
 
-# Ask GCC for the crtbegin and crtend files
-CRTBEGIN_OBJ:=$(shell $(CXX) $(LIB_FLAGS) -print-file-name=crtbegin.o)
-CRTEND_OBJ:=$(shell $(CXX) $(LIB_FLAGS) -print-file-name=crtend.o)
-
-# The files provided directly by the compiler
-SPECIAL_O_FILES=$(CRTBEGIN_OBJ) $(CRTEND_OBJ)
-
 $(eval $(call tlib_compile_cpp_folder,src))
 $(eval $(call compile_assembly_folder,src))
 
 # Compile the assembly code
 
-debug/libtlib.a: $(SPECIAL_O_FILES) $(O_FILES)
+O_FILES := $(filter-out debug/src/crti.s.o,$(O_FILES))
+O_FILES := $(filter-out debug/src/crtn.s.o,$(O_FILES))
+
+debug/libtlib.a: debug/src/crti.s.o debug/src/crtn.s.o $(O_FILES)
 	@ mkdir -p debug/
 	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link (tlib) $(FILE_COLOR)$@$(NO_COLOR)"
-	@ ${AR} rcs debug/libtlib.a $(SPECIAL_O_FILES) $(O_FILES)
+	@ ${AR} rcs debug/libtlib.a $(O_FILES)
 
 -include $(D_FILES)
 
