@@ -4,7 +4,6 @@
 // (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
-
 #include <tlib/system.hpp>
 #include <tlib/graphics.hpp>
 #include <tlib/print.hpp>
@@ -128,6 +127,7 @@ void paint_top_bar(){
 }
 
 struct window {
+private:
     size_t x;
     size_t y;
     size_t width;
@@ -135,6 +135,12 @@ struct window {
 
     uint32_t color;
     uint32_t border_color;
+
+    bool drag = false;
+    int64_t drag_start_x = 0;
+    int64_t drag_start_y = 0;
+
+public:
 
     // TODO Relax std::vector to allow for non-default-constructible
     window(){}
@@ -151,6 +157,35 @@ struct window {
     window& operator=(const window& rhs) = default;
     window& operator=(window&& rhs) = default;
 
+    void update(){
+        if(drag){
+            auto mouse_x = graphics::mouse_x();
+            auto mouse_y = graphics::mouse_y();
+
+            auto delta_x = int64_t(mouse_x) - drag_start_x;
+            auto delta_y = int64_t(mouse_y) - drag_start_y;
+
+            if(int64_t(x) + delta_x < 0){
+                x = 0;
+            } else {
+                x += delta_x;
+
+                x = std::min(x, ::width - width);
+            }
+
+            if(int64_t(y) + delta_y < 20){
+                y = 20;
+            } else {
+                y += delta_y;
+
+                y = std::min(y, ::height - height);
+            }
+
+            drag_start_x = mouse_x;
+            drag_start_y = mouse_y;
+        }
+    }
+
     void draw() const {
         constexpr const size_t border = 2;
 
@@ -165,6 +200,25 @@ struct window {
 
         // Draw the base line of the title bar
         draw_rect(x, y + 18, width, border, border_color);
+    }
+
+    bool mouse_in_title(){
+        auto mouse_x = graphics::mouse_x();
+        auto mouse_y = graphics::mouse_y();
+
+        return mouse_x >= x && mouse_x <= x + width && mouse_y >= y + 2 && mouse_y <= mouse_y + 18;
+    }
+
+    void start_drag(){
+        if(!drag){
+            drag = true;
+            drag_start_x = graphics::mouse_x();
+            drag_start_y = graphics::mouse_y();
+        }
+    }
+
+    void stop_drag(){
+        drag = false;
     }
 };
 
@@ -204,6 +258,10 @@ int main(int /*argc*/, char* /*argv*/[]){
         paint_top_bar();
 
         for(auto& window : windows){
+            window.update();
+        }
+
+        for(auto& window : windows){
             window.draw();
         }
 
@@ -221,10 +279,22 @@ int main(int /*argc*/, char* /*argv*/[]){
             switch(code){
                 case keycode::MOUSE_LEFT_PRESS:
                     user_logf("odin: left press");
+
+                    for(auto& window: windows){
+                        if(window.mouse_in_title()){
+                            window.start_drag();
+                        }
+                    }
+
                     break;
 
                 case keycode::MOUSE_LEFT_RELEASE:
                     user_logf("odin: left release");
+
+                    for(auto& window: windows){
+                        window.stop_drag();
+                    }
+
                     break;
 
                 case keycode::MOUSE_RIGHT_PRESS:
