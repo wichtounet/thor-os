@@ -27,6 +27,7 @@ scheduler::process_state get_process_state(pid_t pid);
 
 void block_process(pid_t pid);
 void unblock_process(pid_t pid);
+void unblock_process_hint(pid_t pid);
 
 void init();
 void start() __attribute__((noreturn));

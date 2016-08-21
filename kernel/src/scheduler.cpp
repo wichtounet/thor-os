@@ -54,15 +54,8 @@ std::array<scheduler::process_control_t, scheduler::MAX_PROCESS> pcb;
 
 //Define one run queue for each priority level
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
-std::array<mutex<>, scheduler::PRIORITY_LEVELS> run_queue_locks;
 
-std::vector<scheduler::pid_t>& run_queue(size_t priority){
-    return run_queues[priority - scheduler::MIN_PRIORITY];
-}
-
-mutex<>& run_queue_lock(size_t priority){
-    return run_queue_locks[priority - scheduler::MIN_PRIORITY];
-}
+int_lock queue_lock;
 
 volatile bool started = false;
 
@@ -73,6 +66,10 @@ size_t next_pid = 0;
 
 size_t gc_pid = 0;
 size_t idle_pid = 0;
+
+std::vector<scheduler::pid_t>& run_queue(size_t priority){
+    return run_queues[priority - scheduler::MIN_PRIORITY];
+}
 
 void idle_task(){
     while(true){
@@ -145,13 +142,16 @@ void gc_task(){
                 }
 
                 // 5. Remove process from run queue
-                size_t index = 0;
-                for(; index < run_queue(desc.priority).size(); ++index){
-                    std::lock_guard<mutex<>> l(run_queue_lock(desc.priority));
 
-                    if(run_queue(desc.priority)[index] == desc.pid){
-                        run_queue(desc.priority).erase(index);
-                        break;
+                {
+                    std::lock_guard<int_lock> l(queue_lock);
+
+                    size_t index = 0;
+                    for(; index < run_queue(desc.priority).size(); ++index){
+                        if(run_queue(desc.priority)[index] == desc.pid){
+                            run_queue(desc.priority).erase(index);
+                            break;
+                        }
                     }
                 }
 
@@ -241,7 +241,7 @@ void queue_process(scheduler::pid_t pid){
 
     process.state = scheduler::process_state::READY;
 
-    std::lock_guard<mutex<>> l(run_queue_lock(process.process.priority));
+    std::lock_guard<int_lock> l(queue_lock);
     run_queue(process.process.priority).push_back(pid);
 }
 
@@ -307,10 +307,10 @@ void switch_to_process(size_t pid){
 size_t select_next_process(){
     auto current_priority = pcb[current_pid].process.priority;
 
+    std::lock_guard<int_lock> l(queue_lock);
+
     //1. Run a process of higher priority, if any
     for(size_t p = scheduler::MAX_PRIORITY; p > current_priority; --p){
-        std::lock_guard<mutex<>> l(run_queue_lock(p));
-
         for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
                 return pid;
@@ -321,8 +321,6 @@ size_t select_next_process(){
     //2. Run the next process of the same priority
 
     {
-        std::lock_guard<mutex<>> l(run_queue_lock(current_priority));
-
         auto& current_run_queue = run_queue(current_priority);
 
         size_t next_index = 0;
@@ -348,8 +346,6 @@ size_t select_next_process(){
     //3. Run a process of lower priority
 
     for(size_t p = current_priority - 1; p >= scheduler::MIN_PRIORITY; --p){
-        std::lock_guard<mutex<>> l(run_queue_lock(p));
-
         for(auto pid : run_queue(p)){
             if(pcb[pid].state == scheduler::process_state::READY){
                 return pid;
@@ -584,11 +580,6 @@ uint64_t get_process_cr3(size_t pid){
 } //end of extern "C"
 
 void scheduler::init(){
-    //Init all the semaphores
-    for(auto& lock : run_queue_locks){
-        lock.init();
-    }
-
     //Create all the kernel tasks
     create_idle_task();
     create_init_task();
@@ -864,12 +855,22 @@ void scheduler::block_process(pid_t pid){
 }
 
 void scheduler::unblock_process(pid_t pid){
-    logging::logf(logging::log_level::DEBUG, "scheduler: Unblock process %u\n", pid);
+    logging::logf(logging::log_level::DEBUG, "scheduler: Unblock process %u (%u)\n", pid, size_t(pcb[pid].state));
 
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pid != idle_pid, "No reason to unblock the idle task");
     thor_assert(is_started(), "The scheduler is not started");
     thor_assert(pcb[pid].state == process_state::BLOCKED || pcb[pid].state == process_state::BLOCKED_TIMEOUT || pcb[pid].state == process_state::WAITING, "Can only unblock BLOCKED/WAITING processes");
+
+    pcb[pid].state = process_state::READY;
+}
+
+void scheduler::unblock_process_hint(pid_t pid){
+    logging::logf(logging::log_level::DEBUG, "scheduler: Unblock process (hint) %u (%u)\n", pid, size_t(pcb[pid].state));
+
+    thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
+    thor_assert(pid != idle_pid, "No reason to unblock the idle task");
+    thor_assert(is_started(), "The scheduler is not started");
 
     pcb[pid].state = process_state::READY;
 }
