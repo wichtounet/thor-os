@@ -832,14 +832,14 @@ void scheduler::block_process_timeout_light(pid_t pid, size_t ms){
 
     logging::logf(logging::log_level::DEBUG, "scheduler: Block process (light) %u with timeout %u\n", pid, ms);
 
-    pcb[pid].state = process_state::BLOCKED_TIMEOUT;
-
     // Compute the amount of ticks to sleep
     auto sleep_ticks = ms * (timer::timer_frequency() / 1000);
     sleep_ticks = !sleep_ticks ? 1 : sleep_ticks;
 
     // Put the process to sleep
     pcb[pid].sleep_timeout = sleep_ticks;
+
+    pcb[pid].state = process_state::BLOCKED_TIMEOUT;
 }
 
 void scheduler::block_process(pid_t pid){
