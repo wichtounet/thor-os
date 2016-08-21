@@ -63,8 +63,10 @@ public:
             if(pid != scheduler::INVALID_PID){
                 logging::logf(logging::log_level::TRACE, "sleep_queue: wake %d\n", pid);
 
-                //Indicate to the scheduler that this process will be able to run
-                scheduler::unblock_process(pid);
+                // Indicate to the scheduler that this process will be able to run
+                // We use a hint here because it is possible that the thread was
+                // already woken up from sleep
+                scheduler::unblock_process_hint(pid);
 
                 return pid;
             }
