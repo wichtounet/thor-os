@@ -18,9 +18,90 @@ namespace {
 constexpr const size_t MAX_TERMINALS = 2;
 size_t active_terminal;
 
-bool shift = false;
-
 std::array<stdio::virtual_terminal, MAX_TERMINALS> terminals;
+
+void input_thread(void* data){
+    auto& terminal = *reinterpret_cast<stdio::virtual_terminal*>(data);
+
+    auto pid = scheduler::get_pid();
+
+    logging::logf(logging::log_level::TRACE, "stdio: Input Thread for terminal %u started (pid:%u)\n", terminal.id, pid);
+
+    bool shift = false;
+
+    while(true){
+        // Wait for some input
+        scheduler::block_process(pid);
+
+        // Handle keyboard input
+        while(!terminal.keyboard_buffer.empty()){
+            auto key = terminal.keyboard_buffer.pop();
+
+            if(terminal.canonical){
+                //Key released
+                if(key & 0x80){
+                    key &= ~(0x80);
+                    if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
+                        shift = false;
+                    }
+                }
+                //Key pressed
+                else {
+                    if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
+                        shift = true;
+                    } else if(key == keyboard::KEY_BACKSPACE){
+                        if(!terminal.input_buffer.empty()){
+                            terminal.input_buffer.pop_last();
+                            terminal.print('\b');
+                        }
+                    } else {
+                        auto qwertz_key =
+                            shift
+                            ? keyboard::shift_key_to_ascii(key)
+                            : keyboard::key_to_ascii(key);
+
+                        if(qwertz_key){
+                            terminal.input_buffer.push(qwertz_key);
+
+                            terminal.print(qwertz_key);
+
+                            if(qwertz_key == '\n'){
+                                // Transfer current line to the canonical buffer
+                                while(!terminal.input_buffer.empty()){
+                                    terminal.canonical_buffer.push(terminal.input_buffer.pop());
+                                }
+
+                                terminal.input_queue.wake_up();
+                            }
+                        }
+                    }
+                }
+            } else {
+                // The complete processing of the key will be done by the
+                // userspace program
+                auto code = keyboard::raw_key_to_keycode(key);
+                terminal.raw_buffer.push(static_cast<size_t>(code));
+
+                terminal.input_queue.wake_up();
+
+                thor_assert(!terminal.raw_buffer.full(), "raw buffer is full!");
+            }
+        }
+
+        // Handle mouse input
+        while(!terminal.mouse_buffer.empty()){
+            auto key = terminal.mouse_buffer.pop();
+
+            if(!terminal.canonical && terminal.mouse){
+                terminal.raw_buffer.push(key);
+
+                terminal.input_queue.wake_up();
+
+                thor_assert(!terminal.raw_buffer.full(), "raw buffer is full!");
+            }
+        }
+    }
+}
 
 } //end of anonymous namespace
 
@@ -30,71 +111,27 @@ void stdio::virtual_terminal::print(char key){
 }
 
 void stdio::virtual_terminal::send_input(char key){
-    if(canonical){
-        //Key released
-        if(key & 0x80){
-            key &= ~(0x80);
-            if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
-                shift = false;
-            }
-        }
-        //Key pressed
-        else {
-            if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
-                shift = true;
-            } else if(key == keyboard::KEY_BACKSPACE){
-                if(!input_buffer.empty()){
-                    input_buffer.pop_last();
-                    print('\b');
-                }
-            } else {
-                auto qwertz_key =
-                    shift
-                    ? keyboard::shift_key_to_ascii(key)
-                    : keyboard::key_to_ascii(key);
-
-                if(qwertz_key){
-                    input_buffer.push(qwertz_key);
-
-                    print(qwertz_key);
-
-                    if(qwertz_key == '\n'){
-                        // Transfer current line to the canonical buffer
-                        while(!input_buffer.empty()){
-                            canonical_buffer.push(input_buffer.pop());
-                        }
-
-                        if(!input_queue.empty()){
-                            input_queue.wake_up();
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        // The complete processing of the key will be done by the
-        // userspace program
-        auto code = keyboard::raw_key_to_keycode(key);
-        raw_buffer.push(static_cast<size_t>(code));
-
-        if(!input_queue.empty()){
-            input_queue.wake_up();
-        }
-
-        thor_assert(!raw_buffer.full(), "raw buffer is full!");
+    if(!input_thread_pid){
+        return;
     }
+
+    // Simply give the input to the input thread
+    keyboard_buffer.push(key);
+    thor_assert(!keyboard_buffer.full(), "keyboard buffer is full!");
+
+    scheduler::unblock_process_hint(input_thread_pid);
 }
 
 void stdio::virtual_terminal::send_mouse_input(keycode key){
-    if(!canonical && mouse){
-        raw_buffer.push(static_cast<size_t>(key));
-
-        if(!input_queue.empty()){
-            input_queue.wake_up();
-        }
-
-        thor_assert(!raw_buffer.full(), "raw buffer is full!");
+    if(!input_thread_pid){
+        return;
     }
+
+    // Simply give the input to the input thread
+    mouse_buffer.push(size_t(key));
+    thor_assert(!mouse_buffer.full(), "mouse buffer is full!");
+
+    scheduler::unblock_process_hint(input_thread_pid);
 }
 
 size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max){
@@ -188,6 +225,24 @@ void stdio::init_terminals(){
 
     active_terminal = 0;
     terminals[active_terminal].active = true;
+}
+
+void stdio::finalize(){
+    for(size_t i  = 0; i < MAX_TERMINALS; ++i){
+        auto& terminal = terminals[i];
+
+        auto* user_stack = new char[scheduler::user_stack_size];
+        auto* kernel_stack = new char[scheduler::kernel_stack_size];
+
+        auto& input_process = scheduler::create_kernel_task_args("tty_input", user_stack, kernel_stack, &input_thread, &terminal);
+
+        input_process.ppid = 1;
+        input_process.priority = scheduler::DEFAULT_PRIORITY;
+
+        scheduler::queue_system_process(input_process.pid);
+
+        terminal.input_thread_pid = input_process.pid;
+    }
 }
 
 stdio::virtual_terminal& stdio::get_active_terminal(){

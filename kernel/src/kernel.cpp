@@ -129,6 +129,7 @@ void kernel_main(){
 
     // Start the secondary kernel processes
     network::finalize();
+    stdio::finalize();
 
     // Start the scheduler
     scheduler::start();

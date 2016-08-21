@@ -24,7 +24,13 @@ struct virtual_terminal {
     bool active;
     bool canonical;
     bool mouse;
+    size_t input_thread_pid;
 
+    // Filled by the IRQ
+    circular_buffer<char, 128> keyboard_buffer;
+    circular_buffer<size_t, 128> mouse_buffer;
+
+    // Handled by the input thread
     circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
     circular_buffer<char, 2 * INPUT_BUFFER_SIZE> canonical_buffer;
     circular_buffer<size_t, 3 * INPUT_BUFFER_SIZE> raw_buffer;
@@ -88,6 +94,8 @@ struct virtual_terminal {
 };
 
 void init_terminals();
+void finalize();
+
 virtual_terminal& get_active_terminal();
 virtual_terminal& get_terminal(size_t id);
 
