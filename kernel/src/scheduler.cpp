@@ -286,17 +286,20 @@ void create_post_init_task(){
 }
 
 void switch_to_process(size_t pid){
+    if(pcb[current_pid].process.system){
+        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u to %u (rip:%u)\n", current_pid, pid, pcb[current_pid].process.context->rip);
+    } else {
+        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u to %u\n", current_pid, pid);
+    }
+
+    // This should never be interrupted
+    direct_int_lock l;
+
     auto old_pid = current_pid;
     current_pid = pid;
 
     auto& process = pcb[pid];
     process.state = scheduler::process_state::RUNNING;
-
-    if(process.process.system){
-        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u to %u (rip:%u)\n", old_pid, current_pid, process.process.context->rip);
-    } else {
-        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u to %u\n", old_pid, current_pid);
-    }
 
     gdt::tss().rsp0_low = process.process.kernel_rsp & 0xFFFFFFFF;
     gdt::tss().rsp0_high = process.process.kernel_rsp >> 32;
