@@ -43,7 +43,7 @@ public:
             value = 0;
 
             if(Debug){
-                logging::logf(logging::log_level::TRACE, "%s(mutex): directly acquired %d\n", name, scheduler::get_pid());
+                logging::logf(logging::log_level::TRACE, "%s(mutex): directly acquired (process %d)\n", name, scheduler::get_pid());
             }
 
             lock.release();
@@ -67,7 +67,7 @@ public:
         if(queue.empty()){
             value = 1;
             if(Debug){
-                logging::logf(logging::log_level::TRACE, "%s(mutex): direct release\n", name);
+                logging::logf(logging::log_level::TRACE, "%s(mutex): direct release (process %d)\n", name, scheduler::get_pid());
             }
         } else {
             auto pid = queue.pop();
