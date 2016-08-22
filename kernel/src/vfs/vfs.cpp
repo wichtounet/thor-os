@@ -347,6 +347,11 @@ int64_t vfs::stat(size_t fd, stat_info& info){
         info.flags |= STAT_FLAG_HIDDEN;
     }
 
+    // All files starting with a .dot are hidden by default
+    if(fs_path.base_name()[0] == '.'){
+        info.flags |= STAT_FLAG_HIDDEN;
+    }
+
     info.created = f.created;
     info.modified = f.modified;
     info.accessed = f.accessed;
