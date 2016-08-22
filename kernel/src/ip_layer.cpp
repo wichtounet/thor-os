@@ -12,6 +12,10 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 
+inline network::ip::address network::ip::ip32_to_ip(uint32_t raw){
+    return {switch_endian_32(raw)};
+}
+
 void network::ip::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
@@ -32,8 +36,8 @@ void network::ip::decode(network::interface_descriptor& /*interface*/, network::
     logging::logf(logging::log_level::TRACE, "ip: Data Length: %u\n", size_t(data_length));
     logging::logf(logging::log_level::TRACE, "ip: Time To Live: %u\n", size_t(arp_header->ttl));
 
-    network::ip::address source(switch_endian_32(arp_header->source_ip));
-    network::ip::address target(switch_endian_32(arp_header->target_ip));
+    auto source = ip32_to_ip(arp_header->source_ip);
+    auto target = ip32_to_ip(arp_header->target_ip);
 
     logging::logf(logging::log_level::TRACE, "ip: Source Protocol Address %u.%u.%u.%u \n",
         uint64_t(source(0)), uint64_t(source(1)), uint64_t(source(2)), uint64_t(source(3)));

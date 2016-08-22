@@ -30,6 +30,9 @@ struct header {
 static_assert(sizeof(address) == 6, "The size of a MAC address is 6 bytes");
 static_assert(sizeof(header) == 14, "The size of the Ethernet header is 14 bytes");
 
+uint64_t mac6_to_mac64(const char* mac);
+void mac64_to_mac6(uint64_t input, char* mac);
+
 void decode(network::interface_descriptor& interface, packet& packet);
 
 packet prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);

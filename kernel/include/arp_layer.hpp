@@ -11,6 +11,7 @@
 #include <types.hpp>
 
 #include "ethernet_layer.hpp"
+#include "ip_layer.hpp"
 #include "network.hpp"
 
 namespace network {
@@ -28,6 +29,12 @@ struct header {
     uint16_t target_hw_addr[3];
     uint16_t target_protocol_addr[2];
 } __attribute__((packed));
+
+uint64_t mac3_to_mac64(uint16_t* source_mac);
+network::ip::address ip2_to_ip(uint16_t* source_ip);
+
+void mac64_to_mac3(uint64_t source_mac, uint16_t* mac);
+void ip_to_ip2(network::ip::address source_ip, uint16_t* ip);
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 

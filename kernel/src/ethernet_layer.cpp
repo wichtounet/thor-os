@@ -49,6 +49,22 @@ uint16_t type_to_code(network::ethernet::ether_type type){
 
 } //end of anonymous namespace
 
+uint64_t network::ethernet::mac6_to_mac64(const char* source_mac){
+    size_t mac = 0;
+
+    for(size_t i = 0; i < 6; ++i){
+        mac |= uint64_t(source_mac[i]) << ((5 - i) * 8);
+    }
+
+    return mac;
+}
+
+void network::ethernet::mac64_to_mac6(uint64_t source_mac, char* mac){
+    for(size_t i = 0; i < 6; ++i){
+        mac[i] = (source_mac >> ((5 - i) * 8));
+    }
+}
+
 void network::ethernet::decode(network::interface_descriptor& interface, packet& packet){
     logging::logf(logging::log_level::TRACE, "ethernet: Start decoding new packet\n");
 
@@ -60,13 +76,8 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
         return;
     }
 
-    size_t source_mac = 0;
-    size_t target_mac = 0;
-
-    for(size_t i = 0; i < 6; ++i){
-        source_mac |= uint64_t(ether_header->source.mac[i]) << ((5 - i) * 8);
-        target_mac |= uint64_t(ether_header->target.mac[i]) << ((5 - i) * 8);
-    }
+    size_t source_mac = mac6_to_mac64(ether_header->source.mac);
+    size_t target_mac = mac6_to_mac64(ether_header->target.mac);
 
     logging::logf(logging::log_level::TRACE, "ethernet: Source MAC Address %h \n", source_mac);
     logging::logf(logging::log_level::TRACE, "ethernet: Destination MAC Address %h \n", target_mac);
@@ -107,10 +118,8 @@ network::ethernet::packet network::ethernet::prepare_packet(network::interface_d
     auto* ether_header = reinterpret_cast<header*>(p.payload);
     ether_header->type = switch_endian_16(type_to_code(type));
 
-    for(size_t i = 0; i < 6; ++i){
-        ether_header->source.mac[i] = (source_mac >> ((5 - i) * 8));
-        ether_header->target.mac[i] = (destination >> ((5 - i) * 8));
-    }
+    mac64_to_mac6(source_mac, ether_header->source.mac);
+    mac64_to_mac6(destination, ether_header->target.mac);
 
     return p;
 }

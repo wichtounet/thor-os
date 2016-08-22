@@ -21,6 +21,41 @@ sleep_queue wait_queue;
 
 } //end of anonymous namespace
 
+uint64_t network::arp::mac3_to_mac64(uint16_t* source_mac){
+    size_t mac = 0;
+
+    for(size_t i = 0; i < 3; ++i){
+        mac |= uint64_t(switch_endian_16(source_mac[i])) << ((2 - i) * 16);
+    }
+
+    return mac;
+}
+
+network::ip::address network::arp::ip2_to_ip(uint16_t* source_ip){
+    network::ip::address ip;
+
+    for(size_t i = 0; i < 2; ++i){
+        auto source = switch_endian_16(source_ip[i]);
+
+        ip.set_sub(2*i, source >> 8);
+        ip.set_sub(2*i+1, source);
+    }
+
+    return ip;
+}
+
+void network::arp::mac64_to_mac3(uint64_t source_mac, uint16_t* mac){
+    for(size_t i = 0; i < 3; ++i){
+        mac[i] = switch_endian_16(uint16_t(source_mac >> ((2 - i) * 16)));
+    }
+}
+
+void network::arp::ip_to_ip2(network::ip::address source_ip, uint16_t* ip){
+    for(size_t i = 0; i < 2; ++i){
+        ip[i] = (uint16_t(source_ip(2*i+1)) << 8) + source_ip(2*i);
+    }
+}
+
 void network::arp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
@@ -56,30 +91,14 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
         return;
     }
 
-    size_t source_hw = 0;
-    size_t target_hw = 0;
-
-    for(size_t i = 0; i < 3; ++i){
-        source_hw |= uint64_t(switch_endian_16(arp_header->source_hw_addr[i])) << ((2 - i) * 16);
-        target_hw |= uint64_t(switch_endian_16(arp_header->target_hw_addr[i])) << ((2 - i) * 16);
-    }
+    auto source_hw = mac3_to_mac64(arp_header->source_hw_addr);
+    auto target_hw = mac3_to_mac64(arp_header->target_hw_addr);
 
     logging::logf(logging::log_level::TRACE, "arp: Source HW Address %h \n", source_hw);
     logging::logf(logging::log_level::TRACE, "arp: Target HW Address %h \n", target_hw);
 
-    network::ip::address source_prot;
-    network::ip::address target_prot;
-
-    for(size_t i = 0; i < 2; ++i){
-        auto source = switch_endian_16(arp_header->source_protocol_addr[i]);
-        auto target = switch_endian_16(arp_header->target_protocol_addr[i]);
-
-        source_prot.set_sub(2*i, source >> 8);
-        source_prot.set_sub(2*i+1, source);
-
-        target_prot.set_sub(2*i, target >> 8);
-        target_prot.set_sub(2*i+1, target);
-    }
+    auto source_prot = ip2_to_ip(arp_header->source_protocol_addr);
+    auto target_prot = ip2_to_ip(arp_header->target_protocol_addr);
 
     logging::logf(logging::log_level::TRACE, "arp: Source Protocol Address %u.%u.%u.%u \n",
         uint64_t(source_prot(0)), uint64_t(source_prot(1)), uint64_t(source_prot(2)), uint64_t(source_prot(3)));
@@ -106,18 +125,12 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
             arp_reply_header->protocol_len = 0x4; // IP Address
             arp_reply_header->operation = switch_endian_16(0x2); //ARP Reply
 
-            auto source_mac = interface.mac_address;
+            mac64_to_mac3(interface.mac_address, arp_reply_header->source_hw_addr);
 
-            for(size_t i = 0; i < 3; ++i){
-                arp_reply_header->target_hw_addr[i] = arp_header->source_hw_addr[i];
+            std::copy_n(arp_header->source_hw_addr, 3, arp_reply_header->target_hw_addr);
 
-                arp_reply_header->source_hw_addr[i] = switch_endian_16(uint16_t(source_mac >> ((2 - i) * 16)));
-            }
-
-            for(size_t i = 0; i < 2; ++i){
-                arp_reply_header->source_protocol_addr[i] = arp_header->target_protocol_addr[i];
-                arp_reply_header->target_protocol_addr[i] = arp_header->source_protocol_addr[i];
-            }
+            std::copy_n(arp_header->target_protocol_addr, 2, arp_reply_header->source_protocol_addr);
+            std::copy_n(arp_header->source_protocol_addr, 2, arp_reply_header->target_protocol_addr);
 
             network::ethernet::finalize_packet(interface, packet);
         }

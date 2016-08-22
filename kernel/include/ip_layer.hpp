@@ -46,6 +46,8 @@ inline address make_address(uint8_t a, uint8_t b, uint8_t c, uint8_t d){
     return addr;
 }
 
+address ip32_to_ip(uint32_t raw);
+
 struct header {
     uint8_t version_ihl;
     uint8_t dscp_ecn;
