@@ -80,7 +80,7 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
         uint64_t(target_prot(0)), uint64_t(target_prot(1)), uint64_t(target_prot(2)), uint64_t(target_prot(3)));
 
     // If not an ARP Probe, update the ARP cache
-    if(source_prot.raw_address == 0x0){
+    if(source_prot.raw_address != 0x0){
         network::arp::update_cache(source_hw, source_prot);
     }
 
