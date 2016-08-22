@@ -116,3 +116,10 @@ void shutdown(){
 
     __builtin_unreachable();
 }
+
+void alpha(){
+    asm volatile("mov rax, 0x6666; int 50"
+        : //No outputs
+        : //No inputs
+        : "rax");
+}

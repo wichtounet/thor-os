@@ -18,6 +18,7 @@
 #include "mouse.hpp"
 #include "vfs/vfs.hpp"
 #include "ioctl.hpp"
+#include "icmp_layer.hpp"
 
 //TODO Split this file
 
@@ -334,6 +335,12 @@ void sc_ioctl(interrupt::syscall_regs* regs){
     regs->rax = ioctl(device, static_cast<ioctl_request>(request), data);
 }
 
+void sc_alpha(interrupt::syscall_regs*){
+    if(network::number_of_interfaces()){
+        network::icmp::ping(network::interface(0), network::ip::make_address(192, 168, 20, 201));
+    }
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -543,6 +550,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x2000:
             sc_ioctl(regs);
+            break;
+
+        case 0x6666:
+            sc_alpha(regs);
             break;
 
         default:

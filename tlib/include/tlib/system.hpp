@@ -32,4 +32,6 @@ void shutdown();
 uint64_t s_time();
 uint64_t ms_time();
 
+void alpha();
+
 #endif
