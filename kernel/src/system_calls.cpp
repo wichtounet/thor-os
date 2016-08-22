@@ -18,7 +18,7 @@
 #include "mouse.hpp"
 #include "vfs/vfs.hpp"
 #include "ioctl.hpp"
-#include "icmp_layer.hpp"
+#include "net/icmp_layer.hpp"
 
 //TODO Split this file
 

@@ -26,7 +26,7 @@
 #include "terminal.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
-#include "network.hpp"
+#include "net/network.hpp"
 #include "vfs/vfs.hpp"
 #include "fs/sysfs.hpp"
 #include "drivers/hpet.hpp"

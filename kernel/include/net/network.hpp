@@ -15,7 +15,7 @@
 #include <semaphore.hpp>
 #include <lock_guard.hpp>
 
-#include "ethernet_packet.hpp"
+#include "net/ethernet_packet.hpp"
 
 namespace network {
 

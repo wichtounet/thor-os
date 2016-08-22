@@ -10,9 +10,9 @@
 
 #include <types.hpp>
 
-#include "ethernet_layer.hpp"
-#include "ip_layer.hpp"
-#include "network.hpp"
+#include "net/ethernet_layer.hpp"
+#include "net/ip_layer.hpp"
+#include "net/network.hpp"
 
 namespace network {
 

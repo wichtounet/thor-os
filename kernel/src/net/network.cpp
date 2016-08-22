@@ -8,13 +8,14 @@
 #include <vector.hpp>
 #include <string.hpp>
 
-#include "network.hpp"
+#include "net/network.hpp"
+#include "net/ethernet_layer.hpp"
+
 #include "pci.hpp"
 #include "rtl8139.hpp"
 #include "physical_allocator.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
-#include "ethernet_layer.hpp"
 
 #include "fs/sysfs.hpp"
 

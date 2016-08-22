@@ -10,8 +10,8 @@
 
 #include <types.hpp>
 
-#include "network.hpp"
-#include "ethernet_packet.hpp"
+#include "net/network.hpp"
+#include "net/ethernet_packet.hpp"
 
 namespace network {
 

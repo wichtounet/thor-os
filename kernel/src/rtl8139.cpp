@@ -16,7 +16,7 @@
 #include "paging.hpp"
 #include "int_lock.hpp"
 
-#include "ethernet_layer.hpp"
+#include "net/ethernet_layer.hpp"
 
 #define MAC0 0x00
 #define MAC4 0x04

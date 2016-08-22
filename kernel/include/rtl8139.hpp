@@ -10,7 +10,7 @@
 
 #include<types.hpp>
 
-#include "network.hpp"
+#include "net/network.hpp"
 #include "pci.hpp"
 
 namespace rtl8139 {

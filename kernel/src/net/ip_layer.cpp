@@ -8,7 +8,8 @@
 #include <vector.hpp>
 #include <string.hpp>
 
-#include "ip_layer.hpp"
+#include "net/ip_layer.hpp"
+
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 

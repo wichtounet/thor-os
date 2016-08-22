@@ -8,11 +8,12 @@
 #include <vector.hpp>
 #include <string.hpp>
 
-#include "ethernet_layer.hpp"
+#include "net/ethernet_layer.hpp"
+#include "net/arp_layer.hpp"
+#include "net/ip_layer.hpp"
+
 #include "logging.hpp"
 #include "kernel_utils.hpp"
-#include "arp_layer.hpp"
-#include "ip_layer.hpp"
 
 namespace {
 

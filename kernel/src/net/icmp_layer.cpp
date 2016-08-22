@@ -5,11 +5,12 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "ethernet_layer.hpp"
-#include "icmp_layer.hpp"
+#include "net/ethernet_layer.hpp"
+#include "net/icmp_layer.hpp"
+#include "net/arp_cache.hpp"
+#include "net/arp_layer.hpp"
+
 #include "logging.hpp"
-#include "arp_cache.hpp"
-#include "arp_layer.hpp"
 #include "kernel_utils.hpp"
 
 void network::icmp::ping(network::interface_descriptor& interface, network::ip::address target_ip){

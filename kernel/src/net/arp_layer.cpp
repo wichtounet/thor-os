@@ -8,9 +8,10 @@
 #include <vector.hpp>
 #include <string.hpp>
 
-#include "arp_layer.hpp"
-#include "arp_cache.hpp"
-#include "ip_layer.hpp"
+#include "net/arp_layer.hpp"
+#include "net/arp_cache.hpp"
+#include "net/ip_layer.hpp"
+
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "sleep_queue.hpp"
