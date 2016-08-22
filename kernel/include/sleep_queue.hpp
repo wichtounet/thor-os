@@ -47,8 +47,6 @@ public:
 
     /*!
      * \brief Wake up the first process from the queue.
-     *
-     * If the queue is empty, the behaviour is undefined.
      */
     scheduler::pid_t wake_up(){
         std::lock_guard<spinlock> l(lock);
@@ -73,6 +71,30 @@ public:
         }
 
         return scheduler::INVALID_PID;
+    }
+
+    /*!
+     * \brief Wake up all the processes from the queue.
+     */
+    void wake_up_all(){
+        std::lock_guard<spinlock> l(lock);
+
+        while(!queue.empty()){
+            // Get the first process
+            auto pid = queue.top();
+
+            // Remove it
+            queue.pop();
+
+            if(pid != scheduler::INVALID_PID){
+                logging::logf(logging::log_level::TRACE, "sleep_queue: wake(all) %d\n", pid);
+
+                // Indicate to the scheduler that this process will be able to run
+                // We use a hint here because it is possible that the thread was
+                // already woken up from sleep
+                scheduler::unblock_process_hint(pid);
+            }
+        }
     }
 
     /*!

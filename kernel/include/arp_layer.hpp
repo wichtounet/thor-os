@@ -31,6 +31,8 @@ struct header {
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
+void wait_for_reply();
+
 } // end of arp namespace
 
 } // end of network namespace

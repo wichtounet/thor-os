@@ -11,6 +11,7 @@
 #include <types.hpp>
 
 #include "ip_layer.hpp"
+#include "network.hpp"
 
 namespace network {
 
@@ -23,6 +24,8 @@ bool is_ip_cached(network::ip::address ip);
 
 network::ip::address get_ip(uint64_t mac);
 uint64_t get_mac(network::ip::address ip);
+
+uint64_t get_mac_force(network::interface_descriptor& interface, network::ip::address ip);
 
 } // end of arp namespace
 

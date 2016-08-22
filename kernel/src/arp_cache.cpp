@@ -9,6 +9,7 @@
 #include <string.hpp>
 
 #include "arp_cache.hpp"
+#include "arp_layer.hpp"
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "assert.hpp"
@@ -88,4 +89,49 @@ uint64_t network::arp::get_mac(network::ip::address ip){
     }
 
     thor_unreachable("The IP is not cached in the ARP table");
+}
+
+uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, network::ip::address ip){
+    if(is_ip_cached(ip)){
+        return get_mac(ip);
+    }
+
+    // At this point we need to send a request for the IP
+
+    logging::logf(logging::log_level::TRACE, "arp: IP not cached, generate ARP Request\n");
+
+    // Ask the ethernet layer to craft a packet
+    auto packet = network::ethernet::prepare_packet(interface, sizeof(network::arp::header), 0xFFFFFFFFFFFF, ethernet::ether_type::ARP);
+
+    auto* arp_request_header = reinterpret_cast<network::arp::header*>(packet.payload + packet.index);
+
+    arp_request_header->hw_type = switch_endian_16(0x1); // ethernet
+    arp_request_header->protocol_type = switch_endian_16(0x800); // IPV4
+    arp_request_header->hw_len = 0x6; // MAC Address
+    arp_request_header->protocol_len = 0x4; // IP Address
+    arp_request_header->operation = switch_endian_16(0x1); //ARP Request
+
+    auto source_mac = interface.mac_address;
+
+    for(size_t i = 0; i < 3; ++i){
+        arp_request_header->target_hw_addr[i] = 0x0;
+        arp_request_header->source_hw_addr[i] = switch_endian_16(uint16_t(source_mac >> ((2 - i) * 16)));
+    }
+
+    network::ip::address source = network::ip::make_address(10,0,2,15);
+
+    for(size_t i = 0; i < 2; ++i){
+        arp_request_header->source_protocol_addr[i] = (uint16_t(source(2*i+1)) << 8) + source(2*i);
+        arp_request_header->target_protocol_addr[i] = (uint16_t(ip(2*i+1)) << 8) + ip(2*i);
+    }
+
+    network::ethernet::finalize_packet(interface, packet);
+
+    while(!is_ip_cached(ip)){
+        network::arp::wait_for_reply();
+    }
+
+    logging::logf(logging::log_level::TRACE, "arp: received ARP Reply\n");
+
+    return get_mac(ip);
 }

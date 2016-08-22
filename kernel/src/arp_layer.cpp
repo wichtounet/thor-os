@@ -13,6 +13,13 @@
 #include "ip_layer.hpp"
 #include "logging.hpp"
 #include "kernel_utils.hpp"
+#include "sleep_queue.hpp"
+
+namespace {
+
+sleep_queue wait_queue;
+
+} //end of anonymous namespace
 
 void network::arp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -117,6 +124,10 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
     } else if(operation == 0x2){
         logging::logf(logging::log_level::TRACE, "arp: Handle Reply\n");
 
-        //TODO
+        wait_queue.wake_up_all();
     }
+}
+
+void network::arp::wait_for_reply(){
+    wait_queue.sleep();
 }
