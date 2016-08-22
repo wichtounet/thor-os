@@ -13,6 +13,13 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 
+void network::icmp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+    header* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+
+    logging::logf(logging::log_level::TRACE, "icmp: Start ICMP packet handling\n");
+
+}
+
 void network::icmp::ping(network::interface_descriptor& interface, network::ip::address target_ip){
     logging::logf(logging::log_level::TRACE, "icmp: Ping %u.%u.%u.%u \n",
         uint64_t(target_ip(0)), uint64_t(target_ip(1)), uint64_t(target_ip(2)), uint64_t(target_ip(3)));

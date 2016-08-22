@@ -9,6 +9,7 @@
 #include <string.hpp>
 
 #include "net/ip_layer.hpp"
+#include "net/icmp_layer.hpp"
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"
@@ -17,7 +18,7 @@ inline network::ip::address network::ip::ip32_to_ip(uint32_t raw){
     return {switch_endian_32(raw)};
 }
 
-void network::ip::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
+void network::ip::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
     logging::logf(logging::log_level::TRACE, "ip: Start IPv4 packet handling\n");
@@ -47,8 +48,10 @@ void network::ip::decode(network::interface_descriptor& /*interface*/, network::
 
     auto protocol = arp_header->protocol;
 
+    packet.index += sizeof(header);
+
     if(protocol == 0x01){
-        logging::logf(logging::log_level::DEBUG, "ip: ICMP packet detected\n");
+        network::icmp::decode(interface, packet);
     } else if(protocol == 0x06){
         logging::logf(logging::log_level::ERROR, "ip: TCP packet detected (unsupported)\n");
     } else if(protocol == 0x11){
