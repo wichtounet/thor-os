@@ -15,7 +15,12 @@ static constexpr const size_t BUFFER_SIZE = 4096;
 
 namespace {
 
-void ls_files(const char* file_path){
+struct config {
+    bool list = false;
+    bool hidden = false;
+};
+
+void ls_files(const config& conf, const char* file_path){
     auto fd = open(file_path);
 
     if(fd.valid()){
@@ -36,13 +41,47 @@ void ls_files(const char* file_path){
                         while(true){
                             auto entry = reinterpret_cast<directory_entry*>(buffer + position);
 
-                            print_line(&entry->name);
+                            bool show = true;
+                            if(!conf.hidden){
+                                auto path = std::string(file_path) + "/" + &entry->name;
+
+                                auto file_fd = open(path.c_str());
+
+                                if(file_fd.valid()){
+                                    auto file_info = stat(*file_fd);
+
+                                    if(file_info.valid()){
+                                        if(file_info->flags & STAT_FLAG_HIDDEN){
+                                            show = false;
+                                        }
+                                    } else {
+                                        printf("ls: stat error: %s\n", std::error_message(file_info.error()));
+                                    }
+                                } else {
+                                    printf("ls: open error: %s\n", std::error_message(file_fd.error()));
+                                }
+
+                                close(*file_fd);
+                            }
+
+                            if(show){
+                                if(conf.list){
+                                    print_line(&entry->name);
+                                } else {
+                                    print(&entry->name);
+                                    print(" ");
+                                }
+                            }
 
                             if(!entry->offset_next){
                                 break;
                             }
 
                             position += entry->offset_next;
+                        }
+
+                        if(!conf.list){
+                            print_line();
                         }
                     }
                 } else {
@@ -64,11 +103,35 @@ void ls_files(const char* file_path){
 } // end of anonymous namespace
 
 int main(int argc, char* argv[]){
-    if(argc == 1){
+    config conf;
+
+    int i = 1;
+    for(; i < argc; ++i){
+        std::string arg(argv[i]);
+
+        if(arg[0] == '-'){
+            for(size_t j = 1; j < arg.size(); ++j){
+                auto c = arg[j];
+
+                if(c == 'l'){
+                    conf.list = true;
+                } else if(c == 'a'){
+                    conf.hidden = true;
+                } else {
+                    print_line("ls: invalid argument");
+                    return 1;
+                }
+            }
+        } else {
+            break;
+        }
+    }
+
+    if(i == argc){
         auto cwd = current_working_directory();
-        ls_files(cwd.c_str());
+        ls_files(conf, cwd.c_str());
     } else {
-        ls_files(argv[1]);
+        ls_files(conf, argv[argc -1]);
     }
 
     return 0;
