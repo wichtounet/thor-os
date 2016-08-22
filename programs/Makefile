@@ -2,7 +2,8 @@
 
 include ../cpp.mk
 
-PROGRAMS=alpha long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which readelf touch mkdir rm date ls lspci lse820 mount df uptime writer divzero odin ps bench mkfs dctor
+PROGRAMS_DIRS=$(filter-out dist/, $(filter %/, $(wildcard */)))
+PROGRAMS=$(PROGRAMS_DIRS:%/=%)
 
 default: dist
 
