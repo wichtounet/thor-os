@@ -7,7 +7,8 @@
 
 #include <tlib/errors.hpp>
 
-#include "ramdisk.hpp"
+#include "drivers/ramdisk.hpp"
+
 #include "disks.hpp"
 #include "paging.hpp"
 #include "logging.hpp"

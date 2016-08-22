@@ -15,7 +15,7 @@
 #ifdef THOR_INIT
 void serial_transmit(char a);
 #else
-#include "serial.hpp"
+#include "drivers/serial.hpp"
 #endif
 
 #define BOCHS_E9 0xE9

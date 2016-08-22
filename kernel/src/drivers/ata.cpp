@@ -9,8 +9,9 @@
 
 #include <tlib/errors.hpp>
 
-#include "ata.hpp"
-#include "ata_constants.hpp"
+#include "drivers/ata.hpp"
+#include "drivers/ata_constants.hpp"
+
 #include "kernel_utils.hpp"
 #include "kalloc.hpp"
 #include "thor.hpp"

@@ -8,10 +8,11 @@
 #ifndef RTL_8139_H
 #define RTL_8139_H
 
-#include<types.hpp>
+#include <types.hpp>
 
 #include "net/network.hpp"
-#include "pci.hpp"
+
+#include "drivers/pci.hpp"
 
 namespace rtl8139 {
 

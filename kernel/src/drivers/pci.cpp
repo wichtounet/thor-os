@@ -5,7 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "pci.hpp"
+#include "drivers/pci.hpp"
+
 #include "kernel_utils.hpp"
 #include "logging.hpp"
 

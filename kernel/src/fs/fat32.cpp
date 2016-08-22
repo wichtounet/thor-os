@@ -13,8 +13,9 @@
 
 #include "fs/fat32.hpp"
 
+#include "drivers/rtc.hpp"
+
 #include "console.hpp"
-#include "rtc.hpp"
 #include "logging.hpp"
 
 namespace {

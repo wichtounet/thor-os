@@ -8,7 +8,7 @@
 #include <array.hpp>
 
 #include "terminal.hpp"
-#include "keyboard.hpp"
+#include "drivers/keyboard.hpp"
 #include "console.hpp"
 #include "assert.hpp"
 #include "logging.hpp"

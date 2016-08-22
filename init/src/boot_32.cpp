@@ -14,7 +14,7 @@
 #include "kernel.hpp"
 #include "early_memory.hpp"
 #include "virtual_debug.hpp"
-#include "ata_constants.hpp"
+#include "drivers/ata_constants.hpp"
 
 static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
 static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");

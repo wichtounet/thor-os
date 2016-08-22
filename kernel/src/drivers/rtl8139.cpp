@@ -5,7 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "rtl8139.hpp"
+#include "drivers/rtl8139.hpp"
+
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "physical_allocator.hpp"

@@ -19,7 +19,7 @@
 #include "kernel_utils.hpp"
 #include "interrupts.hpp"
 #include "timer.hpp"
-#include "pci.hpp"
+#include "drivers/pci.hpp"
 #include "logging.hpp"
 
 #include "mutex.hpp"

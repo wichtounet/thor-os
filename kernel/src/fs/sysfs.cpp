@@ -14,7 +14,6 @@
 #include "fs/sysfs.hpp"
 
 #include "console.hpp"
-#include "rtc.hpp"
 #include "assert.hpp"
 
 namespace {

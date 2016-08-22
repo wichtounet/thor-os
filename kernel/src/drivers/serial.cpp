@@ -5,7 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "serial.hpp"
+#include "drivers/serial.hpp"
+
 #include "kernel_utils.hpp"
 
 #define COM1_PORT 0x3f8

@@ -5,7 +5,7 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "rtc.hpp"
+#include "drivers/rtc.hpp"
 #include "kernel_utils.hpp"
 #include "acpi.hpp"
 #include "acpica.hpp"

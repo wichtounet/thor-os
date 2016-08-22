@@ -7,7 +7,8 @@
 
 #include <algorithms.hpp>
 
-#include "mouse.hpp"
+#include "drivers/mouse.hpp"
+
 #include "interrupts.hpp"
 #include "kernel_utils.hpp"
 #include "logging.hpp"

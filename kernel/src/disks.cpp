@@ -15,8 +15,8 @@
 #include "logging.hpp"
 
 // The disks implementation
-#include "ata.hpp"
-#include "ramdisk.hpp"
+#include "drivers/ata.hpp"
+#include "drivers/ramdisk.hpp"
 
 #include "fs/devfs.hpp"
 #include "fs/sysfs.hpp"

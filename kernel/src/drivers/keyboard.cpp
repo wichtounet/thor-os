@@ -5,7 +5,8 @@
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
-#include "keyboard.hpp"
+#include "drivers/keyboard.hpp"
+
 #include "interrupts.hpp"
 #include "kernel_utils.hpp"
 #include "terminal.hpp"
