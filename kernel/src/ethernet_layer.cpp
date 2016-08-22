@@ -50,6 +50,8 @@ uint16_t type_to_code(network::ethernet::ether_type type){
 } //end of anonymous namespace
 
 void network::ethernet::decode(network::interface_descriptor& interface, packet& packet){
+    logging::logf(logging::log_level::TRACE, "ethernet: Start decoding new packet\n");
+
     header* ether_header = reinterpret_cast<header*>(packet.payload);
 
     // Filter out non-ethernet II frames
@@ -89,6 +91,8 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
             logging::logf(logging::log_level::ERROR, "ethernet: Unhandled Packet Type in switch: %u\n", uint64_t(switch_endian_16(ether_header->type)));
             break;
     }
+
+    logging::logf(logging::log_level::TRACE, "ethernet: Finished decoding packet\n");
 }
 
 network::ethernet::packet network::ethernet::prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
