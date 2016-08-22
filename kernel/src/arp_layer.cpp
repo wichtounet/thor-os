@@ -85,7 +85,7 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
     }
 
     if(operation == 0x1){
-        if(target_prot == network::ip::make_address(192,168,20,66)){
+        if(target_prot == network::ip::make_address(10,0,2,15)){
             logging::logf(logging::log_level::TRACE, "arp: Reply to Request for own IP\n");
 
             // Ask the ethernet layer to craft a packet

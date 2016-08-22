@@ -337,7 +337,7 @@ void sc_ioctl(interrupt::syscall_regs* regs){
 
 void sc_alpha(interrupt::syscall_regs*){
     if(network::number_of_interfaces()){
-        network::icmp::ping(network::interface(0), network::ip::make_address(192, 168, 20, 201));
+        network::icmp::ping(network::interface(0), network::ip::make_address(10, 0, 2, 2));
     }
 }
 

@@ -37,7 +37,7 @@ void network::icmp::ping(network::interface_descriptor& interface, network::ip::
             arp_request_header->source_hw_addr[i] = switch_endian_16(uint16_t(source_mac >> ((2 - i) * 16)));
         }
 
-        network::ip::address source = network::ip::make_address(192, 168, 20, 66);
+        network::ip::address source = network::ip::make_address(10,0,2,15);
 
         for(size_t i = 0; i < 2; ++i){
             arp_request_header->source_protocol_addr[i] = (uint16_t(source(2*i+1)) << 8) + source(2*i);

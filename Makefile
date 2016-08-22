@@ -51,6 +51,13 @@ qemu: default
 	tail -f virtual.log
 	kill %1
 
+qemu_user: default
+	touch virtual.log
+	sudo qemu-system-x86_64 -enable-kvm -cpu host -serial file:virtual.log -netdev user,id=thor_net0 -device rtl8139,netdev=thor_net0,id=thor_nic0 -vga std -hda hdd.img &
+	echo "Reading kernel log (Ctrl+C for exit)"
+	tail -f virtual.log
+	kill %1
+
 bochs: default
 	echo "c" > commands
 	bochs -qf tools/bochsrc.txt -rc commands
