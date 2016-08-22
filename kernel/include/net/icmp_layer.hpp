@@ -24,6 +24,25 @@ struct header {
     uint32_t rest; ///< Depends on the type of packet type
 } __attribute__((packed));
 
+enum class type {
+    ECHO_REPLY = 0,
+    UNREACHABLE = 3,
+    SOURCE_QUENCH = 4,
+    REDICT = 5,
+    ECHO_REQUES = 8,
+    ROUTER_ADVERTISEMENT = 9,
+    ROUTER_SOLICITATION = 10,
+    TIME_EXCEEDED = 11,
+    PARAMETER_PROBLEM = 12,
+    TIMESTAMP = 13,
+    TIMESTAMP_REPLY = 14,
+    INFORMATION_REQUEST = 15,
+    INFORMATION_REPLY = 16,
+    ADDRESS_MASK_REQUEST = 17,
+    ADDRESS_MASK_REPLY = 18,
+    TRACEROUTE = 30
+};
+
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
 void ping(network::interface_descriptor& interface, network::ip::address addr);
