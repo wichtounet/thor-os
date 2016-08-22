@@ -12,9 +12,9 @@
 
 #include "tlib/datetime.hpp"
 
-constexpr const size_t STAT_FLAG_DIRECTORY = 0x1;
-constexpr const size_t STAT_FLAG_HIDDEN = 0x2;
-constexpr const size_t STAT_FLAG_SYSTEM = 0x2;
+constexpr const size_t STAT_FLAG_DIRECTORY = 1 << 0;
+constexpr const size_t STAT_FLAG_HIDDEN = 1 << 1;
+constexpr const size_t STAT_FLAG_SYSTEM = 1 << 2;
 
 struct stat_info {
     size_t flags;
