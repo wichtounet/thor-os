@@ -25,13 +25,8 @@ void compute_checksum(network::ip::header* header){
 
     auto sum = std::accumulate(reinterpret_cast<uint16_t*>(header),reinterpret_cast<uint16_t*>(header) + ihl * 2, uint32_t(0));
 
-    logging::logf(logging::log_level::TRACE, "ip: sum:%h\n", size_t(sum));
-
     uint32_t value = sum & 0xFFFF;
     uint32_t carry = (sum - value) >> 16;
-
-    logging::logf(logging::log_level::TRACE, "ip: value:%h\n", size_t(value));
-    logging::logf(logging::log_level::TRACE, "ip: carry:%h\n", size_t(carry));
 
     while(carry){
         value += carry;
