@@ -24,12 +24,19 @@ struct header {
     uint32_t rest; ///< Depends on the type of packet type
 } __attribute__((packed));
 
-enum class type {
+struct echo_request_header {
+    uint16_t identifier;
+    uint16_t sequence;
+} __attribute__((packed));
+
+static_assert(sizeof(echo_request_header) == sizeof(header::rest), "Invalid size for echo request header");
+
+enum class type : uint8_t {
     ECHO_REPLY = 0,
     UNREACHABLE = 3,
     SOURCE_QUENCH = 4,
     REDICT = 5,
-    ECHO_REQUES = 8,
+    ECHO_REQUEST = 8,
     ROUTER_ADVERTISEMENT = 9,
     ROUTER_SOLICITATION = 10,
     TIME_EXCEEDED = 11,
