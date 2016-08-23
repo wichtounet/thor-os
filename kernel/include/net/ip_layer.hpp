@@ -65,6 +65,9 @@ static_assert(sizeof(header) == 20, "The size of an IPv4 header must be 20 bytes
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
+network::ethernet::packet prepare_packet(network::interface_descriptor& interface, size_t size, address& destination, size_t protocol);
+void finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
+
 } // end of ip namespace
 
 } // end of network namespace

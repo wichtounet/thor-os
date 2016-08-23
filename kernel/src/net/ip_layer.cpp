@@ -9,7 +9,9 @@
 #include <string.hpp>
 
 #include "net/ip_layer.hpp"
+#include "net/ethernet_layer.hpp"
 #include "net/icmp_layer.hpp"
+#include "net/arp_cache.hpp"
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"
@@ -59,4 +61,33 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
     } else {
         logging::logf(logging::log_level::ERROR, "ip: Packet of unknown protocol detected (%h)\n", size_t(protocol));
     }
+}
+
+network::ethernet::packet network::ip::prepare_packet(network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
+    //auto source_ip = interface.
+
+    auto target_mac = network::arp::get_mac_force(interface, target_ip);
+
+    // Ask the ethernet layer to craft a packet
+    auto packet = network::ethernet::prepare_packet(interface, size + sizeof(header), target_mac, ethernet::ether_type::IPV4);
+
+    auto* header = reinterpret_cast<network::ip::header*>(packet.payload + packet.index);
+
+    header->version_ihl = (4 << 4) + 5;
+    header->dscp_ecn = 0;
+    header->total_len = size + sizeof(header);
+    header->identification = 0;
+    header->flags_offset = 1U << 14;
+    header->ttl = 255;
+    header->protocol = protocol;
+    //TODO header->header_checksum
+    //TODO header->source_ip = ip_to_ip32(source_ip);
+    //TODO header->target_ip = ip_to_ip32(target_ip);
+
+    return packet;
+}
+
+void network::ip::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
+    // Send the packet to the ethernet layer
+    network::ethernet::finalize_packet(interface, p);
 }
