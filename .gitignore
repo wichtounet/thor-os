@@ -14,3 +14,6 @@ tlib/debug
 
 # Ignore the generated log (Qemu)
 *.log
+
+# Ignore the generated pcap files (Qemu)
+*.pcap
