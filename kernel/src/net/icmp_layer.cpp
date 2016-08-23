@@ -66,6 +66,34 @@ void network::icmp::decode(network::interface_descriptor& /*interface*/, network
     }
 }
 
+network::ethernet::packet network::icmp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){
+    // Ask the IP layer to craft a packet
+    auto packet = network::ip::prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x01);
+
+    // Set the ICMP header
+
+    auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+
+    icmp_header->type = static_cast<uint8_t>(t);
+    icmp_header->code = code;
+
+    packet.index += sizeof(header) - sizeof(uint32_t);
+
+    return packet;
+}
+
+void network::icmp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
+    packet.index -= sizeof(header) - sizeof(uint32_t);
+
+    auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+
+    // Compute the checksum
+    compute_checksum(icmp_header, 0);
+
+    // Give the packet to the IP layer for finalization
+    network::ip::finalize_packet(interface, packet);
+}
+
 void network::icmp::ping(network::interface_descriptor& interface, network::ip::address target_ip){
     logging::logf(logging::log_level::TRACE, "icmp: Ping %u.%u.%u.%u \n",
         uint64_t(target_ip(0)), uint64_t(target_ip(1)), uint64_t(target_ip(2)), uint64_t(target_ip(3)));
@@ -74,27 +102,16 @@ void network::icmp::ping(network::interface_descriptor& interface, network::ip::
 
     logging::logf(logging::log_level::TRACE, "icmp: Target MAC Address: %h\n", target_mac);
 
-    // Ask the IP layer to craft a packet
-    auto packet = network::ip::prepare_packet(interface, sizeof(header), target_ip, 0x01);
+    // Ask the ICMP layer to craft a packet
+    auto packet = network::icmp::prepare_packet(interface, target_ip, 0, type::ECHO_REQUEST, 0);
 
-    // Set the ICMP header
+    // Set the Command header
 
-    auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
-
-    icmp_header->type = static_cast<uint8_t>(type::ECHO_REQUEST);
-    icmp_header->code = 0;
-
-    // Set the command header
-
-    auto* command_header = reinterpret_cast<echo_request_header*>(&icmp_header->rest);
+    auto* command_header = reinterpret_cast<echo_request_header*>(packet.payload + packet.index);
 
     command_header->identifier = 0x666;
     command_header->sequence = echo_sequence++;
 
-    // Compute the checksum
-
-    compute_checksum(icmp_header, 0);
-
-    // Give the packet to the IP layer for finalization
-    network::ip::finalize_packet(interface, packet);
+    // Send the packet back to ICMP
+    network::icmp::finalize_packet(interface, packet);
 }
