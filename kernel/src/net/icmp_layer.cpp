@@ -17,10 +17,13 @@ namespace {
 
 uint16_t echo_sequence = 0;
 
-void compute_checksum(network::icmp::header* header, size_t payload_size){
-    header->checksum = 0;
+void compute_checksum(network::icmp::header* icmp_header, size_t payload_size){
+    icmp_header->checksum = 0;
 
-    auto sum = std::accumulate(reinterpret_cast<uint16_t*>(header), reinterpret_cast<uint16_t*>(header) + payload_size * 2, uint32_t(0));
+    auto sum = std::accumulate(
+        reinterpret_cast<uint16_t*>(icmp_header),
+        reinterpret_cast<uint16_t*>(icmp_header) + sizeof(network::icmp::header) / 2 + payload_size * 2,
+        uint32_t(0));
 
     uint32_t value = sum & 0xFFFF;
     uint32_t carry = (sum - value) >> 16;
@@ -32,7 +35,7 @@ void compute_checksum(network::icmp::header* header, size_t payload_size){
         value = sub;
     }
 
-    header->checksum = ~value;
+    icmp_header->checksum = ~value;
 }
 
 } // end of anonymous namespace
