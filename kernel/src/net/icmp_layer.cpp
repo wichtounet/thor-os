@@ -22,12 +22,12 @@ void compute_checksum(network::icmp::header* header, size_t payload_size){
 
     auto sum = std::accumulate(reinterpret_cast<uint16_t*>(header), reinterpret_cast<uint16_t*>(header) + payload_size * 2, uint32_t(0));
 
-    uint32_t value = sum & 0xFF;
+    uint32_t value = sum & 0xFFFF;
     uint32_t carry = (sum - value) >> 16;
 
     while(carry){
         value += carry;
-        auto sub = value & 0xFF;
+        auto sub = value & 0xFFFF;
         carry = (value - sub) >> 16;
         value = sub;
     }
