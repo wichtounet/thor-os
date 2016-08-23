@@ -20,10 +20,7 @@ uint16_t echo_sequence = 0;
 void compute_checksum(network::icmp::header* header, size_t payload_size){
     header->checksum = 0;
 
-    uint32_t sum = 0;
-    std::for_each(reinterpret_cast<uint16_t*>(header), reinterpret_cast<uint16_t*>(header) + payload_size * 2, [&sum](uint16_t value){
-        sum += value;
-    });
+    auto sum = std::accumulate(reinterpret_cast<uint16_t*>(header), reinterpret_cast<uint16_t*>(header) + payload_size * 2, uint32_t(0));
 
     uint32_t value = sum & 0xFF;
     uint32_t carry = sum - value;

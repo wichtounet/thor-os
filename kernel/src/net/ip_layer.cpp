@@ -23,10 +23,7 @@ void compute_checksum(network::ip::header* header){
 
     header->header_checksum = 0;
 
-    uint32_t sum = 0;
-    std::for_each(reinterpret_cast<uint16_t*>(header),reinterpret_cast<uint16_t*>(header) + ihl * 2, [&sum](uint16_t value){
-        sum += value;
-    });
+    auto sum = std::accumulate(reinterpret_cast<uint16_t*>(header),reinterpret_cast<uint16_t*>(header) + ihl * 2, uint32_t(0));
 
     uint32_t value = sum & 0xFF;
     uint32_t carry = sum - value;

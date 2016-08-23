@@ -232,6 +232,17 @@ void for_each(Iterator it, Iterator end, Functor func){
     }
 }
 
+template<class Iterator, class T>
+T accumulate(Iterator it, Iterator end, T init){
+    while(it != end){
+        init = init + *it;
+
+        ++it;
+    }
+
+    return init;
+}
+
 template<typename T>
 constexpr const T& min(const T& a, const T& b){
     return a <= b ? a : b;
