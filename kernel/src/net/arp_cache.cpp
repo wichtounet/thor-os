@@ -115,7 +115,7 @@ uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, n
     network::arp::mac64_to_mac3(interface.mac_address, arp_request_header->source_hw_addr);
     network::arp::mac64_to_mac3(0x0, arp_request_header->target_hw_addr);
 
-    network::arp::ip_to_ip2(network::ip::make_address(10,0,2,15), arp_request_header->source_protocol_addr);
+    network::arp::ip_to_ip2(interface.ip_address, arp_request_header->source_protocol_addr);
     network::arp::ip_to_ip2(ip, arp_request_header->target_protocol_addr);
 
     network::ethernet::finalize_packet(interface, packet);

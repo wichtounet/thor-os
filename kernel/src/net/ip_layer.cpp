@@ -64,7 +64,7 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
 }
 
 network::ethernet::packet network::ip::prepare_packet(network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
-    //auto source_ip = interface.
+    //auto source_ip = interface.ip_address;
 
     auto target_mac = network::arp::get_mac_force(interface, target_ip);
 

@@ -86,6 +86,11 @@ void network::init(){
                 rtl8139::init_driver(interface, pci_device);
             }
 
+            if(interface.enabled){
+                //TODO This should be configurable
+                interface.ip_address = network::ip::make_address(10, 0, 2, 15);
+            }
+
             auto p = path("/net") / interface.name;
 
             sysfs::set_constant_value(path("/sys"), p / "name", interface.name);

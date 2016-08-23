@@ -16,6 +16,7 @@
 #include <lock_guard.hpp>
 
 #include "net/ethernet_packet.hpp"
+#include "net/ip_address.hpp"
 
 namespace network {
 
@@ -27,6 +28,7 @@ struct interface_descriptor {
     size_t pci_device;
     size_t mac_address;
     void* driver_data;
+    network::ip::address ip_address;
 
     mutable mutex<> tx_lock; //To synchronize the queue
     mutable semaphore tx_sem;
