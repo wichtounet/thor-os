@@ -25,17 +25,22 @@ void compute_checksum(network::ip::header* header){
 
     auto sum = std::accumulate(reinterpret_cast<uint16_t*>(header),reinterpret_cast<uint16_t*>(header) + ihl * 2, uint32_t(0));
 
-    uint32_t value = sum & 0xFF;
+    logging::logf(logging::log_level::TRACE, "ip: sum:%h\n", size_t(sum));
+
+    uint32_t value = sum & 0xFFFF;
     uint32_t carry = (sum - value) >> 16;
+
+    logging::logf(logging::log_level::TRACE, "ip: value:%h\n", size_t(value));
+    logging::logf(logging::log_level::TRACE, "ip: carry:%h\n", size_t(carry));
 
     while(carry){
         value += carry;
-        auto sub = value & 0xFF;
+        auto sub = value & 0xFFFF;
         carry = (value - sub) >> 16;
         value = sub;
     }
 
-    header->header_checksum = ~value;
+    header->header_checksum = ~uint16_t(value);
 }
 
 } // end of anonymous namespace
@@ -97,21 +102,22 @@ network::ethernet::packet network::ip::prepare_packet(network::interface_descrip
     // Ask the ethernet layer to craft a packet
     auto packet = network::ethernet::prepare_packet(interface, size + sizeof(header), target_mac, ethernet::ether_type::IPV4);
 
-    auto* header = reinterpret_cast<network::ip::header*>(packet.payload + packet.index);
+    auto* ip_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
-    header->version_ihl = (4 << 4) + 5;
-    header->dscp_ecn = 0;
-    header->total_len = size + sizeof(header);
-    header->identification = 0;
-    header->flags_offset = 1U << 14;
-    header->ttl = 255;
-    header->protocol = protocol;
-    header->source_ip = ip_to_ip32(interface.ip_address);
-    header->target_ip = ip_to_ip32(target_ip);
+    ip_header->version_ihl = (4 << 4) + 5;
+    ip_header->dscp_ecn = 0;
+    ip_header->total_len = switch_endian_16(uint16_t(size) + sizeof(header));
+    ip_header->identification = 0;
+    ip_header->flags_offset = 0;
+    ip_header->flags_offset = switch_endian_16(uint16_t(1) << 14);
+    ip_header->ttl = 255;
+    ip_header->protocol = protocol;
+    ip_header->source_ip = ip_to_ip32(interface.ip_address);
+    ip_header->target_ip = ip_to_ip32(target_ip);
 
-    compute_checksum(header);
+    compute_checksum(ip_header);
 
-    packet.index += sizeof(network::ip::header);
+    packet.index += sizeof(header);
 
     return packet;
 }
