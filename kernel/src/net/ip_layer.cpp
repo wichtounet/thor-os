@@ -26,12 +26,12 @@ void compute_checksum(network::ip::header* header){
     auto sum = std::accumulate(reinterpret_cast<uint16_t*>(header),reinterpret_cast<uint16_t*>(header) + ihl * 2, uint32_t(0));
 
     uint32_t value = sum & 0xFF;
-    uint32_t carry = sum - value;
+    uint32_t carry = (sum - value) >> 16;
 
     while(carry){
         value += carry;
         auto sub = value & 0xFF;
-        carry = value - sub;
+        carry = (value - sub) >> 16;
         value = sub;
     }
 

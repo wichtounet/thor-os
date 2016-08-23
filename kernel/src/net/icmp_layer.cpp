@@ -23,12 +23,12 @@ void compute_checksum(network::icmp::header* header, size_t payload_size){
     auto sum = std::accumulate(reinterpret_cast<uint16_t*>(header), reinterpret_cast<uint16_t*>(header) + payload_size * 2, uint32_t(0));
 
     uint32_t value = sum & 0xFF;
-    uint32_t carry = sum - value;
+    uint32_t carry = (sum - value) >> 16;
 
     while(carry){
         value += carry;
         auto sub = value & 0xFF;
-        carry = value - sub;
+        carry = (value - sub) >> 16;
         value = sub;
     }
 
@@ -37,12 +37,30 @@ void compute_checksum(network::icmp::header* header, size_t payload_size){
 
 } // end of anonymous namespace
 
-void network::icmp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
-    header* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
-
+void network::icmp::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
     logging::logf(logging::log_level::TRACE, "icmp: Start ICMP packet handling\n");
 
-    //TODO
+    auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+
+    auto command_type = static_cast<type>(icmp_header->type);
+
+    switch(command_type){
+        case type::ECHO_REQUEST:
+            logging::logf(logging::log_level::TRACE, "icmp: Echo Request\n");
+            break;
+        case type::ECHO_REPLY:
+            logging::logf(logging::log_level::TRACE, "icmp: Echo Reply\n");
+            break;
+        case type::UNREACHABLE:
+            logging::logf(logging::log_level::TRACE, "icmp: Unreachable\n");
+            break;
+        case type::TIME_EXCEEDED:
+            logging::logf(logging::log_level::TRACE, "icmp: Time exceeded\n");
+            break;
+        default:
+            logging::logf(logging::log_level::TRACE, "icmp: Unsupported ICMP packet received (type:%u)\n", uint64_t(icmp_header->type));
+            break;
+    }
 }
 
 void network::icmp::ping(network::interface_descriptor& interface, network::ip::address target_ip){
@@ -56,16 +74,21 @@ void network::icmp::ping(network::interface_descriptor& interface, network::ip::
     // Ask the IP layer to craft a packet
     auto packet = network::ip::prepare_packet(interface, sizeof(header), target_ip, 0x01);
 
+    // Set the ICMP header
+
     auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
     icmp_header->type = static_cast<uint8_t>(type::ECHO_REQUEST);
     icmp_header->code = 0;
-    icmp_header->rest = 0;
+
+    // Set the command header
 
     auto* command_header = reinterpret_cast<echo_request_header*>(&icmp_header->rest);
 
     command_header->identifier = 0x666;
     command_header->sequence = echo_sequence++;
+
+    // Compute the checksum
 
     compute_checksum(icmp_header, 0);
 
