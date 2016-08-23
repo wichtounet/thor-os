@@ -164,11 +164,17 @@ public:
         data[_size++] = element;
     }
 
+    void emplace_back(){
+        ensure_capacity(_size + 1);
+
+        new (&data[_size++]) T();
+    }
+
     template<typename... Args>
     void emplace_back(Args... args){
         ensure_capacity(_size + 1);
 
-        new (&data[_size++]) T(std::forward<Args>(args)...);
+        new (&data[_size++]) T{std::forward<Args>(args)...};
     }
 
     void pop_back(){
