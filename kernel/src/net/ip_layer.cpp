@@ -16,8 +16,12 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 
-inline network::ip::address network::ip::ip32_to_ip(uint32_t raw){
+network::ip::address network::ip::ip32_to_ip(uint32_t raw){
     return {switch_endian_32(raw)};
+}
+
+uint32_t network::ip::ip_to_ip32(address ip){
+    return switch_endian_32(ip.raw_address);
 }
 
 void network::ip::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
@@ -64,8 +68,6 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
 }
 
 network::ethernet::packet network::ip::prepare_packet(network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
-    //auto source_ip = interface.ip_address;
-
     auto target_mac = network::arp::get_mac_force(interface, target_ip);
 
     // Ask the ethernet layer to craft a packet
@@ -81,8 +83,10 @@ network::ethernet::packet network::ip::prepare_packet(network::interface_descrip
     header->ttl = 255;
     header->protocol = protocol;
     //TODO header->header_checksum
-    //TODO header->source_ip = ip_to_ip32(source_ip);
-    //TODO header->target_ip = ip_to_ip32(target_ip);
+    header->source_ip = ip_to_ip32(interface.ip_address);
+    header->target_ip = ip_to_ip32(target_ip);
+
+    packet.index += sizeof(network::ip::header);
 
     return packet;
 }
