@@ -55,6 +55,11 @@ const path& get_handle(size_t fd);
 bool has_handle(size_t fd);
 void release_handle(size_t fd);
 
+size_t register_new_socket(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol);
+const network::socket& get_socket(size_t fd);
+bool has_socket(size_t fd);
+void release_socket(size_t fd);
+
 const path& get_working_directory();
 void set_working_directory(const path& directory);
 

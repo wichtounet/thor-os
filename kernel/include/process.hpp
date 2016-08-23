@@ -16,6 +16,8 @@
 
 #include "vfs/path.hpp"
 
+#include "net/socket.hpp"
+
 namespace scheduler {
 
 constexpr const size_t MAX_PRIORITY = 4;
@@ -90,6 +92,7 @@ struct process_control_t {
     size_t rounds;
     size_t sleep_timeout;
     std::vector<path> handles;
+    std::vector<network::socket> sockets;
     path working_directory;
 };
 
