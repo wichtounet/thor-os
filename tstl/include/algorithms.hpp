@@ -223,6 +223,15 @@ bool equal_n(Iterator1 it1, Iterator2 it2, size_t n){
     return compare_n(it1, it2, n) == 0;
 }
 
+template<typename Iterator, typename Functor>
+void for_each(Iterator it, Iterator end, Functor func){
+    while(it != end){
+        func(*it);
+
+        ++it;
+    }
+}
+
 template<typename T>
 constexpr const T& min(const T& a, const T& b){
     return a <= b ? a : b;

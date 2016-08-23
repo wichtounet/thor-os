@@ -16,6 +16,33 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 
+namespace {
+
+void compute_checksum(network::ip::header* header){
+    auto ihl = header->version_ihl & 0xF;
+
+    header->header_checksum = 0;
+
+    uint32_t sum = 0;
+    std::for_each(reinterpret_cast<uint16_t*>(header),reinterpret_cast<uint16_t*>(header) + ihl * 2, [&sum](uint16_t value){
+        sum += value;
+    });
+
+    uint32_t value = sum & 0xFF;
+    uint32_t carry = sum - value;
+
+    while(carry){
+        value += carry;
+        auto sub = value & 0xFF;
+        carry = value - sub;
+        value = sub;
+    }
+
+    header->header_checksum = ~value;
+}
+
+} // end of anonymous namespace
+
 network::ip::address network::ip::ip32_to_ip(uint32_t raw){
     return {switch_endian_32(raw)};
 }
@@ -82,9 +109,10 @@ network::ethernet::packet network::ip::prepare_packet(network::interface_descrip
     header->flags_offset = 1U << 14;
     header->ttl = 255;
     header->protocol = protocol;
-    //TODO header->header_checksum
     header->source_ip = ip_to_ip32(interface.ip_address);
     header->target_ip = ip_to_ip32(target_ip);
+
+    compute_checksum(header);
 
     packet.index += sizeof(network::ip::header);
 
