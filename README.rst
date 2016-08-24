@@ -48,6 +48,7 @@ And of course (if you develop on Intel), the *Intel 64 and IA-32 Architectures S
 As for Books, I've been pretty much disappointed so far. There are plenty of books on operating system, but none of the few I've read so far have been great. They are probably good at helping you understand OSes, but pretty bad at helping you develop your own OS. Moreover, they are also pretty much outdated. 
 
 The books I've read are:
+
 * Modern Operating Systems by Andrew S. Tanenbaum, 3rd ed. It's a pretty good book overall. It covers most of the subjects, although it doesn't go in too much details on some subjects (network implementation). Moreover, it also covers some subjects that most hobbyist are not going to care about (lots about security for instance). 
 * Operating Systems: Design and Implementation by Andrew S. Tanenbaum et al. I would only advice this book if you want to learn about MINIX, if you don't care about MINIX, don't read this book. It's full of code, not really well organized and not easy to follow. 
 
