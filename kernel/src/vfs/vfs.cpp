@@ -216,7 +216,7 @@ int64_t vfs::mount(partition_type type, const char* mount_point, const char* dev
     return 0;
 }
 
-int64_t vfs::statfs(const char* mount_point, statfs_info& info){
+int64_t vfs::statfs(const char* mount_point, tlib::statfs_info& info){
     auto base_path = get_path(mount_point);
 
     if(!base_path.is_valid()){
@@ -307,7 +307,7 @@ int64_t vfs::rm(const char* file_path){
     return fs.file_system->rm(fs_path);
 }
 
-int64_t vfs::stat(size_t fd, stat_info& info){
+int64_t vfs::stat(size_t fd, tlib::stat_info& info){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
@@ -320,7 +320,7 @@ int64_t vfs::stat(size_t fd, stat_info& info){
     if(fs_path.is_root()){
         //TODO Add file system support for stat of the root directory
         info.size = 4096;
-        info.flags = STAT_FLAG_DIRECTORY;
+        info.flags = tlib::STAT_FLAG_DIRECTORY;
 
         return 0;
     }
@@ -336,20 +336,20 @@ int64_t vfs::stat(size_t fd, stat_info& info){
     info.flags = 0;
 
     if(f.directory){
-        info.flags |= STAT_FLAG_DIRECTORY;
+        info.flags |= tlib::STAT_FLAG_DIRECTORY;
     }
 
     if(f.system){
-        info.flags |= STAT_FLAG_SYSTEM;
+        info.flags |= tlib::STAT_FLAG_SYSTEM;
     }
 
     if(f.hidden){
-        info.flags |= STAT_FLAG_HIDDEN;
+        info.flags |= tlib::STAT_FLAG_HIDDEN;
     }
 
     // All files starting with a .dot are hidden by default
     if(fs_path.base_name()[0] == '.'){
-        info.flags |= STAT_FLAG_HIDDEN;
+        info.flags |= tlib::STAT_FLAG_HIDDEN;
     }
 
     info.created = f.created;
@@ -522,7 +522,7 @@ int64_t vfs::entries(size_t fd, char* buffer, size_t size){
     size_t total_size = 0;
 
     for(auto& f : files){
-        total_size += sizeof(directory_entry) + f.file_name.size();
+        total_size += sizeof(tlib::directory_entry) + f.file_name.size();
     }
 
     if(size < total_size){
@@ -534,7 +534,7 @@ int64_t vfs::entries(size_t fd, char* buffer, size_t size){
     for(size_t i = 0; i < files.size(); ++i){
         auto& file = files[i];
 
-        auto entry = reinterpret_cast<directory_entry*>(buffer + position);
+        auto entry = reinterpret_cast<tlib::directory_entry*>(buffer + position);
 
         entry->type = 0; //TODO Fill that
         entry->length = file.file_name.size();
@@ -572,7 +572,7 @@ int64_t vfs::mounts(char* buffer, size_t size){
     for(size_t i = 0; i < mount_point_list.size(); ++i){
         auto& mp = mount_point_list[i];
 
-        auto entry = reinterpret_cast<mount_point*>(buffer + position);
+        auto entry = reinterpret_cast<tlib::mount_point*>(buffer + position);
 
         auto fs_type = partition_type_to_string(mp.fs_type);
 

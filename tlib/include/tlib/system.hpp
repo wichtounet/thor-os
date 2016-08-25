@@ -15,6 +15,8 @@
 
 #include "tlib/datetime.hpp"
 
+namespace tlib {
+
 void exit(size_t return_code) __attribute__((noreturn));
 
 std::expected<size_t> exec(const char* executable, const std::vector<std::string>& params = {});
@@ -33,5 +35,7 @@ uint64_t s_time();
 uint64_t ms_time();
 
 void alpha();
+
+} // end of tlib namespace
 
 #endif

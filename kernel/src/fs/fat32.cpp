@@ -703,7 +703,7 @@ size_t fat32::fat32_file_system::rm(const path& file_path){
     }
 }
 
-size_t fat32::fat32_file_system::statfs(statfs_info& file){
+size_t fat32::fat32_file_system::statfs(tlib::statfs_info& file){
     file.total_size = fat_bs->total_sectors_long * 512;
     file.free_size = fat_is->free_clusters * fat_bs->sectors_per_cluster * 512;
 

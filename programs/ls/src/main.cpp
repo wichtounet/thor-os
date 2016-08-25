@@ -21,55 +21,55 @@ struct config {
 };
 
 void ls_files(const config& conf, const char* file_path){
-    auto fd = open(file_path);
+    auto fd = tlib::open(file_path);
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
-            if(!(info->flags & STAT_FLAG_DIRECTORY)){
-                print_line("ls: error: Is not a directory");
+            if(!(info->flags & tlib::STAT_FLAG_DIRECTORY)){
+                tlib::print_line("ls: error: Is not a directory");
             } else {
                 auto buffer = new char[BUFFER_SIZE];
 
-                auto entries_result = entries(*fd, buffer, BUFFER_SIZE);
+                auto entries_result = tlib::entries(*fd, buffer, BUFFER_SIZE);
 
                 if(entries_result.valid()){
                     if(*entries_result){
                         size_t position = 0;
 
                         while(true){
-                            auto entry = reinterpret_cast<directory_entry*>(buffer + position);
+                            auto entry = reinterpret_cast<tlib::directory_entry*>(buffer + position);
 
                             bool show = true;
                             if(!conf.hidden){
                                 auto path = std::string(file_path) + "/" + &entry->name;
 
-                                auto file_fd = open(path.c_str());
+                                auto file_fd = tlib::open(path.c_str());
 
                                 if(file_fd.valid()){
-                                    auto file_info = stat(*file_fd);
+                                    auto file_info = tlib::stat(*file_fd);
 
                                     if(file_info.valid()){
-                                        if(file_info->flags & STAT_FLAG_HIDDEN){
+                                        if(file_info->flags & tlib::STAT_FLAG_HIDDEN){
                                             show = false;
                                         }
                                     } else {
-                                        printf("ls: stat error: %s\n", std::error_message(file_info.error()));
+                                        tlib::printf("ls: stat error: %s\n", std::error_message(file_info.error()));
                                     }
                                 } else {
-                                    printf("ls: open error: %s\n", std::error_message(file_fd.error()));
+                                    tlib::printf("ls: open error: %s\n", std::error_message(file_fd.error()));
                                 }
 
-                                close(*file_fd);
+                                tlib::close(*file_fd);
                             }
 
                             if(show){
                                 if(conf.list){
-                                    print_line(&entry->name);
+                                    tlib::print_line(&entry->name);
                                 } else {
-                                    print(&entry->name);
-                                    print(" ");
+                                    tlib::print(&entry->name);
+                                    tlib::print(" ");
                                 }
                             }
 
@@ -81,22 +81,22 @@ void ls_files(const config& conf, const char* file_path){
                         }
 
                         if(!conf.list){
-                            print_line();
+                            tlib::print_line();
                         }
                     }
                 } else {
-                    printf("ls: entries error: %s\n", std::error_message(entries_result.error()));
+                    tlib::printf("ls: entries error: %s\n", std::error_message(entries_result.error()));
                 }
 
                 delete[] buffer;
             }
         } else {
-            printf("ls: stat error: %s\n", std::error_message(info.error()));
+            tlib::printf("ls: stat error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("ls: open error: %s\n", std::error_message(fd.error()));
+        tlib::printf("ls: open error: %s\n", std::error_message(fd.error()));
     }
 }
 
@@ -118,7 +118,7 @@ int main(int argc, char* argv[]){
                 } else if(c == 'a'){
                     conf.hidden = true;
                 } else {
-                    print_line("ls: invalid argument");
+                    tlib::print_line("ls: invalid argument");
                     return 1;
                 }
             }
@@ -128,7 +128,7 @@ int main(int argc, char* argv[]){
     }
 
     if(i == argc){
-        auto cwd = current_working_directory();
+        auto cwd = tlib::current_working_directory();
         ls_files(conf, cwd.c_str());
     } else {
         ls_files(conf, argv[argc -1]);

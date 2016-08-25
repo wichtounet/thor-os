@@ -9,19 +9,19 @@
 #include <tlib/system.hpp>
 
 int main(int, char*[]){
-    auto date = local_date();
+    auto date = tlib::local_date();
 
-    print(date.day);
-    print('.');
-    print(date.month);
-    print('.');
-    print(date.year);
-    print(' ');
+    tlib::print(date.day);
+    tlib::print('.');
+    tlib::print(date.month);
+    tlib::print('.');
+    tlib::print(date.year);
+    tlib::print(' ');
 
-    print(date.hour);
-    print(':');
-    print(date.minutes);
-    print_line();
+    tlib::print(date.hour);
+    tlib::print(':');
+    tlib::print(date.minutes);
+    tlib::print_line();
 
     return 0;
 }

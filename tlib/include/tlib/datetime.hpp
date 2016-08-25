@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+namespace tlib {
+
 struct datetime {
     uint16_t year;
     uint8_t month;
@@ -20,5 +22,7 @@ struct datetime {
     uint8_t unused;
     uint64_t precise;
 } __attribute__((packed)) ;
+
+} // end of namespace tlib
 
 #endif

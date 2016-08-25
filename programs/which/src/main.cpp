@@ -12,7 +12,7 @@
 
 int main(int argc, char* argv[]){
     if(argc == 1){
-        print_line("Usage: which executable_path");
+        tlib::print_line("Usage: which executable_path");
         return 1;
     }
 
@@ -22,17 +22,17 @@ int main(int argc, char* argv[]){
         path = "/bin/" + path;
     }
 
-    auto fd = open(path.c_str());
+    auto fd = tlib::open(path.c_str());
 
     if(fd.valid()){
-        print_line(path);
+        tlib::print_line(path);
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
         if(fd.has_error(std::ERROR_NOT_EXISTS)){
-            printf("%s not found\n", argv[1]);
+            tlib::printf("%s not found\n", argv[1]);
         } else {
-            printf("which: error: %s\n", std::error_message(fd.error()));
+            tlib::printf("which: error: %s\n", std::error_message(fd.error()));
         }
     }
 

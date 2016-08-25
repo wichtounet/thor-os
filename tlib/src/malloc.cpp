@@ -84,8 +84,8 @@ bool expand_heap(malloc_header_chunk* current, size_t bytes = 0){
     }
 
     //Allocate a new block of memory
-    auto old_end = brk_end();
-    auto brk_end = sbrk(blocks * BLOCK_SIZE);
+    auto old_end = tlib::brk_end();
+    auto brk_end = tlib::sbrk(blocks * BLOCK_SIZE);
 
     if(brk_end == old_end){
         return false;
@@ -123,7 +123,7 @@ void init_head(){
 
 } //end of anonymous namespace
 
-void* malloc(size_t bytes){
+void* tlib::malloc(size_t bytes){
     if(unlikely(!init)){
         init_head();
     }
@@ -191,7 +191,7 @@ void* malloc(size_t bytes){
     return reinterpret_cast<void*>(block_start);
 }
 
-void free(void* block){
+void tlib::free(void* block){
     auto free_header = reinterpret_cast<malloc_header_chunk*>(
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 
@@ -202,7 +202,7 @@ void free(void* block){
     insert_after(malloc_head, free_header);
 }
 
-size_t brk_start(){
+size_t tlib::brk_start(){
     size_t value;
     asm volatile("mov rax, 7; int 50; mov %[brk_start], rax"
         : [brk_start] "=m" (value)
@@ -211,7 +211,7 @@ size_t brk_start(){
     return value;
 }
 
-size_t brk_end(){
+size_t tlib::brk_end(){
     size_t value;
     asm volatile("mov rax, 8; int 50; mov %[brk_end], rax"
         : [brk_end] "=m" (value)
@@ -220,7 +220,7 @@ size_t brk_end(){
     return value;
 }
 
-size_t sbrk(size_t inc){
+size_t tlib::sbrk(size_t inc){
     size_t value;
     asm volatile("mov rax, 9; mov rbx, %[brk_inc]; int 50; mov %[brk_end], rax"
         : [brk_end] "=m" (value)
@@ -230,17 +230,17 @@ size_t sbrk(size_t inc){
 }
 
 void* operator new(uint64_t size){
-    return malloc(size);
+    return tlib::malloc(size);
 }
 
 void operator delete(void* p){
-    free(p);
+    tlib::free(p);
 }
 
 void* operator new[](uint64_t size){
-    return malloc(size);
+    return tlib::malloc(size);
 }
 
 void operator delete[](void* p){
-    return free(p);
+    return tlib::free(p);
 }

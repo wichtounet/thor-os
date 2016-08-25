@@ -87,6 +87,6 @@ inline const char* error_message(size_t error){
     }
 }
 
-}
+} // end of namespace std
 
 #endif

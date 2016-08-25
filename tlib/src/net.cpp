@@ -7,7 +7,7 @@
 
 #include "tlib/net.hpp"
 
-std::expected<size_t> socket_open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
+std::expected<size_t> tlib::socket_open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
     int64_t fd;
     asm volatile("mov rax, 0x3000; mov rbx, %[type]; mov rcx, %[type]; mov rdx, %[protocol]; int 50; mov %[fd], rax"
         : [fd] "=m" (fd)
@@ -21,7 +21,7 @@ std::expected<size_t> socket_open(network::socket_domain domain, network::socket
     }
 }
 
-void socket_close(size_t fd){
+void tlib::socket_close(size_t fd){
     asm volatile("mov rax, 0x3001; mov rbx, %[fd]; int 50;"
         : /* No outputs */
         : [fd] "g" (fd)

@@ -10,11 +10,15 @@
 
 #include <types.hpp>
 
+namespace tlib {
+
 struct directory_entry {
     size_t type;
     size_t offset_next;
     size_t length;
     char name; //First char
 };
+
+} // end of namespace tlib
 
 #endif

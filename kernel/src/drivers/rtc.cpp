@@ -29,7 +29,7 @@ uint8_t get_RTC_register(int reg){
 
 } //end of anonymous namespace
 
-datetime rtc::all_data(){
+tlib::datetime rtc::all_data(){
     uint8_t second;
     uint8_t minute;
     uint8_t hour;

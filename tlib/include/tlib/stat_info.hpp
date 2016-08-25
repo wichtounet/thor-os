@@ -12,6 +12,8 @@
 
 #include "tlib/datetime.hpp"
 
+namespace tlib {
+
 constexpr const size_t STAT_FLAG_DIRECTORY = 1 << 0;
 constexpr const size_t STAT_FLAG_HIDDEN = 1 << 1;
 constexpr const size_t STAT_FLAG_SYSTEM = 1 << 2;
@@ -23,5 +25,7 @@ struct stat_info {
     datetime modified;
     datetime accessed;
 };
+
+} // end of namespace tlib
 
 #endif

@@ -12,85 +12,85 @@
 
 int main(int argc, char* argv[]){
     if(argc == 1){
-        print_line("Usage: stat file_path");
+        tlib::print_line("Usage: stat file_path");
         return 1;
     }
 
-    auto fd = open(argv[1]);
+    auto fd = tlib::open(argv[1]);
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
-            if(info->flags & STAT_FLAG_DIRECTORY){
-                print("Directory ");
+            if(info->flags & tlib::STAT_FLAG_DIRECTORY){
+                tlib::print("Directory ");
             } else {
-                print("File ");
+                tlib::print("File ");
             }
 
-            print_line(argv[1]);
+            tlib::print_line(argv[1]);
 
-            printf("Size: %m\n", info->size);
-            print("Flags: ");
+            tlib::printf("Size: %m\n", info->size);
+            tlib::print("Flags: ");
 
-            if(info->flags & STAT_FLAG_HIDDEN){
-                print("Hidden ");
+            if(info->flags & tlib::STAT_FLAG_HIDDEN){
+                tlib::print("Hidden ");
             }
 
-            if(info->flags & STAT_FLAG_SYSTEM){
-                print("System ");
+            if(info->flags & tlib::STAT_FLAG_SYSTEM){
+                tlib::print("System ");
             }
 
-            print_line();
+            tlib::print_line();
 
-            print("Created: ");
+            tlib::print("Created: ");
 
-            print(info->created.day);
-            print('.');
-            print(info->created.month);
-            print('.');
-            print(info->created.year);
-            print(' ');
+            tlib::print(info->created.day);
+            tlib::print('.');
+            tlib::print(info->created.month);
+            tlib::print('.');
+            tlib::print(info->created.year);
+            tlib::print(' ');
 
-            print(info->created.hour);
-            print(':');
-            print(info->created.minutes);
-            print_line();
+            tlib::print(info->created.hour);
+            tlib::print(':');
+            tlib::print(info->created.minutes);
+            tlib::print_line();
 
-            print("Modified: ");
+            tlib::print("Modified: ");
 
-            print(info->modified.day);
-            print('.');
-            print(info->modified.month);
-            print('.');
-            print(info->modified.year);
-            print(' ');
+            tlib::print(info->modified.day);
+            tlib::print('.');
+            tlib::print(info->modified.month);
+            tlib::print('.');
+            tlib::print(info->modified.year);
+            tlib::print(' ');
 
-            print(info->modified.hour);
-            print(':');
-            print(info->modified.minutes);
-            print_line();
+            tlib::print(info->modified.hour);
+            tlib::print(':');
+            tlib::print(info->modified.minutes);
+            tlib::print_line();
 
-            print("Accessed: ");
+            tlib::print("Accessed: ");
 
-            print(info->accessed.day);
-            print('.');
-            print(info->accessed.month);
-            print('.');
-            print(info->accessed.year);
-            print(' ');
+            tlib::print(info->accessed.day);
+            tlib::print('.');
+            tlib::print(info->accessed.month);
+            tlib::print('.');
+            tlib::print(info->accessed.year);
+            tlib::print(' ');
 
-            print(info->accessed.hour);
-            print(':');
-            print(info->accessed.minutes);
-            print_line();
+            tlib::print(info->accessed.hour);
+            tlib::print(':');
+            tlib::print(info->accessed.minutes);
+            tlib::print_line();
         } else {
-            printf("stat: error: %s\n", std::error_message(info.error()));
+            tlib::printf("stat: error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("stat: error: %s\n", std::error_message(fd.error()));
+        tlib::printf("stat: error: %s\n", std::error_message(fd.error()));
     }
 
     return 0;

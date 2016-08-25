@@ -320,7 +320,7 @@ size_t sysfs::sysfs_file_system::rm(const path& ){
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t sysfs::sysfs_file_system::statfs(statfs_info& file){
+size_t sysfs::sysfs_file_system::statfs(tlib::statfs_info& file){
     file.total_size = 0;
     file.free_size = 0;
 

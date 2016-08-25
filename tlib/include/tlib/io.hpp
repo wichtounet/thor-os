@@ -13,6 +13,10 @@
 
 #include "tlib/ioctl_codes.hpp"
 
+namespace tlib {
+
 int64_t ioctl(size_t device, ioctl_request request, void* data);
+
+} //end of namespace tlib
 
 #endif

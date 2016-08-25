@@ -44,7 +44,7 @@ void append_to_file(const char* s, size_t length){
     auto fd = vfs::open("/messages", std::OPEN_CREATE);
 
     if(fd >= 0){
-        stat_info info;
+        tlib::stat_info info;
         if(vfs::stat(fd, info) == 0){
             if(vfs::truncate(fd, info.size + length + 1) == 0){
                 std::string buffer = s;

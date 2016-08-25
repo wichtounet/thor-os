@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+namespace tlib {
+
 namespace graphics {
 
 uint64_t get_width();
@@ -30,5 +32,7 @@ uint64_t mouse_y();
 void redraw(char* buffer);
 
 } // end of namespace graphics
+
+} // end of namespace tlib
 
 #endif

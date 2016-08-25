@@ -12,11 +12,11 @@ namespace {
 
 struct A {
     A(){
-        print_line("dctor: Constructor called");
+        tlib::print_line("dctor: Constructor called");
     }
 
     ~A(){
-        print_line("dctor: Destructor called");
+        tlib::print_line("dctor: Destructor called");
     }
 };
 
@@ -25,7 +25,7 @@ A a;
 } // end of anonymous namespace
 
 int main(int, char*[]){
-    print_line("dctor: main function called");
+    tlib::print_line("dctor: main function called");
 
     return 0;
 }

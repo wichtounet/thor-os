@@ -22,7 +22,7 @@ auto message = "I'm two";
 int main(){
     while(true){
         fibonacci_slow(current);
-        print_line(message);
+        tlib::print_line(message);
     }
 
     return 0;

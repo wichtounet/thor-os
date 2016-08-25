@@ -170,14 +170,14 @@ void sc_close(interrupt::syscall_regs* regs){
 
 void sc_stat(interrupt::syscall_regs* regs){
     auto fd = regs->rbx;
-    auto info = reinterpret_cast<stat_info*>(regs->rcx);
+    auto info = reinterpret_cast<tlib::stat_info*>(regs->rcx);
 
     regs->rax = vfs::stat(fd, *info);
 }
 
 void sc_statfs(interrupt::syscall_regs* regs){
     auto mount_point  = reinterpret_cast<char*>(regs->rbx);
-    auto info = reinterpret_cast<statfs_info*>(regs->rcx);
+    auto info = reinterpret_cast<tlib::statfs_info*>(regs->rcx);
 
     regs->rax = vfs::statfs(mount_point, *info);
 }
@@ -269,7 +269,7 @@ void sc_rm(interrupt::syscall_regs* regs){
 }
 
 void sc_datetime(interrupt::syscall_regs* regs){
-    auto date = reinterpret_cast<datetime*>(regs->rbx);
+    auto date = reinterpret_cast<tlib::datetime*>(regs->rbx);
 
     *date = rtc::all_data();
 }

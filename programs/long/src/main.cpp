@@ -20,14 +20,14 @@ uint64_t fibonacci_slow(uint64_t s){
 int main(){
     uint64_t i = 0;
 
-    print_line("START");
+    tlib::print_line("START");
 
     while(i < 10){
-        print_line(fibonacci_slow(current));
+        tlib::print_line(fibonacci_slow(current));
         ++i;
     }
 
-    print_line("END");
+    tlib::print_line("END");
 
     return 0;
 }

@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+namespace tlib {
+
 struct mount_point {
     size_t offset_next;
     size_t length_mp;
@@ -17,5 +19,7 @@ struct mount_point {
     size_t length_type;
     char name; //First char
 };
+
+} // end of namespace tlib
 
 #endif

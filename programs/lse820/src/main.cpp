@@ -14,57 +14,57 @@
 static constexpr const size_t BUFFER_SIZE = 4096;
 
 std::string read_file(const std::string& path){
-    auto fd = open(path.c_str());
+    auto fd = tlib::open(path.c_str());
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
             auto size = info->size;
 
             auto buffer = new char[size+1];
 
-            auto content_result = read(*fd, buffer, size);
+            auto content_result = tlib::read(*fd, buffer, size);
 
             if(content_result.valid()){
                 if(*content_result != size){
                     //TODO Read more
                 } else {
                     buffer[size] = '\0';
-                    close(*fd);
+                    tlib::close(*fd);
                     return buffer;
                 }
             } else {
-                printf("cat: error: %s\n", std::error_message(content_result.error()));
+                tlib::printf("cat: error: %s\n", std::error_message(content_result.error()));
             }
         } else {
-            printf("cat: error: %s\n", std::error_message(info.error()));
+            tlib::printf("cat: error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("cat: error: %s\n", std::error_message(fd.error()));
+        tlib::printf("cat: error: %s\n", std::error_message(fd.error()));
     }
 
     return "";
 }
 
 int main(int /*argc*/, char* /*argv*/[]){
-    auto fd = open("/sys/memory/e820/");
+    auto fd = tlib::open("/sys/memory/e820/");
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
             auto entries_buffer = new char[BUFFER_SIZE];
 
-            auto entries_result = entries(*fd, entries_buffer, BUFFER_SIZE);
+            auto entries_result = tlib::entries(*fd, entries_buffer, BUFFER_SIZE);
 
             if(entries_result.valid()){
                 size_t position = 0;
 
                 while(true){
-                    auto entry = reinterpret_cast<directory_entry*>(entries_buffer + position);
+                    auto entry = reinterpret_cast<tlib::directory_entry*>(entries_buffer + position);
 
                     std::string base_path = "/sys/memory/e820/";
                     std::string entry_name = &entry->name;
@@ -74,7 +74,7 @@ int main(int /*argc*/, char* /*argv*/[]){
                         auto size = parse(read_file(base_path + entry_name + "/size"));
                         auto type = read_file(base_path + entry_name + "/type");
 
-                        printf("%s: %s (%hB) %h -> %h\n", &entry->name, type.c_str(), size, base, base + size);
+                        tlib::printf("%s: %s (%hB) %h -> %h\n", &entry->name, type.c_str(), size, base, base + size);
                     }
 
                     if(!entry->offset_next){
@@ -84,17 +84,17 @@ int main(int /*argc*/, char* /*argv*/[]){
                     position += entry->offset_next;
                 }
             } else {
-                printf("lse820: entries error: %s\n", std::error_message(entries_result.error()));
+                tlib::printf("lse820: entries error: %s\n", std::error_message(entries_result.error()));
             }
 
             delete[] entries_buffer;
         } else {
-            printf("lse820: stat error: %s\n", std::error_message(info.error()));
+            tlib::printf("lse820: stat error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("lse820: open error: %s\n", std::error_message(fd.error()));
+        tlib::printf("lse820: open error: %s\n", std::error_message(fd.error()));
     }
 
     return 0;

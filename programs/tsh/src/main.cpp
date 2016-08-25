@@ -19,8 +19,8 @@ size_t columns = 0;
 size_t rows  = 0;
 
 void get_console_information(){
-    columns = get_columns();
-    rows = get_rows();
+    columns = tlib::get_columns();
+    rows = tlib::get_rows();
 }
 
 void exit_command(const std::vector<std::string>& params);
@@ -45,68 +45,68 @@ command_definition commands[6] = {
 };
 
 void exit_command(const std::vector<std::string>&){
-    exit(0);
+    tlib::exit(0);
 }
 
 void echo_command(const std::vector<std::string>& params){
     for(uint64_t i = 1; i < params.size(); ++i){
-        print(params[i]);
-        print(' ');
+        tlib::print(params[i]);
+        tlib::print(' ');
     }
-    print_line();
+    tlib::print_line();
 }
 
 void sleep_command(const std::vector<std::string>& params){
     if(params.size() == 1){
-        print_line("sleep: missing operand");
+        tlib::print_line("sleep: missing operand");
     } else {
         size_t time = std::parse(params[1]);
-        sleep_ms(time * 1000);
+        tlib::sleep_ms(time * 1000);
     }
 }
 
 void clear_command(const std::vector<std::string>&){
-    clear();
+    tlib::clear();
 }
 
 void cd_command(const std::vector<std::string>& params){
     if(params.size() == 1){
-        print_line("Usage: cd file_path");
+        tlib::print_line("Usage: cd file_path");
         return;
     }
 
     auto& path = params[1];
 
-    auto fd = open(path.c_str());
+    auto fd = tlib::open(path.c_str());
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
-            if(!(info->flags & STAT_FLAG_DIRECTORY)){
-                print_line("cat: error: Is not a directory");
+            if(!(info->flags & tlib::STAT_FLAG_DIRECTORY)){
+                tlib::print_line("cat: error: Is not a directory");
             } else {
                 if(path[0] == '/'){
-                    set_current_working_directory(path);
+                    tlib::set_current_working_directory(path);
                 } else {
-                    auto cwd = current_working_directory();
+                    auto cwd = tlib::current_working_directory();
 
-                    set_current_working_directory(cwd + "/" + path);
+                    tlib::set_current_working_directory(cwd + "/" + path);
                 }
             }
         } else {
-            printf("cd: error: %s\n", std::error_message(info.error()));
+            tlib::printf("cd: error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("cd: error: %s\n", std::error_message(fd.error()));
+        tlib::printf("cd: error: %s\n", std::error_message(fd.error()));
     }
 }
 
 void pwd_command(const std::vector<std::string>&){
-    auto cwd = current_working_directory();
-    print_line(cwd);
+    auto cwd = tlib::current_working_directory();
+    tlib::print_line(cwd);
 }
 
 } //end of anonymous namespace
@@ -117,10 +117,10 @@ int main(){
     char input_buffer[256];
     std::string current_input;
 
-    print("thor> ");
+    tlib::print("thor> ");
 
     while(true){
-        auto c = read_input(input_buffer, 255 );
+        auto c = tlib::read_input(input_buffer, 255 );
 
         if(input_buffer[c-1] == '\n'){
             if(c > 1){
@@ -156,21 +156,21 @@ int main(){
                         executable = "/bin/" + executable;
                     }
 
-                    auto result = exec_and_wait(executable.c_str(), args);
+                    auto result = tlib::exec_and_wait(executable.c_str(), args);
 
                     if(!result.valid()){
-                        print("error: ");
-                        print_line(std::error_message(result.error()));
-                        print("command: \"");
-                        print(current_input);
-                        print_line("\"");
+                        tlib::print("error: ");
+                        tlib::print_line(std::error_message(result.error()));
+                        tlib::print("command: \"");
+                        tlib::print(current_input);
+                        tlib::print_line("\"");
                     }
                 }
             }
 
             current_input.clear();
 
-            print("thor> ");
+            tlib::print("thor> ");
         } else {
             input_buffer[c] = '\0';
 

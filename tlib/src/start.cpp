@@ -32,7 +32,7 @@ void _start(int argc, char* argv[]){
     __cxa_finalize(nullptr);
 
     // Kill the process with the correct exit code
-    exit(code);
+    tlib::exit(code);
 }
 
 #define ATEXIT_MAX_FUNCS 32

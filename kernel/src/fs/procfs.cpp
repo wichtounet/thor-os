@@ -193,7 +193,7 @@ size_t procfs::procfs_file_system::ls(const path& file_path, std::vector<vfs::fi
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t procfs::procfs_file_system::statfs(statfs_info& file){
+size_t procfs::procfs_file_system::statfs(tlib::statfs_info& file){
     file.total_size = 0;
     file.free_size = 0;
 

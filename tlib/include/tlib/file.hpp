@@ -15,6 +15,8 @@
 #include "tlib/stat_info.hpp"
 #include "tlib/statfs_info.hpp"
 
+namespace tlib {
+
 std::expected<size_t> open(const char* file, size_t flags = 0);
 int64_t mkdir(const char* file);
 int64_t rm(const char* file);
@@ -31,5 +33,7 @@ std::expected<void> mount(size_t type, size_t dev_fd, size_t mp_fd);
 
 std::string current_working_directory();
 void set_current_working_directory(const std::string& directory);
+
+} // end of namespace tlib
 
 #endif

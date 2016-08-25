@@ -14,36 +14,36 @@
 static constexpr const size_t BUFFER_SIZE = 4096;
 
 std::string read_file(const std::string& path){
-    auto fd = open(path.c_str());
+    auto fd = tlib::open(path.c_str());
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
             auto size = info->size;
 
             auto buffer = new char[size+1];
 
-            auto content_result = read(*fd, buffer, size);
+            auto content_result = tlib::read(*fd, buffer, size);
 
             if(content_result.valid()){
                 if(*content_result != size){
                     //TODO Read more
                 } else {
                     buffer[size] = '\0';
-                    close(*fd);
+                    tlib::close(*fd);
                     return buffer;
                 }
             } else {
-                printf("cat: error: %s\n", std::error_message(content_result.error()));
+                tlib::printf("cat: error: %s\n", std::error_message(content_result.error()));
             }
         } else {
-            printf("cat: error: %s\n", std::error_message(info.error()));
+            tlib::printf("cat: error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("cat: error: %s\n", std::error_message(fd.error()));
+        tlib::printf("cat: error: %s\n", std::error_message(fd.error()));
     }
 
     return "";
@@ -90,21 +90,21 @@ const char* device_type_str(const std::string& class_code){
 }
 
 int main(int /*argc*/, char* /*argv*/[]){
-    auto fd = open("/sys/pci/");
+    auto fd = tlib::open("/sys/pci/");
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
             auto entries_buffer = new char[BUFFER_SIZE];
 
-            auto entries_result = entries(*fd, entries_buffer, BUFFER_SIZE);
+            auto entries_result = tlib::entries(*fd, entries_buffer, BUFFER_SIZE);
 
             if(entries_result.valid()){
                 size_t position = 0;
 
                 while(true){
-                    auto entry = reinterpret_cast<directory_entry*>(entries_buffer + position);
+                    auto entry = reinterpret_cast<tlib::directory_entry*>(entries_buffer + position);
 
                     std::string base_path = "/sys/pci/";
                     std::string entry_name = &entry->name;
@@ -115,7 +115,7 @@ int main(int /*argc*/, char* /*argv*/[]){
                     auto subclass = read_file(base_path + entry_name + "/subclass");
                     auto device_type = device_type_str(class_code);
 
-                    printf("%s: %s %s:%s (%s:%s)\n", device_type, &entry->name, vendor.c_str(), device.c_str(), class_code.c_str(), subclass.c_str());
+                    tlib::printf("%s: %s %s:%s (%s:%s)\n", device_type, &entry->name, vendor.c_str(), device.c_str(), class_code.c_str(), subclass.c_str());
 
                     if(!entry->offset_next){
                         break;
@@ -124,17 +124,17 @@ int main(int /*argc*/, char* /*argv*/[]){
                     position += entry->offset_next;
                 }
             } else {
-                printf("ls: error: %s\n", std::error_message(entries_result.error()));
+                tlib::printf("ls: error: %s\n", std::error_message(entries_result.error()));
             }
 
             delete[] entries_buffer;
         } else {
-            printf("ls: error: %s\n", std::error_message(info.error()));
+            tlib::printf("ls: error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("ls: error: %s\n", std::error_message(fd.error()));
+        tlib::printf("ls: error: %s\n", std::error_message(fd.error()));
     }
 
     return 0;

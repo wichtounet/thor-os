@@ -8,7 +8,7 @@
 #include <tlib/system.hpp>
 
 int main(int, char*[]){
-    alpha();
+    tlib::alpha();
 
     return 0;
 }

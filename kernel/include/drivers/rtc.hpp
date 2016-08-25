@@ -12,7 +12,7 @@
 
 namespace rtc {
 
-datetime all_data();
+tlib::datetime all_data();
 
 } //end of rtc namespace
 

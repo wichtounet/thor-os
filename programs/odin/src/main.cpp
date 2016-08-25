@@ -97,8 +97,8 @@ void draw_string(size_t x, size_t y, const char* s, uint32_t color){
 }
 
 void paint_cursor(){
-    auto x = graphics::mouse_x();
-    auto y = graphics::mouse_y();
+    auto x = tlib::graphics::mouse_x();
+    auto y = tlib::graphics::mouse_y();
 
     auto color = make_color(20, 20, 20);
 
@@ -118,9 +118,9 @@ void paint_top_bar(){
     draw_rect(0, 0, width, 18, make_color(51, 51, 51));
     draw_rect(0, 18, width, 2, make_color(25, 25, 25));
 
-    auto date = local_date();
+    auto date = tlib::local_date();
 
-    auto date_str = sprintf("%u.%u.%u %u:%u", size_t(date.day), size_t(date.month), size_t(date.year), size_t(date.hour), size_t(date.minutes));
+    auto date_str = tlib::sprintf("%u.%u.%u %u:%u", size_t(date.day), size_t(date.month), size_t(date.year), size_t(date.hour), size_t(date.minutes));
 
     draw_char(2, 2, 'T', make_color(30, 30, 30));
     draw_string(width - 128, 2, date_str.c_str(), make_color(200, 200, 200));
@@ -159,8 +159,8 @@ public:
 
     void update(){
         if(drag){
-            auto mouse_x = graphics::mouse_x();
-            auto mouse_y = graphics::mouse_y();
+            auto mouse_x = tlib::graphics::mouse_x();
+            auto mouse_y = tlib::graphics::mouse_y();
 
             auto delta_x = int64_t(mouse_x) - drag_start_x;
             auto delta_y = int64_t(mouse_y) - drag_start_y;
@@ -203,8 +203,8 @@ public:
     }
 
     bool mouse_in_title(){
-        auto mouse_x = graphics::mouse_x();
-        auto mouse_y = graphics::mouse_y();
+        auto mouse_x = tlib::graphics::mouse_x();
+        auto mouse_y = tlib::graphics::mouse_y();
 
         return mouse_x >= x && mouse_x <= x + width && mouse_y >= y + 2 && mouse_y <= mouse_y + 18;
     }
@@ -212,8 +212,8 @@ public:
     void start_drag(){
         if(!drag){
             drag = true;
-            drag_start_x = graphics::mouse_x();
-            drag_start_y = graphics::mouse_y();
+            drag_start_x = tlib::graphics::mouse_x();
+            drag_start_y = tlib::graphics::mouse_y();
         }
     }
 
@@ -227,14 +227,14 @@ std::vector<window> windows;
 } // end of anonnymous namespace
 
 int main(int /*argc*/, char* /*argv*/[]){
-    width = graphics::get_width();
-    height = graphics::get_height();
-    x_shift = graphics::get_x_shift();
-    y_shift = graphics::get_y_shift();
-    bytes_per_scan_line = graphics::get_bytes_per_scan_line();
-    red_shift = graphics::get_red_shift();
-    green_shift = graphics::get_green_shift();
-    blue_shift = graphics::get_blue_shift();
+    width = tlib::graphics::get_width();
+    height = tlib::graphics::get_height();
+    x_shift = tlib::graphics::get_x_shift();
+    y_shift = tlib::graphics::get_y_shift();
+    bytes_per_scan_line = tlib::graphics::get_bytes_per_scan_line();
+    red_shift = tlib::graphics::get_red_shift();
+    green_shift = tlib::graphics::get_green_shift();
+    blue_shift = tlib::graphics::get_blue_shift();
 
     size_t total_size = height * bytes_per_scan_line;
 
@@ -244,8 +244,8 @@ int main(int /*argc*/, char* /*argv*/[]){
 
     auto background = make_color(128, 128, 128);
 
-    set_canonical(false);
-    set_mouse(true);
+    tlib::set_canonical(false);
+    tlib::set_mouse(true);
 
     static constexpr const size_t sleep_timeout = 50;
 
@@ -267,18 +267,18 @@ int main(int /*argc*/, char* /*argv*/[]){
 
         paint_cursor();
 
-        graphics::redraw(buffer);
+        tlib::graphics::redraw(buffer);
 
-        auto before = ms_time();
-        auto code = read_input_raw(sleep_timeout);
-        auto after = ms_time();
+        auto before = tlib::ms_time();
+        auto code = tlib::read_input_raw(sleep_timeout);
+        auto after = tlib::ms_time();
 
         if(code != keycode::TIMEOUT){
             // TODO Handle event at this point
 
             switch(code){
                 case keycode::MOUSE_LEFT_PRESS:
-                    user_logf("odin: left press");
+                    tlib::user_logf("odin: left press");
 
                     for(auto& window: windows){
                         if(window.mouse_in_title()){
@@ -289,7 +289,7 @@ int main(int /*argc*/, char* /*argv*/[]){
                     break;
 
                 case keycode::MOUSE_LEFT_RELEASE:
-                    user_logf("odin: left release");
+                    tlib::user_logf("odin: left release");
 
                     for(auto& window: windows){
                         window.stop_drag();
@@ -298,27 +298,27 @@ int main(int /*argc*/, char* /*argv*/[]){
                     break;
 
                 case keycode::MOUSE_RIGHT_PRESS:
-                    user_logf("odin: right press");
+                    tlib::user_logf("odin: right press");
                     break;
 
                 case keycode::MOUSE_RIGHT_RELEASE:
-                    user_logf("odin: right release");
+                    tlib::user_logf("odin: right release");
                     break;
 
                 default:
-                    user_logf("odin: %u ", static_cast<size_t>(code));
+                    tlib::user_logf("odin: %u ", static_cast<size_t>(code));
             }
 
             auto duration = after - before;
 
             if(duration < sleep_timeout){
-                sleep_ms(sleep_timeout - duration);
+                tlib::sleep_ms(sleep_timeout - duration);
             }
         }
     }
 
-    set_canonical(true);
-    set_mouse(false);
+    tlib::set_canonical(true);
+    tlib::set_mouse(false);
 
     delete[] buffer;
 

@@ -16,36 +16,36 @@ namespace {
 static constexpr const size_t BUFFER_SIZE = 4096;
 
 std::string read_file(const std::string& path){
-    auto fd = open(path.c_str());
+    auto fd = tlib::open(path.c_str());
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
             auto size = info->size;
 
             auto buffer = new char[size+1];
 
-            auto content_result = read(*fd, buffer, size);
+            auto content_result = tlib::read(*fd, buffer, size);
 
             if(content_result.valid()){
                 if(*content_result != size){
                     //TODO Read more
                 } else {
                     buffer[size] = '\0';
-                    close(*fd);
+                    tlib::close(*fd);
                     return buffer;
                 }
             } else {
-                printf("ps: error: %s\n", std::error_message(content_result.error()));
+                tlib::printf("ps: error: %s\n", std::error_message(content_result.error()));
             }
         } else {
-            printf("ps: error: %s\n", std::error_message(info.error()));
+            tlib::printf("ps: error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("ps: error: %s\n", std::error_message(fd.error()));
+        tlib::printf("ps: error: %s\n", std::error_message(fd.error()));
     }
 
     return "";
@@ -77,23 +77,23 @@ const char* state_str(uint64_t state){
 } // end of anonymous space
 
 int main(int /*argc*/, char* /*argv*/[]){
-    auto fd = open("/proc/");
+    auto fd = tlib::open("/proc/");
 
-    printf("PID PPID Pri State      Memory Name\n");
+    tlib::printf("PID PPID Pri State      Memory Name\n");
 
     if(fd.valid()){
-        auto info = stat(*fd);
+        auto info = tlib::stat(*fd);
 
         if(info.valid()){
             auto entries_buffer = new char[BUFFER_SIZE];
 
-            auto entries_result = entries(*fd, entries_buffer, BUFFER_SIZE);
+            auto entries_result = tlib::entries(*fd, entries_buffer, BUFFER_SIZE);
 
             if(entries_result.valid()){
                 size_t position = 0;
 
                 while(true){
-                    auto entry = reinterpret_cast<directory_entry*>(entries_buffer + position);
+                    auto entry = reinterpret_cast<tlib::directory_entry*>(entries_buffer + position);
 
                     std::string base_path = "/proc/";
                     std::string entry_name = &entry->name;
@@ -107,9 +107,9 @@ int main(int /*argc*/, char* /*argv*/[]){
                     auto memory = parse(read_file(base_path + entry_name + "/memory"));
 
                     if(system){
-                        printf("%3u %4u %3u %10s %6m %s [kernel]\n", pid, ppid, priority, state_str(state), memory, name.c_str());
+                        tlib::printf("%3u %4u %3u %10s %6m %s [kernel]\n", pid, ppid, priority, state_str(state), memory, name.c_str());
                     } else {
-                        printf("%3u %4u %3u %10s %6m %s \n", pid, ppid, priority, state_str(state), memory, name.c_str());
+                        tlib::printf("%3u %4u %3u %10s %6m %s \n", pid, ppid, priority, state_str(state), memory, name.c_str());
                     }
 
                     if(!entry->offset_next){
@@ -119,17 +119,17 @@ int main(int /*argc*/, char* /*argv*/[]){
                     position += entry->offset_next;
                 }
             } else {
-                printf("ps: error: %s\n", std::error_message(entries_result.error()));
+                tlib::printf("ps: error: %s\n", std::error_message(entries_result.error()));
             }
 
             delete[] entries_buffer;
         } else {
-            printf("ps: error: %s\n", std::error_message(info.error()));
+            tlib::printf("ps: error: %s\n", std::error_message(info.error()));
         }
 
-        close(*fd);
+        tlib::close(*fd);
     } else {
-        printf("ps: error: %s\n", std::error_message(fd.error()));
+        tlib::printf("ps: error: %s\n", std::error_message(fd.error()));
     }
 
     return 0;

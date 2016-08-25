@@ -17,19 +17,19 @@ int main(int argc, char* argv[]){
     if(argc == 1){
         auto buffer = new char[BUFFER_SIZE];
 
-        auto mp_result = mounts(buffer, BUFFER_SIZE);
+        auto mp_result = tlib::mounts(buffer, BUFFER_SIZE);
 
         if(mp_result.valid()){
             size_t position = 0;
 
             while(true){
-                auto entry = reinterpret_cast<mount_point*>(buffer + position);
+                auto entry = reinterpret_cast<tlib::mount_point*>(buffer + position);
 
                 auto mount_point = &entry->name;
                 auto device = mount_point + entry->length_mp + 1;
                 auto type = device + entry->length_dev + 1;
 
-                printf("%s %s %s\n", mount_point, device, type);
+                tlib::printf("%s %s %s\n", mount_point, device, type);
 
                 if(!entry->offset_next){
                     break;
@@ -38,7 +38,7 @@ int main(int argc, char* argv[]){
                 position += entry->offset_next;
             }
         } else {
-            printf("mount: error: %s\n", std::error_message(mp_result.error()));
+            tlib::printf("mount: error: %s\n", std::error_message(mp_result.error()));
         }
 
         delete[] buffer;
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]){
     }
 
     if(argc < 4){
-        printf("usage: mount fs device mountpoint\n");
+        tlib::printf("usage: mount fs device mountpoint\n");
 
         return 1;
     }
@@ -59,29 +59,29 @@ int main(int argc, char* argv[]){
     std::string fs(fs_str);
 
     if(fs == "fat32"){
-        printf("mkfs: Mounting %s fat32 filesystem on %s\n", device_str, mount_point_str);
+        tlib::printf("mkfs: Mounting %s fat32 filesystem on %s\n", device_str, mount_point_str);
 
-        auto device_fd = open(device_str);
+        auto device_fd = tlib::open(device_str);
 
         if(!device_fd.valid()){
-            printf("mount: open error: %s\n", std::error_message(device_fd.error()));
+            tlib::printf("mount: open error: %s\n", std::error_message(device_fd.error()));
             return 1;
         }
 
-        auto mp_fd = open(mount_point_str);
+        auto mp_fd = tlib::open(mount_point_str);
 
-        if(!mp_fd.valid()){ printf("mount: open error: %s\n", std::error_message(mp_fd.error()));
+        if(!mp_fd.valid()){ tlib::printf("mount: open error: %s\n", std::error_message(mp_fd.error()));
             return 1;
         }
 
-        auto mount_result = mount(1, *device_fd, *mp_fd);
+        auto mount_result = tlib::mount(1, *device_fd, *mp_fd);
 
         if(!mount_result.valid()){
-            printf("mount: mount error: %s\n", std::error_message(mount_result.error()));
+            tlib::printf("mount: mount error: %s\n", std::error_message(mount_result.error()));
             return 1;
         }
     } else {
-        printf("mkfs: Unsupported filesystem %s\n", fs_str);
+        tlib::printf("mkfs: Unsupported filesystem %s\n", fs_str);
         return 1;
     }
 

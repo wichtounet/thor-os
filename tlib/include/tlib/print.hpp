@@ -17,6 +17,8 @@
 
 #include <tlib/keycode.hpp>
 
+namespace tlib {
+
 void print(char c);
 void print(const char* s);
 void print(const std::string& s);
@@ -53,5 +55,7 @@ size_t get_rows();
 #include "printf_dec.hpp"
 
 void user_logf(const char* s, ...);
+
+} //end of namespace tlib
 
 #endif

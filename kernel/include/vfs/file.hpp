@@ -21,9 +21,9 @@ struct file {
     bool hidden;
     bool system;
     uint64_t size;
-    datetime created;
-    datetime modified;
-    datetime accessed;
+    tlib::datetime created;
+    tlib::datetime modified;
+    tlib::datetime accessed;
 
     //File system specific
     size_t location;

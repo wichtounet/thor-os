@@ -15,9 +15,9 @@ extern "C" {
 uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 
 __attribute__((noreturn)) void __stack_chk_fail(){
-    printf("Stack smashing detected \n");
+    tlib::printf("Stack smashing detected \n");
     //TODO printf("pid=%u\n", scheduler::get_pid());
-    exit(1);
+    tlib::exit(1);
 }
 
-}
+} // end of extern "C"

@@ -12,20 +12,20 @@ const char* source = "Hello world";
 int main(){
     char buffer[16];
 
-    printf("Read 1 string (max 15)\n");
+    tlib::printf("Read 1 string (max 15)\n");
 
-    auto c = read_input(buffer, 15);
+    auto c = tlib::read_input(buffer, 15);
     buffer[c] = '\0';
-    print(buffer);
+    tlib::print(buffer);
 
-    printf("Read 1 string (max 15) with timeout 5\n");
-    c = read_input(buffer, 15, 5000);
+    tlib::printf("Read 1 string (max 15) with timeout 5\n");
+    c = tlib::read_input(buffer, 15, 5000);
 
     if(c){
         buffer[c] = '\0';
-        print(buffer);
+        tlib::print(buffer);
     } else {
-        printf("Timeout reached\n");
+        tlib::printf("Timeout reached\n");
     }
 
     return 0;
