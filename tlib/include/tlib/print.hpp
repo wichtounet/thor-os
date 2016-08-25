@@ -46,8 +46,8 @@ void set_mouse(bool m);
 size_t read_input(char* buffer, size_t max);
 size_t read_input(char* buffer, size_t max, size_t ms);
 
-keycode read_input_raw();
-keycode read_input_raw(size_t ms);
+std::keycode read_input_raw();
+std::keycode read_input_raw(size_t ms);
 
 void clear();
 

@@ -12,6 +12,6 @@
 
 #include <tlib/ioctl_codes.hpp>
 
-int64_t ioctl(size_t device_fd, ioctl_request request, void* data);
+int64_t ioctl(size_t device_fd, io::ioctl_request request, void* data);
 
 #endif

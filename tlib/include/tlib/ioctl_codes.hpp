@@ -10,8 +10,14 @@
 
 #include <types.hpp>
 
+#include "tlib/config.hpp"
+
+THOR_NAMESPACE(tlib, io) {
+
 enum class ioctl_request : size_t {
     GET_BLK_SIZE = 1
 };
+
+} // end of namespace
 
 #endif

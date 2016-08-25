@@ -10,7 +10,9 @@
 
 #include <types.hpp>
 
-namespace tlib {
+#include "tlib/config.hpp"
+
+THOR_NAMESPACE(tlib, vfs) {
 
 struct directory_entry {
     size_t type;

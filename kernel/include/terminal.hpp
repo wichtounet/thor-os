@@ -47,7 +47,7 @@ struct virtual_terminal {
     /*!
      * \brief Send a mouse input to the terminal (from the keyboard driver)
      */
-    void send_mouse_input(keycode c);
+    void send_mouse_input(std::keycode c);
 
     /*!
      * \brief Reads canonical input in the given buffer

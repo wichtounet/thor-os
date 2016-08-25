@@ -11,8 +11,11 @@
 #include <types.hpp>
 
 #include "tlib/datetime.hpp"
+#include "tlib/config.hpp"
 
-namespace tlib {
+THOR_NAMESPACE(tlib, vfs) {
+
+using datetime = THOR_NAMESPACE_NAME(tlib, rtc)::datetime;
 
 constexpr const size_t STAT_FLAG_DIRECTORY = 1 << 0;
 constexpr const size_t STAT_FLAG_HIDDEN = 1 << 1;

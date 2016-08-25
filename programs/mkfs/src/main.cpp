@@ -42,7 +42,7 @@ int main(int argc, char* argv[]){
         // Get the size of the device
 
         uint64_t size = 0;
-        auto code = tlib::ioctl(*fd, ioctl_request::GET_BLK_SIZE, &size);
+        auto code = tlib::ioctl(*fd, tlib::ioctl_request::GET_BLK_SIZE, &size);
 
         if(code){
             tlib::printf("mkfs: ioctl error: %s\n", std::error_message(code));

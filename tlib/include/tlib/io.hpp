@@ -18,7 +18,7 @@ ASSERT_ONLY_THOR_PROGRAM
 
 namespace tlib {
 
-int64_t ioctl(size_t device, ioctl_request request, void* data);
+int64_t ioctl(size_t device, tlib::ioctl_request request, void* data);
 
 } //end of namespace tlib
 

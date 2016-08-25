@@ -10,7 +10,6 @@
 
 #include <types.hpp>
 
-//TODO Rename this namespace
 namespace std {
 
 constexpr const size_t ERROR_NOT_EXISTS = 1;

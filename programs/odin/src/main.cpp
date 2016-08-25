@@ -273,11 +273,11 @@ int main(int /*argc*/, char* /*argv*/[]){
         auto code = tlib::read_input_raw(sleep_timeout);
         auto after = tlib::ms_time();
 
-        if(code != keycode::TIMEOUT){
+        if(code != std::keycode::TIMEOUT){
             // TODO Handle event at this point
 
             switch(code){
-                case keycode::MOUSE_LEFT_PRESS:
+                case std::keycode::MOUSE_LEFT_PRESS:
                     tlib::user_logf("odin: left press");
 
                     for(auto& window: windows){
@@ -288,7 +288,7 @@ int main(int /*argc*/, char* /*argv*/[]){
 
                     break;
 
-                case keycode::MOUSE_LEFT_RELEASE:
+                case std::keycode::MOUSE_LEFT_RELEASE:
                     tlib::user_logf("odin: left release");
 
                     for(auto& window: windows){
@@ -297,11 +297,11 @@ int main(int /*argc*/, char* /*argv*/[]){
 
                     break;
 
-                case keycode::MOUSE_RIGHT_PRESS:
+                case std::keycode::MOUSE_RIGHT_PRESS:
                     tlib::user_logf("odin: right press");
                     break;
 
-                case keycode::MOUSE_RIGHT_RELEASE:
+                case std::keycode::MOUSE_RIGHT_RELEASE:
                     tlib::user_logf("odin: right release");
                     break;
 

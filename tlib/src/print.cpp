@@ -96,22 +96,22 @@ size_t tlib::read_input(char* buffer, size_t max, size_t ms){
     return value;
 }
 
-keycode tlib::read_input_raw(){
+std::keycode tlib::read_input_raw(){
     size_t value;
     asm volatile("mov rax, 0x12; int 50; mov %[input], rax"
         : [input] "=m" (value)
         :
         : "rax");
-    return static_cast<keycode>(value);
+    return static_cast<std::keycode>(value);
 }
 
-keycode tlib::read_input_raw(size_t ms){
+std::keycode tlib::read_input_raw(size_t ms){
     size_t value;
     asm volatile("mov rax, 0x13; mov rbx, %[ms]; int 50; mov %[input], rax"
         : [input] "=m" (value)
         : [ms] "g" (ms)
         : "rax");
-    return static_cast<keycode>(value);
+    return static_cast<std::keycode>(value);
 }
 
 void  tlib::clear(){

@@ -122,7 +122,7 @@ void stdio::virtual_terminal::send_input(char key){
     scheduler::unblock_process_hint(input_thread_pid);
 }
 
-void stdio::virtual_terminal::send_mouse_input(keycode key){
+void stdio::virtual_terminal::send_mouse_input(std::keycode key){
     if(!input_thread_pid){
         return;
     }
@@ -188,11 +188,11 @@ size_t stdio::virtual_terminal::read_input_raw(){
 size_t stdio::virtual_terminal::read_input_raw(size_t ms){
     if(raw_buffer.empty()){
         if(!ms){
-            return static_cast<size_t>(keycode::TIMEOUT);
+            return static_cast<size_t>(std::keycode::TIMEOUT);
         }
 
         if(!input_queue.sleep(ms)){
-            return static_cast<size_t>(keycode::TIMEOUT);
+            return static_cast<size_t>(std::keycode::TIMEOUT);
         }
     }
 

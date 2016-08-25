@@ -50,7 +50,7 @@ void close(size_t fd);
  * \param info The info to fill
  * \return a status code
  */
-int64_t stat(size_t fd, tlib::stat_info& info);
+int64_t stat(size_t fd, vfs::stat_info& info);
 
 /*!
  * \brief Returns information about the file system
@@ -58,7 +58,7 @@ int64_t stat(size_t fd, tlib::stat_info& info);
  * \param info The info to fill
  * \return a status code
  */
-int64_t statfs(const char* mount_point, tlib::statfs_info& info);
+int64_t statfs(const char* mount_point, vfs::statfs_info& info);
 
 /*!
  * \brief Create a new directory

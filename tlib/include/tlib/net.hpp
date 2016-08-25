@@ -17,7 +17,7 @@ ASSERT_ONLY_THOR_PROGRAM
 
 namespace tlib {
 
-std::expected<size_t> socket_open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol);
+std::expected<size_t> socket_open(socket_domain domain, socket_type type, socket_protocol protocol);
 void socket_close(size_t fd);
 
 } // end of namespace tlib

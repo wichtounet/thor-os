@@ -22,7 +22,7 @@ int main(int argc, char* argv[]){
 
     std::string ip(argv[0]);
 
-    auto socket = tlib::socket_open(network::socket_domain::AF_INET, network::socket_type::RAW, network::socket_protocol::ICMP);
+    auto socket = tlib::socket_open(tlib::socket_domain::AF_INET, tlib::socket_type::RAW, tlib::socket_protocol::ICMP);
 
     if(!socket){
         tlib::printf("ls: socket_open error: %s\n", std::error_message(socket.error()));

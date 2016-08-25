@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+namespace std {
+
 enum class keycode : size_t {
     INVALID = 0
     , TIMEOUT = 1
@@ -188,5 +190,7 @@ enum class keycode : size_t {
     , MOUSE_LEFT_RELEASE
     , MOUSE_RIGHT_RELEASE
 };
+
+} // end of workspace std
 
 #endif

@@ -11,6 +11,8 @@
 #include "kernel_utils.hpp"
 #include "terminal.hpp"
 
+using keycode = std::keycode;
+
 namespace {
 
 keycode pressed_codes[128] = {

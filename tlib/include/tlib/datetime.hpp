@@ -10,7 +10,9 @@
 
 #include <types.hpp>
 
-namespace tlib {
+#include "tlib/config.hpp"
+
+THOR_NAMESPACE(tlib, rtc) {
 
 struct datetime {
     uint16_t year;

@@ -10,7 +10,9 @@
 
 #include <types.hpp>
 
-namespace network {
+#include "tlib/config.hpp"
+
+THOR_NAMESPACE(tlib, network) {
 
 enum class socket_domain : size_t {
     AF_INET

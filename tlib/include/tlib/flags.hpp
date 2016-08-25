@@ -10,11 +10,10 @@
 
 #include <types.hpp>
 
-//TODO Rename this namespace
 namespace std {
 
 constexpr const size_t OPEN_CREATE = 0x1;
 
-}
+} // end of namespace
 
 #endif

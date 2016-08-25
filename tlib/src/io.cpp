@@ -7,7 +7,7 @@
 
 #include "tlib/io.hpp"
 
-int64_t tlib::ioctl(size_t device, ioctl_request request, void* data){
+int64_t tlib::ioctl(size_t device, tlib::ioctl_request request, void* data){
     int64_t code;
     asm volatile("mov rax, 0x2000; mov rbx, %[device]; mov rcx, %[request]; mov rdx, %[data]; int 50; mov %[code], rax"
         : [code] "=m" (code)
