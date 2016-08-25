@@ -688,35 +688,33 @@ void scheduler::sbrk(size_t inc){
 }
 
 void scheduler::await_termination(pid_t pid){
-    int_lock lock;
-
     while(true){
-        lock.acquire();
+        {
+            direct_int_lock lock;
 
-        bool found = false;
-        for(auto& process : pcb){
-            if(process.process.ppid == current_pid && process.process.pid == pid){
-                if(process.state == process_state::KILLED || process.state == process_state::EMPTY){
-                    lock.release();
-                    return;
+            bool found = false;
+            for(auto& process : pcb){
+                if(process.process.ppid == current_pid && process.process.pid == pid){
+                    if(process.state == process_state::KILLED || process.state == process_state::EMPTY){
+                        return;
+                    }
+
+                    found = true;
+                    break;
                 }
-
-                found = true;
-                break;
             }
+
+            // The process may have already been cleaned, we can simply return
+            if(!found){
+                return;
+            }
+
+            logging::logf(logging::log_level::DEBUG, "scheduler: Process %u waits for %u\n", current_pid, pid);
+
+            pcb[current_pid].state = process_state::WAITING;
         }
 
-        // The process may have already been cleaned, we can simply return
-        if(!found){
-            lock.release();
-            return;
-        }
-
-        logging::logf(logging::log_level::DEBUG, "scheduler: Process %u waits for %u\n", current_pid, pid);
-
-        pcb[current_pid].state = process_state::WAITING;
-
-        lock.release();
+        // Reschedule is out of the critical section
         reschedule();
     }
 }
