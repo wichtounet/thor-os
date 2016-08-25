@@ -56,6 +56,20 @@ size_t number_of_interfaces();
 
 interface_descriptor& interface(size_t index);
 
+/*!
+ * \brief Open a new socket
+ * \param domain The socket domain
+ * \param type The socket type
+ * \param protocol The socket protocol
+ * \return The file descriptor on success, a negative error code otherwise
+ */
+int64_t open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol);
+
+/*!
+ * \brief Close the given socket file descriptor
+ */
+void close(size_t fd);
+
 } // end of network namespace
 
 #endif

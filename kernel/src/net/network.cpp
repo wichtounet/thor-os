@@ -20,8 +20,9 @@
 
 #include "fs/sysfs.hpp"
 
-namespace {
+#include "tlib/errors.hpp"
 
+namespace {
 std::vector<network::interface_descriptor> interfaces;
 
 void rx_thread(void* data){
@@ -138,4 +139,26 @@ size_t network::number_of_interfaces(){
 
 network::interface_descriptor& network::interface(size_t index){
     return interfaces[index];
+}
+
+int64_t network::open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
+    if(domain != socket_domain::AF_INET){
+        return -std::ERROR_SOCKET_INVALID_DOMAIN;
+    }
+
+    if(type != socket_type::RAW){
+        return -std::ERROR_SOCKET_INVALID_TYPE;
+    }
+
+    if(protocol != socket_protocol::ICMP){
+        return -std::ERROR_SOCKET_INVALID_PROTOCOL;
+    }
+
+    return scheduler::register_new_socket(domain, type, protocol);
+}
+
+void network::close(size_t fd){
+    if(scheduler::has_socket(fd)){
+        scheduler::release_socket(fd);
+    }
 }

@@ -32,6 +32,9 @@ constexpr const size_t ERROR_INVALID_COUNT = 16;
 constexpr const size_t ERROR_INVALID_REQUEST = 17;
 constexpr const size_t ERROR_INVALID_DEVICE = 18;
 constexpr const size_t ERROR_ALREADY_MOUNTED = 19;
+constexpr const size_t ERROR_SOCKET_INVALID_DOMAIN = 20;
+constexpr const size_t ERROR_SOCKET_INVALID_TYPE = 21;
+constexpr const size_t ERROR_SOCKET_INVALID_PROTOCOL = 22;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -73,6 +76,12 @@ inline const char* error_message(size_t error){
             return "The device is not valid for this request";
         case ERROR_ALREADY_MOUNTED:
             return "Something is already mounted";
+        case ERROR_SOCKET_INVALID_DOMAIN:
+            return "The socket domain is invalid";
+        case ERROR_SOCKET_INVALID_TYPE:
+            return "The socket type is invalid";
+        case ERROR_SOCKET_INVALID_PROTOCOL:
+            return "The socket protocol is invalid";
         default:
             return "Unknonwn error";
     }

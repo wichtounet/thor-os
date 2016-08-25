@@ -341,6 +341,20 @@ void sc_alpha(interrupt::syscall_regs*){
     }
 }
 
+void sc_socket_open(interrupt::syscall_regs* regs){
+    auto domain = static_cast<network::socket_domain>(regs->rbx);
+    auto type = static_cast<network::socket_type>(regs->rcx);
+    auto protocol = static_cast<network::socket_protocol>(regs->rdx);
+
+    regs->rax = network::open(domain, type, protocol);
+}
+
+void sc_socket_close(interrupt::syscall_regs* regs){
+    auto fd = regs->rbx;
+
+    network::close(fd);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -550,6 +564,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x2000:
             sc_ioctl(regs);
+            break;
+
+        case 0x3000:
+            sc_socket_open(regs);
+            break;
+
+        case 0x3001:
+            sc_socket_close(regs);
             break;
 
         case 0x6666:
