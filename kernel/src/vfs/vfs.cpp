@@ -122,7 +122,7 @@ mounted_fs& get_fs(const path& base_path){
         }
     }
 
-    return mount_point_list[best_match];;
+    return mount_point_list[best_match];
 }
 
 path get_fs_path(const path& base_path, const mounted_fs& fs){
@@ -547,9 +547,7 @@ int64_t vfs::entries(size_t fd, char* buffer, size_t size){
         }
 
         char* name_buffer = &(entry->name);
-        for(size_t j = 0; j < file.file_name.size(); ++j){
-            name_buffer[j] = file.file_name[j];
-        }
+        std::copy(file.file_name.begin(), file.file_name.end(), name_buffer);
         name_buffer[file.file_name.size()] = '\0';
     }
 

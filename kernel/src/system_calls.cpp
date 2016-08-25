@@ -243,9 +243,7 @@ void sc_pwd(interrupt::syscall_regs* regs){
     auto p = wd.string();
 
     auto buffer = reinterpret_cast<char*>(regs->rbx);
-    for(size_t i = 0; i < p.size(); ++i){
-        buffer[i] = p[i];
-    }
+    std::copy(p.begin(), p.end(), buffer);
     buffer[p.size()] = '\0';
 }
 

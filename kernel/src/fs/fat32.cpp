@@ -955,9 +955,7 @@ fat32::cluster_entry* fat32::fat32_file_system::find_free_entry(std::unique_heap
         //remove the end of directory markers
         if(end_found){
             //Remove all the end of directory marker in the cluster
-            for(size_t i = 0; i < directory_cluster.size(); ++i){
-                auto& entry = directory_cluster[i];
-
+            for(auto& entry : directory_cluster){
                 if(end_of_directory(entry)){
                     entry.name[0] = 0xE5;
                 }
@@ -1018,9 +1016,7 @@ fat32::cluster_entry* fat32::fat32_file_system::extend_directory(std::unique_hea
     }
 
     //Remove all the end of directory marker in the previous cluster
-    for(size_t i = 0; i < directory_cluster.size(); ++i){
-        auto& entry = directory_cluster[i];
-
+    for(auto& entry : directory_cluster){
         if(end_of_directory(entry)){
             entry.name[0] = 0xE5;
         }

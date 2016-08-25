@@ -214,10 +214,10 @@ void stdio::virtual_terminal::set_mouse(bool m){
 }
 
 void stdio::init_terminals(){
-    for(size_t i  = 0; i < MAX_TERMINALS; ++i){
-        auto& terminal = terminals[i];
+    size_t id = 0;
 
-        terminal.id = i;
+    for(auto& terminal : terminals){
+        terminal.id = i++;
         terminal.active = false;
         terminal.canonical = true;
         terminal.mouse = false;
@@ -228,9 +228,7 @@ void stdio::init_terminals(){
 }
 
 void stdio::finalize(){
-    for(size_t i  = 0; i < MAX_TERMINALS; ++i){
-        auto& terminal = terminals[i];
-
+    for(auto& terminal : terminals){
         auto* user_stack = new char[scheduler::user_stack_size];
         auto* kernel_stack = new char[scheduler::kernel_stack_size];
 
