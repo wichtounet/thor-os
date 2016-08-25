@@ -9,6 +9,9 @@
 #define USERLIB_MALLOC_H
 
 #include "types.hpp"
+#include "tlib/config.hpp"
+
+ASSERT_ONLY_THOR_PROGRAM
 
 void* operator new(uint64_t size);
 void operator delete(void* p);

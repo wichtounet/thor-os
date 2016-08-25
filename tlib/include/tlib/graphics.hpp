@@ -10,6 +10,10 @@
 
 #include <types.hpp>
 
+#include "tlib/config.hpp"
+
+ASSERT_ONLY_THOR_PROGRAM
+
 namespace tlib {
 
 namespace graphics {

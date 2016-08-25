@@ -14,6 +14,9 @@
 #include <string.hpp>
 
 #include "tlib/datetime.hpp"
+#include "tlib/config.hpp"
+
+ASSERT_ONLY_THOR_PROGRAM
 
 namespace tlib {
 

@@ -8,7 +8,9 @@
 #ifndef USER_PRINT_HPP
 #define USER_PRINT_HPP
 
-//TODO Rename in console
+#include "tlib/config.hpp"
+
+ASSERT_ONLY_THOR_PROGRAM
 
 #include <stdarg.h>
 

@@ -14,6 +14,9 @@
 
 #include "tlib/stat_info.hpp"
 #include "tlib/statfs_info.hpp"
+#include "tlib/config.hpp"
+
+ASSERT_ONLY_THOR_PROGRAM
 
 namespace tlib {
 
