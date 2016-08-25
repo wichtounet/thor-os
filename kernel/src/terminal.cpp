@@ -217,7 +217,7 @@ void stdio::init_terminals(){
     size_t id = 0;
 
     for(auto& terminal : terminals){
-        terminal.id = i++;
+        terminal.id = id++;
         terminal.active = false;
         terminal.canonical = true;
         terminal.mouse = false;
