@@ -1,0 +1,58 @@
+
+# This format file is made especially for clang-format-3.7
+
+---
+BasedOnStyle: Google
+IndentWidth: 4
+# clang-format is not very good to break long lines, don't let it do it
+ColumnLimit: 0
+---
+Language: Cpp
+Standard: Cpp11
+
+# Tune some indentations
+AccessModifierOffset: -4
+ConstructorInitializerIndentWidth: 8
+
+# Only control statements should have spaces
+SpaceBeforeParens: ControlStatements
+
+# No block and its body should EVER be on a single line
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+
+# Better C++11 support
+Cpp11BracedListStyle: true
+
+# Avoid too many empty lines
+MaxEmptyLinesToKeep: 1
+
+# Templates should always be on a separate line
+AlwaysBreakTemplateDeclarations: true
+
+# Nice alignement
+AlignConsecutiveAssignments: true
+
+# Improve ternary operators alignement
+BreakBeforeTernaryOperators: true
+
+# Tabs are bad news
+UseTab: Never
+
+# Configure comments
+AlignTrailingComments: true
+SpacesBeforeTrailingComments: 1
+
+# Don't mess with my comments
+CommentPragmas:  '^[^ ]'
+
+# Avoid empty lines
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+
+# Force pointers to the type
+DerivePointerAlignment: false
+PointerAlignment: Left
