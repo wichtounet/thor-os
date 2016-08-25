@@ -140,27 +140,11 @@ size_t get_file(const sys_folder& folder, const path& file_path, vfs::file& f) {
 
 size_t ls(const sys_folder& folder, std::vector<vfs::file>& contents) {
     for (auto& file : folder.folders) {
-        vfs::file f;
-
-        f.file_name = file.name;
-        f.directory = true;
-        f.hidden    = false;
-        f.system    = false;
-        f.size      = 0;
-
-        contents.push_back(f);
+        contents.emplace_back(file.name, true, false, false, 0);
     }
 
     for (auto& file : folder.values) {
-        vfs::file f;
-
-        f.file_name = file.name;
-        f.directory = false;
-        f.hidden    = false;
-        f.system    = false;
-        f.size      = file.value().size();
-
-        contents.push_back(f);
+        contents.emplace_back(file.name, false, false, false, file.value().size());
     }
 
     return 0;
