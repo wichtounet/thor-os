@@ -10,19 +10,9 @@
 
 #include <types.hpp>
 
+#include "tlib/net_constants.hpp"
+
 namespace network {
-
-enum class socket_domain {
-    AF_INET
-};
-
-enum class socket_type {
-    RAW
-};
-
-enum class socket_protocol {
-    ICMP
-};
 
 struct socket {
     size_t id;
