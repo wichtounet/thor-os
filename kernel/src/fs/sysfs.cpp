@@ -23,17 +23,19 @@ struct sys_value {
     std::string _value;
     sysfs::dynamic_fun_t fun = nullptr;
 
-    sys_value(){}
-    sys_value(std::string name, std::string value) : name(name), _value(value){
+    sys_value() {}
+    sys_value(std::string name, std::string value)
+            : name(name), _value(value) {
         //Nothing else to init
     }
 
-    sys_value(std::string name, sysfs::dynamic_fun_t fun) : name(name), fun(fun){
+    sys_value(std::string name, sysfs::dynamic_fun_t fun)
+            : name(name), fun(fun) {
         //Nothing else to init
     }
 
     std::string value() const {
-        if(fun){
+        if (fun) {
             return fun();
         } else {
             return _value;
@@ -46,20 +48,21 @@ struct sys_folder {
     std::vector<sys_folder> folders;
     std::vector<sys_value> values;
 
-    sys_folder(){}
+    sys_folder() {}
 
-    sys_folder(std::string name) : name(name) {
+    sys_folder(std::string name)
+            : name(name) {
         //Nothing else to init
     }
 };
 
 std::vector<sys_folder> root_folders;
 
-sys_folder& find_root_folder(const path& mount_point){
+sys_folder& find_root_folder(const path& mount_point) {
     thor_assert(mount_point.is_sub_root(), "Unsupported mount point");
 
-    for(auto& sys_folder : root_folders){
-        if(sys_folder.name == mount_point.sub_root_name()){
+    for (auto& sys_folder : root_folders) {
+        if (sys_folder.name == mount_point.sub_root_name()) {
             return sys_folder;
         }
     }
@@ -72,9 +75,9 @@ sys_folder& find_root_folder(const path& mount_point){
 sys_folder& find_folder(sys_folder& root, const path& file_path, size_t i, size_t last){
     auto& name = file_path[i];
 
-    for(auto& folder : root.folders){
-        if(folder.name == name){
-            if(i == last - 1){
+    for (auto& folder : root.folders) {
+        if (folder.name == name) {
+            if (i == last - 1) {
                 return folder;
             } else {
                 return find_folder(folder, file_path, i + 1, last);
@@ -84,19 +87,19 @@ sys_folder& find_folder(sys_folder& root, const path& file_path, size_t i, size_
 
     root.folders.emplace_back(name);
 
-    if(i == last - 1){
+    if (i == last - 1) {
         return root.folders.back();
     } else {
         return find_folder(root.folders.back(), file_path, i + 1, last);
     }
 }
 
-bool exists_folder(sys_folder& root, const path& file_path, size_t i, size_t last){
+bool exists_folder(sys_folder& root, const path& file_path, size_t i, size_t last) {
     auto& name = file_path[i];
 
-    for(auto& folder : root.folders){
-        if(folder.name == name){
-            if(i == last - 1){
+    for (auto& folder : root.folders) {
+        if (folder.name == name) {
+            if (i == last - 1) {
                 return true;
             } else {
                 return exists_folder(folder, file_path, i + 1, last);
@@ -107,26 +110,26 @@ bool exists_folder(sys_folder& root, const path& file_path, size_t i, size_t las
     return false;
 }
 
-size_t get_file(const sys_folder& folder, const path& file_path, vfs::file& f){
-    for(auto& file : folder.folders){
-        if(file.name == file_path.base_name()){
+size_t get_file(const sys_folder& folder, const path& file_path, vfs::file& f) {
+    for (auto& file : folder.folders) {
+        if (file.name == file_path.base_name()) {
             f.file_name = file.name;
             f.directory = true;
-            f.hidden = false;
-            f.system = false;
-            f.size = 0;
+            f.hidden    = false;
+            f.system    = false;
+            f.size      = 0;
 
             return 0;
         }
     }
 
-    for(auto& file : folder.values){
-        if(file.name == file_path.base_name()){
+    for (auto& file : folder.values) {
+        if (file.name == file_path.base_name()) {
             f.file_name = file.name;
             f.directory = false;
-            f.hidden = false;
-            f.system = false;
-            f.size = file.value().size();
+            f.hidden    = false;
+            f.system    = false;
+            f.size      = file.value().size();
 
             return 0;
         }
@@ -135,36 +138,40 @@ size_t get_file(const sys_folder& folder, const path& file_path, vfs::file& f){
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t ls(const sys_folder& folder, std::vector<vfs::file>& contents){
-    for(auto& file : folder.folders){
+size_t ls(const sys_folder& folder, std::vector<vfs::file>& contents) {
+    for (auto& file : folder.folders) {
         vfs::file f;
+
         f.file_name = file.name;
         f.directory = true;
-        f.hidden = false;
-        f.system = false;
-        f.size = 0;
+        f.hidden    = false;
+        f.system    = false;
+        f.size      = 0;
+
         contents.push_back(f);
     }
 
-    for(auto& file : folder.values){
+    for (auto& file : folder.values) {
         vfs::file f;
+
         f.file_name = file.name;
         f.directory = false;
-        f.hidden = false;
-        f.system = false;
-        f.size = file.value().size();
+        f.hidden    = false;
+        f.system    = false;
+        f.size      = file.value().size();
+
         contents.push_back(f);
     }
 
     return 0;
 }
 
-size_t read(const sys_folder& folder, const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
-    for(auto& file : folder.values){
-        if(file.name == file_path.base_name()){
+size_t read(const sys_folder& folder, const path& file_path, char* buffer, size_t count, size_t offset, size_t& read) {
+    for (auto& file : folder.values) {
+        if (file.name == file_path.base_name()) {
             auto value = file.value();
 
-            if(offset > value.size()){
+            if (offset > value.size()) {
                 return std::ERROR_INVALID_OFFSET;
             }
 
@@ -175,8 +182,8 @@ size_t read(const sys_folder& folder, const path& file_path, char* buffer, size_
         }
     }
 
-    for(auto& file : folder.folders){
-        if(file.name == file_path.base_name()){
+    for (auto& file : folder.folders) {
+        if (file.name == file_path.base_name()) {
             return std::ERROR_DIRECTORY;
         }
     }
@@ -184,9 +191,9 @@ size_t read(const sys_folder& folder, const path& file_path, char* buffer, size_
     return std::ERROR_NOT_EXISTS;
 }
 
-void set_value(sys_folder& folder, const std::string& name, const std::string& value){
-    for(auto& v : folder.values){
-        if(v.name == name){
+void set_value(sys_folder& folder, const std::string& name, const std::string& value) {
+    for (auto& v : folder.values) {
+        if (v.name == name) {
             v._value = value;
             return;
         }
@@ -195,9 +202,9 @@ void set_value(sys_folder& folder, const std::string& name, const std::string& v
     folder.values.emplace_back(name, value);
 }
 
-void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_t fun){
-    for(auto& v : folder.values){
-        if(v.name == name){
+void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_t fun) {
+    for (auto& v : folder.values) {
+        if (v.name == name) {
             v.fun = fun;
             return;
         }
@@ -206,22 +213,22 @@ void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_t
     folder.values.emplace_back(name, fun);
 }
 
-void delete_value(sys_folder& folder, const std::string& name){
-    for(size_t i = 0; i < folder.values.size(); ++i){
+void delete_value(sys_folder& folder, const std::string& name) {
+    for (size_t i = 0; i < folder.values.size(); ++i) {
         auto& v = folder.values[i];
 
-        if(v.name == name){
+        if (v.name == name) {
             folder.values.erase(i);
             break;
         }
     }
 }
 
-void delete_folder(sys_folder& folder, const std::string& name){
-    for(size_t i = 0; i < folder.folders.size(); ++i){
+void delete_folder(sys_folder& folder, const std::string& name) {
+    for (size_t i = 0; i < folder.folders.size(); ++i) {
         auto& v = folder.folders[i];
 
-        if(v.name == name){
+        if (v.name == name) {
             folder.folders.erase(i);
             break;
         }
@@ -230,29 +237,30 @@ void delete_folder(sys_folder& folder, const std::string& name){
 
 } //end of anonymous namespace
 
-sysfs::sysfs_file_system::sysfs_file_system(path mp) : mount_point(mp) {
+sysfs::sysfs_file_system::sysfs_file_system(path mp)
+        : mount_point(mp) {
     //Nothing to init
 }
 
-sysfs::sysfs_file_system::~sysfs_file_system(){
+sysfs::sysfs_file_system::~sysfs_file_system() {
     //Nothing to delete
 }
 
-size_t sysfs::sysfs_file_system::get_file(const path& file_path, vfs::file& f){
+size_t sysfs::sysfs_file_system::get_file(const path& file_path, vfs::file& f) {
     auto& root_folder = find_root_folder(mount_point);
 
-    if(file_path.is_root()){
+    if (file_path.is_root()) {
         f.file_name = "/";
         f.directory = true;
-        f.hidden = false;
-        f.system = false;
-        f.size = 0;
+        f.hidden    = false;
+        f.system    = false;
+        f.size      = 0;
 
         return 0;
-    } else if(file_path.size() == 2){
+    } else if (file_path.size() == 2) {
         return ::get_file(root_folder, file_path, f);
     } else {
-        if(exists_folder(root_folder, file_path, 1, file_path.size() - 1)){
+        if (exists_folder(root_folder, file_path, 1, file_path.size() - 1)) {
             auto& folder = find_folder(root_folder, file_path, 1, file_path.size() - 1);
 
             return ::get_file(folder, file_path, f);
@@ -262,15 +270,15 @@ size_t sysfs::sysfs_file_system::get_file(const path& file_path, vfs::file& f){
     }
 }
 
-size_t sysfs::sysfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
+size_t sysfs::sysfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read) {
     auto& root_folder = find_root_folder(mount_point);
 
-    if(file_path.is_root()){
+    if (file_path.is_root()) {
         return std::ERROR_DIRECTORY;
-    } else if(file_path.size() == 2){
+    } else if (file_path.size() == 2) {
         return ::read(root_folder, file_path, buffer, count, offset, read);
     } else {
-        if(exists_folder(root_folder, file_path, 1, file_path.size() - 1)){
+        if (exists_folder(root_folder, file_path, 1, file_path.size() - 1)) {
             auto& folder = find_folder(root_folder, file_path, 1, file_path.size() - 1);
 
             return ::read(folder, file_path, buffer, count, offset, read);
@@ -280,25 +288,25 @@ size_t sysfs::sysfs_file_system::read(const path& file_path, char* buffer, size_
     }
 }
 
-size_t sysfs::sysfs_file_system::write(const path&, const char*, size_t, size_t, size_t&){
+size_t sysfs::sysfs_file_system::write(const path&, const char*, size_t, size_t, size_t&) {
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t sysfs::sysfs_file_system::clear(const path&, size_t, size_t, size_t&){
+size_t sysfs::sysfs_file_system::clear(const path&, size_t, size_t, size_t&) {
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t sysfs::sysfs_file_system::truncate(const path&, size_t){
+size_t sysfs::sysfs_file_system::truncate(const path&, size_t) {
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t sysfs::sysfs_file_system::ls(const path& file_path, std::vector<vfs::file>& contents){
+size_t sysfs::sysfs_file_system::ls(const path& file_path, std::vector<vfs::file>& contents) {
     auto& root_folder = find_root_folder(mount_point);
 
-    if(file_path.is_root()){
+    if (file_path.is_root()) {
         return ::ls(root_folder, contents);
     } else {
-        if(exists_folder(root_folder, file_path, 1, file_path.size())){
+        if (exists_folder(root_folder, file_path, 1, file_path.size())) {
             auto& folder = find_folder(root_folder, file_path, 1, file_path.size());
 
             return ::ls(folder, contents);
@@ -308,29 +316,29 @@ size_t sysfs::sysfs_file_system::ls(const path& file_path, std::vector<vfs::file
     }
 }
 
-size_t sysfs::sysfs_file_system::touch(const path& ){
+size_t sysfs::sysfs_file_system::touch(const path&) {
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t sysfs::sysfs_file_system::mkdir(const path& ){
+size_t sysfs::sysfs_file_system::mkdir(const path&) {
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t sysfs::sysfs_file_system::rm(const path& ){
+size_t sysfs::sysfs_file_system::rm(const path&) {
     return std::ERROR_PERMISSION_DENIED;
 }
 
-size_t sysfs::sysfs_file_system::statfs(vfs::statfs_info& file){
+size_t sysfs::sysfs_file_system::statfs(vfs::statfs_info& file) {
     file.total_size = 0;
-    file.free_size = 0;
+    file.free_size  = 0;
 
     return 0;
 }
 
-void sysfs::set_constant_value(const path& mount_point, const path& file_path, const std::string& value){
+void sysfs::set_constant_value(const path& mount_point, const path& file_path, const std::string& value) {
     auto& root_folder = find_root_folder(mount_point);
 
-    if(file_path.size() == 2){
+    if (file_path.size() == 2) {
         ::set_value(root_folder, file_path.base_name(), value);
     } else {
         auto& folder = find_folder(root_folder, file_path, 1, file_path.size() - 1);
@@ -338,10 +346,10 @@ void sysfs::set_constant_value(const path& mount_point, const path& file_path, c
     }
 }
 
-void sysfs::set_dynamic_value(const path& mount_point, const path& file_path, dynamic_fun_t fun){
+void sysfs::set_dynamic_value(const path& mount_point, const path& file_path, dynamic_fun_t fun) {
     auto& root_folder = find_root_folder(mount_point);
 
-    if(file_path.size() == 2){
+    if (file_path.size() == 2) {
         ::set_value(root_folder, file_path.base_name(), fun);
     } else {
         auto& folder = find_folder(root_folder, file_path, 1, file_path.size() - 1);
@@ -349,10 +357,10 @@ void sysfs::set_dynamic_value(const path& mount_point, const path& file_path, dy
     }
 }
 
-void sysfs::delete_value(const path& mount_point, const path& file_path){
+void sysfs::delete_value(const path& mount_point, const path& file_path) {
     auto& root_folder = find_root_folder(mount_point);
 
-    if(file_path.size() == 2){
+    if (file_path.size() == 2) {
         ::delete_value(root_folder, file_path.base_name());
     } else {
         auto& folder = find_folder(root_folder, file_path, 1, file_path.size() - 1);
@@ -361,10 +369,10 @@ void sysfs::delete_value(const path& mount_point, const path& file_path){
     }
 }
 
-void sysfs::delete_folder(const path& mount_point, const path& file_path){
+void sysfs::delete_folder(const path& mount_point, const path& file_path) {
     auto& root_folder = find_root_folder(mount_point);
 
-    if(file_path.size() == 2){
+    if (file_path.size() == 2) {
         ::delete_folder(root_folder, file_path.base_name());
     } else {
         auto& folder = find_folder(root_folder, file_path, 1, file_path.size() - 1);
