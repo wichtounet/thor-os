@@ -146,8 +146,7 @@ void gc_task(){
                 {
                     std::lock_guard<int_lock> l(queue_lock);
 
-                    size_t index = 0;
-                    for(; index < run_queue(desc.priority).size(); ++index){
+                    for(size_t index = 0; index < run_queue(desc.priority).size(); ++index){
                         if(run_queue(desc.priority)[index] == desc.pid){
                             run_queue(desc.priority).erase(index);
                             break;
