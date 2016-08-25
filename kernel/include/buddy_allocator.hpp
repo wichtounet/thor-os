@@ -139,7 +139,7 @@ private:
         }
     }
 
-    size_t word_level(size_t pages){
+    size_t word_level(size_t pages) const {
         size_t size = 1;
 
         for(size_t i = 0; i < levels; ++i){
