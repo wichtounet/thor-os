@@ -1,6 +1,8 @@
 Thor Operating System
 =====================
 
+.. image:: https://github.com/wichtounet/thor-os/wiki/images/thor-vesa.png
+
 Thor is an operating system created for learning purposes and for fun.
 
 It is currently a 64bit OS written mainly in C++, with few lines of assembly when necessary.
