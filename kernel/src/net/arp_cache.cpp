@@ -99,7 +99,8 @@ uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, n
 
     // At this point we need to send a request for the IP
 
-    logging::logf(logging::log_level::TRACE, "arp: IP not cached, generate ARP Request\n");
+    logging::logf(logging::log_level::TRACE, "arp: IP %u.%u.%u.%u not cached, generate ARP Request\n",
+        ip(0), ip(1), ip(2), ip(3));
 
     // Ask the ethernet layer to craft a packet
     auto packet = network::ethernet::prepare_packet(interface, sizeof(network::arp::header), 0xFFFFFFFFFFFF, ethernet::ether_type::ARP);
