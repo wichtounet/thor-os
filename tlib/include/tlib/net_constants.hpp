@@ -67,6 +67,13 @@ enum class type : uint8_t {
     TRACEROUTE = 30
 };
 
+struct packet_descriptor {
+    size_t payload_size;
+    ip::address target_ip;
+    icmp::type type;
+    size_t code;
+};
+
 } // end of namespace icmp
 
 enum class socket_domain : size_t {
@@ -79,13 +86,6 @@ enum class socket_type : size_t {
 
 enum class socket_protocol : size_t {
     ICMP
-};
-
-struct icmp_packet_descriptor {
-    size_t payload_size;
-    ip::address target_ip;
-    icmp::type type;
-    size_t code;
 };
 
 } // end of network namespace

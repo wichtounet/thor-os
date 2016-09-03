@@ -17,8 +17,17 @@ ASSERT_ONLY_THOR_PROGRAM
 
 namespace tlib {
 
+struct packet {
+    size_t fd;
+    char* payload;
+    size_t index;
+};
+
 std::expected<size_t> socket_open(socket_domain domain, socket_type type, socket_protocol protocol);
-void socket_close(size_t fd);
+void socket_close(size_t socket_fd);
+
+std::expected<packet> prepare_packet(size_t socket_fd, void* desc);
+std::expected<void> finalize_packet(size_t socket_fd, packet p);
 
 } // end of namespace tlib
 
