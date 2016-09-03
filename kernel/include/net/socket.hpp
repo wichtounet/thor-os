@@ -9,6 +9,8 @@
 #define NET_SOCKET_H
 
 #include <types.hpp>
+#include <vector.hpp>
+#include <algorithms.hpp>
 
 #include "tlib/net_constants.hpp"
 
@@ -70,14 +72,9 @@ struct socket {
     }
 
     void erase_packet(size_t fd){
-        for(size_t i = 0; i < packets.size(); ++i){
-            if(packets[i].fd == fd){
-                packets.erase(i);
-                return;
-            }
-        }
-
-        thor_unreachable("Should not happen");
+        packets.erase(std::remove_if(packets.begin(), packets.end(), [fd](network::ethernet::packet& packet){
+            return packet.fd == fd;
+        }), packets.end());
     }
 };
 
