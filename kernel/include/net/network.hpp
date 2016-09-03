@@ -15,8 +15,9 @@
 #include <semaphore.hpp>
 #include <lock_guard.hpp>
 
+#include "tlib/net_constants.hpp"
+
 #include "net/ethernet_packet.hpp"
-#include "net/ip_address.hpp"
 
 namespace network {
 

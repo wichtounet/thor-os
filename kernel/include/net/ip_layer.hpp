@@ -11,7 +11,7 @@
 #include <types.hpp>
 
 #include "net/network.hpp"
-#include "net/ip_address.hpp"
+#include "tlib/net_constants.hpp"
 
 namespace network {
 

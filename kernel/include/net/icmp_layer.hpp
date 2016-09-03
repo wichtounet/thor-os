@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+#include "tlib/net_constants.hpp"
+
 #include "net/network.hpp"
 #include "net/ip_layer.hpp"
 
@@ -30,25 +32,6 @@ struct echo_request_header {
 } __attribute__((packed));
 
 static_assert(sizeof(echo_request_header) == sizeof(header::rest), "Invalid size for echo request header");
-
-enum class type : uint8_t {
-    ECHO_REPLY = 0,
-    UNREACHABLE = 3,
-    SOURCE_QUENCH = 4,
-    REDICT = 5,
-    ECHO_REQUEST = 8,
-    ROUTER_ADVERTISEMENT = 9,
-    ROUTER_SOLICITATION = 10,
-    TIME_EXCEEDED = 11,
-    PARAMETER_PROBLEM = 12,
-    TIMESTAMP = 13,
-    TIMESTAMP_REPLY = 14,
-    INFORMATION_REQUEST = 15,
-    INFORMATION_REPLY = 16,
-    ADDRESS_MASK_REQUEST = 17,
-    ADDRESS_MASK_REPLY = 18,
-    TRACEROUTE = 30
-};
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
