@@ -8,6 +8,8 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
+#include <initializer_list>
+
 #include <types.hpp>
 #include <algorithms.hpp>
 #include <new.hpp>
@@ -32,7 +34,12 @@ private:
 
 public:
     vector() : data(nullptr), _size(0), _capacity(0) {}
+
     explicit vector(uint64_t c) : data(new T[c]), _size(0), _capacity(c) {}
+
+    vector(initializer_list<T> values) : data(new T[values.size()]), _size(values.size()), _capacity(values.size()) {
+        std::copy(values.begin(), values.end(), begin());
+    }
 
     vector(const vector& rhs) : data(nullptr), _size(rhs._size), _capacity(rhs._capacity) {
         if(!rhs.empty()){
