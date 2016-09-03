@@ -11,6 +11,7 @@
 #include "test.hpp"
 
 void string_tests();
+void tuple_tests();
 void traits_tests();
 void algorithms_tests();
 void circular_buffer_tests();
@@ -20,6 +21,7 @@ int main(){
     traits_tests();
     algorithms_tests();
     circular_buffer_tests();
+    tuple_tests();
 
     printf("All tests finished\n");
 
