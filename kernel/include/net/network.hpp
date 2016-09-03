@@ -14,6 +14,7 @@
 #include <mutex.hpp>
 #include <semaphore.hpp>
 #include <lock_guard.hpp>
+#include <tuple.hpp>
 
 #include "tlib/net_constants.hpp"
 
@@ -70,6 +71,23 @@ int64_t open(network::socket_domain domain, network::socket_type type, network::
  * \brief Close the given socket file descriptor
  */
 void close(size_t fd);
+
+/*!
+ * \brief Prepare a packet
+ * \param socket_fd The file descriptor of the packet
+ * \param desc The packet descriptor to send (depending on the protocol)
+ * \þaram buffer The buffer to hold the packet payload
+ * \return a tuple containing the packet file descriptor and the packet payload index
+ */
+std::tuple<size_t, size_t> prepare_packet(size_t socket_fd, void* desc, char* buffer);
+
+/*!
+ * \brief Finalize a packet (send it)
+ * \param socket_fd The file descriptor of the packet
+ * \param packet_fd The file descriptor of the packet
+ * \return 0 on success and a negative error code otherwise
+ */
+int64_t finalize_packet(size_t socket_fd, size_t packet_fd);
 
 } // end of network namespace
 

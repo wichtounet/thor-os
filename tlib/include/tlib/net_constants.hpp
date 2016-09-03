@@ -2,8 +2,7 @@
 // Copyright Baptiste Wicht 2013-2016.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
-//  http://www.boost.org/LICENSE_1_0.txt)
-//=======================================================================
+//  http://www.boost.org/LICENSE_1_0.txt) //=======================================================================
 
 #ifndef TLIB_NET_CONSTANTS_H
 #define TLIB_NET_CONSTANTS_H
@@ -66,6 +65,18 @@ enum class type : uint8_t {
     ADDRESS_MASK_REPLY = 18,
     TRACEROUTE = 30
 };
+
+struct header {
+    uint8_t type;
+    uint8_t code;
+    uint16_t checksum;
+    uint32_t rest; ///< Depends on the type of packet type
+} __attribute__((packed));
+
+struct echo_request_header {
+    uint16_t identifier;
+    uint16_t sequence;
+} __attribute__((packed));
 
 struct packet_descriptor {
     size_t payload_size;

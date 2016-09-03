@@ -22,6 +22,8 @@
 
 #include "tlib/errors.hpp"
 
+#include "net/icmp_layer.hpp"
+
 namespace {
 std::vector<network::interface_descriptor> interfaces;
 
@@ -161,4 +163,53 @@ void network::close(size_t fd){
     if(scheduler::has_socket(fd)){
         scheduler::release_socket(fd);
     }
+}
+
+std::tuple<size_t, size_t> network::prepare_packet(size_t socket_fd, void* desc, char* buffer){
+    if(!scheduler::has_socket(socket_fd)){
+        return {-std::ERROR_SOCKET_INVALID_FD, 0};
+    }
+
+    // TODO A socket should be bound to an interface somehow
+    if(!network::number_of_interfaces()){
+        return {-std::ERROR_SOCKET_NO_INTERFACE, 0};
+    }
+
+    auto& interface = network::interface(0);
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    switch(socket.protocol){
+        case network::socket_protocol::ICMP:
+            auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
+            auto packet = network::icmp::prepare_packet(interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
+            auto fd = socket.register_packet(packet);
+
+            return {fd, packet.index};
+    }
+
+    return {-std::ERROR_SOCKET_UNIMPLEMENTED, 0};
+}
+
+int64_t network::finalize_packet(size_t socket_fd, size_t packet_fd){
+    if(!scheduler::has_socket(socket_fd)){
+        return -std::ERROR_SOCKET_INVALID_FD;
+    }
+
+    if(!scheduler::has_socket(packet_fd)){
+        return -std::ERROR_SOCKET_INVALID_PACKET_FD;
+    }
+
+    auto& interface = network::interface(0);
+    auto& socket = scheduler::get_socket(socket_fd);
+    auto& packet = socket.get_packet(packet_fd);
+
+    switch(socket.protocol){
+        case network::socket_protocol::ICMP:
+            network::icmp::finalize_packet(interface, packet);
+            socket.erase_packet(packet_fd);
+
+            return 0;
+    }
+
+    return -std::ERROR_SOCKET_UNIMPLEMENTED, 0;
 }

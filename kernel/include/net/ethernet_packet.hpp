@@ -30,8 +30,11 @@ struct packet {
     ether_type type;
     size_t index;
 
-    packet(){}
-    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0) {}
+    // Set for user mode
+    size_t fd;
+
+    packet() : fd(0) {}
+    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0) {}
 };
 
 } // end of ethernet namespace

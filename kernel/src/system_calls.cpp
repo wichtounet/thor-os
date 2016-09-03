@@ -353,6 +353,26 @@ void sc_socket_close(interrupt::syscall_regs* regs){
     network::close(fd);
 }
 
+void sc_prepare_packet(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto desc = reinterpret_cast<void*>(regs->rcx);
+    auto buffer = reinterpret_cast<char*>(regs->rdx);
+
+    int64_t fd;
+    size_t index;
+    std::tie(fd, index) = network::prepare_packet(socket_fd, desc, buffer);
+
+    regs->rax = fd;
+    regs->rbx = index;
+}
+
+void sc_finalize_packet(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto packet_fd = regs->rcx;
+
+    regs->rax = network::finalize_packet(socket_fd, packet_fd);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -560,9 +580,13 @@ void system_call_entry(interrupt::syscall_regs* regs){
             sc_mouse_y(regs);
             break;
 
+        // I/O system calls
+
         case 0x2000:
             sc_ioctl(regs);
             break;
+
+        // Network system calls
 
         case 0x3000:
             sc_socket_open(regs);
@@ -571,6 +595,16 @@ void system_call_entry(interrupt::syscall_regs* regs){
         case 0x3001:
             sc_socket_close(regs);
             break;
+
+        case 0x3002:
+            sc_prepare_packet(regs);
+            break;
+
+        case 0x3003:
+            sc_finalize_packet(regs);
+            break;
+
+        // Special system calls
 
         case 0x6666:
             sc_alpha(regs);

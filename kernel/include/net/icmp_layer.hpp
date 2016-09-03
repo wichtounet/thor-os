@@ -19,18 +19,6 @@ namespace network {
 
 namespace icmp {
 
-struct header {
-    uint8_t type;
-    uint8_t code;
-    uint16_t checksum;
-    uint32_t rest; ///< Depends on the type of packet type
-} __attribute__((packed));
-
-struct echo_request_header {
-    uint16_t identifier;
-    uint16_t sequence;
-} __attribute__((packed));
-
 static_assert(sizeof(echo_request_header) == sizeof(header::rest), "Invalid size for echo request header");
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
