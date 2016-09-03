@@ -195,12 +195,13 @@ int64_t network::finalize_packet(size_t socket_fd, size_t packet_fd){
         return -std::ERROR_SOCKET_INVALID_FD;
     }
 
-    if(!scheduler::has_socket(packet_fd)){
+    auto& interface = network::interface(0);
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(!socket.has_packet(packet_fd)){
         return -std::ERROR_SOCKET_INVALID_PACKET_FD;
     }
 
-    auto& interface = network::interface(0);
-    auto& socket = scheduler::get_socket(socket_fd);
     auto& packet = socket.get_packet(packet_fd);
 
     switch(socket.protocol){
