@@ -13,6 +13,7 @@
 #include <types.hpp>
 #include <algorithms.hpp>
 #include <new.hpp>
+#include <iterator.hpp>
 
 //TODO The vector does not call any destructor
 
@@ -198,6 +199,24 @@ public:
         }
 
         --_size;
+    }
+
+    void erase(iterator position){
+        for(size_t i = position - begin(); i < _size - 1; ++i){
+            data[i] = std::move(data[i+1]);
+        }
+
+        --_size;
+    }
+
+    void erase(iterator first, iterator last){
+        auto n = std::distance(first, last);
+
+        for(size_t i = first - begin(); i < _size - n; ++i){
+            data[i] = std::move(data[i+n]);
+        }
+
+        _size -= n;
     }
 
     //Iterators
