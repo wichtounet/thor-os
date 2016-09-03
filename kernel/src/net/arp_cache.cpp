@@ -121,6 +121,8 @@ uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, n
 
     network::ethernet::finalize_packet(interface, packet);
 
+    // TODO We probably don't want to wait forever
+
     while(!is_ip_cached(ip)){
         network::arp::wait_for_reply();
     }
