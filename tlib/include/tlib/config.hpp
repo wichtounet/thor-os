@@ -40,6 +40,8 @@ constexpr bool is_thor_lib(){
 #define THOR_NAMESPACE_NAME(LIB_NS,THOR_NS) THOR_NS
 #endif
 
+#define THOR_NAMESPACE(LIB_NS,THOR_NS) namespace THOR_NAMESPACE_NAME(LIB_NS, THOR_NS)
+
 // Namespaces in kernel
 
 #ifdef THOR_TLIB
