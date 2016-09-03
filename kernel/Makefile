@@ -8,9 +8,6 @@ THOR_FLAGS=-DCONFIG_HISTORY=y
 CRTBEGIN_OBJ:=$(shell $(CXX) $(KERNEL_CPP_FLAGS_64) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CXX) $(KERNEL_CPP_FLAGS_64) -print-file-name=crtend.o)
 
-# The link files provided by the compiler
-SPECIAL_O_FILES=$(CRTBEGIN_OBJ) $(CRTEND_OBJ)
-
 # Compile the 16-bit and 32-bit parts of the executable
 
 boot_16.o: src/boot/boot_16.cpp
@@ -50,7 +47,12 @@ $(eval $(call acpica_folder_compile,utilities))
 
 -include $(D_FILES)
 
-LINK_O_FILES=$(SPECIAL_O_FILES) $(O_FILES)
+# Remove special files from O_FILES
+O_FILES := $(filter-out debug/src/crti.s.o,$(O_FILES))
+O_FILES := $(filter-out debug/src/crtn.s.o,$(O_FILES))
+
+# COmpute the link files order
+LINK_O_FILES=debug/src/crti.s.o $(CRTBEGIN_OBJ) $(O_FILES) $(CRTEND_OBJ) debug/src/crtn.s.o
 
 debug/kernel.bin: $(LINK_O_FILES)
 	@ mkdir -p debug/
