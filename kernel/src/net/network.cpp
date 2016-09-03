@@ -212,5 +212,5 @@ int64_t network::finalize_packet(size_t socket_fd, size_t packet_fd){
             return 0;
     }
 
-    return -std::ERROR_SOCKET_UNIMPLEMENTED, 0;
+    return -std::ERROR_SOCKET_UNIMPLEMENTED;
 }
