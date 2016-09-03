@@ -232,7 +232,7 @@ void for_each(Iterator it, Iterator end, Functor func){
     }
 }
 
-template<class Iterator, class T>
+template<typename Iterator, typename T>
 T accumulate(Iterator it, Iterator end, T init){
     while(it != end){
         init = init + *it;
@@ -241,6 +241,58 @@ T accumulate(Iterator it, Iterator end, T init){
     }
 
     return init;
+}
+
+template<typename Iterator, typename T>
+Iterator find(Iterator first, Iterator last, const T& value){
+    for (; first != last; ++first) {
+        if (*first == value) {
+            return first;
+        }
+    }
+
+    return last;
+}
+
+template <typename Iterator, typename Pred>
+Iterator find_if(Iterator first, Iterator last, Pred pred) {
+    for (; first != last; ++first) {
+        if (pred(*first)) {
+            return first;
+        }
+    }
+
+    return last;
+}
+
+template< typename Iterator, typename T >
+Iterator remove(Iterator first, Iterator last, const T& value){
+    first = std::find(first, last, value);
+
+    if (first != last){
+        for(auto it = first; ++it != last; ){
+            if (!(*it == value)){
+                *first++ = std::move(*it);
+            }
+        }
+    }
+
+    return first;
+}
+
+template <typename Iterator, typename Pred>
+Iterator remove_if(Iterator first, Iterator last, Pred pred) {
+    first = std::find_if(first, last, pred);
+
+    if (first != last) {
+        for (auto it = first; ++it != last;) {
+            if (!pred(*it)) {
+                *first++ = std::move(*it);
+            }
+        }
+    }
+
+    return first;
 }
 
 template<typename T>
