@@ -8,6 +8,8 @@
 #ifndef CIRCULAR_BUFFER_H
 #define CIRCULAR_BUFFER_H
 
+#include <types.hpp>
+
 /*!
  * \brief A circular buffer of maximum size S
  *
