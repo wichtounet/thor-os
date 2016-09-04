@@ -48,6 +48,19 @@ uint16_t type_to_code(network::ethernet::ether_type type){
     return 0x0;
 }
 
+void prepare_packet(network::ethernet::packet& p, network::interface_descriptor& interface, size_t destination, network::ethernet::ether_type type){
+    p.type = type;
+    p.index = sizeof(network::ethernet::header);
+
+    auto source_mac = interface.mac_address;
+
+    auto* ether_header = reinterpret_cast<network::ethernet::header*>(p.payload);
+    ether_header->type = switch_endian_16(type_to_code(type));
+
+    network::ethernet::mac64_to_mac6(source_mac, ether_header->source.mac);
+    network::ethernet::mac64_to_mac6(destination, ether_header->target.mac);
+}
+
 } //end of anonymous namespace
 
 uint64_t network::ethernet::mac6_to_mac64(const char* source_mac){
@@ -111,20 +124,37 @@ network::ethernet::packet network::ethernet::prepare_packet(network::interface_d
     auto total_size = size + sizeof(header);
 
     network::ethernet::packet p(new char[total_size], total_size);
-    p.type = type;
-    p.index = sizeof(header);
 
-    auto source_mac = interface.mac_address;
+    ::prepare_packet(p, interface, destination, type);
 
-    auto* ether_header = reinterpret_cast<header*>(p.payload);
-    ether_header->type = switch_endian_16(type_to_code(type));
+    return p;
+}
 
-    mac64_to_mac6(source_mac, ether_header->source.mac);
-    mac64_to_mac6(destination, ether_header->target.mac);
+network::ethernet::packet network::ethernet::prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
+    auto total_size = size + sizeof(header);
+
+    network::ethernet::packet p(buffer, total_size);
+    p.user = true;
+
+    ::prepare_packet(p, interface, destination, type);
 
     return p;
 }
 
 void network::ethernet::finalize_packet(network::interface_descriptor& interface, packet& p){
-    interface.send(p);
+    if(p.user){
+        // The packet will be handled by a kernel thread, needs to
+        // be copied to kernel memory
+
+        network::ethernet::packet kernel_packet(new char[p.payload_size], p.payload_size);
+
+        std::copy_n(p.payload, p.payload_size, kernel_packet.payload);
+
+        kernel_packet.type = p.type;
+        kernel_packet.index = p.index;
+
+        interface.send(kernel_packet);
+    } else {
+        interface.send(p);
+    }
 }

@@ -36,6 +36,7 @@ void mac64_to_mac6(uint64_t input, char* mac);
 void decode(network::interface_descriptor& interface, packet& packet);
 
 packet prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
+packet prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
 void finalize_packet(network::interface_descriptor& interface, packet& p);
 
 } // end of ethernet namespace

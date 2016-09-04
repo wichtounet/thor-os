@@ -32,9 +32,10 @@ struct packet {
 
     // Set for user mode
     size_t fd;
+    bool user;
 
-    packet() : fd(0) {}
-    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0) {}
+    packet() : fd(0), user(false) {}
+    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0), user(false) {}
 };
 
 } // end of ethernet namespace

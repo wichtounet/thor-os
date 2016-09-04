@@ -38,6 +38,17 @@ void compute_checksum(network::icmp::header* icmp_header, size_t payload_size){
     icmp_header->checksum = ~value;
 }
 
+void prepare_packet(network::ethernet::packet& packet, network::icmp::type t, size_t code){
+    // Set the ICMP header
+
+    auto* icmp_header = reinterpret_cast<network::icmp::header*>(packet.payload + packet.index);
+
+    icmp_header->type = static_cast<uint8_t>(t);
+    icmp_header->code = code;
+
+    packet.index += sizeof(network::icmp::header) - sizeof(uint32_t);
+}
+
 } // end of anonymous namespace
 
 void network::icmp::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
@@ -70,14 +81,16 @@ network::ethernet::packet network::icmp::prepare_packet(network::interface_descr
     // Ask the IP layer to craft a packet
     auto packet = network::ip::prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x01);
 
-    // Set the ICMP header
+    ::prepare_packet(packet, t, code);
 
-    auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    return packet;
+}
 
-    icmp_header->type = static_cast<uint8_t>(t);
-    icmp_header->code = code;
+network::ethernet::packet network::icmp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){
+    // Ask the IP layer to craft a packet
+    auto packet = network::ip::prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x01);
 
-    packet.index += sizeof(header) - sizeof(uint32_t);
+    ::prepare_packet(packet, t, code);
 
     return packet;
 }

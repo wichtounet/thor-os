@@ -38,6 +38,25 @@ void compute_checksum(network::ip::header* header){
     header->header_checksum = ~uint16_t(value);
 }
 
+void prepare_packet(network::ethernet::packet& packet, network::interface_descriptor& interface, size_t size, network::ip::address& target_ip, size_t protocol){
+    auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.index);
+
+    ip_header->version_ihl = (4 << 4) + 5;
+    ip_header->dscp_ecn = 0;
+    ip_header->total_len = switch_endian_16(uint16_t(size) + sizeof(network::ip::header));
+    ip_header->identification = 0;
+    ip_header->flags_offset = 0;
+    ip_header->flags_offset = switch_endian_16(uint16_t(1) << 14);
+    ip_header->ttl = 255;
+    ip_header->protocol = protocol;
+    ip_header->source_ip = ip_to_ip32(interface.ip_address);
+    ip_header->target_ip = ip_to_ip32(target_ip);
+
+    compute_checksum(ip_header);
+
+    packet.index += sizeof(network::ip::header);
+}
+
 } // end of anonymous namespace
 
 network::ip::address network::ip::ip32_to_ip(uint32_t raw){
@@ -97,22 +116,18 @@ network::ethernet::packet network::ip::prepare_packet(network::interface_descrip
     // Ask the ethernet layer to craft a packet
     auto packet = network::ethernet::prepare_packet(interface, size + sizeof(header), target_mac, ethernet::ether_type::IPV4);
 
-    auto* ip_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    ::prepare_packet(packet, interface, size, target_ip, protocol);
 
-    ip_header->version_ihl = (4 << 4) + 5;
-    ip_header->dscp_ecn = 0;
-    ip_header->total_len = switch_endian_16(uint16_t(size) + sizeof(header));
-    ip_header->identification = 0;
-    ip_header->flags_offset = 0;
-    ip_header->flags_offset = switch_endian_16(uint16_t(1) << 14);
-    ip_header->ttl = 255;
-    ip_header->protocol = protocol;
-    ip_header->source_ip = ip_to_ip32(interface.ip_address);
-    ip_header->target_ip = ip_to_ip32(target_ip);
+    return packet;
+}
 
-    compute_checksum(ip_header);
+network::ethernet::packet network::ip::prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
+    auto target_mac = network::arp::get_mac_force(interface, target_ip);
 
-    packet.index += sizeof(header);
+    // Ask the ethernet layer to craft a packet
+    auto packet = network::ethernet::prepare_packet(buffer, interface, size + sizeof(header), target_mac, ethernet::ether_type::IPV4);
+
+    ::prepare_packet(packet, interface, size, target_ip, protocol);
 
     return packet;
 }

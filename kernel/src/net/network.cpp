@@ -55,6 +55,9 @@ void tx_thread(void* data){
 
         auto packet = interface.tx_queue.pop();
         interface.hw_send(interface, packet);
+
+        thor_assert(!packet.user);
+
         delete[] packet.payload;
     }
 }
@@ -181,7 +184,7 @@ std::tuple<size_t, size_t> network::prepare_packet(size_t socket_fd, void* desc,
     switch(socket.protocol){
         case network::socket_protocol::ICMP:
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
-            auto packet = network::icmp::prepare_packet(interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
+            auto packet = network::icmp::prepare_packet(buffer, interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
             auto fd = socket.register_packet(packet);
 
             return {fd, packet.index};
