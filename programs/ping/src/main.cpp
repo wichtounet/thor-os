@@ -71,7 +71,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    //TODO Wait for replies
+    auto* icmp_header = reinterpret_cast<tlib::icmp::header*>(p->payload + p->index);
+
+    auto command_type = static_cast<tlib::icmp::type>(icmp_header->type);
+
+    if(command_type == tlib::icmp::type::ECHO_REPLY){
+        tlib::printf("reply received from %s\n", ip.c_str());
+    }
 
     status = tlib::listen(*socket, false);
     if (!status) {

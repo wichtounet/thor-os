@@ -12,6 +12,7 @@
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"
+#include "scheduler.hpp"
 
 namespace {
 
@@ -74,6 +75,20 @@ void network::icmp::decode(network::interface_descriptor& /*interface*/, network
         default:
             logging::logf(logging::log_level::TRACE, "icmp: Unsupported ICMP packet received (type:%u)\n", uint64_t(icmp_header->type));
             break;
+    }
+
+    // TODO Need something better for this
+
+    for(size_t pid = 0; pid < scheduler::MAX_PROCESS; ++pid){
+        auto state = scheduler::get_process_state(pid);
+        if(state != scheduler::process_state::EMPTY && state != scheduler::process_state::NEW && state != scheduler::process_state::KILLED){
+            for(auto& socket : scheduler::get_sockets(pid)){
+                if(socket.listen && socket.protocol == network::socket_protocol::ICMP){
+                    socket.listen_packets.push(packet);
+                    socket.listen_queue.wake_up();
+                }
+            }
+        }
     }
 }
 
