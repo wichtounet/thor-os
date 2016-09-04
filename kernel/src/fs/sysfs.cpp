@@ -198,25 +198,15 @@ void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_t
 }
 
 void delete_value(sys_folder& folder, const std::string& name) {
-    for (size_t i = 0; i < folder.values.size(); ++i) {
-        auto& v = folder.values[i];
-
-        if (v.name == name) {
-            folder.values.erase(i);
-            break;
-        }
-    }
+    folder.values.erase(std::remove_if(folder.values.begin(), folder.values.end(), [&name](const sys_value& value){
+        return value.name == name;
+    }), folder.values.end());
 }
 
 void delete_folder(sys_folder& folder, const std::string& name) {
-    for (size_t i = 0; i < folder.folders.size(); ++i) {
-        auto& v = folder.folders[i];
-
-        if (v.name == name) {
-            folder.folders.erase(i);
-            break;
-        }
-    }
+    folder.folders.erase(std::remove_if(folder.folders.begin(), folder.folders.end(), [&name](const sys_folder& value){
+        return value.name == name;
+    }), folder.folders.end());
 }
 
 } //end of anonymous namespace

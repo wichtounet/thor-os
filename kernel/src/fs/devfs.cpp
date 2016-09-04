@@ -216,12 +216,9 @@ void devfs::register_device(const std::string& mp, const std::string& name, devi
 void devfs::deregister_device(const std::string& mp, const std::string& name){
     for(auto& device_list : devices){
         if(device_list.mount_point == mp){
-            for(size_t i = 0; i < device_list.devices.size(); ++i){
-                if(device_list.devices[i].name == name){
-                    device_list.devices.erase(i);
-                    break;
-                }
-            }
+            device_list.devices.erase(std::remove_if(device_list.devices.begin(), device_list.devices.end(), [&name](const device& dev){
+                return dev.name == name;
+            }), device_list.devices.end());
 
             return;
         }
