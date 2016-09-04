@@ -35,6 +35,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    auto status = tlib::listen(*socket, true);
+    if (!status) {
+        tlib::printf("ping: listen error: %s\n", std::error_message(status.error()));
+        return 1;
+    }
+
     tlib::icmp::packet_descriptor desc;
     desc.payload_size = 0;
     desc.target_ip    = tlib::ip::make_address(std::atoui(ip_parts[0]), std::atoui(ip_parts[1]), std::atoui(ip_parts[2]), std::atoui(ip_parts[3]));
@@ -53,15 +59,27 @@ int main(int argc, char* argv[]) {
     command_header->identifier = 0x666;
     command_header->sequence   = 0x1;
 
-    auto status = tlib::finalize_packet(*socket, *packet);
+    status = tlib::finalize_packet(*socket, *packet);
     if (!status) {
         tlib::printf("ping: finalize_packet error: %s\n", std::error_message(status.error()));
         return 1;
     }
 
-    tlib::socket_close(*socket);
+    auto p = tlib::wait_for_packet(*socket);
+    if (!p) {
+        tlib::printf("ping: wait_for_packet error: %s\n", std::error_message(p.error()));
+        return 1;
+    }
 
     //TODO Wait for replies
+
+    status = tlib::listen(*socket, false);
+    if (!status) {
+        tlib::printf("ping: listen error: %s\n", std::error_message(status.error()));
+        return 1;
+    }
+
+    tlib::socket_close(*socket);
 
     return 0;
 }

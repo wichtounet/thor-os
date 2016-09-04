@@ -67,3 +67,35 @@ std::expected<void> tlib::finalize_packet(size_t socket_fd, tlib::packet p){
 
     free(p.payload);
 }
+
+std::expected<void> tlib::listen(size_t socket_fd, bool l){
+    int64_t code;
+    asm volatile("mov rax, 0x3004; mov rbx, %[socket]; mov rcx, %[listen]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [socket] "g" (socket_fd), [listen] "g" (size_t(l))
+        : "rax", "rbx", "rcx");
+
+    if(code < 0){
+        return std::make_expected_from_error<void, size_t>(-code);
+    } else {
+        return std::make_expected();
+    }
+}
+
+std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd){
+    int64_t code;
+    uint64_t payload;
+    asm volatile("mov rax, 0x3005; mov rbx, %[socket]; int 50; mov %[code], rax; mov %[payload], rbx;"
+        : [payload] "=m" (payload), [code] "=m" (code)
+        : [socket] "g" (socket_fd)
+        : "rax", "rbx", "rcx");
+
+    if(code < 0){
+        return std::make_expected_from_error<packet, size_t>(-code);
+    } else {
+        tlib::packet p;
+        p.index = code;
+        p.payload = reinterpret_cast<char*>(payload);
+        return std::make_expected<packet>(p);
+    }
+}

@@ -89,6 +89,21 @@ std::tuple<size_t, size_t> prepare_packet(size_t socket_fd, void* desc, char* bu
  */
 int64_t finalize_packet(size_t socket_fd, size_t packet_fd);
 
+/*!
+ * \brief Listen to a socket or not
+ * \param socket_fd The file descriptor of the packet
+ * \param listen Indicates if listen or not
+ * \return 0 on success and a negative error code otherwise
+ */
+int64_t listen(size_t socket_fd, bool listen);
+
+/*!
+ * \brief Wait for a packet
+ * \param socket_fd The file descriptor of the packet
+ * \return a tuple containing the packet index and payload
+ */
+std::tuple<int64_t, char*> wait_for_packet(size_t socket_fd);
+
 } // end of network namespace
 
 #endif

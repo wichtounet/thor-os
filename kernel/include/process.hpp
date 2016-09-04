@@ -16,7 +16,11 @@
 
 #include "vfs/path.hpp"
 
-#include "net/socket.hpp"
+namespace network {
+
+struct socket;
+
+} // end of namespace network
 
 namespace scheduler {
 
@@ -26,6 +30,8 @@ constexpr const size_t PRIORITY_LEVELS = MAX_PRIORITY - MIN_PRIORITY + 1;
 constexpr const size_t DEFAULT_PRIORITY = 3;
 
 typedef size_t pid_t;
+
+constexpr const pid_t INVALID_PID = 1024 * 1024 * 1024; //I'm pretty sure we won't violate this limit
 
 enum class process_state : char {
     EMPTY = 0,

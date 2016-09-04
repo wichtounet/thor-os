@@ -28,6 +28,8 @@ void socket_close(size_t socket_fd);
 
 std::expected<packet> prepare_packet(size_t socket_fd, void* desc);
 std::expected<void> finalize_packet(size_t socket_fd, packet p);
+std::expected<void> listen(size_t socket_fd, bool l);
+std::expected<packet> wait_for_packet(size_t socket_fd);
 
 } // end of namespace tlib
 

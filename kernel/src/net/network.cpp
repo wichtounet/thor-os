@@ -217,3 +217,34 @@ int64_t network::finalize_packet(size_t socket_fd, size_t packet_fd){
 
     return -std::ERROR_SOCKET_UNIMPLEMENTED;
 }
+
+int64_t network::listen(size_t socket_fd, bool listen){
+    if(!scheduler::has_socket(socket_fd)){
+        return -std::ERROR_SOCKET_INVALID_FD;
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    socket.listen = listen;
+
+    return 0;
+}
+
+std::tuple<int64_t, char*> network::wait_for_packet(size_t socket_fd){
+    if(!scheduler::has_socket(socket_fd)){
+        return {-std::ERROR_SOCKET_INVALID_FD, nullptr};
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(!socket.listen){
+        return {-std::ERROR_SOCKET_NOT_LISTEN, nullptr};
+    }
+
+    if(socket.listen_packets.empty()){
+        socket.listen_queue.sleep();
+    }
+
+    auto packet = socket.listen_packets.pop();
+    return {packet.index, packet.payload};
+}

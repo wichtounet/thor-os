@@ -373,6 +373,25 @@ void sc_finalize_packet(interrupt::syscall_regs* regs){
     regs->rax = network::finalize_packet(socket_fd, packet_fd);
 }
 
+void sc_listen(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto listen = bool(regs->rcx);
+
+    regs->rax = network::listen(socket_fd, listen);
+}
+
+void sc_wait_for_packet(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto listen = bool(regs->rcx);
+
+    int64_t index;
+    char* buffer;
+    std::tie(index, buffer) = network::wait_for_packet(socket_fd);
+
+    regs->rax = index;
+    regs->rbx = reinterpret_cast<size_t>(buffer);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -602,6 +621,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x3003:
             sc_finalize_packet(regs);
+            break;
+
+        case 0x3004:
+            sc_listen(regs);
+            break;
+
+        case 0x3005:
+            sc_wait_for_packet(regs);
             break;
 
         // Special system calls
