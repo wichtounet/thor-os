@@ -58,6 +58,8 @@ size_t register_new_socket(network::socket_domain domain, network::socket_type t
 network::socket& get_socket(size_t fd);
 bool has_socket(size_t fd);
 void release_socket(size_t fd);
+std::vector<network::socket>& get_sockets();
+std::vector<network::socket>& get_sockets(pid_t pid);
 
 const path& get_working_directory();
 void set_working_directory(const path& directory);

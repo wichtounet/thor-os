@@ -935,6 +935,14 @@ network::socket& scheduler::get_socket(size_t fd){
     return pcb[current_pid].sockets[fd];
 }
 
+std::vector<network::socket>& scheduler::get_sockets(){
+    return pcb[current_pid].sockets;
+}
+
+std::vector<network::socket>& scheduler::get_sockets(scheduler::pid_t pid){
+    return pcb[pid].sockets;
+}
+
 const path& scheduler::get_working_directory(){
     return pcb[current_pid].working_directory;
 }
