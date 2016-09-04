@@ -21,9 +21,7 @@ path::path(const std::string& path){
     auto parts = std::split(path, '/');
     names.reserve(names.size() + parts.size());
 
-    for(auto& part : parts){
-        names.push_back(part);
-    }
+    std::copy(parts.begin(), parts.end(), std::back_inserter(names));
 }
 
 path::path(const path& base_path, const std::string& p){
@@ -32,13 +30,8 @@ path::path(const path& base_path, const std::string& p){
     auto parts = std::split(p, '/');
     names.reserve(names.size() + base_path.size() + parts.size());
 
-    for(auto& part : base_path){
-        names.push_back(part);
-    }
-
-    for(auto& part : parts){
-        names.push_back(part);
-    }
+    std::copy(base_path.begin(), base_path.end(), std::back_inserter(names));
+    std::copy(parts.begin(), parts.end(), std::back_inserter(names));
 }
 
 path::path(const path& base_path, const path& p){
@@ -46,13 +39,8 @@ path::path(const path& base_path, const path& p){
 
     names.reserve(names.size() + base_path.size() + p.size());
 
-    for(auto& part : base_path){
-        names.push_back(part);
-    }
-
-    for(auto& part : p){
-        names.push_back(part);
-    }
+    std::copy(base_path.begin(), base_path.end(), std::back_inserter(names));
+    std::copy(p.begin(), p.end(), std::back_inserter(names));
 }
 
 // TODO Ideally, the last / should not be used
