@@ -47,39 +47,45 @@ int main(int argc, char* argv[]) {
     desc.type         = tlib::icmp::type::ECHO_REQUEST;
     desc.code         = 0;
 
-    auto packet = tlib::prepare_packet(*socket, &desc);
+    for(size_t i = 0; i < 4; ++i){
+        auto packet = tlib::prepare_packet(*socket, &desc);
 
-    if (!packet) {
-        tlib::printf("ping: prepare_packet error: %s\n", std::error_message(packet.error()));
-        return 1;
+        if (!packet) {
+            tlib::printf("ping: prepare_packet error: %s\n", std::error_message(packet.error()));
+            return 1;
+        }
+
+        auto* command_header = reinterpret_cast<tlib::icmp::echo_request_header*>(packet->payload + packet->index);
+
+        command_header->identifier = 0x666;
+        command_header->sequence   = 0x1 + i;
+
+        status = tlib::finalize_packet(*socket, *packet);
+        if (!status) {
+            tlib::printf("ping: finalize_packet error: %s\n", std::error_message(status.error()));
+            return 1;
+        }
+
+        auto p = tlib::wait_for_packet(*socket);
+        if (!p) {
+            tlib::printf("ping: wait_for_packet error: %s\n", std::error_message(p.error()));
+            return 1;
+        }
+
+        auto* icmp_header = reinterpret_cast<tlib::icmp::header*>(p->payload + p->index);
+
+        auto command_type = static_cast<tlib::icmp::type>(icmp_header->type);
+
+        if(command_type == tlib::icmp::type::ECHO_REPLY){
+            tlib::printf("Reply received from %s\n", ip.c_str());
+        } else {
+            tlib::printf("Unhandled command type received\n");
+        }
+
+        tlib::release_packet(*p);
+
+        tlib::sleep_ms(1000);
     }
-
-    auto* command_header = reinterpret_cast<tlib::icmp::echo_request_header*>(packet->payload + packet->index);
-
-    command_header->identifier = 0x666;
-    command_header->sequence   = 0x1;
-
-    status = tlib::finalize_packet(*socket, *packet);
-    if (!status) {
-        tlib::printf("ping: finalize_packet error: %s\n", std::error_message(status.error()));
-        return 1;
-    }
-
-    auto p = tlib::wait_for_packet(*socket);
-    if (!p) {
-        tlib::printf("ping: wait_for_packet error: %s\n", std::error_message(p.error()));
-        return 1;
-    }
-
-    auto* icmp_header = reinterpret_cast<tlib::icmp::header*>(p->payload + p->index);
-
-    auto command_type = static_cast<tlib::icmp::type>(icmp_header->type);
-
-    if(command_type == tlib::icmp::type::ECHO_REPLY){
-        tlib::printf("reply received from %s\n", ip.c_str());
-    }
-
-    tlib::release_packet(*p);
 
     status = tlib::listen(*socket, false);
     if (!status) {
