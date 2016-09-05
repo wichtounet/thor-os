@@ -250,7 +250,7 @@ int main(int /*argc*/, char* /*argv*/[]){
     static constexpr const size_t sleep_timeout = 50;
 
     // Create a default window
-    windows.emplace_back(250, 250, 200, 400);
+    windows.emplace_back(250UL, 250UL, 200UL, 400UL);
 
     while(true){
         fill_buffer(background);

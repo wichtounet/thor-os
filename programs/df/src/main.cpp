@@ -17,7 +17,7 @@ static constexpr const size_t BUFFER_SIZE = 4096;
 int main(int argc, char* argv[]){
     bool human = false;
 
-    for(size_t i = 1; i < argc; ++i){
+    for(size_t i = 1; i < size_t(argc); ++i){
         std::string param(argv[i]);
 
         if(param == "-h"){
