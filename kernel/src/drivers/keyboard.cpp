@@ -10,6 +10,7 @@
 #include "interrupts.hpp"
 #include "kernel_utils.hpp"
 #include "terminal.hpp"
+#include "logging.hpp"
 
 using keycode = std::keycode;
 
