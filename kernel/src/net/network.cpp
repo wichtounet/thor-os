@@ -241,6 +241,8 @@ int64_t network::wait_for_packet(char* buffer, size_t socket_fd){
         return -std::ERROR_SOCKET_NOT_LISTEN;
     }
 
+    logging::logf(logging::log_level::TRACE, "network: %u wait for packet on socket %u\n", scheduler::get_pid(), socket_fd);
+
     if(socket.listen_packets.empty()){
         socket.listen_queue.sleep();
     }
@@ -248,5 +250,8 @@ int64_t network::wait_for_packet(char* buffer, size_t socket_fd){
     auto packet = socket.listen_packets.pop();
     std::copy_n(packet.payload, packet.payload_size, buffer);
     //TODO At this point we leak the memory of the packets
+
+    logging::logf(logging::log_level::TRACE, "network: %u received packet on socket %u\n", scheduler::get_pid(), socket_fd);
+
     return packet.index;
 }
