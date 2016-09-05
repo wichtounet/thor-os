@@ -39,7 +39,7 @@ void rx_thread(void* data){
 
         auto packet = interface.rx_queue.pop();
         network::ethernet::decode(interface, packet);
-        delete[] packet.payload;
+        //delete[] packet.payload;
     }
 }
 
@@ -230,15 +230,15 @@ int64_t network::listen(size_t socket_fd, bool listen){
     return 0;
 }
 
-std::tuple<int64_t, char*> network::wait_for_packet(size_t socket_fd){
+int64_t network::wait_for_packet(char* buffer, size_t socket_fd){
     if(!scheduler::has_socket(socket_fd)){
-        return {-std::ERROR_SOCKET_INVALID_FD, nullptr};
+        return -std::ERROR_SOCKET_INVALID_FD;
     }
 
     auto& socket = scheduler::get_socket(socket_fd);
 
     if(!socket.listen){
-        return {-std::ERROR_SOCKET_NOT_LISTEN, nullptr};
+        return -std::ERROR_SOCKET_NOT_LISTEN;
     }
 
     if(socket.listen_packets.empty()){
@@ -246,5 +246,7 @@ std::tuple<int64_t, char*> network::wait_for_packet(size_t socket_fd){
     }
 
     auto packet = socket.listen_packets.pop();
-    return {packet.index, packet.payload};
+    std::copy_n(packet.payload, packet.payload_size, buffer);
+    //TODO At this point we leak the memory of the packets
+    return packet.index;
 }

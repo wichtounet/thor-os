@@ -382,14 +382,12 @@ void sc_listen(interrupt::syscall_regs* regs){
 
 void sc_wait_for_packet(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
-    auto listen = bool(regs->rcx);
+    auto user_buffer = reinterpret_cast<char*>(regs->rcx);
 
-    int64_t index;
-    char* buffer;
-    std::tie(index, buffer) = network::wait_for_packet(socket_fd);
+    auto index = network::wait_for_packet(user_buffer, socket_fd);
 
     regs->rax = index;
-    regs->rbx = reinterpret_cast<size_t>(buffer);
+    regs->rbx = reinterpret_cast<size_t>(user_buffer);
 }
 
 } //End of anonymous namespace

@@ -100,9 +100,9 @@ int64_t listen(size_t socket_fd, bool listen);
 /*!
  * \brief Wait for a packet
  * \param socket_fd The file descriptor of the packet
- * \return a tuple containing the packet index and payload
+ * \return the packet index
  */
-std::tuple<int64_t, char*> wait_for_packet(size_t socket_fd);
+int64_t wait_for_packet(char* buffer, size_t socket_fd);
 
 } // end of network namespace
 

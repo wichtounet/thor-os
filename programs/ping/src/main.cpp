@@ -79,6 +79,8 @@ int main(int argc, char* argv[]) {
         tlib::printf("reply received from %s\n", ip.c_str());
     }
 
+    tlib::release_packet(*p);
+
     status = tlib::listen(*socket, false);
     if (!status) {
         tlib::printf("ping: listen error: %s\n", std::error_message(status.error()));
