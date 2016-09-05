@@ -39,6 +39,7 @@ void ip_to_ip2(network::ip::address source_ip, uint16_t* ip);
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
 void wait_for_reply();
+void wait_for_reply(size_t ms);
 
 } // end of arp namespace
 

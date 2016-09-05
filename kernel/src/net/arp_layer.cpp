@@ -145,3 +145,7 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
 void network::arp::wait_for_reply(){
     wait_queue.sleep();
 }
+
+void network::arp::wait_for_reply(size_t ms){
+    wait_queue.sleep(ms);
+}
