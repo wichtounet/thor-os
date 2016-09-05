@@ -143,7 +143,9 @@ void packet_handler(interrupt::syscall_regs*, void* data){
         }
 
         desc.cur_rx = cur_rx;
-    } else if(status & (TX_OK | TX_ERR)){
+    }
+
+    if(status & (TX_OK | TX_ERR)){
         auto& dirty_tx = desc.dirty_tx;
         size_t cleaned_up = 0;
 
@@ -174,7 +176,9 @@ void packet_handler(interrupt::syscall_regs*, void* data){
         }
 
         desc.tx_sem.release(cleaned_up);
-    } else {
+    }
+
+    if(!(status & (RX_OK | TX_OK | TX_ERR))){
         // This should not happen since we only enable a few
         // interrupts
         logging::logf(logging::log_level::ERROR, "rtl8139: Receive status unhandled OK\n");
