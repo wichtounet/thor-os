@@ -12,6 +12,7 @@
 #include "console.hpp"
 #include "assert.hpp"
 #include "logging.hpp"
+#include "scheduler.hpp"
 
 namespace {
 
