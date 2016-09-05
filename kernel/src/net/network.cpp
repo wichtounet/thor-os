@@ -39,7 +39,9 @@ void rx_thread(void* data){
 
         auto packet = interface.rx_queue.pop();
         network::ethernet::decode(interface, packet);
-        //delete[] packet.payload;
+
+        // The memory of the packet was allocated by the interface itself, can be safely removed
+        delete[] packet.payload;
     }
 }
 
@@ -249,7 +251,9 @@ int64_t network::wait_for_packet(char* buffer, size_t socket_fd){
 
     auto packet = socket.listen_packets.pop();
     std::copy_n(packet.payload, packet.payload_size, buffer);
-    //TODO At this point we leak the memory of the packets
+
+    // The memory was allocated as a copy by the decoding process, it is safe to remove it here
+    delete[] packet.payload;
 
     logging::logf(logging::log_level::TRACE, "network: %u received packet on socket %u\n", scheduler::get_pid(), socket_fd);
 
