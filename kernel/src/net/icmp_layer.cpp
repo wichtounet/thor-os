@@ -14,6 +14,8 @@
 #include "kernel_utils.hpp"
 #include "scheduler.hpp"
 
+#include "tlib/errors.hpp"
+
 namespace {
 
 uint16_t echo_sequence = 0;
@@ -61,10 +63,38 @@ void network::icmp::decode(network::interface_descriptor& interface, network::et
 
     auto command_type = static_cast<type>(icmp_header->type);
 
+    auto command_index = packet.index + sizeof(network::icmp::header) - sizeof(uint32_t);
+
     switch(command_type){
         case type::ECHO_REQUEST:
-            logging::logf(logging::log_level::TRACE, "icmp: Echo Request\n");
-            break;
+            {
+                logging::logf(logging::log_level::TRACE, "icmp: received Echo Request\n");
+
+                auto ip_index = packet.tag(1);
+                auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + ip_index);
+
+                auto target_ip = network::ip::ip32_to_ip(ip_header->target_ip);
+                auto source_ip = network::ip::ip32_to_ip(ip_header->source_ip);
+
+                if(target_ip == interface.ip_address){
+                    logging::logf(logging::log_level::TRACE, "icmp: Reply to Echo Request for own IP\n");
+
+                    auto reply_packet = network::icmp::prepare_packet(interface, source_ip, 0x0, type::ECHO_REPLY, 0x0);
+
+                    if(reply_packet){
+                        auto* command_header = reinterpret_cast<echo_request_header*>(packet.payload + command_index);
+                        auto* reply_command_header = reinterpret_cast<echo_request_header*>(reply_packet->payload + reply_packet->index);
+
+                        *reply_command_header = *command_header;
+                    } else {
+                        logging::logf(logging::log_level::ERROR, "icmp: Failed to reply: %s\n", std::error_message(reply_packet.error()));
+                    }
+
+                    network::icmp::finalize_packet(interface, *reply_packet);
+                }
+
+                break;
+            }
         case type::ECHO_REPLY:
             logging::logf(logging::log_level::TRACE, "icmp: Echo Reply\n");
             break;
