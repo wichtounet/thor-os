@@ -115,8 +115,14 @@ uint64_t network::arp::get_mac(network::ip::address ip){
 }
 
 uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, network::ip::address ip){
+    // Check cache first
     if(is_ip_cached(ip)){
         return get_mac(ip);
+    }
+
+    // Ask for self MAC address
+    if(interface.ip_address == ip){
+        return interface.mac_address;
     }
 
     // At this point we need to send a request for the IP
@@ -136,8 +142,14 @@ uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, n
 }
 
 std::expected<uint64_t> network::arp::get_mac_force(network::interface_descriptor& interface, network::ip::address ip, size_t ms){
+    // Check cache first
     if(is_ip_cached(ip)){
         return std::make_expected<uint64_t>(get_mac(ip));
+    }
+
+    // Ask for self MAC address
+    if(interface.ip_address == ip){
+        return std::make_expected<uint64_t>(interface.mac_address);
     }
 
     // At this point we need to send a request for the IP
