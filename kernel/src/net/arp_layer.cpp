@@ -60,6 +60,8 @@ void network::arp::ip_to_ip2(network::ip::address source_ip, uint16_t* ip){
 }
 
 void network::arp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+    packet.tag(1, packet.index);
+
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
     logging::logf(logging::log_level::TRACE, "arp: Start ARP packet handling\n");

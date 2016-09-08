@@ -70,6 +70,8 @@ uint32_t network::ip::ip_to_ip32(address ip){
 }
 
 void network::ip::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+    packet.tag(1, packet.index);
+
     header* ip_header = reinterpret_cast<header*>(packet.payload + packet.index);
 
     logging::logf(logging::log_level::TRACE, "ip: Start IPv4 packet handling\n");

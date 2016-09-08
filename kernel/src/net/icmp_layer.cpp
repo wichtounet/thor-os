@@ -52,7 +52,9 @@ void prepare_packet(network::ethernet::packet& packet, network::icmp::type t, si
 
 } // end of anonymous namespace
 
-void network::icmp::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
+void network::icmp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+    packet.tag(2, packet.index);
+
     logging::logf(logging::log_level::TRACE, "icmp: Start ICMP packet handling\n");
 
     auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);

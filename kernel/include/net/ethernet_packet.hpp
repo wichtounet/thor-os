@@ -34,8 +34,19 @@ struct packet {
     size_t fd;
     bool user;
 
-    packet() : fd(0), user(false) {}
-    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0), user(false) {}
+    uint64_t tags; // This allows for 4 tags (4 layer)
+
+    packet() : fd(0), user(false), tags(0) {}
+    packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0), user(false), tags(0) {}
+
+    void tag(size_t layer, size_t index){
+        tags |= (index << (layer * 16));
+    }
+
+    size_t tag(size_t layer) const {
+        thor_assert(layer < 4, "Invalid tag access");
+        return (tags >> (layer * 16)) & 0xFFFF;
+    }
 };
 
 } // end of ethernet namespace

@@ -96,6 +96,7 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
     logging::logf(logging::log_level::TRACE, "ethernet: Source MAC Address %h \n", source_mac);
     logging::logf(logging::log_level::TRACE, "ethernet: Destination MAC Address %h \n", target_mac);
 
+    packet.tag(0, 0);
     packet.type = decode_ether_type(ether_header);
     packet.index += sizeof(header);
 
