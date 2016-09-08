@@ -47,7 +47,10 @@ int main(int argc, char* argv[]) {
     desc.type         = tlib::icmp::type::ECHO_REQUEST;
     desc.code         = 0;
 
-    for(size_t i = 0; i < 4; ++i){
+    static constexpr const size_t N = 4;
+    static constexpr const size_t timeout_ms = 2000;
+
+    for(size_t i = 0; i < N; ++i){
         auto packet = tlib::prepare_packet(*socket, &desc);
 
         if (!packet) {
@@ -71,29 +74,53 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        auto p = tlib::wait_for_packet(*socket, 2000);
-        if (!p) {
-            if(p.error() == std::ERROR_SOCKET_TIMEOUT){
-                tlib::printf("%s unreachable\n", ip.c_str());
-            } else {
-                tlib::printf("ping: wait_for_packet error: %s\n", std::error_message(p.error()));
-                return 1;
-            }
-        } else {
-            auto* icmp_header = reinterpret_cast<tlib::icmp::header*>(p->payload + p->index);
+        auto before = tlib::ms_time();
+        auto after = before;
 
-            auto command_type = static_cast<tlib::icmp::type>(icmp_header->type);
-
-            if(command_type == tlib::icmp::type::ECHO_REPLY){
-                tlib::printf("Reply received from %s\n", ip.c_str());
-            } else {
-                tlib::printf("Unhandled command type received\n");
+        while(true){
+            // Make sure we don't wait for more than the timeout
+            if(after > before + timeout_ms){
+                break;
             }
+
+            auto remaining = timeout_ms - (after - before);
+
+            bool handled = false;
+
+            auto p = tlib::wait_for_packet(*socket, remaining);
+            if (!p) {
+                if(p.error() == std::ERROR_SOCKET_TIMEOUT){
+                    tlib::printf("%s unreachable\n", ip.c_str());
+                    handled = true;
+                } else {
+                    tlib::printf("ping: wait_for_packet error: %s\n", std::error_message(p.error()));
+                    return 1;
+                }
+            } else {
+                auto* icmp_header = reinterpret_cast<tlib::icmp::header*>(p->payload + p->index);
+
+                auto command_type = static_cast<tlib::icmp::type>(icmp_header->type);
+
+                if(command_type == tlib::icmp::type::ECHO_REPLY){
+                    tlib::printf("Reply received from %s\n", ip.c_str());
+                    handled = true;
+                }
+
+                // The rest of the packets are simply ignored
+
+                tlib::release_packet(*p);
+            }
+
+            if(handled){
+                break;
+            }
+
+            after = tlib::ms_time();
         }
 
-        tlib::release_packet(*p);
-
-        tlib::sleep_ms(1000);
+        if(i < N - 1){
+            tlib::sleep_ms(1000);
+        }
     }
 
     status = tlib::listen(*socket, false);
