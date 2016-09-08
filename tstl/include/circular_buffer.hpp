@@ -9,6 +9,7 @@
 #define CIRCULAR_BUFFER_H
 
 #include <types.hpp>
+#include <utility.hpp>
 
 /*!
  * \brief A circular buffer of maximum size S
@@ -57,6 +58,22 @@ public:
             return false;
         } else {
             buffer[end] = value;
+            end = (end + 1) % Size;
+
+            return true;
+        }
+    }
+
+    /*!
+     * \brief Construct a new element in place at it would have been pushed
+     * \param values The values to forward to the constructor
+     */
+    template<typename... Ts>
+    bool emplace_push(Ts&&... values){
+        if(full()){
+            return false;
+        } else {
+            new (&buffer[end]) T{std::forward<Ts>(values)...};
             end = (end + 1) % Size;
 
             return true;
