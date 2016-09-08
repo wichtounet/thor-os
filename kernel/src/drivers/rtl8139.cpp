@@ -201,6 +201,8 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
         interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
         interface.rx_sem.release();
 
+        logging::logf(logging::log_level::TRACE, "rtl8139: Packet to self transmitted correctly\n");
+
         return;
     }
 
