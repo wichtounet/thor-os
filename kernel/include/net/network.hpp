@@ -45,7 +45,7 @@ struct interface_descriptor {
     circular_buffer<ethernet::packet, 32> rx_queue;
     circular_buffer<ethernet::packet, 32> tx_queue;
 
-    void (*hw_send)(const interface_descriptor&, ethernet::packet& p);
+    void (*hw_send)(interface_descriptor&, ethernet::packet& p);
 
     void send(ethernet::packet& p){
         std::lock_guard<mutex<>> l(tx_lock);

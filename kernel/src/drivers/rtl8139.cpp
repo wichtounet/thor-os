@@ -185,8 +185,24 @@ void packet_handler(interrupt::syscall_regs*, void* data){
     }
 }
 
-void send_packet(const network::interface_descriptor& interface, network::ethernet::packet& packet){
+void send_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
     logging::logf(logging::log_level::TRACE, "rtl8139: Start transmitting packet\n");
+
+    auto* ether_header = reinterpret_cast<network::ethernet::header*>(packet.payload);
+
+    // Shortcut packet to self directly to the rx queue
+    if(network::ethernet::mac6_to_mac64(ether_header->target.mac) == interface.mac_address){
+        auto packet_buffer = new char[packet.payload_size];
+
+        std::copy_n(packet.payload, packet.payload_size, packet_buffer);
+
+        direct_int_lock lock;
+
+        interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
+        interface.rx_sem.release();
+
+        return;
+    }
 
     auto& desc = *reinterpret_cast<rtl8139_t*>(interface.driver_data);
     auto iobase = desc.iobase;
