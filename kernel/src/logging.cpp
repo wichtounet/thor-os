@@ -43,18 +43,18 @@ inline const char* level_to_string(logging::log_level level){
 void append_to_file(const char* s, size_t length){
     auto fd = vfs::open("/messages", std::OPEN_CREATE);
 
-    if(fd >= 0){
+    if(fd){
         vfs::stat_info info;
-        if(vfs::stat(fd, info) == 0){
-            if(vfs::truncate(fd, info.size + length + 1) == 0){
+        if(vfs::stat(*fd, info) == 0){
+            if(vfs::truncate(*fd, info.size + length + 1) == 0){
                 std::string buffer = s;
                 buffer += '\n';
 
-                vfs::write(fd, buffer.c_str(), buffer.size(), info.size);
+                vfs::write(*fd, buffer.c_str(), buffer.size(), info.size);
             }
         }
 
-        vfs::close(fd);
+        vfs::close(*fd);
     }
 }
 

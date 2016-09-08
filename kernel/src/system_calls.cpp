@@ -176,7 +176,8 @@ void sc_open(interrupt::syscall_regs* regs){
     auto file = reinterpret_cast<char*>(regs->rbx);
     auto flags = regs->rcx;
 
-    regs->rax = vfs::open(file, flags);
+    auto status = vfs::open(file, flags);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_close(interrupt::syscall_regs* regs){

@@ -169,7 +169,7 @@ void vfs::init(){
     }
 }
 
-int64_t vfs::mount(partition_type type, size_t mp_fd, size_t dev_fd){
+int64_t vfs::mount(partition_type type, fd_t mp_fd, fd_t dev_fd){
     if(!scheduler::has_handle(mp_fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
@@ -228,11 +228,11 @@ int64_t vfs::statfs(const char* mount_point, vfs::statfs_info& info){
     return fs.file_system->statfs(info);
 }
 
-int64_t vfs::open(const char* file_path, size_t flags){
+std::expected<vfs::fd_t> vfs::open(const char* file_path, size_t flags){
     auto base_path = get_path(file_path);
 
     if(!base_path.is_valid()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        return std::make_unexpected<fd_t>(std::ERROR_INVALID_FILE_PATH);
     }
 
     auto& fs = get_fs(base_path);
@@ -257,13 +257,13 @@ int64_t vfs::open(const char* file_path, size_t flags){
     }
 
     if(sub_result > 0){
-        return -sub_result;
+        return std::make_unexpected<fd_t, size_t>(sub_result);
     } else {
         return scheduler::register_new_handle(base_path);
     }
 }
 
-void vfs::close(size_t fd){
+void vfs::close(fd_t fd){
     if(scheduler::has_handle(fd)){
         scheduler::release_handle(fd);
     }
@@ -307,7 +307,7 @@ int64_t vfs::rm(const char* file_path){
     return fs.file_system->rm(fs_path);
 }
 
-int64_t vfs::stat(size_t fd, vfs::stat_info& info){
+int64_t vfs::stat(fd_t fd, vfs::stat_info& info){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
@@ -359,7 +359,7 @@ int64_t vfs::stat(size_t fd, vfs::stat_info& info){
     return 0;
 }
 
-int64_t vfs::read(size_t fd, char* buffer, size_t count, size_t offset){
+int64_t vfs::read(fd_t fd, char* buffer, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
@@ -397,7 +397,7 @@ int64_t vfs::direct_read(const path& base_path, char* buffer, size_t count, size
     return read;
 }
 
-int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
+int64_t vfs::write(fd_t fd, const char* buffer, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
@@ -421,7 +421,7 @@ int64_t vfs::write(size_t fd, const char* buffer, size_t count, size_t offset){
     return written;
 }
 
-int64_t vfs::clear(size_t fd, size_t count, size_t offset){
+int64_t vfs::clear(fd_t fd, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
@@ -459,7 +459,7 @@ int64_t vfs::direct_write(const path& base_path, const char* buffer, size_t coun
     return written;
 }
 
-int64_t vfs::truncate(size_t fd, size_t size){
+int64_t vfs::truncate(fd_t fd, size_t size){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
@@ -503,7 +503,7 @@ int64_t vfs::direct_read(const path& base_path, std::string& content){
     return read;
 }
 
-int64_t vfs::entries(size_t fd, char* buffer, size_t size){
+int64_t vfs::entries(fd_t fd, char* buffer, size_t size){
     if(!scheduler::has_handle(fd)){
         return -std::ERROR_INVALID_FILE_DESCRIPTOR;
     }
