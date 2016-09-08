@@ -24,6 +24,22 @@
 
 namespace {
 
+int64_t expected_to_i64(const std::expected<void>& status){
+    if(status){
+        return 0;
+    } else {
+        return -status.error();
+    }
+}
+
+int64_t expected_to_i64(const std::expected<size_t>& status){
+    if(status){
+        return *status;
+    } else {
+        return -status.error();
+    }
+}
+
 void sc_print_char(interrupt::syscall_regs* regs){
     k_print(static_cast<char>(regs->rbx));
 }
@@ -330,7 +346,8 @@ void sc_ioctl(interrupt::syscall_regs* regs){
     auto request = regs->rcx;
     auto data = reinterpret_cast<void*>(regs->rdx);
 
-    regs->rax = ioctl(device, static_cast<io::ioctl_request>(request), data);
+    auto status = ioctl(device, static_cast<io::ioctl_request>(request), data);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_alpha(interrupt::syscall_regs*){
@@ -370,22 +387,6 @@ void sc_prepare_packet(interrupt::syscall_regs* regs){
 
     regs->rax = fd;
     regs->rbx = index;
-}
-
-int64_t expected_to_i64(const std::expected<void>& status){
-    if(status){
-        return 0;
-    } else {
-        return -status.error();
-    }
-}
-
-int64_t expected_to_i64(const std::expected<size_t>& status){
-    if(status){
-        return *status;
-    } else {
-        return -status.error();
-    }
 }
 
 void sc_finalize_packet(interrupt::syscall_regs* regs){

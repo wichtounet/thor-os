@@ -12,9 +12,9 @@
 #include "logging.hpp"
 #include "fs/devfs.hpp"
 
-int64_t ioctl(size_t device_fd, io::ioctl_request request, void* data){
+std::expected<size_t> ioctl(size_t device_fd, io::ioctl_request request, void* data){
     if(!scheduler::has_handle(device_fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     auto& device = scheduler::get_handle(device_fd);
@@ -23,5 +23,5 @@ int64_t ioctl(size_t device_fd, io::ioctl_request request, void* data){
         return devfs::get_device_size(device, *reinterpret_cast<size_t*>(data));
     }
 
-    return std::ERROR_INVALID_REQUEST;
+    return std::make_unexpected<size_t>(std::ERROR_INVALID_REQUEST);
 }

@@ -9,9 +9,10 @@
 #define IOCTL_HPP
 
 #include <types.hpp>
+#include <expected.hpp>
 
 #include <tlib/ioctl_codes.hpp>
 
-int64_t ioctl(size_t device_fd, io::ioctl_request request, void* data);
+std::expected<size_t> ioctl(size_t device_fd, io::ioctl_request request, void* data);
 
 #endif
