@@ -7,6 +7,7 @@
 
 #include <vector.hpp>
 #include <string.hpp>
+#include <expected.hpp>
 
 #include "net/arp_cache.hpp"
 #include "net/arp_layer.hpp"
@@ -28,7 +29,7 @@ struct cache_entry {
 
 std::vector<cache_entry> cache;
 
-bool arp_request(network::interface_descriptor& interface, network::ip::address ip){
+std::expected<void> arp_request(network::interface_descriptor& interface, network::ip::address ip){
     // Ask the ethernet layer to craft a packet
     auto packet = network::ethernet::prepare_packet(interface, sizeof(network::arp::header), 0xFFFFFFFFFFFF, network::ethernet::ether_type::ARP);
 
@@ -49,10 +50,9 @@ bool arp_request(network::interface_descriptor& interface, network::ip::address 
 
         network::ethernet::finalize_packet(interface, *packet);
 
-        return true;
+        return {};
     } else {
-        //TODO Don't loose the error
-        return false;
+        return std::make_expected_from_error<void>(packet.error());
     }
 }
 
