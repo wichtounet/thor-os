@@ -96,20 +96,24 @@ void network::icmp::decode(network::interface_descriptor& /*interface*/, network
     }
 }
 
-network::ethernet::packet network::icmp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){
+std::expected<network::ethernet::packet> network::icmp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){
     // Ask the IP layer to craft a packet
     auto packet = network::ip::prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x01);
 
-    ::prepare_packet(packet, t, code);
+    if(packet){
+        ::prepare_packet(*packet, t, code);
+    }
 
     return packet;
 }
 
-network::ethernet::packet network::icmp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){
+std::expected<network::ethernet::packet> network::icmp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){
     // Ask the IP layer to craft a packet
     auto packet = network::ip::prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x01);
 
-    ::prepare_packet(packet, t, code);
+    if(packet){
+        ::prepare_packet(*packet, t, code);
+    }
 
     return packet;
 }
@@ -137,13 +141,15 @@ void network::icmp::ping(network::interface_descriptor& interface, network::ip::
     // Ask the ICMP layer to craft a packet
     auto packet = network::icmp::prepare_packet(interface, target_ip, 0, type::ECHO_REQUEST, 0);
 
-    // Set the Command header
+    if(packet){
+        // Set the Command header
 
-    auto* command_header = reinterpret_cast<echo_request_header*>(packet.payload + packet.index);
+        auto* command_header = reinterpret_cast<echo_request_header*>(packet->payload + packet->index);
 
-    command_header->identifier = 0x666;
-    command_header->sequence = echo_sequence++;
+        command_header->identifier = 0x666;
+        command_header->sequence = echo_sequence++;
 
-    // Send the packet back to ICMP
-    network::icmp::finalize_packet(interface, packet);
+        // Send the packet back to ICMP
+        network::icmp::finalize_packet(interface, *packet);
+    }
 }

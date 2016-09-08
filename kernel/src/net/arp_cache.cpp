@@ -28,25 +28,32 @@ struct cache_entry {
 
 std::vector<cache_entry> cache;
 
-void arp_request(network::interface_descriptor& interface, network::ip::address ip){
+bool arp_request(network::interface_descriptor& interface, network::ip::address ip){
     // Ask the ethernet layer to craft a packet
     auto packet = network::ethernet::prepare_packet(interface, sizeof(network::arp::header), 0xFFFFFFFFFFFF, network::ethernet::ether_type::ARP);
 
-    auto* arp_request_header = reinterpret_cast<network::arp::header*>(packet.payload + packet.index);
+    if(packet){
+        auto* arp_request_header = reinterpret_cast<network::arp::header*>(packet->payload + packet->index);
 
-    arp_request_header->hw_type = switch_endian_16(0x1); // ethernet
-    arp_request_header->protocol_type = switch_endian_16(0x800); // IPV4
-    arp_request_header->hw_len = 0x6; // MAC Address
-    arp_request_header->protocol_len = 0x4; // IP Address
-    arp_request_header->operation = switch_endian_16(0x1); //ARP Request
+        arp_request_header->hw_type = switch_endian_16(0x1); // ethernet
+        arp_request_header->protocol_type = switch_endian_16(0x800); // IPV4
+        arp_request_header->hw_len = 0x6; // MAC Address
+        arp_request_header->protocol_len = 0x4; // IP Address
+        arp_request_header->operation = switch_endian_16(0x1); //ARP Request
 
-    network::arp::mac64_to_mac3(interface.mac_address, arp_request_header->source_hw_addr);
-    network::arp::mac64_to_mac3(0x0, arp_request_header->target_hw_addr);
+        network::arp::mac64_to_mac3(interface.mac_address, arp_request_header->source_hw_addr);
+        network::arp::mac64_to_mac3(0x0, arp_request_header->target_hw_addr);
 
-    network::arp::ip_to_ip2(interface.ip_address, arp_request_header->source_protocol_addr);
-    network::arp::ip_to_ip2(ip, arp_request_header->target_protocol_addr);
+        network::arp::ip_to_ip2(interface.ip_address, arp_request_header->source_protocol_addr);
+        network::arp::ip_to_ip2(ip, arp_request_header->target_protocol_addr);
 
-    network::ethernet::finalize_packet(interface, packet);
+        network::ethernet::finalize_packet(interface, *packet);
+
+        return true;
+    } else {
+        //TODO Don't loose the error
+        return false;
+    }
 }
 
 } //end of anonymous namespace
@@ -130,6 +137,7 @@ uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, n
     logging::logf(logging::log_level::TRACE, "arp: IP %u.%u.%u.%u not cached, generate ARP Request\n",
         ip(0), ip(1), ip(2), ip(3));
 
+    // TODO Handle error here
     arp_request(interface, ip);
 
     while(!is_ip_cached(ip)){
@@ -157,6 +165,7 @@ std::expected<uint64_t> network::arp::get_mac_force(network::interface_descripto
     logging::logf(logging::log_level::TRACE, "arp: IP %u.%u.%u.%u not cached, generate ARP Request\n",
         ip(0), ip(1), ip(2), ip(3));
 
+    // TODO Handle error here
     arp_request(interface, ip);
 
     auto start = timer::milliseconds();

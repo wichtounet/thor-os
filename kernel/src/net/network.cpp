@@ -187,9 +187,14 @@ std::tuple<size_t, size_t> network::prepare_packet(size_t socket_fd, void* desc,
         case network::socket_protocol::ICMP:
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
             auto packet = network::icmp::prepare_packet(buffer, interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
-            auto fd = socket.register_packet(packet);
 
-            return {fd, packet.index};
+            if(packet){
+                auto fd = socket.register_packet(*packet);
+
+                return {fd, packet->index};
+            } else {
+                return {-packet.error(), 0};
+            }
     }
 
     return {-std::ERROR_SOCKET_UNIMPLEMENTED, 0};
