@@ -559,6 +559,10 @@ inline expected<void> make_expected(){
     return expected<void>();
 }
 
+// Make sure the size is maintained reasonable
+static_assert(sizeof(expected<void>) == 2 * sizeof(size_t), "expected<void> should not have overhead");
+static_assert(sizeof(expected<size_t>) == 2 * sizeof(size_t), "expected<void> should not have overhead");
+
 } //end of namespace std
 
 #endif
