@@ -202,7 +202,13 @@ void init_task(){
 
     while(true){
         auto pid = scheduler::exec("/bin/tsh", params);
-        scheduler::await_termination(pid);
+
+        if(!pid){
+            logging::logf(logging::log_level::DEBUG, "scheduler: failed to run the shell: %s\n", std::error_message(pid.error()));
+            return;
+        }
+
+        scheduler::await_termination(*pid);
 
         logging::log(logging::log_level::DEBUG, "scheduler: shell exited, run new one\n");
     }
@@ -605,7 +611,7 @@ bool scheduler::is_started(){
     return started;
 }
 
-int64_t scheduler::exec(const std::string& file, const std::vector<std::string>& params){
+std::expected<scheduler::pid_t> scheduler::exec(const std::string& file, const std::vector<std::string>& params){
     logging::log(logging::log_level::TRACE, "scheduler:exec: read_file start\n");
 
     std::string content;
@@ -613,7 +619,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     if(result < 0){
         logging::logf(logging::log_level::DEBUG, "scheduler: direct_read error: %s\n", std::error_message(-result));
 
-        return result;
+        return std::make_unexpected<pid_t, size_t>(-result);
     }
 
     logging::log(logging::log_level::TRACE, "scheduler:exec: read_file end\n");
@@ -621,7 +627,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     if(content.empty()){
         logging::log(logging::log_level::DEBUG, "scheduler:exec: Not a file\n");
 
-        return -std::ERROR_NOT_EXISTS;
+        return std::make_unexpected<pid_t>(std::ERROR_NOT_EXISTS);
     }
 
     auto buffer = content.c_str();
@@ -629,7 +635,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     if(!elf::is_valid(buffer)){
         logging::log(logging::log_level::DEBUG, "scheduler:exec: Not a valid file\n");
 
-        return -std::ERROR_NOT_EXECUTABLE;
+        return std::make_unexpected<pid_t>(std::ERROR_NOT_EXECUTABLE);
     }
 
     auto& process = new_process();
@@ -639,7 +645,7 @@ int64_t scheduler::exec(const std::string& file, const std::vector<std::string>&
     if(!create_paging(buffer, process)){
         logging::log(logging::log_level::DEBUG, "scheduler:exec: Impossible to create paging\n");
 
-        return -std::ERROR_FAILED_EXECUTION;
+        return std::make_unexpected<pid_t>(std::ERROR_FAILED_EXECUTION);
     }
 
     process.brk_start = program_break;

@@ -10,6 +10,7 @@
 
 #include <vector.hpp>
 #include <string.hpp>
+#include <expected.hpp>
 
 #include "process.hpp"
 #include "net/socket.hpp"
@@ -32,7 +33,7 @@ void init();
 void start() __attribute__((noreturn));
 bool is_started();
 
-int64_t exec(const std::string& path, const std::vector<std::string>& params);
+std::expected<pid_t> exec(const std::string& path, const std::vector<std::string>& params);
 
 void kill_current_process();
 void await_termination(pid_t pid);

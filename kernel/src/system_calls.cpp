@@ -113,7 +113,8 @@ void sc_exec(interrupt::syscall_regs* regs){
         params.emplace_back(argv[i]);
     }
 
-    regs->rax = scheduler::exec(file, params);
+    auto status = scheduler::exec(file, params);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_await_termination(interrupt::syscall_regs* regs){
