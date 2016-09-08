@@ -555,6 +555,11 @@ inline expected<T, E> make_expected_from_error(E v){
     return expected<T, E>(exceptional<E>(v));
 }
 
+template<typename T, typename E>
+inline expected<T, E> make_unexpected(E v){
+    return expected<T, E>(exceptional<E>(v));
+}
+
 inline expected<void> make_expected(){
     return expected<void>();
 }
