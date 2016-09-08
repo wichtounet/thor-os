@@ -200,16 +200,16 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
     return {-std::ERROR_SOCKET_UNIMPLEMENTED, 0};
 }
 
-int64_t network::finalize_packet(socket_fd_t socket_fd, size_t packet_fd){
+std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packet_fd){
     if(!scheduler::has_socket(socket_fd)){
-        return -std::ERROR_SOCKET_INVALID_FD;
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
     }
 
     auto& interface = network::interface(0);
     auto& socket = scheduler::get_socket(socket_fd);
 
     if(!socket.has_packet(packet_fd)){
-        return -std::ERROR_SOCKET_INVALID_PACKET_FD;
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_PACKET_FD);
     }
 
     auto& packet = socket.get_packet(packet_fd);
@@ -219,33 +219,33 @@ int64_t network::finalize_packet(socket_fd_t socket_fd, size_t packet_fd){
             network::icmp::finalize_packet(interface, packet);
             socket.erase_packet(packet_fd);
 
-            return 0;
+            return std::make_expected();
     }
 
-    return -std::ERROR_SOCKET_UNIMPLEMENTED;
+    return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
 }
 
-int64_t network::listen(socket_fd_t socket_fd, bool listen){
+std::expected<void> network::listen(socket_fd_t socket_fd, bool listen){
     if(!scheduler::has_socket(socket_fd)){
-        return -std::ERROR_SOCKET_INVALID_FD;
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
     }
 
     auto& socket = scheduler::get_socket(socket_fd);
 
     socket.listen = listen;
 
-    return 0;
+    return std::make_expected();
 }
 
-int64_t network::wait_for_packet(char* buffer, socket_fd_t socket_fd){
+std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_fd){
     if(!scheduler::has_socket(socket_fd)){
-        return -std::ERROR_SOCKET_INVALID_FD;
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);
     }
 
     auto& socket = scheduler::get_socket(socket_fd);
 
     if(!socket.listen){
-        return -std::ERROR_SOCKET_NOT_LISTEN;
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_LISTEN);
     }
 
     logging::logf(logging::log_level::TRACE, "network: %u wait for packet on socket %u\n", scheduler::get_pid(), socket_fd);
@@ -262,29 +262,29 @@ int64_t network::wait_for_packet(char* buffer, socket_fd_t socket_fd){
 
     logging::logf(logging::log_level::TRACE, "network: %u received packet on socket %u\n", scheduler::get_pid(), socket_fd);
 
-    return packet.index;
+    return {packet.index};
 }
 
-int64_t network::wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms){
+std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms){
     if(!scheduler::has_socket(socket_fd)){
-        return -std::ERROR_SOCKET_INVALID_FD;
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);
     }
 
     auto& socket = scheduler::get_socket(socket_fd);
 
     if(!socket.listen){
-        return -std::ERROR_SOCKET_NOT_LISTEN;
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_LISTEN);
     }
 
     logging::logf(logging::log_level::TRACE, "network: %u wait for packet on socket %u\n", scheduler::get_pid(), socket_fd);
 
     if(socket.listen_packets.empty()){
         if(!ms){
-            return -std::ERROR_SOCKET_TIMEOUT;
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
         }
 
         if(!socket.listen_queue.sleep(ms)){
-            return -std::ERROR_SOCKET_TIMEOUT;
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
         }
     }
 
@@ -296,5 +296,5 @@ int64_t network::wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms)
 
     logging::logf(logging::log_level::TRACE, "network: %u received packet on socket %u\n", scheduler::get_pid(), socket_fd);
 
-    return packet.index;
+    return {packet.index};
 }

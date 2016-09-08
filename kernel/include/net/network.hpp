@@ -90,7 +90,7 @@ std::tuple<size_t, size_t> prepare_packet(socket_fd_t socket_fd, void* desc, cha
  * \param packet_fd The file descriptor of the packet
  * \return 0 on success and a negative error code otherwise
  */
-int64_t finalize_packet(socket_fd_t socket_fd, size_t packet_fd);
+std::expected<void> finalize_packet(socket_fd_t socket_fd, size_t packet_fd);
 
 /*!
  * \brief Listen to a socket or not
@@ -98,14 +98,14 @@ int64_t finalize_packet(socket_fd_t socket_fd, size_t packet_fd);
  * \param listen Indicates if listen or not
  * \return 0 on success and a negative error code otherwise
  */
-int64_t listen(socket_fd_t socket_fd, bool listen);
+std::expected<void> listen(socket_fd_t socket_fd, bool listen);
 
 /*!
  * \brief Wait for a packet
  * \param socket_fd The file descriptor of the packet
  * \return the packet index
  */
-int64_t wait_for_packet(char* buffer, socket_fd_t socket_fd);
+std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd);
 
 /*!
  * \brief Wait for a packet, for some time
@@ -113,7 +113,7 @@ int64_t wait_for_packet(char* buffer, socket_fd_t socket_fd);
  * \param ms The maximum time, in milliseconds, to wait for a packet
  * \return the packet index
  */
-int64_t wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms);
+std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms);
 
 } // end of network namespace
 

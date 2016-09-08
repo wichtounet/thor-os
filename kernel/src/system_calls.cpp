@@ -372,27 +372,45 @@ void sc_prepare_packet(interrupt::syscall_regs* regs){
     regs->rbx = index;
 }
 
+int64_t expected_to_i64(const std::expected<void>& status){
+    if(status){
+        return 0;
+    } else {
+        return -status.error();
+    }
+}
+
+int64_t expected_to_i64(const std::expected<size_t>& status){
+    if(status){
+        return *status;
+    } else {
+        return -status.error();
+    }
+}
+
 void sc_finalize_packet(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
     auto packet_fd = regs->rcx;
 
-    regs->rax = network::finalize_packet(socket_fd, packet_fd);
+    auto status = network::finalize_packet(socket_fd, packet_fd);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_listen(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
     auto listen = bool(regs->rcx);
 
-    regs->rax = network::listen(socket_fd, listen);
+    auto status = network::listen(socket_fd, listen);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_wait_for_packet(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
     auto user_buffer = reinterpret_cast<char*>(regs->rcx);
 
-    auto index = network::wait_for_packet(user_buffer, socket_fd);
+    auto status = network::wait_for_packet(user_buffer, socket_fd);
 
-    regs->rax = index;
+    regs->rax = expected_to_i64(status);
     regs->rbx = reinterpret_cast<size_t>(user_buffer);
 }
 
@@ -401,9 +419,9 @@ void sc_wait_for_packet_ms(interrupt::syscall_regs* regs){
     auto user_buffer = reinterpret_cast<char*>(regs->rcx);
     auto ms = regs->rdx;
 
-    auto index = network::wait_for_packet(user_buffer, socket_fd, ms);
+    auto status = network::wait_for_packet(user_buffer, socket_fd, ms);
 
-    regs->rax = index;
+    regs->rax = expected_to_i64(status);
     regs->rbx = reinterpret_cast<size_t>(user_buffer);
 }
 
