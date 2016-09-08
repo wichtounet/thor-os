@@ -136,7 +136,12 @@ void network::icmp::ping(network::interface_descriptor& interface, network::ip::
 
     auto target_mac = network::arp::get_mac_force(interface, target_ip);
 
-    logging::logf(logging::log_level::TRACE, "icmp: Target MAC Address: %h\n", target_mac);
+    if(!target_mac){
+        logging::logf(logging::log_level::TRACE, "icmp: Failed to get MAC Address from IP\n");
+        return;
+    }
+
+    logging::logf(logging::log_level::TRACE, "icmp: Target MAC Address: %h\n", *target_mac);
 
     // Ask the ICMP layer to craft a packet
     auto packet = network::icmp::prepare_packet(interface, target_ip, 0, type::ECHO_REQUEST, 0);

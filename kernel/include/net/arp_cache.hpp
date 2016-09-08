@@ -47,7 +47,7 @@ uint64_t get_mac(network::ip::address ip);
  * \param ip The IP address to look for in the cache
  * \return The MAC address of the IP address
  */
-uint64_t get_mac_force(network::interface_descriptor& interface, network::ip::address ip);
+std::expected<uint64_t> get_mac_force(network::interface_descriptor& interface, network::ip::address ip);
 
 /*!
  * \brief Returns the MAC address of the given IP address. If the

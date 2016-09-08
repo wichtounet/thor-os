@@ -113,8 +113,12 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
 std::expected<network::ethernet::packet> network::ip::prepare_packet(network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
     auto target_mac = network::arp::get_mac_force(interface, target_ip);
 
+    if(!target_mac){
+        return std::make_expected_from_error<network::ethernet::packet>(target_mac.error());
+    }
+
     // Ask the ethernet layer to craft a packet
-    auto packet = network::ethernet::prepare_packet(interface, size + sizeof(header), target_mac, ethernet::ether_type::IPV4);
+    auto packet = network::ethernet::prepare_packet(interface, size + sizeof(header), *target_mac, ethernet::ether_type::IPV4);
 
     if(packet){
         ::prepare_packet(*packet, interface, size, target_ip, protocol);
@@ -126,8 +130,12 @@ std::expected<network::ethernet::packet> network::ip::prepare_packet(network::in
 std::expected<network::ethernet::packet> network::ip::prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
     auto target_mac = network::arp::get_mac_force(interface, target_ip);
 
+    if(!target_mac){
+        return std::make_expected_from_error<network::ethernet::packet>(target_mac.error());
+    }
+
     // Ask the ethernet layer to craft a packet
-    auto packet = network::ethernet::prepare_packet(buffer, interface, size + sizeof(header), target_mac, ethernet::ether_type::IPV4);
+    auto packet = network::ethernet::prepare_packet(buffer, interface, size + sizeof(header), *target_mac, ethernet::ether_type::IPV4);
 
     if(packet){
         ::prepare_packet(*packet, interface, size, target_ip, protocol);

@@ -121,7 +121,7 @@ uint64_t network::arp::get_mac(network::ip::address ip){
     thor_unreachable("The IP is not cached in the ARP table");
 }
 
-uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, network::ip::address ip){
+std::expected<uint64_t> network::arp::get_mac_force(network::interface_descriptor& interface, network::ip::address ip){
     // Check cache first
     if(is_ip_cached(ip)){
         return get_mac(ip);
@@ -137,8 +137,10 @@ uint64_t network::arp::get_mac_force(network::interface_descriptor& interface, n
     logging::logf(logging::log_level::TRACE, "arp: IP %u.%u.%u.%u not cached, generate ARP Request\n",
         ip(0), ip(1), ip(2), ip(3));
 
-    // TODO Handle error here
-    arp_request(interface, ip);
+    auto arp_result = arp_request(interface, ip);
+    if(!arp_result){
+        return std::make_expected_from_error<uint64_t>(arp_result.error());
+    }
 
     while(!is_ip_cached(ip)){
         network::arp::wait_for_reply();
@@ -165,8 +167,10 @@ std::expected<uint64_t> network::arp::get_mac_force(network::interface_descripto
     logging::logf(logging::log_level::TRACE, "arp: IP %u.%u.%u.%u not cached, generate ARP Request\n",
         ip(0), ip(1), ip(2), ip(3));
 
-    // TODO Handle error here
-    arp_request(interface, ip);
+    auto arp_result = arp_request(interface, ip);
+    if(!arp_result){
+        return std::make_expected_from_error<uint64_t>(arp_result.error());
+    }
 
     auto start = timer::milliseconds();
 
