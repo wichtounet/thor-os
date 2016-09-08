@@ -51,6 +51,11 @@ int main(int argc, char* argv[]) {
         auto packet = tlib::prepare_packet(*socket, &desc);
 
         if (!packet) {
+            if(packet.error() == std::ERROR_SOCKET_TIMEOUT){
+                tlib::printf("Unable to resolve MAC address for target IP\n");
+                return 1;
+            }
+
             tlib::printf("ping: prepare_packet error: %s\n", std::error_message(packet.error()));
             return 1;
         }
