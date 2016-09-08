@@ -15,12 +15,15 @@
 #include <semaphore.hpp>
 #include <lock_guard.hpp>
 #include <tuple.hpp>
+#include <expected.hpp>
 
 #include "tlib/net_constants.hpp"
 
 #include "net/ethernet_packet.hpp"
 
 namespace network {
+
+using socket_fd_t = size_t;
 
 struct interface_descriptor {
     size_t id;
@@ -65,7 +68,7 @@ interface_descriptor& interface(size_t index);
  * \param protocol The socket protocol
  * \return The file descriptor on success, a negative error code otherwise
  */
-int64_t open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol);
+std::expected<socket_fd_t> open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol);
 
 /*!
  * \brief Close the given socket file descriptor
@@ -79,7 +82,7 @@ void close(size_t fd);
  * \þaram buffer The buffer to hold the packet payload
  * \return a tuple containing the packet file descriptor and the packet payload index
  */
-std::tuple<size_t, size_t> prepare_packet(size_t socket_fd, void* desc, char* buffer);
+std::tuple<size_t, size_t> prepare_packet(socket_fd_t socket_fd, void* desc, char* buffer);
 
 /*!
  * \brief Finalize a packet (send it)
@@ -87,7 +90,7 @@ std::tuple<size_t, size_t> prepare_packet(size_t socket_fd, void* desc, char* bu
  * \param packet_fd The file descriptor of the packet
  * \return 0 on success and a negative error code otherwise
  */
-int64_t finalize_packet(size_t socket_fd, size_t packet_fd);
+int64_t finalize_packet(socket_fd_t socket_fd, size_t packet_fd);
 
 /*!
  * \brief Listen to a socket or not
@@ -95,14 +98,14 @@ int64_t finalize_packet(size_t socket_fd, size_t packet_fd);
  * \param listen Indicates if listen or not
  * \return 0 on success and a negative error code otherwise
  */
-int64_t listen(size_t socket_fd, bool listen);
+int64_t listen(socket_fd_t socket_fd, bool listen);
 
 /*!
  * \brief Wait for a packet
  * \param socket_fd The file descriptor of the packet
  * \return the packet index
  */
-int64_t wait_for_packet(char* buffer, size_t socket_fd);
+int64_t wait_for_packet(char* buffer, socket_fd_t socket_fd);
 
 /*!
  * \brief Wait for a packet, for some time
@@ -110,7 +113,7 @@ int64_t wait_for_packet(char* buffer, size_t socket_fd);
  * \param ms The maximum time, in milliseconds, to wait for a packet
  * \return the packet index
  */
-int64_t wait_for_packet(char* buffer, size_t socket_fd, size_t ms);
+int64_t wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms);
 
 } // end of network namespace
 

@@ -344,7 +344,13 @@ void sc_socket_open(interrupt::syscall_regs* regs){
     auto type = static_cast<network::socket_type>(regs->rcx);
     auto protocol = static_cast<network::socket_protocol>(regs->rdx);
 
-    regs->rax = network::open(domain, type, protocol);
+    auto socket_fd = network::open(domain, type, protocol);
+
+    if(socket_fd){
+        regs->rax = *socket_fd;
+    } else {
+        regs->rax = -socket_fd.error();
+    }
 }
 
 void sc_socket_close(interrupt::syscall_regs* regs){

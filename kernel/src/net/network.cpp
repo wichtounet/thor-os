@@ -148,17 +148,17 @@ network::interface_descriptor& network::interface(size_t index){
     return interfaces[index];
 }
 
-int64_t network::open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
+std::expected<network::socket_fd_t> network::open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
     if(domain != socket_domain::AF_INET){
-        return -std::ERROR_SOCKET_INVALID_DOMAIN;
+        return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_DOMAIN);
     }
 
     if(type != socket_type::RAW){
-        return -std::ERROR_SOCKET_INVALID_TYPE;
+        return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
     if(protocol != socket_protocol::ICMP){
-        return -std::ERROR_SOCKET_INVALID_PROTOCOL;
+        return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_PROTOCOL);
     }
 
     return scheduler::register_new_socket(domain, type, protocol);
@@ -170,7 +170,7 @@ void network::close(size_t fd){
     }
 }
 
-std::tuple<size_t, size_t> network::prepare_packet(size_t socket_fd, void* desc, char* buffer){
+std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* desc, char* buffer){
     if(!scheduler::has_socket(socket_fd)){
         return {-std::ERROR_SOCKET_INVALID_FD, 0};
     }
@@ -200,7 +200,7 @@ std::tuple<size_t, size_t> network::prepare_packet(size_t socket_fd, void* desc,
     return {-std::ERROR_SOCKET_UNIMPLEMENTED, 0};
 }
 
-int64_t network::finalize_packet(size_t socket_fd, size_t packet_fd){
+int64_t network::finalize_packet(socket_fd_t socket_fd, size_t packet_fd){
     if(!scheduler::has_socket(socket_fd)){
         return -std::ERROR_SOCKET_INVALID_FD;
     }
@@ -225,7 +225,7 @@ int64_t network::finalize_packet(size_t socket_fd, size_t packet_fd){
     return -std::ERROR_SOCKET_UNIMPLEMENTED;
 }
 
-int64_t network::listen(size_t socket_fd, bool listen){
+int64_t network::listen(socket_fd_t socket_fd, bool listen){
     if(!scheduler::has_socket(socket_fd)){
         return -std::ERROR_SOCKET_INVALID_FD;
     }
@@ -237,7 +237,7 @@ int64_t network::listen(size_t socket_fd, bool listen){
     return 0;
 }
 
-int64_t network::wait_for_packet(char* buffer, size_t socket_fd){
+int64_t network::wait_for_packet(char* buffer, socket_fd_t socket_fd){
     if(!scheduler::has_socket(socket_fd)){
         return -std::ERROR_SOCKET_INVALID_FD;
     }
@@ -265,7 +265,7 @@ int64_t network::wait_for_packet(char* buffer, size_t socket_fd){
     return packet.index;
 }
 
-int64_t network::wait_for_packet(char* buffer, size_t socket_fd, size_t ms){
+int64_t network::wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms){
     if(!scheduler::has_socket(socket_fd)){
         return -std::ERROR_SOCKET_INVALID_FD;
     }
