@@ -18,6 +18,8 @@
 
 namespace {
 
+constexpr const size_t ARP_TIMEOUT = 5000;
+
 void compute_checksum(network::ip::header* header){
     auto ihl = header->version_ihl & 0xF;
 
@@ -111,7 +113,7 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
 }
 
 std::expected<network::ethernet::packet> network::ip::prepare_packet(network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
-    auto target_mac = network::arp::get_mac_force(interface, target_ip);
+    auto target_mac = network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
 
     if(!target_mac){
         return std::make_expected_from_error<network::ethernet::packet>(target_mac.error());
@@ -128,7 +130,7 @@ std::expected<network::ethernet::packet> network::ip::prepare_packet(network::in
 }
 
 std::expected<network::ethernet::packet> network::ip::prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
-    auto target_mac = network::arp::get_mac_force(interface, target_ip);
+    auto target_mac = network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
 
     if(!target_mac){
         return std::make_expected_from_error<network::ethernet::packet>(target_mac.error());
