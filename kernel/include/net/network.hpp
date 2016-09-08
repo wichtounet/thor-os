@@ -104,6 +104,14 @@ int64_t listen(size_t socket_fd, bool listen);
  */
 int64_t wait_for_packet(char* buffer, size_t socket_fd);
 
+/*!
+ * \brief Wait for a packet, for some time
+ * \param socket_fd The file descriptor of the packet
+ * \param ms The maximum time, in milliseconds, to wait for a packet
+ * \return the packet index
+ */
+int64_t wait_for_packet(char* buffer, size_t socket_fd, size_t ms);
+
 } // end of network namespace
 
 #endif

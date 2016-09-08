@@ -264,3 +264,37 @@ int64_t network::wait_for_packet(char* buffer, size_t socket_fd){
 
     return packet.index;
 }
+
+int64_t network::wait_for_packet(char* buffer, size_t socket_fd, size_t ms){
+    if(!scheduler::has_socket(socket_fd)){
+        return -std::ERROR_SOCKET_INVALID_FD;
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(!socket.listen){
+        return -std::ERROR_SOCKET_NOT_LISTEN;
+    }
+
+    logging::logf(logging::log_level::TRACE, "network: %u wait for packet on socket %u\n", scheduler::get_pid(), socket_fd);
+
+    if(socket.listen_packets.empty()){
+        if(!ms){
+            return -std::ERROR_SOCKET_TIMEOUT;
+        }
+
+        if(!socket.listen_queue.sleep(ms)){
+            return -std::ERROR_SOCKET_TIMEOUT;
+        }
+    }
+
+    auto packet = socket.listen_packets.pop();
+    std::copy_n(packet.payload, packet.payload_size, buffer);
+
+    // The memory was allocated as a copy by the decoding process, it is safe to remove it here
+    delete[] packet.payload;
+
+    logging::logf(logging::log_level::TRACE, "network: %u received packet on socket %u\n", scheduler::get_pid(), socket_fd);
+
+    return packet.index;
+}

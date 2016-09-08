@@ -390,6 +390,17 @@ void sc_wait_for_packet(interrupt::syscall_regs* regs){
     regs->rbx = reinterpret_cast<size_t>(user_buffer);
 }
 
+void sc_wait_for_packet_ms(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto user_buffer = reinterpret_cast<char*>(regs->rcx);
+    auto ms = regs->rdx;
+
+    auto index = network::wait_for_packet(user_buffer, socket_fd, ms);
+
+    regs->rax = index;
+    regs->rbx = reinterpret_cast<size_t>(user_buffer);
+}
+
 } //End of anonymous namespace
 
 void system_call_entry(interrupt::syscall_regs* regs){
@@ -627,6 +638,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x3005:
             sc_wait_for_packet(regs);
+            break;
+
+        case 0x3006:
+            sc_wait_for_packet_ms(regs);
             break;
 
         // Special system calls

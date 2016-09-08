@@ -103,6 +103,27 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd){
     }
 }
 
+std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd, size_t ms){
+    auto buffer = malloc(2048);
+
+    int64_t code;
+    uint64_t payload;
+    asm volatile("mov rax, 0x3006; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[ms]; int 50; mov %[code], rax; mov %[payload], rbx;"
+        : [payload] "=m" (payload), [code] "=m" (code)
+        : [socket] "g" (socket_fd), [buffer] "g" (reinterpret_cast<size_t>(buffer)), [ms] "g" (ms)
+        : "rax", "rbx", "rcx");
+
+    if(code < 0){
+        free(buffer);
+        return std::make_expected_from_error<packet, size_t>(-code);
+    } else {
+        tlib::packet p;
+        p.index = code;
+        p.payload = reinterpret_cast<char*>(payload);
+        return std::make_expected<packet>(p);
+    }
+}
+
 void tlib::release_packet(packet& packet){
     if(packet.payload){
         free(packet.payload);
