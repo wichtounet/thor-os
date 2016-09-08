@@ -9,6 +9,8 @@
 #include <string.hpp>
 #include <expected.hpp>
 
+#include "tlib/errors.hpp"
+
 #include "net/arp_cache.hpp"
 #include "net/arp_layer.hpp"
 
@@ -181,7 +183,7 @@ std::expected<uint64_t> network::arp::get_mac_force(network::interface_descripto
             auto end = timer::milliseconds();
             if(start - end > ms){
                 logging::logf(logging::log_level::TRACE, "arp: reached timeout, exiting\n");
-                return std::make_expected_from_error<uint64_t, size_t>(0);
+                return std::make_expected_from_error<uint64_t>(std::ERROR_SOCKET_TIMEOUT);
             }
         }
     }
