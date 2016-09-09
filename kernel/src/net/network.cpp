@@ -13,6 +13,7 @@
 
 #include "drivers/rtl8139.hpp"
 #include "drivers/pci.hpp"
+#include "drivers/loopback.hpp"
 
 #include "physical_allocator.hpp"
 #include "scheduler.hpp"
@@ -110,6 +111,24 @@ void network::init(){
             ++index;
         }
     }
+
+    // Install the loopback device
+
+    interfaces.emplace_back();
+
+    auto& interface = interfaces.back();
+
+    interface.id = interfaces.size() - 1;
+    interface.name = "loopback";
+    interface.pci_device = 0;
+    interface.enabled = true;
+    interface.driver = "loopback";
+    interface.driver_data = nullptr;
+    interface.tx_lock.init(1);
+    interface.tx_sem.init(0);
+    interface.rx_sem.init(0);
+
+    loopback::init_driver(interface);
 }
 
 void network::finalize(){
