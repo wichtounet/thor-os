@@ -35,6 +35,7 @@ struct packet {
     bool user;
 
     uint64_t tags; // This allows for 4 tags (4 layer)
+    uint64_t interface; ///< Id of the interface
 
     packet() : fd(0), user(false), tags(0) {}
     packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0), user(false), tags(0) {}

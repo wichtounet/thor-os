@@ -51,6 +51,7 @@ uint16_t type_to_code(network::ethernet::ether_type type){
 void prepare_packet(network::ethernet::packet& p, network::interface_descriptor& interface, size_t destination, network::ethernet::ether_type type){
     p.type = type;
     p.index = sizeof(network::ethernet::header);
+    p.interface = interface.id;
 
     auto source_mac = interface.mac_address;
 

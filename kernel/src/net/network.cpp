@@ -26,6 +26,7 @@
 #include "net/icmp_layer.hpp"
 
 namespace {
+
 std::vector<network::interface_descriptor> interfaces;
 
 void rx_thread(void* data){
@@ -63,6 +64,26 @@ void tx_thread(void* data){
 
         delete[] packet.payload;
     }
+}
+
+network::interface_descriptor& select_interface(network::ip::address address){
+    if(address == network::ip::make_address(127, 0, 0, 1)){
+        for(auto& interface : interfaces){
+            if(interface.enabled && interface.driver == "loopback"){
+                return interface;
+            }
+        }
+    }
+
+    // Otherwise return the first enabled interface
+
+    for(auto& interface : interfaces){
+        if(interface.enabled){
+            return interface;
+        }
+    }
+
+    thor_unreachable("network: Should never happen");
 }
 
 } //end of anonymous namespace
@@ -194,17 +215,16 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
         return {-std::ERROR_SOCKET_INVALID_FD, 0};
     }
 
-    // TODO A socket should be bound to an interface somehow
     if(!network::number_of_interfaces()){
         return {-std::ERROR_SOCKET_NO_INTERFACE, 0};
     }
 
-    auto& interface = network::interface(0);
     auto& socket = scheduler::get_socket(socket_fd);
 
     switch(socket.protocol){
         case network::socket_protocol::ICMP:
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
+            auto& interface = select_interface(descriptor->target_ip);
             auto packet = network::icmp::prepare_packet(buffer, interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
 
             if(packet){
@@ -224,7 +244,6 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
         return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
     }
 
-    auto& interface = network::interface(0);
     auto& socket = scheduler::get_socket(socket_fd);
 
     if(!socket.has_packet(packet_fd)){
@@ -232,6 +251,7 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
     }
 
     auto& packet = socket.get_packet(packet_fd);
+    auto& interface = network::interface(packet.interface);
 
     switch(socket.protocol){
         case network::socket_protocol::ICMP:
