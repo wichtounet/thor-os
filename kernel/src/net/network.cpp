@@ -86,6 +86,22 @@ network::interface_descriptor& select_interface(network::ip::address address){
     thor_unreachable("network: Should never happen");
 }
 
+void sysfs_publish(const network::interface_descriptor& interface){
+    auto p = path("/net") / interface.name;
+
+    sysfs::set_constant_value(path("/sys"), p / "name", interface.name);
+    sysfs::set_constant_value(path("/sys"), p / "driver", interface.driver);
+    sysfs::set_constant_value(path("/sys"), p / "enabled", interface.enabled ? "true" : "false");
+    sysfs::set_constant_value(path("/sys"), p / "pci_device", std::to_string(interface.pci_device));
+    sysfs::set_constant_value(path("/sys"), p / "mac", std::to_string(interface.mac_address));
+
+    if(interface.enabled){
+        auto ip = interface.ip_address;
+        auto ip_addr = std::to_string(ip(0)) + "." + std::to_string(ip(1)) + "." +std::to_string(ip(2)) + "." +std::to_string(ip(3));
+        sysfs::set_constant_value(path("/sys"), p / "ip", ip_addr);
+    }
+}
+
 } //end of anonymous namespace
 
 void network::init(){
@@ -121,13 +137,7 @@ void network::init(){
                 interface.ip_address = network::ip::make_address(10, 0, 2, 15);
             }
 
-            auto p = path("/net") / interface.name;
-
-            sysfs::set_constant_value(path("/sys"), p / "name", interface.name);
-            sysfs::set_constant_value(path("/sys"), p / "driver", interface.driver);
-            sysfs::set_constant_value(path("/sys"), p / "enabled", interface.enabled ? "true" : "false");
-            sysfs::set_constant_value(path("/sys"), p / "pci_device", std::to_string(i));
-            sysfs::set_constant_value(path("/sys"), p / "mac", std::to_string(interface.mac_address));
+            sysfs_publish(interface);
 
             ++index;
         }
@@ -150,6 +160,8 @@ void network::init(){
     interface.rx_sem.init(0);
 
     loopback::init_driver(interface);
+
+    sysfs_publish(interface);
 }
 
 void network::finalize(){
