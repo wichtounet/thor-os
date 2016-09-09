@@ -45,12 +45,14 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
 void loopback::init_driver(network::interface_descriptor& interface){
     logging::logf(logging::log_level::TRACE, "loopback: Initialize loopback driver\n");
 
-    loopback_t* desc = new loopback_t();
-    desc->interface = &interface;
-
-    interface.driver_data = desc;
+    interface.driver_data = new loopback_t();
     interface.hw_send = send_packet;
 
     interface.ip_address = network::ip::make_address(127, 0, 0, 1);
     //TODO interface.mac_address = mac;
+}
+
+void loopback::finalize_driver(network::interface_descriptor& interface){
+    auto* desc = static_cast<loopback_t*>(interface.driver_data);
+    desc->interface = &interface;
 }

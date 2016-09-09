@@ -15,6 +15,7 @@
 namespace loopback {
 
 void init_driver(network::interface_descriptor& interface);
+void finalize_driver(network::interface_descriptor& interface);
 
 } //end of namespace loopback
 

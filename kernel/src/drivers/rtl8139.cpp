@@ -229,7 +229,6 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
     logging::logf(logging::log_level::TRACE, "rtl8139: Initialize RTL8139 driver on pci:%u:%u:%u\n", uint64_t(pci_device.bus), uint64_t(pci_device.device), uint64_t(pci_device.function));
 
     rtl8139_t* desc = new rtl8139_t();
-    desc->interface = &interface;
 
     interface.driver_data = desc;
     interface.hw_send = send_packet;
@@ -326,4 +325,9 @@ void rtl8139::init_driver(network::interface_descriptor& interface, pci::device_
     interface.mac_address = mac;
 
     logging::logf(logging::log_level::TRACE, "rtl8139: MAC Address %h \n", mac);
+}
+
+void rtl8139::finalize_driver(network::interface_descriptor& interface){
+    auto* desc = static_cast<rtl8139_t*>(interface.driver_data);
+    desc->interface = &interface;
 }

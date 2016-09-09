@@ -162,6 +162,16 @@ void network::init(){
     loopback::init_driver(interface);
 
     sysfs_publish(interface);
+
+    for(auto& interface : interfaces){
+        if(interface.enabled){
+            if(interface.driver == "loopback"){
+                loopback::finalize_driver(interface);
+            } else if(interface.driver == "rtl8139"){
+                rtl8139::finalize_driver(interface);
+            }
+        }
+    }
 }
 
 void network::finalize(){

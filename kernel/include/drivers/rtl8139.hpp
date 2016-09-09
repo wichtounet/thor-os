@@ -17,6 +17,7 @@
 namespace rtl8139 {
 
 void init_driver(network::interface_descriptor& interface, pci::device_descriptor& pci_device);
+void finalize_driver(network::interface_descriptor& interface);
 
 } //end of namespace rtl8139
 
