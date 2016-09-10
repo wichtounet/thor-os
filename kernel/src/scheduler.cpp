@@ -906,7 +906,7 @@ void scheduler::sleep_ms(pid_t pid, size_t time){
 size_t scheduler::register_new_handle(const path& p){
     pcb[current_pid].handles.push_back(p);
 
-    return pcb[current_pid].handles.size() - 1;
+    return pcb[current_pid].handles.size();
 }
 
 void scheduler::release_handle(size_t fd){
