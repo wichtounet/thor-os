@@ -23,4 +23,8 @@ void network::udp::decode(network::interface_descriptor& interface, network::eth
     logging::logf(logging::log_level::TRACE, "udp: Source Port %h \n", source_port);
     logging::logf(logging::log_level::TRACE, "udp: Target Port %h \n", target_port);
     logging::logf(logging::log_level::TRACE, "udp: Length %h \n", length);
+
+    if(target_port == 53){
+        //TODO DNS decoding
+    }
 }
