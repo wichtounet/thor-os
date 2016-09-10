@@ -254,6 +254,11 @@ int main(int /*argc*/, char* /*argv*/[]){
 
     static constexpr const size_t sleep_timeout = 50;
 
+    std::default_random_engine eng(tlib::ms_time());
+    std::uniform_int_distribution<> width_dist(200, 300);
+    std::uniform_int_distribution<> height_dist(100, 250);
+    std::uniform_int_distribution<> position_dist(0, 500);
+
     // Create a default window
     windows.emplace_back(250UL, 250UL, 200UL, 400UL);
 
@@ -282,6 +287,17 @@ int main(int /*argc*/, char* /*argv*/[]){
             // TODO Handle event at this point
 
             switch(code){
+                case std::keycode::RELEASED_ENTER: {
+                    size_t width  = width_dist(eng);
+                    size_t height = width_dist(eng);
+                    size_t pos_x  = position_dist(eng);
+                    size_t pos_y  = position_dist(eng);
+
+                    windows.emplace_back(width, height, pos_x, pos_y);
+
+                    break;
+                }
+
                 case std::keycode::MOUSE_LEFT_PRESS:
                     tlib::user_logf("odin: left press");
 
