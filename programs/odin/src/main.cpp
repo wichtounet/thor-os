@@ -259,9 +259,6 @@ int main(int /*argc*/, char* /*argv*/[]){
     std::uniform_int_distribution<> height_dist(100, 250);
     std::uniform_int_distribution<> position_dist(0, 500);
 
-    // Create a default window
-    windows.emplace_back(250UL, 250UL, 200UL, 400UL);
-
     while(true){
         fill_buffer(background);
 
