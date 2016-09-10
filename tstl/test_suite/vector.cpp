@@ -108,6 +108,39 @@ void test_push_front(){
     check(*a.begin() == 99);
 }
 
+void test_reverse_iterator(){
+    std::vector<int> a{1, 0, 0, 2, 3, 4};
+
+    auto it = a.rbegin();
+    auto end = a.rend();
+
+    check(it != end, "Invalid reverse iterator");
+    check(*it == 4, "Invalid reverse iterator");
+
+    ++it;
+    check(it != end, "Invalid reverse iterator");
+    check(*it == 3, "Invalid reverse iterator");
+
+    ++it;
+    check(it != end, "Invalid reverse iterator");
+    check(*it == 2, "Invalid reverse iterator");
+
+    ++it;
+    check(it != end, "Invalid reverse iterator");
+    check(*it == 0, "Invalid reverse iterator");
+
+    ++it;
+    check(it != end, "Invalid reverse iterator");
+    check(*it == 0, "Invalid reverse iterator");
+
+    ++it;
+    check(it != end, "Invalid reverse iterator");
+    check(*it == 1, "Invalid reverse iterator");
+
+    ++it;
+    check(it == end, "Invalid reverse iterator");
+}
+
 } //end of anonymous namespace
 
 void vector_tests(){
@@ -117,4 +150,5 @@ void vector_tests(){
     test_erase_remove();
     test_erase_remove_if();
     test_push_front();
+    test_reverse_iterator();
 }

@@ -15,12 +15,18 @@ namespace std {
 
 template <typename T>
 struct iterator_traits {
-    using value_type = typename T::value_type;
+    using value_type      = typename T::value_type;
+    using reference       = typename T::reference;
+    using pointer         = typename T::pointer;
+    using difference_type = typename T::difference_type;
 };
 
 template <typename T>
 struct iterator_traits <T*> {
-    using value_type = T;
+    using value_type      = T;
+    using reference       = T&;
+    using pointer         = T*;
+    using difference_type = size_t;
 };
 
 template<class T>

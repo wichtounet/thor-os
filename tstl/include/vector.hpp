@@ -21,11 +21,14 @@ namespace std {
 template<typename T>
 class vector {
 public:
-    typedef T                       value_type;
-    typedef value_type*             pointer_type;
-    typedef size_t                  size_type;
-    typedef value_type*             iterator;
-    typedef const value_type*       const_iterator;
+    typedef T value_type;
+    typedef value_type* pointer_type;
+    typedef size_t size_type;
+    typedef value_type* iterator;
+    typedef const value_type* const_iterator;
+
+    using reverse_iterator       = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
 private:
     T* data;
@@ -256,6 +259,24 @@ public:
 
     constexpr const_iterator end() const {
         return const_iterator(&data[_size]);
+    }
+
+    //Iterators
+
+    reverse_iterator rbegin(){
+        return iterator(&data[_size] - 1);
+    }
+
+    constexpr const_reverse_iterator rbegin() const {
+        return const_iterator(&data[_size - 1]);
+    }
+
+    reverse_iterator rend(){
+        return reverse_iterator(&data[-1]);
+    }
+
+    constexpr const_reverse_iterator rend() const {
+        return const_reverse_iterator(&data[-1]);
     }
 
     // Relational operators
