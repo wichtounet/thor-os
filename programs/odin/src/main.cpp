@@ -4,6 +4,9 @@
 // (See accompanying file LICENSE or copy at
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
+
+#include <random.hpp>
+
 #include <tlib/system.hpp>
 #include <tlib/graphics.hpp>
 #include <tlib/print.hpp>
@@ -146,9 +149,11 @@ public:
     window(){}
 
     window(size_t x, size_t y, size_t width, size_t height) : x(x), y(y), width(width), height(height) {
-        //TODO This shit does not work
-        color = make_color(51, 51, 51);
-        border_color = make_color(250, 250, 250);
+        std::default_random_engine eng(tlib::ms_time());
+        std::uniform_int_distribution<> color_dist(0, 255);
+
+        color        = make_color(color_dist(eng), color_dist(eng), color_dist(eng));
+        border_color = make_color(color_dist(eng), color_dist(eng), color_dist(eng));
     }
 
     window(const window& rhs) = default;
