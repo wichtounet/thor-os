@@ -11,6 +11,7 @@
 #include <types.hpp>
 
 #include "net/ethernet_layer.hpp"
+#include "net/ip_layer.hpp"
 #include "net/network.hpp"
 
 namespace network {
@@ -25,6 +26,10 @@ struct header {
 } __attribute__((packed));
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+
+std::expected<network::ethernet::packet> prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
+std::expected<network::ethernet::packet> prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
+void finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
 } // end of upd namespace
 
