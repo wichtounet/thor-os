@@ -194,3 +194,151 @@ void tlib::set_current_working_directory(const std::string& directory){
         : [buffer] "g" (reinterpret_cast<size_t>(directory.c_str()))
         : "rax", "rbx");
 }
+
+tlib::file::file(const std::string& path) : path(path), fd(0), error_code(0) {
+    auto open_status = tlib::open(path.c_str());
+
+    if(open_status.valid()){
+        fd = *open_status;
+    } else {
+        error_code = open_status.error();
+    }
+}
+
+tlib::file::~file(){
+    if(fd){
+        tlib::close(fd);
+    }
+}
+
+bool tlib::file::open() const {
+    return fd > 0;
+}
+
+bool tlib::file::good() const {
+    return error_code == 0;
+}
+
+tlib::file::operator bool(){
+    return good();
+}
+
+size_t tlib::file::error() const {
+    return error_code;
+}
+
+std::string tlib::file::read_file(){
+    if(!good() || !open()){
+        return "";
+    }
+
+    std::string buffer;
+
+    auto info = tlib::stat(fd);
+
+    if(info.valid()){
+        auto size = info->size;
+        size_t read = 0;
+
+        char raw_buffer[1024 + 1];
+
+        while(read < size){
+            auto content_result = tlib::read(fd, raw_buffer, 1024, read);
+
+            if(content_result.valid()){
+                auto off = *content_result;
+
+                raw_buffer[off] = '\0';
+                buffer += raw_buffer;
+                read += off;
+            } else { error_code = content_result.error();
+                return "";
+            }
+        }
+    } else {
+        error_code = info.error();
+        return "";
+    }
+
+    return buffer;
+}
+
+tlib::directory_view tlib::file::entries(){
+    if(!good() || !open()){
+        return {nullptr};
+    }
+
+    auto entries_buffer = new char[4096];
+
+    auto entries_result = tlib::entries(fd, entries_buffer, 4096);
+
+    if(!entries_result){
+        delete[] entries_buffer;
+        error_code = entries_result.error();
+
+        return {nullptr};
+    }
+
+    return {entries_buffer};
+}
+
+tlib::directory_iterator::directory_iterator(const directory_view& view, bool end) : view(view), position(0), end(end) {
+    if(!end){
+        entry = reinterpret_cast<tlib::directory_entry*>(view.entries_buffer + position);
+    }
+}
+
+const char* tlib::directory_iterator::operator*() const {
+    return &entry->name;
+}
+
+tlib::directory_iterator& tlib::directory_iterator::operator++(){
+    if(end){
+        return *this;
+    }
+
+    if(!entry->offset_next){
+        entry = nullptr;
+        end = true;
+        return *this;
+    }
+
+    position += entry->offset_next;
+    entry = reinterpret_cast<tlib::directory_entry*>(view.entries_buffer + position);
+
+    return *this;
+}
+
+bool tlib::directory_iterator::operator==(const directory_iterator& rhs) const {
+    if(end){
+        return rhs.end;
+    } else if(rhs.end){
+        return false;
+    } else {
+        return position == rhs.position;
+    }
+}
+
+bool tlib::directory_iterator::operator!=(const directory_iterator& rhs) const {
+    return !(*this == rhs);
+}
+
+tlib::directory_view::directory_view(char* entries_buffer) : entries_buffer(entries_buffer) {}
+
+tlib::directory_view::~directory_view(){
+    if(entries_buffer){
+        delete[] entries_buffer;
+    }
+}
+
+tlib::directory_iterator tlib::directory_view::begin() const {
+    if(entries_buffer){
+        return {*this, false};
+    } else {
+        return {*this, true};
+    }
+}
+
+tlib::directory_iterator tlib::directory_view::end() const {
+    return {*this, true};
+}
