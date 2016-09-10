@@ -171,6 +171,28 @@ public:
         data[_size++] = element;
     }
 
+    void push_front(value_type&& element){
+        ensure_capacity(_size + 1);
+
+        for(size_t i = _size; i > 0; --i){
+            data[i] = std::move(data[i-1]);
+        }
+
+        data[0] = std::forward<value_type>(element);
+        ++_size;
+    }
+
+    void push_front(const value_type& element){
+        ensure_capacity(_size + 1);
+
+        for(size_t i = _size; i > 0; --i){
+            data[i] = std::move(data[i-1]);
+        }
+
+        data[0] = element;
+        ++_size;
+    }
+
     void emplace_back(){
         ensure_capacity(_size + 1);
 

@@ -91,6 +91,23 @@ void test_erase_remove_if(){
     check(*a.begin() == 0);
 }
 
+void test_push_front(){
+    std::vector<int> a{1, 0, 0, 2, 3, 4};
+
+    a.push_front(99);
+
+    check(a.size() == 7, "Invalid vector:size");
+    check(a[0] == 99, "Invalid vector:[]");
+    check(a[1] == 1, "Invalid vector:[]");
+    check(a[2] == 0, "Invalid vector:[]");
+    check(a[3] == 0, "Invalid vector:[]");
+    check(a[4] == 2, "Invalid vector:[]");
+    check(a[5] == 3, "Invalid vector:[]");
+    check(a[6] == 4, "Invalid vector:[]");
+
+    check(*a.begin() == 99);
+}
+
 } //end of anonymous namespace
 
 void vector_tests(){
@@ -99,4 +116,5 @@ void vector_tests(){
     test_erase_range();
     test_erase_remove();
     test_erase_remove_if();
+    test_push_front();
 }
