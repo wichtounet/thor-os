@@ -35,15 +35,15 @@ std::string read_file(const std::string& path){
                     return buffer;
                 }
             } else {
-                tlib::printf("cat: error: %s\n", std::error_message(content_result.error()));
+                tlib::printf("ifconfig: error: %s\n", std::error_message(content_result.error()));
             }
         } else {
-            tlib::printf("cat: error: %s\n", std::error_message(info.error()));
+            tlib::printf("ifconfig: error: %s\n", std::error_message(info.error()));
         }
 
         tlib::close(*fd);
     } else {
-        tlib::printf("cat: error: %s\n", std::error_message(fd.error()));
+        tlib::printf("ifconfig: error: %s\n", std::error_message(fd.error()));
     }
 
     return "";
