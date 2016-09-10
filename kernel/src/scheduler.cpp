@@ -910,15 +910,15 @@ size_t scheduler::register_new_handle(const path& p){
 }
 
 void scheduler::release_handle(size_t fd){
-    pcb[current_pid].handles[fd].invalidate();
+    pcb[current_pid].handles[fd - 1].invalidate();
 }
 
 bool scheduler::has_handle(size_t fd){
-    return fd < pcb[current_pid].handles.size() && pcb[current_pid].handles[fd].is_valid();
+    return fd > 0 && fd <= pcb[current_pid].handles.size() && pcb[current_pid].handles[fd - 1].is_valid();
 }
 
 const path& scheduler::get_handle(size_t fd){
-    return pcb[current_pid].handles[fd];
+    return pcb[current_pid].handles[fd - 1];
 }
 
 size_t scheduler::register_new_socket(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
