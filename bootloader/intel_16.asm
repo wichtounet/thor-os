@@ -1,5 +1,5 @@
 ;=======================================================================
-; Copyright Baptiste Wicht 2013.
+; Copyright Baptiste Wicht 2013-2016.
 ; Distributed under the Boost Software License, Version 1.0.
 ; (See accompanying file LICENSE_1_0.txt or copy at
 ;  http://www.boost.org/LICENSE_1_0.txt)
@@ -47,6 +47,49 @@ print_16:
 
 .done:
     ret
+
+print_int_16:
+    push ax
+    push bx
+    push dx
+    push si
+
+    mov ax, di
+
+    xor si, si
+
+    .loop:
+        xor dx, dx
+        mov bx, 10
+        div bx
+        add dx, 48
+
+        push dx
+        inc si
+
+        test ax, ax
+        jne .loop
+
+    .next:
+        test si, si
+        je .exit
+        dec si
+
+        ; write the char
+        pop ax
+
+        mov ah, 0Eh
+        int 10h
+
+        jmp .next
+
+    .exit:
+        pop si
+        pop dx
+        pop bx
+        pop ax
+
+        ret
 
 key_wait:
     mov al, 0xD2

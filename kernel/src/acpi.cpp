@@ -1,298 +1,197 @@
 //=======================================================================
-// Copyright Baptiste Wicht 2013.
+// Copyright Baptiste Wicht 2013-2016.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include "acpica.hpp"
 #include "acpi.hpp"
 #include "kernel_utils.hpp"
 #include "timer.hpp"
 #include "paging.hpp"
 #include "console.hpp"
-
-#include "stl/types.hpp"
+#include "logging.hpp"
+#include "scheduler.hpp"
+#include "arch.hpp"
+#include "assert.hpp"
 
 namespace {
 
-uint32_t SMI_CMD; //ptr
-uint8_t ACPI_ENABLE;
-uint8_t ACPI_DISABLE;
-uint32_t PM1a_CNT; //ptr
-uint32_t PM1b_CNT; //ptr
-uint16_t SLP_TYPa;
-uint16_t SLP_TYPb;
-uint16_t SLP_EN;
-uint16_t SCI_EN;
-uint8_t PM1_CNT_LEN;
+// This is copied from acexcep.h
+// This could be used with ACPI_DEFINE_EXCEPTION_TABLE but this
+// generates too many warnings and errors
 
-bool version_2 = false;
-
-struct RSDPtr {
-   uint8_t Signature[8];
-   uint8_t CheckSum;
-   uint8_t OemID[6];
-   uint8_t Revision;
-   uint32_t RsdtAddress; //ptr
+static const char* AcpiGbl_ExceptionNames_Env[] = {
+    "AE_OK",
+    "AE_ERROR",
+    "AE_NO_ACPI_TABLES",
+    "AE_NO_NAMESPACE",
+    "AE_NO_MEMORY",
+    "AE_NOT_FOUND",
+    "AE_NOT_EXIST",
+    "AE_ALREADY_EXISTS",
+    "AE_TYPE",
+    "AE_NULL_OBJECT",
+    "AE_NULL_ENTRY",
+    "AE_BUFFER_OVERFLOW",
+    "AE_STACK_OVERFLOW",
+    "AE_STACK_UNDERFLOW",
+    "AE_NOT_IMPLEMENTED",
+    "AE_SUPPORT",
+    "AE_LIMIT",
+    "AE_TIME",
+    "AE_ACQUIRE_DEADLOCK",
+    "AE_RELEASE_DEADLOCK",
+    "AE_NOT_ACQUIRED",
+    "AE_ALREADY_ACQUIRED",
+    "AE_NO_HARDWARE_RESPONSE",
+    "AE_NO_GLOBAL_LOCK",
+    "AE_ABORT_METHOD",
+    "AE_SAME_HANDLER",
+    "AE_NO_HANDLER",
+    "AE_OWNER_ID_LIMIT",
+    "AE_NOT_CONFIGURED",
+    "AE_ACCESS",
+    "AE_IO_ERROR"
 };
 
-struct FACP {
-   uint8_t Signature[4];
-   uint32_t Length;
-   uint8_t unneded1[40 - 8];
-   uint32_t DSDT; //ptr
-   uint8_t unneded2[48 - 44];
-   uint32_t SMI_CMD; //ptr
-   uint8_t ACPI_ENABLE;
-   uint8_t ACPI_DISABLE;
-   uint8_t unneded3[64 - 54];
-   uint32_t PM1a_CNT_BLK; //ptr
-   uint32_t PM1b_CNT_BLK; //ptr
-   uint8_t unneded4[89 - 72];
-   uint8_t PM1_CNT_LEN;
-};
+volatile bool acpi_initialized = false;
 
-// check if the given address has a valid header
-unsigned int* check_rsd_ptr(unsigned int *ptr) {
-   const char* sig = "RSD PTR ";
-   auto rsdp = reinterpret_cast<RSDPtr*>(ptr);
+void initialize_acpica(){
+    logging::logf(logging::log_level::DEBUG, "acpi:: Started initialization of ACPICA\n");
 
-   if (std::equal_n(sig, reinterpret_cast<const char*>(rsdp), 8)){
-       uint8_t check = 0;
+    /* Initialize the ACPICA subsystem */
 
-      // check checksum rsdpd
-      auto bptr = reinterpret_cast<uint8_t*>(ptr);
-      for (size_t i=0; i<sizeof(struct RSDPtr); i++){
-         check += *bptr;
-         bptr++;
-      }
-
-      // found valid rsdpd
-      if (check == 0) {
-          version_2 = rsdp->Revision != 0;
-
-         return reinterpret_cast<unsigned int *>(rsdp->RsdtAddress);
-      }
-   }
-
-   return nullptr;
-}
-
-// finds the acpi header and returns the address of the rsdt
-unsigned int *get_rsd_ptr(void){
-   // search below the 1mb mark for RSDP signature
-   for (auto addr = reinterpret_cast<unsigned int*>(0x000E0000); reinterpret_cast<uintptr_t>(addr) < 0x00100000; addr += 0x10 / sizeof(addr)){
-      auto rsdp = check_rsd_ptr(addr);
-      if (rsdp){
-         return rsdp;
-      }
-   }
-
-   //TODO Check unsigned
-   // at address 0x40:0x0E is the RM segment of the ebda
-   unsigned int ebda = *(reinterpret_cast<short *>(0x40E));   // get pointer
-   ebda = ebda * 0x10 & 0x000FFFFF;   // transform segment into linear address
-
-   // search Extended BIOS Data Area for the Root System Description Pointer signature
-   for (auto addr = reinterpret_cast<unsigned int*>(ebda); reinterpret_cast<uintptr_t>(addr) < ebda + 1024; addr += 0x10 / sizeof(addr)){
-      auto rsdp = check_rsd_ptr(addr);
-      if (rsdp){
-         return rsdp;
-      }
-   }
-
-   return nullptr;
-}
-
-// checks for a given header and validates checksum
-int check_header(unsigned int *ptr, const char* sig){
-    if (std::equal_n(reinterpret_cast<const char*>(ptr), sig, 4)){
-        char *checkPtr = reinterpret_cast<char *>(ptr);
-        int len = *(ptr + 1);
-        char check = 0;
-
-        while (0<len--){
-            check += *checkPtr;
-            checkPtr++;
-        }
-
-        if (check == 0){
-            return 0;
-        }
+    auto status = AcpiInitializeSubsystem();
+    if(ACPI_FAILURE(status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to initialize subsystem: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        return;
     }
 
-    return -1;
+    /* Initialize the ACPICA Table Manager and get all ACPI tables */
+
+    status = AcpiInitializeTables(nullptr, 16, true);
+    if (ACPI_FAILURE (status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to initialize tables: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        return;
+    }
+
+    /* Create the ACPI namespace from ACPI tables */
+
+    status = AcpiLoadTables ();
+    if (ACPI_FAILURE (status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to load tables: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        return;
+    }
+
+    /* Initialize the ACPI hardware */
+
+    status = AcpiEnableSubsystem (ACPI_FULL_INITIALIZATION);
+    if (ACPI_FAILURE (status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to enable subsystem: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        return;
+    }
+
+    /* Complete the ACPI namespace object initialization */
+
+    status = AcpiInitializeObjects (ACPI_FULL_INITIALIZATION);
+    if (ACPI_FAILURE (status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to initialize objects: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        return;
+    }
+
+    acpi_initialized = true;
+
+    logging::logf(logging::log_level::DEBUG, "acpi:: Finished initialization of ACPICA\n");
 }
 
-int acpiEnable(void){
-    // check if acpi is enabled
-    if ( (in_word(PM1a_CNT) &SCI_EN) == 0 ){
-        // check if acpi can be enabled
-        if (SMI_CMD != 0 && ACPI_ENABLE != 0){
-            out_byte(SMI_CMD, ACPI_ENABLE); // send acpi enable command
-            // give 3 seconds time to enable acpi
-            int i;
-            for (i=0; i<300; i++ ){
-                if ( (in_word(PM1a_CNT) & SCI_EN) == 1 )
-                    break;
-                sleep_ms(10);
-            }
-
-            if (PM1b_CNT != 0)
-                for (; i<300; i++ )
-                {
-                    if ( (in_word(PM1b_CNT) & SCI_EN) == 1 )
-                        break;
-                    sleep_ms(10);
-                }
-            if (i<300) {
-                k_print_line("ACPI enabled");
-                return 0;
-            } else {
-                k_print_line("Couldn't enable ACPI");
-                return -1;
-            }
-        } else {
-            k_print_line("No known way to  enable ACPI");
-            return -1;
+uint64_t acpi_read(const ACPI_GENERIC_ADDRESS& address){
+    if(address.SpaceId == ACPI_ADR_SPACE_SYSTEM_MEMORY){
+        UINT64 value = 0;
+        auto status = AcpiOsReadMemory(address.Address, &value, address.BitWidth);
+        if(ACPI_FAILURE(status)){
+            logging::logf(logging::log_level::ERROR, "acpica: Unable to read from memory: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
         }
+        return value;
+    } else if(address.SpaceId == ACPI_ADR_SPACE_SYSTEM_IO){
+        UINT32 value = 0;
+        auto status = AcpiHwReadPort(address.Address, &value, address.BitWidth);
+        if(ACPI_FAILURE(status)){
+            logging::logf(logging::log_level::ERROR, "acpica: Unable to read from hardware port: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        }
+        return value;
     } else {
-        k_print_line("ACPI was already enabled");
+        logging::logf(logging::log_level::ERROR, "acpica: Unimplemented read generic address space id\n");
         return 0;
     }
 }
 
-//
-// bytecode of the \_S5 object
-// -----------------------------------------
-//        | (optional) |    |    |    |
-// NameOP | \          | _  | S  | 5  | _
-// 08     | 5A         | 5F | 53 | 35 | 5F
-//
-// -----------------------------------------------------------------------------------------------------------
-//           |           |              | ( SLP_TYPa   ) | ( SLP_TYPb   ) | ( Reserved   ) | (Reserved    )
-// PackageOP | PkgLength | NumElements  | byteprefix Num | byteprefix Num | byteprefix Num | byteprefix Num
-// 12        | 0A        | 04           | 0A         05  | 0A          05 | 0A         05  | 0A         05
-//
-//----this-structure-was-also-seen----------------------
-// PackageOP | PkgLength | NumElements |
-// 12        | 06        | 04          | 00 00 00 00
-//
-// (Pkglength bit 6-7 encode additional PkgLength bytes [shouldn't be the case here])
-//
-int init_acpi(){
-   unsigned int *ptr = get_rsd_ptr();
-
-   auto aligned_ptr = ptr;
-   if(!paging::page_aligned(ptr)){
-       aligned_ptr = reinterpret_cast<unsigned int*>(reinterpret_cast<uintptr_t>(ptr) & ~(paging::PAGE_SIZE - 1));
-   }
-
-   if(!paging::identity_map(aligned_ptr, 2)){
-       k_print_line("Impossible to identity map the ACPI tables");
-
-       return -1;
-   }
-
-   // check if address is correct  ( if acpi is available on this pc )
-   if (ptr && check_header(ptr, "RSDT") == 0){
-      // the RSDT contains an unknown number of pointers to acpi tables
-      int entrys = *(ptr + 1);
-      entrys = (entrys-36) /4;
-      ptr += 36/4;   // skip header information
-
-      while (0<entrys--){
-         // check if the desired table is reached
-         if (check_header(reinterpret_cast<unsigned int*>(*ptr), "FACP") == 0){
-            entrys = -2;
-
-            struct FACP* facp = reinterpret_cast<FACP*>(*ptr);
-
-            if (check_header(reinterpret_cast<unsigned int*>(facp->DSDT), "DSDT") == 0){
-               // search the \_S5 package in the DSDT
-               char *S5Addr = reinterpret_cast<char *>(facp->DSDT + 36); // skip header
-               int dsdtLength = *(reinterpret_cast<uint32_t*>(static_cast<uintptr_t>(facp->DSDT)+1)) - 36;
-               while (0 < dsdtLength--){
-                  if (std::equal_n(S5Addr, "_S5_", 4)){
-                     break;
-                  }
-
-                  S5Addr++;
-               }
-
-               // check if \_S5 was found
-               if (dsdtLength > 0){
-                  // check for valid AML structure
-                  if ( ( *(S5Addr-1) == 0x08 || ( *(S5Addr-2) == 0x08 && *(S5Addr-1) == '\\') ) && *(S5Addr+4) == 0x12 ){
-                     S5Addr += 5;
-                     S5Addr += ((*S5Addr &0xC0)>>6) +2;   // calculate PkgLength size
-
-                     if (*S5Addr == 0x0A){
-                        S5Addr++;   // skip byteprefix
-                     }
-
-                     SLP_TYPa = *(S5Addr)<<10;
-                     S5Addr++;
-
-                     if (*S5Addr == 0x0A){
-                        S5Addr++;   // skip byteprefix
-                     }
-
-                     SLP_TYPb = *(S5Addr)<<10;
-
-                     SMI_CMD = facp->SMI_CMD;
-
-                     ACPI_ENABLE = facp->ACPI_ENABLE;
-                     ACPI_DISABLE = facp->ACPI_DISABLE;
-
-                     PM1a_CNT = facp->PM1a_CNT_BLK;
-                     PM1b_CNT = facp->PM1b_CNT_BLK;
-
-                     PM1_CNT_LEN = facp->PM1_CNT_LEN;
-
-                     SLP_EN = 1<<13;
-                     SCI_EN = 1;
-
-                     return 0;
-                  } else {
-                     k_print_line("\\_S5 parse error.");
-                  }
-               } else {
-                  k_print_line("\\_S5 not present.");
-               }
-            } else {
-               k_print_line("DSDT invalid.");
-            }
-         }
-         ptr++;
-      }
-      k_print_line("no valid FACP present.");
-   } else {
-      k_print_line("no acpi.");
-   }
-
-   return -1;
+void acpi_write(const ACPI_GENERIC_ADDRESS& address, uint64_t value){
+    if(address.SpaceId == ACPI_ADR_SPACE_SYSTEM_MEMORY){
+        auto status = AcpiOsWriteMemory(address.Address, value, address.BitWidth);
+        if(ACPI_FAILURE(status)){
+            logging::logf(logging::log_level::ERROR, "acpica: Unable to write to memory: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        }
+    } else if(address.SpaceId == ACPI_ADR_SPACE_SYSTEM_IO){
+        auto status = AcpiHwWritePort(address.Address, value, address.BitWidth);
+        if(ACPI_FAILURE(status)){
+            logging::logf(logging::log_level::ERROR, "acpica: Unable to write to hardware port: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        }
+    } else {
+        logging::logf(logging::log_level::ERROR, "acpica: Unimplemented write generic address space id\n");
+    }
 }
 
 } //end of anonymous namespace
 
-bool acpi::init(){
-    return init_acpi() == 0;
+void acpi::init(){
+    // ACPICA needs scheduling to be started
+    scheduler::queue_async_init_task(initialize_acpica);
+}
+
+bool acpi::initialized(){
+    return acpi_initialized;
 }
 
 void acpi::shutdown(){
-   // SCI_EN is set to 1 if acpi shutdown is possible
-   if (SCI_EN == 0){
-      return;
-   }
+    thor_assert(acpi::initialized(), "ACPI must be initialized for acpi::shutdown()");
 
-   acpiEnable();
+    auto status = AcpiEnterSleepStatePrep(5);
 
-   // send the shutdown command
-   out_word(PM1a_CNT, SLP_TYPa | SLP_EN );
-   if ( PM1b_CNT != 0 ){
-      out_word(PM1b_CNT, SLP_TYPb | SLP_EN );
-   }
+    if(ACPI_FAILURE(status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to prepare sleep state: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        return;
+    }
 
-   k_print_line("acpi poweroff failed.");
+    size_t rflags;
+    arch::disable_hwint(rflags);
+    status = AcpiEnterSleepState(5);
+
+    if(ACPI_FAILURE(status)){
+        logging::logf(logging::log_level::ERROR, "acpica: Impossible to enter sleep state: error: %s\n", AcpiGbl_ExceptionNames_Env[status]);
+        return;
+    }
+
+    k_print_line("acpi poweroff failed.");
+    arch::enable_hwint(rflags);
+}
+
+bool acpi::reboot(){
+    thor_assert(acpi::initialized(), "ACPI must be initialized for acpi::reboot()");
+
+    if (AcpiGbl_FADT.Header.Revision < FADT2_REVISION_ID){
+        return false;
+    }
+
+    if(!(AcpiGbl_FADT.Flags & ACPI_FADT_RESET_REGISTER)){
+        return false;
+    }
+
+    auto reset_register = AcpiGbl_FADT.ResetRegister;
+    auto reset_value = AcpiGbl_FADT.ResetValue;
+
+    acpi_write(reset_register, reset_value);
+
+    return true;
 }

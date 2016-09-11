@@ -1,78 +1,57 @@
-default: kernel.bin
+default: /tmp/ReOS/kernel/debug/kernel.bin
 
-CC=x86_64-elf-g++
-AS=x86_64-elf-as
-OC=x86_64-elf-objcopy
+include ../cpp.mk
 
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
-WARNING_FLAGS=-Wall -Wextra -pedantic -Wold-style-cast -Wshadow
-COMMON_CPP_FLAGS=-masm=intel -Iinclude/ -nostdlib -Os -std=c++11 -fno-stack-protector -fno-exceptions -funsigned-char -fno-rtti -ffreestanding -fomit-frame-pointer -mno-red-zone -mno-3dnow -mno-mmx
-
-CPP_FLAGS_LOW=-march=i386 -m32 -fno-strict-aliasing -fno-pic -fno-toplevel-reorder -mno-sse -mno-sse2 -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2
-
-CPP_FLAGS_16=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mregparm=3 -mpreferred-stack-boundary=2
-CPP_FLAGS_32=$(COMMON_CPP_FLAGS) $(CPP_FLAGS_LOW) -mpreferred-stack-boundary=4
-CPP_FLAGS_64=$(COMMON_CPP_FLAGS) -mno-sse3 -mno-sse4 -mno-sse4.1 -mno-sse4.2
-
-LINK_FLAGS=-lgcc -T linker.ld
-
-KERNEL_CPP_FILES=$(wildcard src/*.cpp)
-KERNEL_CPP_STL_FILES=$(wildcard src/stl/*.cpp)
-
-KERNEL_D_FILES=$(KERNEL_CPP_FILES:%.cpp=%.cpp.d)
-KERNEL_D_STL_FILES=$(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.d)
-
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-KERNEL_O_FILES=boot_16_64.o boot_32_64.o $(KERNEL_CPP_FILES:%.cpp=%.cpp.o) $(KERNEL_CPP_STL_FILES:%.cpp=%.cpp.o) isrs.s.o irqs.s.o arch.s.o
+O_FILES=/tmp/ReOS/kernel/src/isrs.s.o /tmp/ReOS/kernel/src/irqs.s.o /tmp/ReOS/kernel/src/arch.s.o /tmp/ReOS/kernel/src/syscalls.s.o /tmp/ReOS/kernel/src/task_switch.s.o
 
-CRTBEGIN_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtbegin.o)
-CRTEND_OBJ:=$(shell $(CC) $(CFLAGS) -print-file-name=crtend.o)
+# Ask GCC for the crtbegin and crtend files
+CRTBEGIN_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtbegin.o)
+CRTEND_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtend.o)
 
-LINK_O_FILES=crti.s.o $(CRTBEGIN_OBJ) $(KERNEL_O_FILES) $(CRTEND_OBJ) crtn.s.o
+# The final link files
+SPECIAL_O_FILES=/tmp/ReOS/kernel/src/crti.s.o $(CRTBEGIN_OBJ) $(CRTEND_OBJ) /tmp/ReOS/kernel/src/crtn.s.o
 
-boot_16.o: src/boot/boot_16.cpp
-	$(CC) $(CPP_FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
+# Compile the assembly code
 
-boot_32.o: src/boot/boot_32.cpp
-	$(CC) $(CPP_FLAGS_32) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_32.cpp -o boot_32.o
+/tmp/ReOS/kernel/src/%.s.o: src/%.s
+	@ mkdir -p /tmp/ReOS/kernel/src/
+	$(AS) -g -c $< -o $@
 
-boot_16_64.o: boot_16.o
-	$(OC) -I elf32-i386 -O elf64-x86-64 boot_16.o boot_16_64.o
+# Compile all the kernel CPP code
 
-boot_32_64.o: boot_32.o
-	$(OC) -I elf32-i386 -O elf64-x86-64 boot_32.o boot_32_64.o
+$(eval $(call compile_cpp_folder,src))
+$(eval $(call compile_cpp_folder,src/drivers))
+$(eval $(call compile_cpp_folder,src/fs))
+$(eval $(call compile_cpp_folder,src/vfs))
 
-%.s.o: src/%.s
-	$(AS) -c $< -o $@
+# Compile all the ACPICA C code
 
-src/%.cpp.d: $(KERNEL_CPP_FILES)
-	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+$(eval $(call acpica_folder_compile,dispatcher))
+$(eval $(call acpica_folder_compile,events))
+$(eval $(call acpica_folder_compile,executer))
+$(eval $(call acpica_folder_compile,namespace))
+$(eval $(call acpica_folder_compile,parser))
+$(eval $(call acpica_folder_compile,hardware))
+$(eval $(call acpica_folder_compile,tables))
+$(eval $(call acpica_folder_compile,utilities))
 
-src/stl/%.cpp.d: $(KERNEL_CPP_STL_FILES)
-	@ $(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT src/stl/$*.cpp.o src/stl/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
+-include $(D_FILES)
 
-src/%.cpp.o:
-	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
+LINK_O_FILES=$(SPECIAL_O_FILES) $(O_FILES)
 
-src/stl/%.cpp.o:
-	$(CC) $(CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $< -o $@
-
--include $(KERNEL_D_FILES)
--include $(KERNEL_D_STL_FILES)
-
-kernel.bin: $(LINK_O_FILES)
-	$(CC) $(LINK_FLAGS) $(CPP_FLAGS_64) -o kernel.bin.o $(LINK_O_FILES)
-	$(OC) -R .note -R .comment -S -O binary kernel.bin.o kernel.bin
-
-debug:
-	echo $(KERNEL_CPP_STL_FILES)
-	echo $(KERNEL_D_STL_FILES)
+/tmp/ReOS/kernel/debug/kernel.bin: $(LINK_O_FILES)
+	@ mkdir -p /tmp/ReOS/kernel/debug/
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link $(FILE_COLOR)$@$(NO_COLOR)"
+	@ $(CXX) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o $@.o $(LINK_O_FILES)
+	@ $(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents $@.o $@
 
 clean:
-	rm -f $(KERNEL_D_FILES)
-	rm -f $(KERNEL_D_STL_FILES)
-	rm -f $(KERNEL_O_FILES)
-	rm -f crti.o
-	rm -f crts.o
-	rm -f *.bin
+	@ echo -e "Remove compiled files (deps/objects)"
+	@ rm -rf /tmp/ReOS/kernel/debug
+	@ rm -f /tmp/ReOS/kernel/crti.o
+	@ rm -f /tmp/ReOS/kernel/crts.o
+	@ echo -e "Remove bin files"
+	@ rm -f /tmp/ReOS/kernel/*.bin

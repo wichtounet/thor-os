@@ -1,27 +1,32 @@
 //=======================================================================
-// Copyright Baptiste Wicht 2013.
+// Copyright Baptiste Wicht 2013-2016.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
 #include "e820.hpp"
-
-
-e820::bios_e820_entry e820::bios_e820_entries[e820::MAX_E820_ENTRIES];
-int16_t e820::bios_e820_entry_count = 0;
+#include "early_memory.hpp"
+#include "logging.hpp"
 
 namespace {
 
 e820::mmapentry e820_mmap[e820::MAX_E820_ENTRIES];
 size_t _available_memory;
+size_t e820_entries = 0;
 
 } //end of namespace anonymous
 
 void e820::finalize_memory_detection(){
-    if(bios_e820_entry_count > 0){
-        for(int64_t i = 0; i < bios_e820_entry_count; ++i){
-            auto& bios_entry = bios_e820_entries[i];
+    e820_entries = early::e820_entry_count();
+
+    auto t = mmap_entry_count();;
+
+    auto* smap = reinterpret_cast<e820::bios_e820_entry*>(early::e820_entry_address);
+
+    if(t > 0){
+        for(size_t i = 0; i < t; ++i){
+            auto& bios_entry = smap[i];
             auto& os_entry = e820_mmap[i];
 
             uint64_t base = bios_entry.base_low + (static_cast<uint64_t>(bios_entry.base_high) << 32);
@@ -43,11 +48,11 @@ void e820::finalize_memory_detection(){
 }
 
 uint64_t e820::mmap_entry_count(){
-    return bios_e820_entry_count;
+    return e820_entries;
 }
 
 bool e820::mmap_failed(){
-    return bios_e820_entry_count <= 0;
+    return mmap_entry_count() <= 0;
 }
 
 const e820::mmapentry& e820::mmap_entry(uint64_t i){

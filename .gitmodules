@@ -1,0 +1,4 @@
+[submodule "kernel/acpica"]
+	path = kernel/acpica
+	url = https://github.com/acpica/acpica.git
+	ignore = dirty

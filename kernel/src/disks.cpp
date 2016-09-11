@@ -1,19 +1,21 @@
 //=======================================================================
-// Copyright Baptiste Wicht 2013.
+// Copyright Baptiste Wicht 2013-2016.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
 //=======================================================================
 
+#include <unique_ptr.hpp>
+#include <array.hpp>
+#include <string.hpp>
+
 #include "disks.hpp"
 #include "ata.hpp"
 #include "thor.hpp"
 #include "console.hpp"
-#include "fat32.hpp"
 
-#include "stl/unique_ptr.hpp"
-#include "stl/array.hpp"
-#include "stl/string.hpp"
+#include "fs/devfs.hpp"
+#include "fs/sysfs.hpp"
 
 namespace {
 
@@ -41,38 +43,66 @@ struct boot_record_t {
 
 static_assert(sizeof(boot_record_t) == 512, "The boot record is 512 bytes long");
 
-const disks::disk_descriptor* _mounted_disk;
-const disks::partition_descriptor* _mounted_partition;
+ata::ata_driver ata_driver_impl;
+ata::ata_part_driver ata_part_driver_impl;
 
-std::vector<std::string> pwd;
+devfs::dev_driver* ata_driver = &ata_driver_impl;
+devfs::dev_driver* ata_part_driver = &ata_part_driver_impl;
+devfs::dev_driver* atapi_driver = nullptr;
 
 } //end of anonymous namespace
 
 void disks::detect_disks(){
     ata::detect_disks();
 
+    char cdrom = 'a';
+    char disk = 'a';
+
     for(uint8_t i = 0; i < ata::number_of_disks(); ++i){
         auto& descriptor = ata::drive(i);
 
         if(descriptor.present){
-            _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATA, &descriptor};
+            std::string name;
+            if(descriptor.atapi){
+                _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATAPI, &descriptor};
+
+                name = "cd";
+                name += cdrom++;
+
+                devfs::register_device("/dev/", name, devfs::device_type::BLOCK_DEVICE, atapi_driver, &_disks[number_of_disks]);
+            } else {
+                _disks[number_of_disks] = {number_of_disks, disks::disk_type::ATA, &descriptor};
+
+                name = "hd";
+                name += disk++;
+
+                devfs::register_device("/dev/", name, devfs::device_type::BLOCK_DEVICE, ata_driver, &_disks[number_of_disks]);
+
+                char part = '1';
+
+                for(auto& partition : partitions(_disks[number_of_disks])){
+                    auto part_name = name + part++;
+
+                    devfs::register_device("/dev/", part_name, devfs::device_type::BLOCK_DEVICE, ata_part_driver, new partition_descriptor(partition));
+                }
+            }
+
+            std::string path = "/ata/" + name;
+
+            sysfs::set_constant_value("/sys/", path + "/model", descriptor.model);
+            sysfs::set_constant_value("/sys/", path + "/serial", descriptor.serial);
+            sysfs::set_constant_value("/sys/", path + "/firmware", descriptor.firmware);
+
             ++number_of_disks;
         }
     }
-
-    _mounted_disk = nullptr;
-    _mounted_partition = nullptr;
 }
 
-uint64_t disks::detected_disks(){
-    return number_of_disks;
-}
-
-const disks::disk_descriptor& disks::disk_by_index(uint64_t index){
+disks::disk_descriptor& disks::disk_by_index(uint64_t index){
     return _disks[index];
 }
 
-const disks::disk_descriptor& disks::disk_by_uuid(uint64_t uuid){
+disks::disk_descriptor& disks::disk_by_uuid(uint64_t uuid){
     for(uint64_t i = 0; i < number_of_disks; ++i){
         if(_disks[i].uuid == uuid){
             return _disks[i];
@@ -82,60 +112,11 @@ const disks::disk_descriptor& disks::disk_by_uuid(uint64_t uuid){
     __builtin_unreachable();
 }
 
-bool disks::disk_exists(uint64_t uuid){
-    for(uint64_t i = 0; i < number_of_disks; ++i){
-        if(_disks[i].uuid == uuid){
-            return true;
-        }
-    }
-
-    return false;
-}
-
-const char* disks::disk_type_to_string(disk_type type){
-    switch(type){
-        case disk_type::ATA:
-            return "ATA";
-        default:
-            return "Invalid Type";
-    }
-}
-
-const char* disks::partition_type_to_string(partition_type type){
-    switch(type){
-        case partition_type::FAT32:
-            return "FAT32";
-        case partition_type::UNKNOWN:
-            return "Unknown";
-        default:
-            return "Invalid Type";
-    }
-}
-
-bool disks::read_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination){
-    switch(disk.type){
-        case disk_type::ATA:
-            return ata::read_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), start, count, destination);
-
-        default:
-            return false;
-    }
-}
-
-bool disks::write_sectors(const disk_descriptor& disk, uint64_t start, uint8_t count, void* destination){
-    switch(disk.type){
-        case disk_type::ATA:
-            return ata::write_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), start, count, destination);
-
-        default:
-            return false;
-    }
-}
-
-std::unique_heap_array<disks::partition_descriptor> disks::partitions(const disk_descriptor& disk){
+std::unique_heap_array<disks::partition_descriptor> disks::partitions(disk_descriptor& disk){
     std::unique_ptr<boot_record_t> boot_record(new boot_record_t());
 
-    if(!read_sectors(disk, 0, 1, boot_record.get())){
+    size_t read;
+    if(ata::read_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), 0, 1, boot_record.get(), read) > 0){
         k_print_line("Read Boot Record failed");
 
         return {};
@@ -158,14 +139,14 @@ std::unique_heap_array<disks::partition_descriptor> disks::partitions(const disk
 
         for(uint64_t i = 0; i < 4; ++i){
             if(boot_record->partitions[i].type_code > 0){
-                partition_type type;
+                vfs::partition_type type;
                 if(boot_record->partitions[i].type_code == 0x0B || boot_record->partitions[i].type_code == 0x0C){
-                    type = partition_type::FAT32;
+                    type = vfs::partition_type::FAT32;
                 } else {
-                    type = partition_type::UNKNOWN;
+                    type = vfs::partition_type::UNKNOWN;
                 }
 
-                partitions[p] = {p, type, boot_record->partitions[i].lba_begin, boot_record->partitions[i].sectors};
+                partitions[p] = {p, type, boot_record->partitions[i].lba_begin, boot_record->partitions[i].sectors, &disk};
 
                 ++p;
             }
@@ -173,101 +154,4 @@ std::unique_heap_array<disks::partition_descriptor> disks::partitions(const disk
 
         return partitions;
     }
-}
-
-bool disks::partition_exists(const disk_descriptor& disk, uint64_t uuid){
-    for(auto& partition : partitions(disk)){
-        if(partition.uuid == uuid){
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void disks::mount(const disk_descriptor& disk, uint64_t uuid){
-    _mounted_disk = &disk;
-
-    if(_mounted_partition){
-        delete _mounted_partition;
-    }
-
-    for(auto& partition : partitions(disk)){
-        if(partition.uuid == uuid){
-            auto p = new partition_descriptor();
-            *p = partition;
-            _mounted_partition = p;
-            break;
-        }
-    }
-}
-
-void disks::unmount(){
-    _mounted_disk = nullptr;
-
-    if(_mounted_partition){
-        delete _mounted_partition;
-    }
-
-    _mounted_partition = nullptr;
-}
-
-const disks::disk_descriptor* disks::mounted_disk(){
-    return _mounted_disk;
-}
-
-const disks::partition_descriptor* disks::mounted_partition(){
-    return _mounted_partition;
-}
-
-std::vector<disks::file> disks::ls(){
-    if(!_mounted_disk || !_mounted_partition){
-        return {};
-    }
-
-    return fat32::ls(*_mounted_disk, *_mounted_partition, pwd);
-}
-
-uint64_t disks::free_size(){
-    if(!_mounted_disk || !_mounted_partition){
-        return 0;
-    }
-
-    return fat32::free_size(*_mounted_disk, *_mounted_partition);
-}
-
-std::vector<std::string>& disks::current_directory(){
-    return pwd;
-}
-
-std::string disks::read_file(const std::string& file){
-    if(!_mounted_disk || !_mounted_partition){
-        return "";
-    }
-
-    return fat32::read_file(*_mounted_disk, *_mounted_partition, pwd, file);
-}
-
-bool disks::mkdir(const std::string& directory){
-    if(!_mounted_disk || !_mounted_partition){
-        return false;
-    }
-
-    return fat32::mkdir(*_mounted_disk, *_mounted_partition, pwd, directory);
-}
-
-bool disks::touch(const std::string& file){
-    if(!_mounted_disk || !_mounted_partition){
-        return false;
-    }
-
-    return fat32::touch(*_mounted_disk, *_mounted_partition, pwd, file);
-}
-
-bool disks::rm(const std::string& file){
-    if(!_mounted_disk || !_mounted_partition){
-        return false;
-    }
-
-    return fat32::rm(*_mounted_disk, *_mounted_partition, pwd, file);
 }

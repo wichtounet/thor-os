@@ -1,5 +1,5 @@
 //=======================================================================
-// Copyright Baptiste Wicht 2013.
+// Copyright Baptiste Wicht 2013-2016.
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
 //  http://www.boost.org/LICENSE_1_0.txt)
@@ -8,15 +8,22 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include "stl/types.hpp"
-#include "stl/enable_if.hpp"
-#include "stl/string.hpp"
+#include <stdarg.h>
 
-void set_column(long column);
-long get_column();
+#include <types.hpp>
+#include <enable_if.hpp>
+#include <string.hpp>
 
-void set_line(long line);
-long get_line();
+void init_console();
+
+size_t get_columns();
+size_t get_rows();
+
+void set_column(size_t column);
+size_t get_column();
+
+void set_line(size_t line);
+size_t get_line();
 
 void wipeout();
 void k_print(char key);
@@ -35,17 +42,17 @@ void k_print(int16_t number);
 void k_print(int32_t number);
 void k_print(int64_t number);
 
-void k_printf(const char* fmt, ...);
-
 template<typename... Arguments>
-typename std::enable_if<(sizeof...(Arguments) == 0), void>::type k_print_line(const Arguments&... args){
+typename std::enable_if_t<(sizeof...(Arguments) == 0)> k_print_line(const Arguments&... args){
     k_print('\n');
 }
 
 template<typename... Arguments>
-typename std::enable_if<(sizeof...(Arguments) > 0), void>::type k_print_line(const Arguments&... args){
+typename std::enable_if_t<(sizeof...(Arguments) > 0)> k_print_line(const Arguments&... args){
     k_print(args...);
     k_print('\n');
 }
+
+#include "printf_dec.hpp"
 
 #endif
