@@ -77,7 +77,7 @@ union trivial_expected_storage <void, E> {
 };
 
 template<typename T, typename E>
-union non_trivial_expected_storage {
+struct non_trivial_expected_storage {
     typedef T value_type;
     typedef E error_type;
 
@@ -88,7 +88,7 @@ union non_trivial_expected_storage {
         //Nothing else to init
     }
 
-    constexpr non_trivial_expected_storage(exceptional<error_type>& e) : error(e.error){
+    constexpr non_trivial_expected_storage(const exceptional<error_type>& e) : error(e.error){
         //Nothing else to init
     }
 
@@ -101,7 +101,7 @@ union non_trivial_expected_storage {
 };
 
 template<typename E>
-union non_trivial_expected_storage <void, E> {
+struct non_trivial_expected_storage <void, E> {
     typedef void value_type;
     typedef E error_type;
 
@@ -177,7 +177,7 @@ struct non_trivial_expected_base {
     typedef E error_type;
 
     bool has_value;
-    trivial_expected_storage<T, E> storage;
+    non_trivial_expected_storage<T, E> storage;
 
     non_trivial_expected_base() : has_value(true), storage(){
         //Nothing else to init
@@ -201,7 +201,7 @@ struct non_trivial_expected_base {
 
     ~non_trivial_expected_base(){
         if(has_value){
-            storage.error.~value_type();
+            storage.value.~value_type();
         } else {
             storage.error.~error_type();
         }
@@ -213,7 +213,7 @@ struct non_trivial_expected_base <void, E> {
     typedef E error_type;
 
     bool has_value;
-    trivial_expected_storage<void, E> storage;
+    non_trivial_expected_storage<void, E> storage;
 
     non_trivial_expected_base() : has_value(true), storage(){
         //Nothing else to init
@@ -235,11 +235,11 @@ struct non_trivial_expected_base <void, E> {
 };
 
 template <typename T, typename E>
-using expected_base = typename std::conditional<
+using expected_base = std::conditional_t<
         std::is_trivially_destructible<T>::value && std::is_trivially_destructible<E>::value,
         trivial_expected_base<T, E>,
         non_trivial_expected_base<T, E>
-    >::type;
+    >;
 
 template<typename T, typename E = size_t>
 struct expected : expected_base<T, E> {
