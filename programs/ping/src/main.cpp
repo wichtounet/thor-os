@@ -108,10 +108,6 @@ int main(int argc, char* argv[]) {
                     tlib::printf("Reply received from %s\n", ip.c_str());
                     handled = true;
                 }
-
-                // The rest of the packets are simply ignored
-
-                tlib::release_packet(p);
             }
 
             if (handled) {

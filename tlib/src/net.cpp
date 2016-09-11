@@ -8,6 +8,32 @@
 #include "tlib/net.hpp"
 #include "tlib/malloc.hpp"
 
+tlib::packet::packet() : fd(0), payload(nullptr), index(0) {
+    //Nothing else to init
+}
+
+tlib::packet::packet(packet&& rhs) : fd(rhs.fd), payload(rhs.payload), index(rhs.index) {
+    rhs.payload = nullptr;
+}
+
+tlib::packet& tlib::packet::operator=(packet&& rhs) {
+    if (this != &rhs) {
+        this->fd      = rhs.fd;
+        this->payload = rhs.payload;
+        this->index   = rhs.index;
+
+        rhs.payload = nullptr;
+    }
+
+    return *this;
+}
+
+tlib::packet::~packet() {
+    if (payload) {
+        tlib::free(payload);
+    }
+}
+
 std::expected<size_t> tlib::socket_open(socket_domain domain, socket_type type, socket_protocol protocol) {
     int64_t fd;
     asm volatile("mov rax, 0x3000; mov rbx, %[type]; mov rcx, %[type]; mov rdx, %[protocol]; int 50; mov %[fd], rax"
@@ -46,11 +72,11 @@ std::expected<tlib::packet> tlib::prepare_packet(size_t socket_fd, void* desc) {
         p.fd      = fd;
         p.index   = index;
         p.payload = static_cast<char*>(buffer);
-        return std::make_expected<packet>(p);
+        return std::make_expected<packet>(std::move(p));
     }
 }
 
-std::expected<void> tlib::finalize_packet(size_t socket_fd, tlib::packet p) {
+std::expected<void> tlib::finalize_packet(size_t socket_fd, const tlib::packet& p) {
     auto packet_fd = p.fd;
 
     int64_t code;
@@ -64,8 +90,6 @@ std::expected<void> tlib::finalize_packet(size_t socket_fd, tlib::packet p) {
     } else {
         return std::make_expected();
     }
-
-    free(p.payload);
 }
 
 std::expected<void> tlib::listen(size_t socket_fd, bool l) {
@@ -99,7 +123,7 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd) {
         tlib::packet p;
         p.index   = code;
         p.payload = reinterpret_cast<char*>(payload);
-        return std::make_expected<packet>(p);
+        return std::make_expected<packet>(std::move(p));
     }
 }
 
@@ -120,13 +144,7 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd, size_t ms) {
         tlib::packet p;
         p.index   = code;
         p.payload = reinterpret_cast<char*>(payload);
-        return std::make_expected<packet>(p);
-    }
-}
-
-void tlib::release_packet(packet& packet) {
-    if (packet.payload) {
-        free(packet.payload);
+        return std::make_expected<packet>(std::move(p));
     }
 }
 
@@ -189,11 +207,11 @@ tlib::packet tlib::socket::prepare_packet(void* desc) {
         error_code = packet.error();
         return tlib::packet();
     } else {
-        return *packet;
+        return std::move(*packet);
     }
 }
 
-void tlib::socket::finalize_packet(tlib::packet p) {
+void tlib::socket::finalize_packet(const tlib::packet& p) {
     if (!good() || !open()) {
         return;
     }
@@ -215,7 +233,7 @@ tlib::packet tlib::socket::wait_for_packet() {
         error_code = p.error();
         return tlib::packet();
     } else {
-        return *p;
+        return std::move(*p);
     }
 }
 
@@ -230,6 +248,6 @@ tlib::packet tlib::socket::wait_for_packet(size_t ms) {
         error_code = p.error();
         return tlib::packet();
     } else {
-        return *p;
+        return std::move(*p);
     }
 }
