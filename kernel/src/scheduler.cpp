@@ -922,7 +922,7 @@ const path& scheduler::get_handle(size_t fd){
 }
 
 size_t scheduler::register_new_socket(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
-    auto id = pcb[current_pid].sockets.size();
+    auto id = pcb[current_pid].sockets.size() + 1;
 
     pcb[current_pid].sockets.emplace_back(id, domain, type, protocol, size_t(1), false);
 
@@ -930,15 +930,15 @@ size_t scheduler::register_new_socket(network::socket_domain domain, network::so
 }
 
 void scheduler::release_socket(size_t fd){
-    pcb[current_pid].sockets[fd].invalidate();
+    pcb[current_pid].sockets[fd - 1].invalidate();
 }
 
 bool scheduler::has_socket(size_t fd){
-    return fd < pcb[current_pid].sockets.size() && pcb[current_pid].sockets[fd].is_valid();
+    return fd > 0 && fd - 1 < pcb[current_pid].sockets.size() && pcb[current_pid].sockets[fd - 1].is_valid();
 }
 
 network::socket& scheduler::get_socket(size_t fd){
-    return pcb[current_pid].sockets[fd];
+    return pcb[current_pid].sockets[fd - 1];
 }
 
 std::vector<network::socket>& scheduler::get_sockets(){
