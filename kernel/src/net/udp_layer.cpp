@@ -11,10 +11,48 @@
 
 namespace {
 
-void compute_checksum(network::udp::header* icmp_header){
-    icmp_header->checksum = 0;
+void compute_checksum(network::ethernet::packet& packet, network::udp::header* udp_header){
+    auto ip_index = packet.tag(1);
 
-    //TODO
+    auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + ip_index);
+
+    udp_header->checksum = 0;
+
+    // Accumulate the ICMP header
+    auto sum = std::accumulate(
+        reinterpret_cast<uint16_t*>(udp_header),
+        reinterpret_cast<uint16_t*>(udp_header) + udp_header->length * 2,
+        uint32_t(0));
+
+    // Accumulate the IP addresses
+    sum = std::accumulate(
+        reinterpret_cast<uint16_t*>(&ip_header->source_ip),
+        reinterpret_cast<uint16_t*>(&ip_header->source_ip) + 4,
+        sum);
+
+    // Accumulate the IP Protocol
+    sum += ip_header->protocol;
+
+    // Accumulate the UDP length
+    sum += udp_header->length;
+
+    // Complete the 1-complement sum
+
+    uint32_t value = sum & 0xFFFF;
+    uint32_t carry = (sum - value) >> 16;
+
+    while(carry){
+        value += carry;
+        auto sub = value & 0xFFFF;
+        carry = (value - sub) >> 16;
+        value = sub;
+    }
+
+    udp_header->checksum = ~value;
+
+    if(!udp_header->checksum){
+        udp_header->checksum = ~0;
+    }
 }
 
 void prepare_packet(network::ethernet::packet& packet, size_t source, size_t target, size_t payload_size){
@@ -79,7 +117,7 @@ void network::udp::finalize_packet(network::interface_descriptor& interface, net
     auto* udp_header = reinterpret_cast<header*>(p.payload + p.index);
 
     // Compute the checksum
-    compute_checksum(udp_header);
+    compute_checksum(p, udp_header);
 
     // Give the packet to the IP layer for finalization
     network::ip::finalize_packet(interface, p);
