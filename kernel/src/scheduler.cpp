@@ -616,10 +616,10 @@ std::expected<scheduler::pid_t> scheduler::exec(const std::string& file, const s
 
     std::string content;
     auto result = vfs::direct_read(path(file), content);
-    if(result < 0){
-        logging::logf(logging::log_level::DEBUG, "scheduler: direct_read error: %s\n", std::error_message(-result));
+    if(!result){
+        logging::logf(logging::log_level::DEBUG, "scheduler: direct_read error: %s\n", std::error_message(result.error()));
 
-        return std::make_unexpected<pid_t, size_t>(-result);
+        return std::make_unexpected<pid_t, size_t>(result.error());
     }
 
     logging::log(logging::log_level::TRACE, "scheduler:exec: read_file end\n");

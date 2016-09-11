@@ -169,13 +169,13 @@ void vfs::init(){
     }
 }
 
-int64_t vfs::mount(partition_type type, fd_t mp_fd, fd_t dev_fd){
+std::expected<void> vfs::mount(partition_type type, fd_t mp_fd, fd_t dev_fd){
     if(!scheduler::has_handle(mp_fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     if(!scheduler::has_handle(dev_fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     auto& mp_path = scheduler::get_handle(mp_fd);
@@ -183,14 +183,14 @@ int64_t vfs::mount(partition_type type, fd_t mp_fd, fd_t dev_fd){
 
     for(auto& m : mount_point_list){
         if(m.mount_point == mp_path){
-            return -std::ERROR_ALREADY_MOUNTED;
+            return std::make_unexpected<void>(std::ERROR_ALREADY_MOUNTED);
         }
     }
 
     auto fs = get_new_fs(type, mp_path, dev_path.string());
 
     if(!fs){
-        return -std::ERROR_INVALID_FILE_SYSTEM;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_SYSTEM);
     }
 
     mount_point_list.emplace_back(type, dev_path, mp_path, fs);
@@ -198,34 +198,35 @@ int64_t vfs::mount(partition_type type, fd_t mp_fd, fd_t dev_fd){
 
     logging::logf(logging::log_level::TRACE, "vfs: mounted file system %s at %s \n", dev_path.string().c_str(), mp_path.string().c_str());
 
-    return 0;
+    return {};
 }
 
-int64_t vfs::mount(partition_type type, const char* mount_point, const char* device){
+std::expected<void> vfs::mount(partition_type type, const char* mount_point, const char* device){
     path mp_path(mount_point);
     path dev_path(device);
 
     auto fs = get_new_fs(type, mp_path, dev_path);
 
     if(!fs){
-        return -std::ERROR_INVALID_FILE_SYSTEM;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_SYSTEM);
     }
 
     mount_point_list.emplace_back(type, dev_path, mp_path, fs);
 
-    return 0;
+    return {};
 }
 
-int64_t vfs::statfs(const char* mount_point, vfs::statfs_info& info){
+std::expected<void> vfs::statfs(const char* mount_point, vfs::statfs_info& info){
     auto base_path = get_path(mount_point);
 
     if(!base_path.is_valid()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_PATH);
     }
 
     auto& fs = get_fs(base_path);
+    auto error = fs.file_system->statfs(info);
 
-    return fs.file_system->statfs(info);
+    return std::make_expected_zero(error);
 }
 
 std::expected<vfs::fd_t> vfs::open(const char* file_path, size_t flags){
@@ -269,11 +270,11 @@ void vfs::close(fd_t fd){
     }
 }
 
-int64_t vfs::mkdir(const char* file_path){
+std::expected<void> vfs::mkdir(const char* file_path){
     auto base_path = get_path(file_path);
 
     if(!base_path.is_valid()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_PATH);
     }
 
     auto& fs = get_fs(base_path);
@@ -291,25 +292,27 @@ int64_t vfs::mkdir(const char* file_path){
     }
 #endif
 
-    return fs.file_system->mkdir(fs_path);
+    auto error = fs.file_system->mkdir(fs_path);
+    return std::make_expected_zero(error);
 }
 
-int64_t vfs::rm(const char* file_path){
+std::expected<void> vfs::rm(const char* file_path){
     auto base_path = get_path(file_path);
 
     if(!base_path.is_valid()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_PATH);
     }
 
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
-    return fs.file_system->rm(fs_path);
+    auto error = fs.file_system->rm(fs_path);
+    return std::make_expected_zero(error);
 }
 
-int64_t vfs::stat(fd_t fd, vfs::stat_info& info){
+std::expected<void> vfs::stat(fd_t fd, vfs::stat_info& info){
     if(!scheduler::has_handle(fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     auto& base_path = scheduler::get_handle(fd);
@@ -322,14 +325,14 @@ int64_t vfs::stat(fd_t fd, vfs::stat_info& info){
         info.size = 4096;
         info.flags = vfs::STAT_FLAG_DIRECTORY;
 
-        return 0;
+        return {};
     }
 
     vfs::file f;
     auto result = fs.file_system->get_file(fs_path, f);
 
-    if(result > 0){
-        return -result;
+    if(result){
+        return std::make_unexpected<void>(result);
     }
 
     info.size = f.size;
@@ -356,18 +359,18 @@ int64_t vfs::stat(fd_t fd, vfs::stat_info& info){
     info.modified = f.modified;
     info.accessed = f.accessed;
 
-    return 0;
+    return {};
 }
 
-int64_t vfs::read(fd_t fd, char* buffer, size_t count, size_t offset){
+std::expected<size_t> vfs::read(fd_t fd, char* buffer, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     auto& base_path = scheduler::get_handle(fd);
 
     if(base_path.is_root()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_PATH);
     }
 
     auto& fs = get_fs(base_path);
@@ -376,36 +379,36 @@ int64_t vfs::read(fd_t fd, char* buffer, size_t count, size_t offset){
     size_t read = 0;
     auto result = fs.file_system->read(fs_path, buffer, count, offset, read);
 
-    if(result > 0){
-        return -result;
+    if(result){
+        return std::make_unexpected<size_t>(result);
+    } else {
+        return read;
     }
-
-    return read;
 }
 
-int64_t vfs::direct_read(const path& base_path, char* buffer, size_t count, size_t offset){
+std::expected<size_t> vfs::direct_read(const path& base_path, char* buffer, size_t count, size_t offset){
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
     size_t read = 0;
     auto result = fs.file_system->read(fs_path, buffer, count, offset, read);
 
-    if(result > 0){
-        return -result;
+    if(result){
+        return std::make_unexpected<size_t>(result);
+    } else {
+        return read;
     }
-
-    return read;
 }
 
-int64_t vfs::write(fd_t fd, const char* buffer, size_t count, size_t offset){
+std::expected<size_t> vfs::write(fd_t fd, const char* buffer, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     auto& base_path = scheduler::get_handle(fd);
 
     if(base_path.is_root()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_PATH);
     }
 
     auto& fs = get_fs(base_path);
@@ -414,22 +417,22 @@ int64_t vfs::write(fd_t fd, const char* buffer, size_t count, size_t offset){
     size_t written = 0;
     auto result = fs.file_system->write(fs_path, buffer, count, offset, written);
 
-    if(result > 0){
-        return -result;
+    if(result){
+        return std::make_unexpected<size_t>(result);
+    } else {
+        return written;
     }
-
-    return written;
 }
 
-int64_t vfs::clear(fd_t fd, size_t count, size_t offset){
+std::expected<size_t> vfs::clear(fd_t fd, size_t count, size_t offset){
     if(!scheduler::has_handle(fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     auto& base_path = scheduler::get_handle(fd);
 
     if(base_path.is_root()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_PATH);
     }
 
     auto& fs = get_fs(base_path);
@@ -438,46 +441,46 @@ int64_t vfs::clear(fd_t fd, size_t count, size_t offset){
     size_t written = 0;
     auto result = fs.file_system->clear(fs_path, count, offset, written);
 
-    if(result > 0){
-        return -result;
+    if(result){
+        return std::make_unexpected<size_t>(result);
+    } else {
+        return written;
     }
-
-    return written;
 }
 
-int64_t vfs::direct_write(const path& base_path, const char* buffer, size_t count, size_t offset){
+std::expected<size_t> vfs::direct_write(const path& base_path, const char* buffer, size_t count, size_t offset){
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
     size_t written = 0;
     auto result = fs.file_system->write(fs_path, buffer, count, offset, written);
 
-    if(result > 0){
-        return -result;
+    if(result){
+        return std::make_unexpected<size_t>(result);
+    } else {
+        return written;
     }
-
-    return written;
 }
 
-int64_t vfs::truncate(fd_t fd, size_t size){
+std::expected<void> vfs::truncate(fd_t fd, size_t size){
     if(!scheduler::has_handle(fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     auto& base_path = scheduler::get_handle(fd);
 
     if(base_path.is_root()){
-        return -std::ERROR_INVALID_FILE_PATH;
+        return std::make_unexpected<void>(std::ERROR_INVALID_FILE_PATH);
     }
 
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
     auto result = fs.file_system->truncate(fs_path, size);
-    return result > 0 ? -result : 0;
+    return std::make_expected_zero(result);
 }
 
-int64_t vfs::direct_read(const path& base_path, std::string& content){
+std::expected<size_t> vfs::direct_read(const path& base_path, std::string& content){
     auto& fs = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);
 
@@ -500,12 +503,16 @@ int64_t vfs::direct_read(const path& base_path, std::string& content){
     content[read] = '\0';
     content.adjust_size(read);
 
-    return read;
+    if(result){
+        return std::make_unexpected<size_t>(result);
+    } else {
+        return read;
+    }
 }
 
-int64_t vfs::entries(fd_t fd, char* buffer, size_t size){
+std::expected<size_t> vfs::entries(fd_t fd, char* buffer, size_t size){
     if(!scheduler::has_handle(fd)){
-        return -std::ERROR_INVALID_FILE_DESCRIPTOR;
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_DESCRIPTOR);
     }
 
     auto& base_path = scheduler::get_handle(fd);
@@ -526,7 +533,7 @@ int64_t vfs::entries(fd_t fd, char* buffer, size_t size){
     }
 
     if(size < total_size){
-        return -std::ERROR_BUFFER_SMALL;
+        return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
     }
 
     size_t position = 0;
@@ -554,7 +561,7 @@ int64_t vfs::entries(fd_t fd, char* buffer, size_t size){
     return total_size;
 }
 
-int64_t vfs::mounts(char* buffer, size_t size){
+std::expected<size_t> vfs::mounts(char* buffer, size_t size){
     size_t total_size = 0;
 
     for(auto& mp : mount_point_list){
@@ -562,7 +569,7 @@ int64_t vfs::mounts(char* buffer, size_t size){
     }
 
     if(size < total_size){
-        return -std::ERROR_BUFFER_SMALL;
+        return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
     }
 
     size_t position = 0;

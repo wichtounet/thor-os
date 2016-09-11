@@ -1363,10 +1363,10 @@ uint32_t fat32::fat32_file_system::find_free_cluster(){
 
 bool fat32::fat32_file_system::read_sectors(uint64_t start, uint8_t count, void* destination){
     auto result = vfs::direct_read(device, reinterpret_cast<char*>(destination), count * 512, start * 512);
-    return result > 0 && result == count * 512;
+    return result && *result == count * 512;
 }
 
 bool fat32::fat32_file_system::write_sectors(uint64_t start, uint8_t count, void* source){
     auto result = vfs::direct_write(device, reinterpret_cast<const char*>(source), count * 512, start * 512);
-    return result > 0 && result == count * 512;
+    return result && *result == count * 512;
 }

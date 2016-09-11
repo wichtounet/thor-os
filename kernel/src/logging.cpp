@@ -45,8 +45,8 @@ void append_to_file(const char* s, size_t length){
 
     if(fd){
         vfs::stat_info info;
-        if(vfs::stat(*fd, info) == 0){
-            if(vfs::truncate(*fd, info.size + length + 1) == 0){
+        if(vfs::stat(*fd, info)){
+            if(vfs::truncate(*fd, info.size + length + 1)){
                 std::string buffer = s;
                 buffer += '\n';
 

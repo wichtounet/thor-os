@@ -560,6 +560,15 @@ inline expected<T, E> make_unexpected(E v){
     return expected<T, E>(exceptional<E>(v));
 }
 
+template<typename E>
+inline expected<void, E> make_expected_zero(E v){
+    if(v){
+        return expected<void, E>(exceptional<E>(v));
+    } else {
+        return expected<void, E>();
+    }
+}
+
 inline expected<void> make_expected(){
     return expected<void>();
 }

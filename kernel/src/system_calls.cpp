@@ -191,14 +191,16 @@ void sc_stat(interrupt::syscall_regs* regs){
     auto fd = regs->rbx;
     auto info = reinterpret_cast<vfs::stat_info*>(regs->rcx);
 
-    regs->rax = vfs::stat(fd, *info);
+    auto status = vfs::stat(fd, *info);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_statfs(interrupt::syscall_regs* regs){
     auto mount_point  = reinterpret_cast<char*>(regs->rbx);
     auto info = reinterpret_cast<vfs::statfs_info*>(regs->rcx);
 
-    regs->rax = vfs::statfs(mount_point, *info);
+    auto status = vfs::statfs(mount_point, *info);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_read(interrupt::syscall_regs* regs){
@@ -207,7 +209,8 @@ void sc_read(interrupt::syscall_regs* regs){
     auto max = regs->rdx;
     auto offset = regs->rsi;
 
-    regs->rax = vfs::read(fd, buffer, max, offset);
+    auto status = vfs::read(fd, buffer, max, offset);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_write(interrupt::syscall_regs* regs){
@@ -216,7 +219,8 @@ void sc_write(interrupt::syscall_regs* regs){
     auto max = regs->rdx;
     auto offset = regs->rsi;
 
-    regs->rax = vfs::write(fd, buffer, max, offset);
+    auto status = vfs::write(fd, buffer, max, offset);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_clear(interrupt::syscall_regs* regs){
@@ -224,14 +228,16 @@ void sc_clear(interrupt::syscall_regs* regs){
     auto max = regs->rcx;
     auto offset = regs->rdx;
 
-    regs->rax = vfs::clear(fd, max, offset);
+    auto status = vfs::clear(fd, max, offset);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_truncate(interrupt::syscall_regs* regs){
     auto fd = regs->rbx;
     auto size = regs->rcx;
 
-    regs->rax = vfs::truncate(fd, size);
+    auto status = vfs::truncate(fd, size);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_entries(interrupt::syscall_regs* regs){
@@ -239,14 +245,16 @@ void sc_entries(interrupt::syscall_regs* regs){
     auto buffer = reinterpret_cast<char*>(regs->rcx);
     auto max = regs->rdx;
 
-    regs->rax = vfs::entries(fd, buffer, max);
+    auto status = vfs::entries(fd, buffer, max);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_mounts(interrupt::syscall_regs* regs){
     auto buffer = reinterpret_cast<char*>(regs->rbx);
     auto max = regs->rcx;
 
-    regs->rax = vfs::mounts(buffer, max);
+    auto status = vfs::mounts(buffer, max);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_mount(interrupt::syscall_regs* regs){
@@ -254,7 +262,8 @@ void sc_mount(interrupt::syscall_regs* regs){
     auto mp_fd = regs->rcx;
     auto dev_fd = regs->rdx;
 
-    regs->rax = vfs::mount(type, mp_fd, dev_fd);
+    auto status = vfs::mount(type, mp_fd, dev_fd);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_pwd(interrupt::syscall_regs* regs){
@@ -276,13 +285,15 @@ void sc_cwd(interrupt::syscall_regs* regs){
 void sc_mkdir(interrupt::syscall_regs* regs){
     auto file = reinterpret_cast<char*>(regs->rbx);
 
-    regs->rax = vfs::mkdir(file);
+    auto status = vfs::mkdir(file);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_rm(interrupt::syscall_regs* regs){
     auto file = reinterpret_cast<char*>(regs->rbx);
 
-    regs->rax = vfs::rm(file);
+    auto status = vfs::rm(file);
+    regs->rax = expected_to_i64(status);
 }
 
 void sc_datetime(interrupt::syscall_regs* regs){
