@@ -67,9 +67,7 @@ void check_function(uint8_t bus, uint8_t device, uint8_t function){
     logging::logf(logging::log_level::DEBUG, "Found device pci:%u:%u:%u (vendor:%u class:%u subclass:%u) \n",
         uint64_t(bus), uint64_t(device), uint64_t(function), uint64_t(vendor_id), uint64_t(class_code), uint64_t(sub_class));
 
-    devices.emplace_back();
-
-    pci::device_descriptor& device_desc = devices.back();
+    auto& device_desc = devices.emplace_back();
 
     device_desc.bus = bus;
     device_desc.device = device;

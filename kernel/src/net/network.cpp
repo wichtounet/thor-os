@@ -111,9 +111,7 @@ void network::init(){
         auto& pci_device = pci::device(i);
 
         if(pci_device.class_type == pci::device_class_type::NETWORK){
-            interfaces.emplace_back();
-
-            auto& interface = interfaces.back();
+            auto& interface = interfaces.emplace_back();
 
             interface.id = interfaces.size() - 1;
             interface.name = std::string("net") + std::to_string(index);
@@ -145,9 +143,7 @@ void network::init(){
 
     // Install the loopback device
 
-    interfaces.emplace_back();
-
-    auto& interface = interfaces.back();
+    auto& interface = interfaces.emplace_back();
 
     interface.id = interfaces.size() - 1;
     interface.name = "loopback";

@@ -67,9 +67,7 @@ sys_folder& find_root_folder(const path& mount_point) {
         }
     }
 
-    root_folders.emplace_back(mount_point.sub_root_name());
-
-    return root_folders.back();
+    return root_folders.emplace_back(mount_point.sub_root_name());
 }
 
 sys_folder& find_folder(sys_folder& root, const path& file_path, size_t i, size_t last){

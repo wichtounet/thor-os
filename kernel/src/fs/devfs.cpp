@@ -209,8 +209,7 @@ void devfs::register_device(const std::string& mp, const std::string& name, devi
         }
     }
 
-    devices.emplace_back(mp);
-    devices.back().devices.emplace_back(name, type, driver, data);
+    devices.emplace_back(mp).devices.emplace_back(name, type, driver, data);
 }
 
 void devfs::deregister_device(const std::string& mp, const std::string& name){
