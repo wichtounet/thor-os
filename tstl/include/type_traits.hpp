@@ -104,6 +104,9 @@ struct conditional<false, T, F> {
     typedef F type;
 };
 
+template<bool B, class T, class F>
+using conditional_t = typename std::conditional<B, T, F>::type;
+
 /* is_trivially_destructible */
 
 template<typename T>
