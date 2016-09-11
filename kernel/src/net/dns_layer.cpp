@@ -51,10 +51,14 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
     auto identification = switch_endian_16(dns_header->identification);
     auto questions      = switch_endian_16(dns_header->questions);
     auto answers        = switch_endian_16(dns_header->answers);
+    auto authority_rrs  = switch_endian_16(dns_header->authority_rrs);
+    auto additional_rrs = switch_endian_16(dns_header->additional_rrs);
 
     logging::logf(logging::log_level::TRACE, "dns: Identification %h \n", size_t(identification));
-    logging::logf(logging::log_level::TRACE, "dns: Questions %h \n", size_t(questions));
     logging::logf(logging::log_level::TRACE, "dns: Answers %h \n", size_t(answers));
+    logging::logf(logging::log_level::TRACE, "dns: Questions %h \n", size_t(questions));
+    logging::logf(logging::log_level::TRACE, "dns: Authorithy RRs %h \n", size_t(authority_rrs));
+    logging::logf(logging::log_level::TRACE, "dns: Additional RRs %h \n", size_t(additional_rrs));
 
     auto flags = dns_header->flags;
 
@@ -90,6 +94,8 @@ std::expected<network::ethernet::packet> network::dns::prepare_packet_query(char
 }
 
 void network::dns::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
+    p.index -= sizeof(header);
+
     // Give the packet to the UDP layer for finalization
     network::udp::finalize_packet(interface, p);
 }

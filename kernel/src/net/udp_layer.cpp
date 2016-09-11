@@ -22,7 +22,7 @@ void compute_checksum(network::ethernet::packet& packet, network::udp::header* u
     // Accumulate the ICMP header
     auto sum = std::accumulate(
         reinterpret_cast<uint16_t*>(udp_header),
-        reinterpret_cast<uint16_t*>(udp_header) + udp_header->length * 2,
+        reinterpret_cast<uint16_t*>(udp_header) + udp_header->length / 2,
         uint32_t(0));
 
     // Accumulate the IP addresses

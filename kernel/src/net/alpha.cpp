@@ -7,7 +7,6 @@
 
 #include "net/alpha.hpp"
 #include "net/ethernet_layer.hpp"
-#include "net/icmp_layer.hpp"
 #include "net/ip_layer.hpp"
 #include "net/dns_layer.hpp"
 
@@ -24,27 +23,37 @@ void network::alpha(){
 
     std::string domain("www.google.ch");
 
-    size_t payload_size = 1 + domain.size() + 2 * 2;
+    auto parts = std::split(domain, '.');
+
+    size_t characters = domain.size() - (parts.size() - 1); // The dots are not included
+    size_t labels = parts.size();
+
+    size_t payload_size = labels + characters + 1 + 2 * 2;
 
     // Ask the DNS layer to craft a packet
-    auto packet = network::dns::prepare_packet_query(interface, target_ip, 3456, 666, payload_size);
+    auto packet = network::dns::prepare_packet_query(interface, target_ip, 3456, 0x666, payload_size);
 
     if(packet){
         auto* payload = reinterpret_cast<char*>(packet->payload + packet->index);
 
-        payload[0] = domain.size();
+        size_t i = 0;
+        for(auto& part : parts){
+            payload[i++] = part.size();
 
-        for(size_t i = 0; i < domain.size(); ++i){
-            payload[i + 1] = domain[i];
+            for(size_t j = 0; j < part.size(); ++j){
+                payload[i++] = part[j];
+            }
         }
 
-        auto* q_type = reinterpret_cast<uint16_t*>(packet->payload + packet->index + 1 + domain.size());
-        *q_type = 1; // A Record
+        payload[i++] = 0;
 
-        auto* q_class = q_type + 1;
-        *q_class = 1; // IN (internet)
+        auto* q_type = reinterpret_cast<uint16_t*>(packet->payload + packet->index + i);
+        *q_type = 0x0100; // A Record
+
+        auto* q_class = reinterpret_cast<uint16_t*>(packet->payload + packet->index + i + 2);
+        *q_class = 0x0100; // IN (internet)
 
         // Send the packet back to ICMP
-        network::icmp::finalize_packet(interface, *packet);
+        network::dns::finalize_packet(interface, *packet);
     }
 }
