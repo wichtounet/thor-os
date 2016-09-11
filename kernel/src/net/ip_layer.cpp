@@ -46,16 +46,16 @@ void prepare_packet(network::ethernet::packet& packet, network::interface_descri
 
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.index);
 
-    ip_header->version_ihl = (4 << 4) + 5;
-    ip_header->dscp_ecn = 0;
-    ip_header->total_len = switch_endian_16(uint16_t(size) + sizeof(network::ip::header));
+    ip_header->version_ihl    = (4 << 4) + 5;
+    ip_header->dscp_ecn       = 0;
+    ip_header->total_len      = switch_endian_16(uint16_t(size) + sizeof(network::ip::header));
     ip_header->identification = 0;
-    ip_header->flags_offset = 0;
-    ip_header->flags_offset = switch_endian_16(uint16_t(1) << 14);
-    ip_header->ttl = 255;
-    ip_header->protocol = protocol;
-    ip_header->source_ip = ip_to_ip32(interface.ip_address);
-    ip_header->target_ip = ip_to_ip32(target_ip);
+    ip_header->flags_offset   = 0;
+    ip_header->flags_offset   = switch_endian_16(uint16_t(1) << 14);
+    ip_header->ttl            = 255;
+    ip_header->protocol       = protocol;
+    ip_header->source_ip      = ip_to_ip32(interface.ip_address);
+    ip_header->target_ip      = ip_to_ip32(target_ip);
 
     compute_checksum(ip_header);
 
