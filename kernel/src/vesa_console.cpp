@@ -27,7 +27,7 @@ void vesa_console::init(){
 
     _columns = (block.width - (MARGIN + PADDING) * 2) / 8;
     _lines = (block.height - TOP - MARGIN - PADDING) / 16;
-    _color = vesa::make_color(0, 255, 0);
+    _color = vesa::make_color(255, 255, 255);
 
     vesa::draw_hline(MARGIN, MARGIN, block.width - 2 * MARGIN, _color);
     vesa::draw_hline(MARGIN, 35, block.width - 2 * MARGIN, _color);
@@ -36,11 +36,13 @@ void vesa_console::init(){
     vesa::draw_vline(MARGIN, MARGIN, block.height - 2 * MARGIN, _color);
     vesa::draw_vline(block.width - MARGIN, MARGIN, block.height - 2 * MARGIN, _color);
 
+    vesa::draw_rect(200, 200, 100, 100, vesa::make_color(182, 148, 179));
+
     auto title_left = (block.width - 4 * 8) / 2;
-    vesa::draw_char(title_left, PADDING + MARGIN, 'T', _color);
-    vesa::draw_char(title_left + 8, PADDING + MARGIN, 'H', _color);
+    vesa::draw_char(title_left, PADDING + MARGIN, 'R', _color);
+    vesa::draw_char(title_left + 8, PADDING + MARGIN, 'e', _color);
     vesa::draw_char(title_left + 16, PADDING + MARGIN, 'O', _color);
-    vesa::draw_char(title_left + 24, PADDING + MARGIN, 'R', _color);
+    vesa::draw_char(title_left + 24, PADDING + MARGIN, 'S', _color);
 }
 
 size_t vesa_console::lines(){

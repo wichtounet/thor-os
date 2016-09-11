@@ -64,8 +64,8 @@ vesa::mode_info_block_t mode_info_block;
 
 /* VESA */
 
-constexpr const uint16_t DEFAULT_WIDTH = 1280;
-constexpr const uint16_t DEFAULT_HEIGHT = 1024;
+constexpr const uint16_t DEFAULT_WIDTH = 1024;
+constexpr const uint16_t DEFAULT_HEIGHT = 768;
 constexpr const uint16_t DEFAULT_BPP = 32;
 
 void out_byte(uint8_t value, uint16_t port){
