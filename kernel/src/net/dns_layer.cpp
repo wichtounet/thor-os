@@ -5,12 +5,23 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+#include <bit_field.hpp>
+
 #include "net/dns_layer.hpp"
 #include "net/udp_layer.hpp"
 
 #include "kernel_utils.hpp"
 
 namespace {
+
+using flag_qr     = std::bit_field<uint16_t, uint8_t, 0, 1>;
+using flag_opcode = std::bit_field<uint16_t, uint8_t, 1, 4>;
+using flag_aa     = std::bit_field<uint16_t, uint8_t, 5, 1>;
+using flag_tc     = std::bit_field<uint16_t, uint8_t, 6, 1>;
+using flag_rd     = std::bit_field<uint16_t, uint8_t, 7, 1>;
+using flag_ra     = std::bit_field<uint16_t, uint8_t, 8, 1>;
+using flag_zeroes = std::bit_field<uint16_t, uint8_t, 9, 3>;
+using flag_rcode  = std::bit_field<uint16_t, uint8_t, 12, 4>;
 
 void prepare_packet_query(network::ethernet::packet& packet, uint16_t identification){
     packet.tag(3, packet.index);
@@ -29,14 +40,14 @@ void prepare_packet_query(network::ethernet::packet& packet, uint16_t identifica
     dns_header->additional_rrs = switch_endian_16(0);
 
     // Set all the flags
-    dns_header->flags.qr     = 0; // This is a query
-    dns_header->flags.opcode = 0; // This is a standard query
-    dns_header->flags.aa     = 0; // This is a query (field not used)
-    dns_header->flags.tc     = 0; // The question is not truncated
-    dns_header->flags.rd     = 0; // No need for recursion
-    dns_header->flags.ra     = 0; // This is a query (field not used)
-    dns_header->flags.zeroes = 0; // Always zero
-    dns_header->flags.rcode  = 0; // This is a query (field not used)
+    flag_qr(&dns_header->flags) = 0;     // This is a query
+    flag_opcode(&dns_header->flags) = 0; // This is a standard query
+    flag_aa(&dns_header->flags) = 0;     // This is a query (field not used)
+    flag_tc(&dns_header->flags) = 0;     // The question is not truncated
+    flag_rd(&dns_header->flags) = 0;     // No need for recursion
+    flag_ra(&dns_header->flags) = 0;     // This is a query (field not used)
+    flag_zeroes(&dns_header->flags) = 0; // Always zero
+    flag_rcode(&dns_header->flags) = 0;  // This is a query (field not used)
 
     packet.index += sizeof(network::dns::header);
 }
@@ -64,10 +75,10 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
 
     auto flags = dns_header->flags;
 
-    if(flags.qr){
+    if(*flag_qr(&dns_header->flags)){
         logging::logf(logging::log_level::TRACE, "dns: Query\n");
     } else {
-        auto response_code = flags.rcode;
+        auto response_code = *flag_opcode(&dns_header->flags);
 
         if(response_code == 0x0){
             logging::logf(logging::log_level::TRACE, "dns: Response OK\n");
