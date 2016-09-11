@@ -60,26 +60,26 @@ void check_function(uint8_t bus, uint8_t device, uint8_t function){
         return;
     }
 
-    auto device_id = get_device_id(bus, device, function);
+    auto device_id  = get_device_id(bus, device, function);
     auto class_code = get_class_code(bus, device, function);
-    auto sub_class = get_subclass(bus, device, function);
+    auto sub_class  = get_subclass(bus, device, function);
 
     logging::logf(logging::log_level::DEBUG, "Found device pci:%u:%u:%u (vendor:%u class:%u subclass:%u) \n",
         uint64_t(bus), uint64_t(device), uint64_t(function), uint64_t(vendor_id), uint64_t(class_code), uint64_t(sub_class));
 
     auto& device_desc = devices.emplace_back();
 
-    device_desc.bus = bus;
-    device_desc.device = device;
-    device_desc.function = function;
-    device_desc.vendor_id = vendor_id;
-    device_desc.device_id = device_id;
+    device_desc.bus        = bus;
+    device_desc.device     = device;
+    device_desc.function   = function;
+    device_desc.vendor_id  = vendor_id;
+    device_desc.device_id  = device_id;
     device_desc.class_code = class_code;
-    device_desc.sub_class = sub_class;
+    device_desc.sub_class  = sub_class;
 
-    if(class_code < static_cast<uint8_t>(pci::device_class_type::RESERVED)){
+    if (class_code < static_cast<uint8_t>(pci::device_class_type::RESERVED)) {
         device_desc.class_type = static_cast<pci::device_class_type>(class_code);
-    } else if(class_code < static_cast<uint8_t>(pci::device_class_type::UNKNOWN)){
+    } else if (class_code < static_cast<uint8_t>(pci::device_class_type::UNKNOWN)) {
         device_desc.class_type = pci::device_class_type::RESERVED;
     } else {
         device_desc.class_type = pci::device_class_type::UNKNOWN;
