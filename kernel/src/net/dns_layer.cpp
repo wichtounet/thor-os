@@ -23,7 +23,7 @@ using flag_ra     = std::bit_field<uint16_t, uint8_t, 8, 1>;
 using flag_zeroes = std::bit_field<uint16_t, uint8_t, 9, 3>;
 using flag_rcode  = std::bit_field<uint16_t, uint8_t, 12, 4>;
 
-void prepare_packet_query(network::ethernet::packet& packet, uint16_t identification){
+void prepare_packet_query(network::ethernet::packet& packet, uint16_t identification) {
     packet.tag(3, packet.index);
 
     // Set the DNS header
@@ -52,24 +52,24 @@ void prepare_packet_query(network::ethernet::packet& packet, uint16_t identifica
     packet.index += sizeof(network::dns::header);
 }
 
-std::string decode_domain(char* payload, size_t& offset){
+std::string decode_domain(char* payload, size_t& offset) {
     std::string domain;
 
     offset = 0;
 
-    while(true){
+    while (true) {
         auto label_size = static_cast<uint8_t>(*(payload + offset));
         ++offset;
 
-        if(!label_size){
+        if (!label_size) {
             break;
         }
 
-        if(!domain.empty()){
+        if (!domain.empty()) {
             domain += '.';
         }
 
-        for(size_t i = 0; i < label_size; ++i){
+        for (size_t i = 0; i < label_size; ++i) {
             domain += *(payload + offset);
             ++offset;
         }
@@ -80,7 +80,7 @@ std::string decode_domain(char* payload, size_t& offset){
 
 } //end of anonymous namespace
 
-void network::dns::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
+void network::dns::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
     packet.tag(3, packet.index);
 
     auto* dns_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -99,19 +99,19 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
     logging::logf(logging::log_level::TRACE, "dns: Authorithy RRs %u \n", size_t(authority_rrs));
     logging::logf(logging::log_level::TRACE, "dns: Additional RRs %u \n", size_t(additional_rrs));
 
-    if(*flag_qr(&dns_header->flags)){
+    if (*flag_qr(&dns_header->flags)) {
         logging::logf(logging::log_level::TRACE, "dns: Query\n");
     } else {
         auto response_code = *flag_opcode(&dns_header->flags);
 
-        if(response_code == 0x0){
+        if (response_code == 0x0) {
             logging::logf(logging::log_level::TRACE, "dns: Response OK\n");
 
             auto* payload = packet.payload + packet.index + sizeof(header);
 
             // Decode the questions (simply wrap around it)
 
-            for(size_t i = 0; i < questions; ++i){
+            for (size_t i = 0; i < questions; ++i) {
                 size_t length;
                 auto domain = decode_domain(payload, length);
 
@@ -126,14 +126,14 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
                 logging::logf(logging::log_level::TRACE, "dns: Query %u Type %u Class %u Name %s\n", i, rr_type, rr_class, domain.c_str());
             }
 
-            for(size_t i = 0; i < answers; ++i){
+            for (size_t i = 0; i < answers; ++i) {
                 auto label = static_cast<uint8_t>(*payload);
 
                 std::string domain;
-                if(label > 64){
+                if (label > 64) {
                     // This is a pointer
                     auto pointer = switch_endian_16(*reinterpret_cast<uint16_t*>(payload));
-                    auto offset = pointer & (0xFFFF >> 2);
+                    auto offset  = pointer & (0xFFFF >> 2);
 
                     payload += 2;
 
@@ -156,7 +156,7 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
                 auto rd_length = switch_endian_16(*reinterpret_cast<uint16_t*>(payload));
                 payload += 2;
 
-                if(rr_type == 0x1 && rr_class == 0x1){
+                if (rr_type == 0x1 && rr_class == 0x1) {
                     auto ip     = network::ip::ip32_to_ip(*reinterpret_cast<uint32_t*>(payload));
                     auto ip_str = network::ip::ip_to_str(ip);
 
@@ -168,43 +168,43 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
 
                 payload += rd_length;
             }
-        } else if(response_code == 0x1){
+        } else if (response_code == 0x1) {
             logging::logf(logging::log_level::TRACE, "dns: Format Error\n");
-        } else if(response_code == 0x2){
+        } else if (response_code == 0x2) {
             logging::logf(logging::log_level::TRACE, "dns: Server Failure\n");
-        } else if(response_code == 0x3){
+        } else if (response_code == 0x3) {
             logging::logf(logging::log_level::TRACE, "dns: Name Error\n");
-        } else if(response_code == 0x4){
+        } else if (response_code == 0x4) {
             logging::logf(logging::log_level::TRACE, "dns: Not Implemented\n");
-        } else if(response_code == 0x5){
+        } else if (response_code == 0x5) {
             logging::logf(logging::log_level::TRACE, "dns: Refused\n");
         }
     }
 }
 
-std::expected<network::ethernet::packet> network::dns::prepare_packet_query(network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size){
+std::expected<network::ethernet::packet> network::dns::prepare_packet_query(network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size) {
     // Ask the UDP layer to craft a packet
     auto packet = network::udp::prepare_packet(interface, target_ip, source_port, 53, sizeof(header) + payload_size);
 
-    if(packet){
+    if (packet) {
         ::prepare_packet_query(*packet, identification);
     }
 
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::dns::prepare_packet_query(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size){
+std::expected<network::ethernet::packet> network::dns::prepare_packet_query(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size) {
     // Ask the UDP layer to craft a packet
     auto packet = network::udp::prepare_packet(buffer, interface, target_ip, source_port, 53, sizeof(header) + payload_size);
 
-    if(packet){
+    if (packet) {
         ::prepare_packet_query(*packet, identification);
     }
 
     return packet;
 }
 
-void network::dns::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
+void network::dns::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
     p.index -= sizeof(header);
 
     // Give the packet to the UDP layer for finalization
