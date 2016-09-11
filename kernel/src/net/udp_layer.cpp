@@ -6,6 +6,7 @@
 //=======================================================================
 
 #include "net/udp_layer.hpp"
+#include "net/dns_layer.hpp"
 
 #include "kernel_utils.hpp"
 
@@ -69,7 +70,7 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
 
 } //end of anonymous namespace
 
-void network::udp::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
+void network::udp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.tag(2, packet.index);
 
     auto* udp_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -84,8 +85,10 @@ void network::udp::decode(network::interface_descriptor& /*interface*/, network:
     logging::logf(logging::log_level::TRACE, "udp: Target Port %h \n", target_port);
     logging::logf(logging::log_level::TRACE, "udp: Length %h \n", length);
 
+    packet.index += sizeof(header);
+
     if(target_port == 53){
-        //TODO DNS decoding
+        network::dns::decode(interface, packet);
     }
 }
 
