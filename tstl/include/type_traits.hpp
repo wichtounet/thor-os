@@ -114,6 +114,11 @@ struct is_trivially_destructible {
     static constexpr const bool value = __has_trivial_destructor(T);
 };
 
+template<>
+struct is_trivially_destructible<void> {
+    static constexpr const bool value = true;
+};
+
 /* is_trivially_destructible */
 
 template<typename T>
