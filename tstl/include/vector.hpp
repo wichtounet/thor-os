@@ -196,17 +196,21 @@ public:
         ++_size;
     }
 
-    void emplace_back(){
+    value_type& emplace_back(){
         ensure_capacity(_size + 1);
 
         new (&data[_size++]) T();
+
+        return back();
     }
 
     template<typename... Args>
-    void emplace_back(Args... args){
+    value_type& emplace_back(Args... args){
         ensure_capacity(_size + 1);
 
         new (&data[_size++]) T{std::forward<Args>(args)...};
+
+        return back();
     }
 
     void pop_back(){
