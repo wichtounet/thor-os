@@ -12,51 +12,68 @@
 
 namespace {
 
-void compute_checksum(network::ethernet::packet& packet, network::udp::header* udp_header){
-    auto ip_index = packet.tag(1);
+template<typename T>
+uint32_t net_checksum_add_bytes(T* values, size_t length){
+    auto raw_values = reinterpret_cast<uint8_t*>(values);
 
-    auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + ip_index);
+    uint32_t sum = 0;
+
+    for(size_t i = 0; i < length; ++i){
+        if(i & 1){
+            sum += static_cast<uint32_t>(raw_values[i]);
+        } else {
+            sum += static_cast<uint32_t>(raw_values[i]) << 8;
+        }
+    }
+
+    return sum;
+}
+
+uint16_t net_checksum_finalize(uint32_t sum){
+    while(sum >> 16){
+        sum = (sum & 0xFFFF) + (sum >> 16);
+    }
+
+    return ~sum;
+}
+
+uint16_t net_checksum_finalize_nz(uint32_t sum){
+    auto checksum = net_checksum_finalize(sum);
+
+    if(!checksum){
+        return ~checksum;
+    } else {
+        return checksum;
+    }
+}
+
+void compute_checksum(network::ethernet::packet& packet){
+    auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
+    auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.index);
 
     udp_header->checksum = 0;
 
-    // Accumulate the ICMP header
-    auto sum = std::accumulate(
-        reinterpret_cast<uint16_t*>(udp_header),
-        reinterpret_cast<uint16_t*>(udp_header) + udp_header->length / 2,
-        uint32_t(0));
+    auto length = switch_endian_16(udp_header->length);
+
+    // Accumulate the Payload
+    auto sum = net_checksum_add_bytes(packet.payload + packet.index, length);
 
     // Accumulate the IP addresses
-    sum = std::accumulate(
-        reinterpret_cast<uint16_t*>(&ip_header->source_ip),
-        reinterpret_cast<uint16_t*>(&ip_header->source_ip) + 4,
-        sum);
+    sum += net_checksum_add_bytes(&ip_header->source_ip, 8);
 
     // Accumulate the IP Protocol
     sum += ip_header->protocol;
 
     // Accumulate the UDP length
-    sum += udp_header->length;
+    sum += length;
 
     // Complete the 1-complement sum
-
-    uint32_t value = sum & 0xFFFF;
-    uint32_t carry = (sum - value) >> 16;
-
-    while(carry){
-        value += carry;
-        auto sub = value & 0xFFFF;
-        carry = (value - sub) >> 16;
-        value = sub;
-    }
-
-    udp_header->checksum = ~value;
-
-    if(!udp_header->checksum){
-        udp_header->checksum = ~0;
-    }
+    udp_header->checksum = switch_endian_16(net_checksum_finalize_nz(sum));
 }
 
 void prepare_packet(network::ethernet::packet& packet, size_t source, size_t target, size_t payload_size){
+    packet.tag(2, packet.index);
+
     // Set the UDP header
 
     auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.index);
@@ -117,10 +134,8 @@ std::expected<network::ethernet::packet> network::udp::prepare_packet(char* buff
 void network::udp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
     p.index -= sizeof(header);
 
-    auto* udp_header = reinterpret_cast<header*>(p.payload + p.index);
-
     // Compute the checksum
-    compute_checksum(p, udp_header);
+    compute_checksum(p);
 
     // Give the packet to the IP layer for finalization
     network::ip::finalize_packet(interface, p);

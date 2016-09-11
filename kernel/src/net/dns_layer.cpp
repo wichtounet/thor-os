@@ -13,6 +13,8 @@
 namespace {
 
 void prepare_packet_query(network::ethernet::packet& packet, uint16_t identification){
+    packet.tag(3, packet.index);
+
     // Set the DNS header
 
     auto* dns_header = reinterpret_cast<network::dns::header*>(packet.payload + packet.index);

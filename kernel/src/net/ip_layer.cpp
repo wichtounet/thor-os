@@ -41,6 +41,8 @@ void compute_checksum(network::ip::header* header){
 }
 
 void prepare_packet(network::ethernet::packet& packet, network::interface_descriptor& interface, size_t size, network::ip::address& target_ip, size_t protocol){
+    packet.tag(1, packet.index);
+
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.index);
 
     ip_header->version_ihl = (4 << 4) + 5;

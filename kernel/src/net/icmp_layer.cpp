@@ -42,6 +42,8 @@ void compute_checksum(network::icmp::header* icmp_header, size_t payload_size){
 }
 
 void prepare_packet(network::ethernet::packet& packet, network::icmp::type t, size_t code){
+    packet.tag(2, packet.index);
+
     // Set the ICMP header
 
     auto* icmp_header = reinterpret_cast<network::icmp::header*>(packet.payload + packet.index);
