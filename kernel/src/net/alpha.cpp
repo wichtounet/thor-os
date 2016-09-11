@@ -8,8 +8,8 @@
 #include "net/alpha.hpp"
 #include "net/ethernet_layer.hpp"
 #include "net/icmp_layer.hpp"
-#include "net/arp_cache.hpp"
 #include "net/ip_layer.hpp"
+#include "net/dns_layer.hpp"
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"
@@ -17,39 +17,32 @@
 
 #include "tlib/errors.hpp"
 
-namespace {
-
-size_t echo_sequence = 1;
-
-} // end of anonymous namespace
-
 void network::alpha(){
     auto& interface = network::interface(0);
 
-    auto target_ip = network::ip::make_address(10,0,2,2);
+    auto target_ip = network::ip::make_address(10,0,2,3);
 
-    logging::logf(logging::log_level::TRACE, "icmp: Ping %u.%u.%u.%u \n",
-        uint64_t(target_ip(0)), uint64_t(target_ip(1)), uint64_t(target_ip(2)), uint64_t(target_ip(3)));
+    std::string domain("www.google.ch");
 
-    auto target_mac = network::arp::get_mac_force(interface, target_ip);
+    size_t payload_size = 1 + domain.size() + 2 * 2;
 
-    if(!target_mac){
-        logging::logf(logging::log_level::TRACE, "icmp: Failed to get MAC Address from IP\n");
-        return;
-    }
-
-    logging::logf(logging::log_level::TRACE, "icmp: Target MAC Address: %h\n", *target_mac);
-
-    // Ask the ICMP layer to craft a packet
-    auto packet = network::icmp::prepare_packet(interface, target_ip, 0, network::icmp::type::ECHO_REQUEST, 0);
+    // Ask the DNS layer to craft a packet
+    auto packet = network::dns::prepare_packet_query(interface, target_ip, 3456, 666, payload_size);
 
     if(packet){
-        // Set the Command header
+        auto* payload = reinterpret_cast<char*>(packet->payload + packet->index);
 
-        auto* command_header = reinterpret_cast<network::icmp::echo_request_header*>(packet->payload + packet->index);
+        payload[0] = domain.size();
 
-        command_header->identifier = 0x666;
-        command_header->sequence = echo_sequence++;
+        for(size_t i = 0; i < domain.size(); ++i){
+            payload[i + 1] = domain[i];
+        }
+
+        auto* q_type = reinterpret_cast<uint16_t*>(packet->payload + packet->index + 1 + domain.size());
+        *q_type = 1; // A Record
+
+        auto* q_class = q_type + 1;
+        *q_class = 1; // IN (internet)
 
         // Send the packet back to ICMP
         network::icmp::finalize_packet(interface, *packet);
