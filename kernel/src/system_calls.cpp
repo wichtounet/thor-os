@@ -18,7 +18,8 @@
 #include "drivers/mouse.hpp"
 #include "vfs/vfs.hpp"
 #include "ioctl.hpp"
-#include "net/icmp_layer.hpp"
+#include "net/network.hpp"
+#include "net/alpha.hpp"
 
 //TODO Split this file
 
@@ -353,9 +354,7 @@ void sc_ioctl(interrupt::syscall_regs* regs){
 }
 
 void sc_alpha(interrupt::syscall_regs*){
-    if(network::number_of_interfaces()){
-        network::icmp::ping(network::interface(0), network::ip::make_address(10, 0, 2, 2));
-    }
+    network::alpha();
 }
 
 void sc_socket_open(interrupt::syscall_regs* regs){
