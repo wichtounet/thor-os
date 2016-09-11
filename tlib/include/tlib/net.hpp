@@ -33,6 +33,54 @@ std::expected<packet> wait_for_packet(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd, size_t ms);
 void release_packet(packet& packet);
 
+struct socket {
+    socket(socket_domain domain, socket_type type, socket_protocol protocol);
+    ~socket();
+
+    /*!
+     * \brief Indicates if the socket is open or not
+     * \return true if the socket is open, false otherwise
+     */
+    bool open() const ;
+
+    /*!
+     * \brief Indicates if everything is in order
+     * \return true if everything is good, false otherwise
+     */
+    bool good() const ;
+
+    /*!
+     * \brief Indicates if everything is in order
+     * \return true if everything is good, false otherwise
+     */
+    operator bool();
+
+    /*!
+     * \brief Returns the error code, if any
+     * \return the error code if any, 0 otherwise
+     */
+    size_t error() const ;
+
+    /*!
+     * \brief Clear the error code
+     */
+    void clear();
+
+    void listen(bool l);
+
+    packet prepare_packet(void* desc);
+    void finalize_packet(packet p);
+    packet wait_for_packet();
+    packet wait_for_packet(size_t ms);
+
+private:
+    socket_domain domain;     ///< The socket domain
+    socket_type type;         ///< The socket type
+    socket_protocol protocol; ///< The socket protocol
+    size_t fd;                ///< The socket file descriptor
+    size_t error_code;        ///< The error code
+};
+
 } // end of namespace tlib
 
 #endif

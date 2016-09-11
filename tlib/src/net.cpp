@@ -4,7 +4,6 @@
 // (See accompanying file LICENSE or copy at
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
-
 #include "tlib/net.hpp"
 #include "tlib/malloc.hpp"
 
@@ -127,5 +126,108 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd, size_t ms){
 void tlib::release_packet(packet& packet){
     if(packet.payload){
         free(packet.payload);
+    }
+}
+
+tlib::socket::socket(socket_domain domain, socket_type type, socket_protocol protocol) : domain(domain), type(type), protocol(protocol), fd(0), error_code(0) {
+    auto open_status = tlib::socket_open(domain, type, protocol);
+
+    if(open_status.valid()){
+        fd = *open_status;
+    } else {
+        error_code = open_status.error();
+    }
+}
+
+tlib::socket::~socket(){
+    if(fd){
+        tlib::socket_close(fd);
+    }
+}
+
+bool tlib::socket::open() const {
+    return fd > 0;
+}
+
+bool tlib::socket::good() const {
+    return error_code == 0;
+}
+
+tlib::socket::operator bool(){
+    return good();
+}
+
+size_t tlib::socket::error() const {
+    return error_code;
+}
+
+void tlib::socket::clear(){
+    error_code = 0;
+}
+
+void tlib::socket::listen(bool l){
+    if(!good() || !open()){
+        return;
+    }
+
+    auto status = tlib::listen(fd, l);
+    if(!status){
+        error_code = status.error();
+    }
+}
+
+tlib::packet tlib::socket::prepare_packet(void* desc){
+    if(!good() || !open()){
+        return tlib::packet();
+    }
+
+    auto packet = tlib::prepare_packet(fd, desc);
+
+    if(!packet){
+        error_code = packet.error();
+        return tlib::packet();
+    } else {
+        return *packet;
+    }
+}
+
+void tlib::socket::finalize_packet(tlib::packet p){
+    if(!good() || !open()){
+        return;
+    }
+
+    auto status = tlib::finalize_packet(fd, p);
+    if(!status){
+        error_code = status.error();
+    }
+}
+
+tlib::packet tlib::socket::wait_for_packet(){
+    if(!good() || !open()){
+        return tlib::packet();
+    }
+
+    auto p = tlib::wait_for_packet(fd);
+
+    if(!p){
+        error_code = p.error();
+        return tlib::packet();
+    } else {
+        return *p;
+    }
+}
+
+tlib::packet tlib::socket::wait_for_packet(size_t ms){
+    if(!good() || !open()){
+        return tlib::packet();
+    }
+
+    auto p = tlib::wait_for_packet(fd, ms);
+
+    if(!p){
+        error_code = p.error();
+        return tlib::packet();
+    } else {
+        return *p;
     }
 }
