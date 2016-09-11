@@ -17,6 +17,7 @@ enum class partition_type {
     FAT32,
     SYSFS,
     DEVFS,
+    PROCFS,
     UNKNOWN
 };
 

@@ -79,6 +79,15 @@ constexpr const auto kernel_stack_size = 2 * paging::PAGE_SIZE;
 constexpr const auto user_stack_start = program_base + 0x700000;
 constexpr const auto user_rsp = user_stack_start + (user_stack_size - 8);
 
+struct process_control_t {
+    scheduler::process_t process;
+    scheduler::process_state state;
+    size_t rounds;
+    size_t sleep_timeout;
+    std::vector<std::vector<std::string>> handles;
+    std::vector<std::string> working_directory;
+};
+
 } //end of namespace scheduler
 
 #endif
