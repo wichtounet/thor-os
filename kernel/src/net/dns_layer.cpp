@@ -57,17 +57,31 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
     auto additional_rrs = switch_endian_16(dns_header->additional_rrs);
 
     logging::logf(logging::log_level::TRACE, "dns: Identification %h \n", size_t(identification));
-    logging::logf(logging::log_level::TRACE, "dns: Answers %h \n", size_t(answers));
-    logging::logf(logging::log_level::TRACE, "dns: Questions %h \n", size_t(questions));
-    logging::logf(logging::log_level::TRACE, "dns: Authorithy RRs %h \n", size_t(authority_rrs));
-    logging::logf(logging::log_level::TRACE, "dns: Additional RRs %h \n", size_t(additional_rrs));
+    logging::logf(logging::log_level::TRACE, "dns: Answers %u \n", size_t(answers));
+    logging::logf(logging::log_level::TRACE, "dns: Questions %u \n", size_t(questions));
+    logging::logf(logging::log_level::TRACE, "dns: Authorithy RRs %u \n", size_t(authority_rrs));
+    logging::logf(logging::log_level::TRACE, "dns: Additional RRs %u \n", size_t(additional_rrs));
 
     auto flags = dns_header->flags;
 
     if(flags.qr){
         logging::logf(logging::log_level::TRACE, "dns: Query\n");
     } else {
-        logging::logf(logging::log_level::TRACE, "dns: Response\n");
+        auto response_code = flags.rcode;
+
+        if(response_code == 0x0){
+            logging::logf(logging::log_level::TRACE, "dns: Response OK\n");
+        } else if(response_code == 0x1){
+            logging::logf(logging::log_level::TRACE, "dns: Format Error\n");
+        } else if(response_code == 0x2){
+            logging::logf(logging::log_level::TRACE, "dns: Server Failure\n");
+        } else if(response_code == 0x3){
+            logging::logf(logging::log_level::TRACE, "dns: Name Error\n");
+        } else if(response_code == 0x4){
+            logging::logf(logging::log_level::TRACE, "dns: Not Implemented\n");
+        } else if(response_code == 0x5){
+            logging::logf(logging::log_level::TRACE, "dns: Refused\n");
+        }
     }
 
     //TODO

@@ -104,7 +104,7 @@ void network::udp::decode(network::interface_descriptor& interface, network::eth
 
     packet.index += sizeof(header);
 
-    if(target_port == 53){
+    if(source_port == 53){
         network::dns::decode(interface, packet);
     }
 }
