@@ -72,6 +72,18 @@ uint32_t network::ip::ip_to_ip32(address ip){
     return switch_endian_32(ip.raw_address);
 }
 
+std::string network::ip::ip_to_str(address ip){
+    std::string value;
+    value += std::to_string(ip(0));
+    value += '.';
+    value += std::to_string(ip(1));
+    value += '.';
+    value += std::to_string(ip(2));
+    value += '.';
+    value += std::to_string(ip(3));
+    return value;
+}
+
 void network::ip::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.tag(1, packet.index);
 
