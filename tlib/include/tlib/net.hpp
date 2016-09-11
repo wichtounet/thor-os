@@ -41,13 +41,13 @@ struct socket {
      * \brief Indicates if the socket is open or not
      * \return true if the socket is open, false otherwise
      */
-    bool open() const ;
+    bool open() const;
 
     /*!
      * \brief Indicates if everything is in order
      * \return true if everything is good, false otherwise
      */
-    bool good() const ;
+    bool good() const;
 
     /*!
      * \brief Indicates if everything is in order
@@ -59,7 +59,7 @@ struct socket {
      * \brief Returns the error code, if any
      * \return the error code if any, 0 otherwise
      */
-    size_t error() const ;
+    size_t error() const;
 
     /*!
      * \brief Clear the error code

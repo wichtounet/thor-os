@@ -33,14 +33,14 @@ int main(int argc, char* argv[]) {
 
     tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::RAW, tlib::socket_protocol::ICMP);
 
-    if(!sock){
+    if (!sock) {
         tlib::printf("ls: socket error: %s\n", std::error_message(sock.error()));
         return 1;
     }
 
     sock.listen(true);
 
-    if(!sock){
+    if (!sock) {
         tlib::printf("ls: socket error: %s\n", std::error_message(sock.error()));
         return 1;
     }
@@ -51,11 +51,11 @@ int main(int argc, char* argv[]) {
     desc.type         = tlib::icmp::type::ECHO_REQUEST;
     desc.code         = 0;
 
-    for(size_t i = 0; i < N; ++i){
+    for (size_t i = 0; i < N; ++i) {
         auto packet = sock.prepare_packet(&desc);
 
         if (!sock) {
-            if(sock.error() == std::ERROR_SOCKET_TIMEOUT){
+            if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
                 tlib::printf("Unable to resolve MAC address for target IP\n");
                 return 1;
             }
@@ -77,11 +77,11 @@ int main(int argc, char* argv[]) {
         }
 
         auto before = tlib::ms_time();
-        auto after = before;
+        auto after  = before;
 
-        while(true){
+        while (true) {
             // Make sure we don't wait for more than the timeout
-            if(after > before + timeout_ms){
+            if (after > before + timeout_ms) {
                 break;
             }
 
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
 
             auto p = sock.wait_for_packet(remaining);
             if (!sock) {
-                if(sock.error() == std::ERROR_SOCKET_TIMEOUT){
+                if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
                     tlib::printf("%s unreachable\n", ip.c_str());
                     handled = true;
                     sock.clear();
@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
 
                 auto command_type = static_cast<tlib::icmp::type>(icmp_header->type);
 
-                if(command_type == tlib::icmp::type::ECHO_REPLY){
+                if (command_type == tlib::icmp::type::ECHO_REPLY) {
                     tlib::printf("Reply received from %s\n", ip.c_str());
                     handled = true;
                 }
@@ -114,14 +114,14 @@ int main(int argc, char* argv[]) {
                 tlib::release_packet(p);
             }
 
-            if(handled){
+            if (handled) {
                 break;
             }
 
             after = tlib::ms_time();
         }
 
-        if(i < N - 1){
+        if (i < N - 1) {
             tlib::sleep_ms(1000);
         }
     }
