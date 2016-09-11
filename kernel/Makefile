@@ -1,36 +1,23 @@
-default: debug/kernel.bin
+default: /tmp/ReOS/kernel/debug/kernel.bin
 
 include ../cpp.mk
 
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
 #TODO Generate also the o files coming from s files automatically, ignoring crti and crtn
-O_FILES=src/isrs.s.o src/irqs.s.o src/arch.s.o src/syscalls.s.o src/task_switch.s.o
+O_FILES=/tmp/ReOS/kernel/src/isrs.s.o /tmp/ReOS/kernel/src/irqs.s.o /tmp/ReOS/kernel/src/arch.s.o /tmp/ReOS/kernel/src/syscalls.s.o /tmp/ReOS/kernel/src/task_switch.s.o
 
 # Ask GCC for the crtbegin and crtend files
 CRTBEGIN_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtbegin.o)
 CRTEND_OBJ:=$(shell $(CXX) $(CFLAGS) -print-file-name=crtend.o)
 
 # The final link files
-SPECIAL_O_FILES=src/crti.s.o $(CRTBEGIN_OBJ) $(CRTEND_OBJ) src/crtn.s.o
-
-# Compile the 16-bit and 32-bit parts of the executable
-
-boot_16.o: src/boot/boot_16.cpp
-	$(CXX) $(COMMON_CPP_FLAGS) $(FLAGS_16) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_16.cpp -o boot_16.o
-
-boot_32.o: src/boot/boot_32.cpp
-	$(CXX) $(COMMON_CPP_FLAGS) $(FLAGS_32) $(THOR_FLAGS) $(WARNING_FLAGS) -c src/boot/boot_32.cpp -o boot_32.o
-
-boot_16_64.o: boot_16.o
-	$(OC) -I elf32-i386 -O elf64-x86-64 boot_16.o boot_16_64.o
-
-boot_32_64.o: boot_32.o
-	$(OC) -I elf32-i386 -O elf64-x86-64 boot_32.o boot_32_64.o
+SPECIAL_O_FILES=/tmp/ReOS/kernel/src/crti.s.o $(CRTBEGIN_OBJ) $(CRTEND_OBJ) /tmp/ReOS/kernel/src/crtn.s.o
 
 # Compile the assembly code
 
-src/%.s.o: src/%.s
+/tmp/ReOS/kernel/src/%.s.o: src/%.s
+	@ mkdir -p /tmp/ReOS/kernel/src/
 	$(AS) -g -c $< -o $@
 
 # Compile all the kernel CPP code
@@ -55,16 +42,16 @@ $(eval $(call acpica_folder_compile,utilities))
 
 LINK_O_FILES=$(SPECIAL_O_FILES) $(O_FILES)
 
-debug/kernel.bin: $(LINK_O_FILES)
-	@ mkdir -p debug/
+/tmp/ReOS/kernel/debug/kernel.bin: $(LINK_O_FILES)
+	@ mkdir -p /tmp/ReOS/kernel/debug/
 	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link $(FILE_COLOR)$@$(NO_COLOR)"
 	@ $(CXX) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o $@.o $(LINK_O_FILES)
 	@ $(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents $@.o $@
 
 clean:
 	@ echo -e "Remove compiled files (deps/objects)"
-	@ rm -rf debug
-	@ rm -f crti.o
-	@ rm -f crts.o
+	@ rm -rf /tmp/ReOS/kernel/debug
+	@ rm -f /tmp/ReOS/kernel/crti.o
+	@ rm -f /tmp/ReOS/kernel/crts.o
 	@ echo -e "Remove bin files"
-	@ rm -f *.bin
+	@ rm -f /tmp/ReOS/kernel/*.bin

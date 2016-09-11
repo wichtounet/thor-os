@@ -1,15 +1,22 @@
+SHELL=/bin/bash
+
+EXEC_NAME=shutdown
+BUILD_PATH=/tmp/ReOS/programs/$(EXEC_NAME)/debug
+
 .PHONY: default clean
 
-default: shutdown
+default: $(BUILD_PATH)/$(EXEC_NAME)
 
 include ../../cpp.mk
 
-%.cpp.o: src/%.cpp
-	$(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
+$(BUILD_PATH)/%.cpp.o: src/%.cpp
+	@ mkdir -p $(BUILD_PATH)
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (program) $(FILE_COLOR)$<$(NO_COLOR)"
+	@ $(CXX) -c $< -o $@ $(PROGRAM_FLAGS)
 
-shutdown: main.cpp.o
-	$(CXX) -o shutdown main.cpp.o $(PROGRAM_LINK_FLAGS)
+$(BUILD_PATH)/$(EXEC_NAME): $(BUILD_PATH)/main.cpp.o
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link (program) $(FILE_COLOR)$<$(NO_COLOR)"
+	@ $(CXX) -o $(BUILD_PATH)/$(EXEC_NAME) $(BUILD_PATH)/main.cpp.o $(PROGRAM_LINK_FLAGS)
 
 clean:
-	rm -f *.cpp.o
-	rm -rf shutdown
+	rm -rf $(BUILD_PATH)

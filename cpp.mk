@@ -1,3 +1,5 @@
+SHELL=/bin/bash
+
 CC=x86_64-elf-gcc
 CXX=x86_64-elf-g++
 AS=x86_64-elf-as
@@ -39,8 +41,8 @@ KERNEL_LINK_FLAGS=$(COMMON_LINK_FLAGS) -T linker.ld
 LIB_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -ffunction-sections -fdata-sections
 LIB_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -mcmodel=small -fPIC -Wl,-gc-sections
 
-PROGRAM_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -I../../printf/include/  -static -L../../tlib/ -ltlib -mcmodel=small -fPIC
-PROGRAM_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L../../tlib/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld -Wl,-gc-sections
+PROGRAM_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) -I../../tlib/include/ -I../../printf/include/  -static -L/tmp/ReOS/tlib/debug/ -ltlib -mcmodel=small -fPIC
+PROGRAM_LINK_FLAGS=$(COMMON_CPP_FLAGS) $(FLAGS_64) $(WARNING_FLAGS) $(COMMON_LINK_FLAGS) -static -L/tmp/ReOS/tlib/debug/ -ltlib -mcmodel=small -fPIC -z max-page-size=0x1000 -T ../linker.ld -Wl,-gc-sections
 
 NO_COLOR=\x1b[0m
 MODE_COLOR=\x1b[31;01m
@@ -49,18 +51,18 @@ FILE_COLOR=\x1b[35;01m
 # Generate the rules for the CPP files of a directory
 define compile_cpp_folder
 
-debug/$(1)/%.cpp.d: $(1)/%.cpp
-	@ mkdir -p debug/$(1)/
-	@ $(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT debug/$(1)/$$*.cpp.o $$< | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $$@
+/tmp/ReOS/kernel/debug/$(1)/%.cpp.d: $(1)/%.cpp
+	@ mkdir -p /tmp/ReOS/kernel/debug/$(1)/
+	@ $(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -MM -MT /tmp/ReOS/kernel/debug/$(1)/$$*.cpp.o $$< | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $$@
 
-debug/$(1)/%.cpp.o: $(1)/%.cpp
-	@ mkdir -p debug/$(1)/
+/tmp/ReOS/kernel/debug/$(1)/%.cpp.o: $(1)/%.cpp
+	@ mkdir -p /tmp/ReOS/kernel/debug/$(1)/
 	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
 	@ $(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $$< -o $$@
 
 folder_cpp_files := $(wildcard $(1)/*.cpp)
-folder_d_files   := $$(folder_cpp_files:%.cpp=debug/%.cpp.d)
-folder_o_files   := $$(folder_cpp_files:%.cpp=debug/%.cpp.o)
+folder_d_files   := $$(folder_cpp_files:%.cpp=/tmp/ReOS/kernel/debug/%.cpp.d)
+folder_o_files   := $$(folder_cpp_files:%.cpp=/tmp/ReOS/kernel/debug/%.cpp.o)
 
 D_FILES := $(D_FILES) $$(folder_d_files)
 O_FILES := $(O_FILES) $$(folder_o_files)
@@ -70,20 +72,41 @@ endef
 # Generate the rules for the APCICA C files of a components subdirectory
 define acpica_folder_compile
 
-debug/acpica/source/components/$(1)/%.c.d: acpica/source/components/$(1)/%.c
-	@ mkdir -p debug/acpica/source/components/$(1)/
+/tmp/ReOS/kernel/debug/acpica/source/components/$(1)/%.c.d: acpica/source/components/$(1)/%.c
+	@ mkdir -p /tmp/ReOS/kernel/debug/acpica/source/components/$(1)/
 	@ $(CXX) $(ACPICA_C_FLAGS) $(THOR_FLAGS) -MM -MT acpica/source/components/$(1)/$$*.c.o $$< | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $$@
 
-debug/acpica/source/components/$(1)/%.c.o: acpica/source/components/$(1)/%.c
-	@ mkdir -p debug/acpica/source/components/$(1)/
+/tmp/ReOS/kernel/debug/acpica/source/components/$(1)/%.c.o: acpica/source/components/$(1)/%.c
+	@ mkdir -p /tmp/ReOS/kernel/debug/acpica/source/components/$(1)/
 	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (ACPICA) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
 	@ $(CC) $(ACPICA_C_FLAGS) $(THOR_FLAGS) -c $$< -o $$@
 
 acpica_folder_c_files := $(wildcard acpica/source/components/$(1)/*.c)
-acpica_folder_d_files := $$(acpica_folder_c_files:%.c=debug/%.c.d)
-acpica_folder_o_files := $$(acpica_folder_c_files:%.c=debug/%.c.o)
+acpica_folder_d_files := $$(acpica_folder_c_files:%.c=/tmp/ReOS/kernel/debug/%.c.d)
+acpica_folder_o_files := $$(acpica_folder_c_files:%.c=/tmp/ReOS/kernel/debug/%.c.o)
 
 D_FILES := $(D_FILES) $$(acpica_folder_d_files)
 O_FILES := $(O_FILES) $$(acpica_folder_o_files)
+
+endef
+
+# Generate the rules for the CPP files of a directory
+define tlib_compile_cpp_folder
+
+/tmp/ReOS/tlib/debug/$(1)/%.cpp.d: $(1)/%.cpp
+	@ mkdir -p /tmp/ReOS/tlib/debug/$(1)/
+	@ $(CXX) $(LIB_FLAGS) -MM -MT /tmp/ReOS/tlib/debug/$(1)/$$*.cpp.o $(1)/$$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $$@
+
+/tmp/ReOS/tlib/debug/$(1)/%.cpp.o: $(1)/%.cpp
+	@ mkdir -p /tmp/ReOS/tlib/debug/$(1)/
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (tlib) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
+	@ $(CXX) $(LIB_FLAGS) -c $$< -o $$@
+
+folder_cpp_files := $(wildcard $(1)/*.cpp)
+folder_d_files   := $$(folder_cpp_files:%.cpp=/tmp/ReOS/tlib/debug/%.cpp.d)
+folder_o_files   := $$(folder_cpp_files:%.cpp=/tmp/ReOS/tlib/debug/%.cpp.o)
+
+D_FILES := $(D_FILES) $$(folder_d_files)
+O_FILES := $(O_FILES) $$(folder_o_files)
 
 endef

@@ -1,24 +1,26 @@
 .PHONY: dist default clean force_look
 
-PROGRAMS=long loop longone longtwo keyboard tsh cpuid shutdown reboot args stat cat which readelf touch mkdir rm date ls lspci lse820 mount df uptime writer
+include ../cpp.mk
+
+PROGRAMS_DIRS=$(filter-out dist/, $(filter %/, $(wildcard */)))
+PROGRAMS=$(PROGRAMS_DIRS:%/=%)
 
 default: dist
 
-tlib/libtlib.a: force_look
+/tmp/ReOS/tlib/debug/libtlib.a: force_look
 	cd ../tlib; $(MAKE)
 
 force_look:
 	true
 
-dist: tlib/libtlib.a
-	$(foreach var,$(PROGRAMS),cd $(var); $(MAKE); cd ..;)
-	mkdir -p dist
-	$(foreach var,$(PROGRAMS),cp $(var)/$(var) dist/;)
-	strip dist/*
+dist: /tmp/ReOS/tlib/debug/libtlib.a
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Build all programs"
+	@ $(foreach var,$(PROGRAMS),cd $(var); $(MAKE); cd ..;)
+	@ mkdir -p /tmp/ReOS/programs/dist
+	@ $(foreach var,$(PROGRAMS),cp /tmp/ReOS/programs/$(var)/debug/$(var) /tmp/ReOS/programs/dist/;)
+	@ strip /tmp/ReOS/programs/dist/*
 
 clean:
-	echo $(PROGRAMS_MAKE)
-	echo $(PROGRAMS_CLEAN)
-	echo $(PROGRAMS)
-	$(foreach var,$(PROGRAMS),cd $(var); $(MAKE) clean; cd ..;)
-	rm -rf dist
+	@ echo -e "Clean all programs"
+	@ $(foreach var,$(PROGRAMS),cd $(var); $(MAKE) clean; cd ..;)
+	@ rm -rf /tmp/ReOS/programs/dist

@@ -1,25 +1,21 @@
-default: libtlib.a
+SHELL=/bin/bash
+
+default: /tmp/ReOS/tlib/debug/libtlib.a
 
 include ../cpp.mk
 
-CPP_FILES=$(wildcard src/*.cpp)
+$(eval $(call tlib_compile_cpp_folder,src))
 
-D_FILES=$(CPP_FILES:%.cpp=%.cpp.d)
+test:
+	@ echo $(O_FILES)
 
-O_FILES=$(CPP_FILES:%.cpp=%.cpp.o)
-
-src/%.cpp.d: $(CPP_FILES)
-	@ $(CXX) $(LIB_FLAGS) -MM -MT src/$*.cpp.o src/$*.cpp | sed -e 's@^\(.*\)\.o:@\1.d \1.o:@' > $@
-
-src/%.cpp.o:
-	$(CXX) $(LIB_FLAGS) -c $< -o $@
+/tmp/ReOS/tlib/debug/libtlib.a: $(O_FILES)
+	@ mkdir -p /tmp/ReOS/tlib/debug/
+	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link (tlib) $(FILE_COLOR)$@$(NO_COLOR)"
+	@ ${AR} rcs /tmp/ReOS/tlib/debug/libtlib.a $(O_FILES)
 
 -include $(D_FILES)
 
-libtlib.a: $(O_FILES)
-	${AR} rcs libtlib.a ${O_FILES}
-
 clean:
-	rm -f libtlib.a
-	rm -f $(O_FILES)
-	rm -f $(D_FILES)
+	@ echo -e "Remove compiled files (deps/objects)"
+	@ rm -rf /tmp/ReOS/tlib/debug

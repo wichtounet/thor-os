@@ -7,27 +7,27 @@ SECTIONS
 
     .text_16 BLOCK(512) : ALIGN(512)
 	{
-		debug/boot_16_64.o(.text)
+		/tmp/ReOS/init/debug/boot_16_64.o(.text)
 	}
 
     .rodata_16 BLOCK(512) : ALIGN(512)
     {
-		debug/boot_16_64.o(.rodata)
+		/tmp/ReOS/init/debug/boot_16_64.o(.rodata)
     }
 
     .bss_16 BLOCK(512) : ALIGN(512)
     {
-		debug/boot_16_64.o(.bss)
+		/tmp/ReOS/init/debug/boot_16_64.o(.bss)
     }
 
     .data_16 BLOCK(512) : ALIGN(512)
     {
-		debug/boot_16_64.o(.data)
+		/tmp/ReOS/init/debug/boot_16_64.o(.data)
     }
 
     .text_32 BLOCK(512) : ALIGN(512)
 	{
-		debug/boot_32_64.o(.text)
+		/tmp/ReOS/init/debug/boot_32_64.o(.text)
 	}
 
 	/* 4K of Read-only data */
