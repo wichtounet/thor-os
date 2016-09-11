@@ -121,7 +121,7 @@ DAP:
 
 ; Constants Datas
 
-    header_1 db 'Welcome to Thor OS Bootloader!', 0
+    header_1 db 'Welcome to ReOS Bootloader!', 0
 
     press_key_msg db 'Press any key to load the kernel...', 0
     load_msg db 'Attempt to load the stage 2...', 0

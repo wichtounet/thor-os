@@ -122,7 +122,7 @@ int main(){
     char input_buffer[128];
     std::string current_input;
 
-    print("thor> ");
+    print("ReOS > ");
 
     while(true){
         auto c = read_input(input_buffer, 127);
@@ -179,7 +179,7 @@ int main(){
 
             current_input.clear();
 
-            print("thor> ");
+            print("ReOS > ");
         } else {
             input_buffer[c] = '\0';
 
