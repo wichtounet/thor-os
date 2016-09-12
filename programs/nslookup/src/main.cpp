@@ -37,6 +37,14 @@ int main(int argc, char* argv[]) {
 
     std::string domain(argv[1]);
 
+    auto resolved = tlib::dns::resolve(domain);
+
+    if(resolved){
+        tlib::printf("resolve(%s): %s\n", domain.c_str(), resolved->c_str());
+    } else {
+        tlib::printf("resolve(%s): failed: %s\n", domain.c_str(), std::error_message(resolved.error()));
+    }
+
     tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::DGRAM, tlib::socket_protocol::DNS);
 
     sock.client_bind();
