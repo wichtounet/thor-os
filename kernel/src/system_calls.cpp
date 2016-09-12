@@ -417,6 +417,13 @@ void sc_listen(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(status);
 }
 
+void sc_client_bind(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+
+    auto status = network::client_bind(socket_fd);
+    regs->rax = expected_to_i64(status);
+}
+
 void sc_wait_for_packet(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
     auto user_buffer = reinterpret_cast<char*>(regs->rcx);
@@ -679,6 +686,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x3006:
             sc_wait_for_packet_ms(regs);
+            break;
+
+        case 0x3007:
+            sc_client_bind(regs);
             break;
 
         // Special system calls

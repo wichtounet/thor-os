@@ -28,6 +28,9 @@
 
 namespace {
 
+// TODO need to be atomic!
+size_t local_port = 1234;
+
 std::vector<network::interface_descriptor> interfaces;
 
 void rx_thread(void* data){
@@ -211,16 +214,24 @@ network::interface_descriptor& network::interface(size_t index){
 }
 
 std::expected<network::socket_fd_t> network::open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
+    // Make sure the socket domain is valid
     if(domain != socket_domain::AF_INET){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_DOMAIN);
     }
 
-    if(type != socket_type::RAW){
+    // Make sure the socket type is valid
+    if(type != socket_type::RAW && type != socket_type::DGRAM){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
+    // Make sure the socket protocol is valid
     if(protocol != socket_protocol::ICMP && protocol != socket_protocol::DNS){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_PROTOCOL);
+    }
+
+    // Make sure the socket protocol is valid for the given socket type
+    if(type == socket_type::DGRAM && !(protocol == socket_protocol::DNS)){
+        return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
 
     return scheduler::register_new_socket(domain, type, protocol);
@@ -320,6 +331,24 @@ std::expected<void> network::listen(socket_fd_t socket_fd, bool listen){
     socket.listen = listen;
 
     return std::make_expected();
+}
+
+std::expected<size_t> network::client_bind(socket_fd_t socket_fd){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(socket.type != socket_type::DGRAM){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
+    }
+
+    socket.local_port = local_port++;
+
+    logging::logf(logging::log_level::TRACE, "network: %u socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
+
+    return std::make_expected<size_t>(socket.local_port);
 }
 
 std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_fd){

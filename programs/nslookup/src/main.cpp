@@ -37,13 +37,9 @@ int main(int argc, char* argv[]) {
 
     std::string domain(argv[1]);
 
-    tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::RAW, tlib::socket_protocol::DNS);
+    tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::DGRAM, tlib::socket_protocol::DNS);
 
-    if (!sock) {
-        tlib::printf("nslookup: socket error: %s\n", std::error_message(sock.error()));
-        return 1;
-    }
-
+    sock.client_bind();
     sock.listen(true);
 
     if (!sock) {

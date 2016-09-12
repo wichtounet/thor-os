@@ -113,7 +113,8 @@ enum class socket_domain : size_t {
 };
 
 enum class socket_type : size_t {
-    RAW
+    RAW,
+    DGRAM
 };
 
 enum class socket_protocol : size_t {

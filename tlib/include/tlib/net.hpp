@@ -41,6 +41,7 @@ void socket_close(size_t socket_fd);
 std::expected<packet> prepare_packet(size_t socket_fd, void* desc);
 std::expected<void> finalize_packet(size_t socket_fd, const packet& p);
 std::expected<void> listen(size_t socket_fd, bool l);
+std::expected<size_t> client_bind(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd, size_t ms);
 
@@ -77,6 +78,11 @@ struct socket {
      */
     void clear();
 
+    /*!
+     * \brief Bind the socket as a client
+     */
+    void client_bind();
+
     void listen(bool l);
 
     packet prepare_packet(void* desc);
@@ -90,6 +96,7 @@ private:
     socket_protocol protocol; ///< The socket protocol
     size_t fd;                ///< The socket file descriptor
     size_t error_code;        ///< The error code
+    size_t local_port;        ///< The local port
 };
 
 inline uint16_t switch_endian_16(uint16_t nb) {

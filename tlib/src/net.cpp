@@ -36,7 +36,7 @@ tlib::packet::~packet() {
 
 std::expected<size_t> tlib::socket_open(socket_domain domain, socket_type type, socket_protocol protocol) {
     int64_t fd;
-    asm volatile("mov rax, 0x3000; mov rbx, %[type]; mov rcx, %[type]; mov rdx, %[protocol]; int 50; mov %[fd], rax"
+    asm volatile("mov rax, 0x3000; mov rbx, %[domain]; mov rcx, %[type]; mov rdx, %[protocol]; int 50; mov %[fd], rax"
                  : [fd] "=m"(fd)
                  : [domain] "g"(static_cast<size_t>(domain)), [type] "g"(static_cast<size_t>(type)), [protocol] "g"(static_cast<size_t>(protocol))
                  : "rax", "rbx", "rcx", "rdx");
@@ -106,6 +106,20 @@ std::expected<void> tlib::listen(size_t socket_fd, bool l) {
     }
 }
 
+std::expected<size_t> tlib::client_bind(size_t socket_fd) {
+    int64_t code;
+    asm volatile("mov rax, 0x3007; mov rbx, %[socket]; int 50; mov %[code], rax"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd)
+                 : "rax", "rbx", "rcx");
+
+    if (code < 0) {
+        return std::make_unexpected<size_t, size_t>(-code);
+    } else {
+        return std::make_expected<size_t>(code);
+    }
+}
+
 std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd) {
     auto buffer = malloc(2048);
 
@@ -157,6 +171,8 @@ tlib::socket::socket(socket_domain domain, socket_type type, socket_protocol pro
     } else {
         error_code = open_status.error();
     }
+
+    local_port = 0;
 }
 
 tlib::socket::~socket() {
@@ -194,6 +210,19 @@ void tlib::socket::listen(bool l) {
     if (!status) {
         error_code = status.error();
     }
+}
+
+void tlib::socket::client_bind() {
+    if (!good() || !open()) {
+        return;
+    }
+
+    auto status = tlib::client_bind(fd);
+    if (!status) {
+        error_code = status.error();
+    }
+
+    local_port = *status;
 }
 
 tlib::packet tlib::socket::prepare_packet(void* desc) {
