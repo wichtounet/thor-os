@@ -11,6 +11,7 @@
 #include <string.hpp>
 
 #include "tlib/net_constants.hpp"
+#include "tlib/net.hpp"
 
 ASSERT_ONLY_THOR_PROGRAM
 
@@ -19,6 +20,7 @@ namespace tlib {
 namespace dns {
 
 std::string decode_domain(char* payload, size_t& offset);
+std::expected<void> send_request(tlib::socket& sock, const std::string& domain, uint16_t rr_type = 0x1, uint16_t rr_class = 0x1);
 
 }  // end of namespace dns
 

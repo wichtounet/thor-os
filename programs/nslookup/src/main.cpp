@@ -17,48 +17,10 @@ static constexpr const size_t retries    = 10;
 static constexpr const size_t timeout_ms = 2000;
 
 bool send_request(tlib::socket& sock, const std::string& domain){
-    auto parts = std::split(domain, '.');
+    auto status = tlib::dns::send_request(sock, domain, 255, 1);
 
-    size_t characters = domain.size() - (parts.size() - 1); // The dots are not included
-    size_t labels     = parts.size();
-
-    tlib::dns::packet_descriptor desc;
-    desc.payload_size   = labels + characters + 1 + 2 * 2;
-    desc.target_ip      = tlib::ip::make_address(10, 0, 2, 3);
-    desc.source_port    = 3456;
-    desc.identification = 0x666;
-    desc.query          = true;
-
-    auto packet = sock.prepare_packet(&desc);
-
-    if (!sock) {
-        tlib::printf("nslookup: prepare_packet error: %s\n", std::error_message(sock.error()));
-        return false;
-    }
-
-    auto* payload = reinterpret_cast<char*>(packet.payload + packet.index);
-
-    size_t i = 0;
-    for (auto& part : parts) {
-        payload[i++] = part.size();
-
-        for (size_t j = 0; j < part.size(); ++j) {
-            payload[i++] = part[j];
-        }
-    }
-
-    payload[i++] = 0;
-
-    auto* q_type = reinterpret_cast<uint16_t*>(packet.payload + packet.index + i);
-    *q_type      = 0x0100; // A Record
-
-    auto* q_class = reinterpret_cast<uint16_t*>(packet.payload + packet.index + i + 2);
-    *q_class      = 0x0100; // IN (internet)
-
-    sock.finalize_packet(packet);
-
-    if (!sock) {
-        tlib::printf("nslookup: finalize_packet error: %s\n", std::error_message(sock.error()));
+    if (!status) {
+        tlib::printf("nslookup: prepare_packet error: %s\n", std::error_message(status.error()));
         return false;
     }
 
@@ -174,14 +136,19 @@ int main(int argc, char* argv[]) {
                             auto rd_length = tlib::switch_endian_16(*reinterpret_cast<uint16_t*>(payload));
                             payload += 2;
 
-                            if (rr_type == 0x1 && rr_class == 0x1) {
-                                auto ip = reinterpret_cast<uint8_t*>(payload);
+                            if(rr_class == 1){ // IN (Internet) class
+                                if (rr_type == 0x1) { // A record
+                                    auto ip = reinterpret_cast<uint8_t*>(payload);
 
-                                tlib::printf("  Answer %u Domain %s Type %u Class %u TTL %u IP: %u.%u.%u.%u\n",
-                                             i, domain.c_str(), rr_type, rr_class, ttl, ip[3], ip[2], ip[1], ip[0]);
+                                    tlib::printf("  Answer %u Domain %s Type A Class IN TTL %u IP: %u.%u.%u.%u\n",
+                                                 i, domain.c_str(), ttl, ip[3], ip[2], ip[1], ip[0]);
+                                } else {
+                                    tlib::printf("  Answer %u Domain %s Type %u Class IN TTL %u\n",
+                                                 i, domain.c_str(), rr_type, ttl);
+                                }
                             } else {
-                                tlib::printf("nslookup: Cannot read DNS response\n");
-                                return 1;
+                                tlib::printf("  Answer %u Domain %s Type %u Class %u TTL %u\n",
+                                    i, domain.c_str(), rr_type, rr_class, ttl);
                             }
 
                             payload += rd_length;
@@ -191,6 +158,10 @@ int main(int argc, char* argv[]) {
                     } else {
                         // There was an error, retry
                         if(++tries == retries || !send_request(sock, domain)){
+                            if(tries == retries){
+                                tlib::printf("nslookup: No valid answer from server\n");
+                            }
+
                             return 1;
                         }
                     }
