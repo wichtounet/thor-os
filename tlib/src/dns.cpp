@@ -43,7 +43,6 @@ std::expected<void> tlib::dns::send_request(tlib::socket& sock, const std::strin
     tlib::dns::packet_descriptor desc;
     desc.payload_size   = labels + characters + 1 + 2 * 2;
     desc.target_ip      = tlib::ip::make_address(10, 0, 2, 3);
-    desc.source_port    = 3456;
     desc.identification = 0x666;
     desc.query          = true;
 

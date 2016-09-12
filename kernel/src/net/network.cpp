@@ -267,6 +267,14 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
         }
     };
 
+    auto get_port = [&socket](size_t port) -> size_t {
+        if(socket.type == socket_type::DGRAM){
+            return socket.local_port;
+        } else {
+            return port;
+        }
+    };
+
     switch (socket.protocol) {
         case network::socket_protocol::ICMP: {
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
@@ -281,7 +289,8 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
             auto& interface = select_interface(descriptor->target_ip);
 
             if(descriptor->query){
-                auto packet = network::dns::prepare_packet_query(buffer, interface, descriptor->target_ip, descriptor->source_port, descriptor->identification, descriptor->payload_size);
+                auto source_port = get_port(descriptor->source_port);
+                auto packet = network::dns::prepare_packet_query(buffer, interface, descriptor->target_ip, source_port, descriptor->identification, descriptor->payload_size);
 
                 return return_from_packet(packet);
             } else {
