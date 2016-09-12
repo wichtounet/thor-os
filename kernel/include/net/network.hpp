@@ -115,6 +115,8 @@ std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd);
  */
 std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms);
 
+void propagate_packet(const ethernet::packet& packet, socket_protocol protocol);
+
 } // end of network namespace
 
 #endif

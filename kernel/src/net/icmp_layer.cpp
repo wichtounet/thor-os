@@ -111,23 +111,7 @@ void network::icmp::decode(network::interface_descriptor& interface, network::et
             break;
     }
 
-    // TODO Need something better for this
-
-    for(size_t pid = 0; pid < scheduler::MAX_PROCESS; ++pid){
-        auto state = scheduler::get_process_state(pid);
-        if(state != scheduler::process_state::EMPTY && state != scheduler::process_state::NEW && state != scheduler::process_state::KILLED){
-            for(auto& socket : scheduler::get_sockets(pid)){
-                if(socket.listen && socket.protocol == network::socket_protocol::ICMP){
-                    auto copy = packet;
-                    copy.payload = new char[copy.payload_size];
-                    std::copy_n(packet.payload, packet.payload_size, copy.payload);
-
-                    socket.listen_packets.push(copy);
-                    socket.listen_queue.wake_up();
-                }
-            }
-        }
-    }
+    network::propagate_packet(packet, network::socket_protocol::ICMP);
 }
 
 std::expected<network::ethernet::packet> network::icmp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){

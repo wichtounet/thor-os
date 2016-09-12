@@ -103,6 +103,7 @@ struct packet_descriptor {
     ip::address target_ip;
     uint16_t source_port;
     uint16_t identification;
+    bool query;
 };
 
 } // end of dns namespace

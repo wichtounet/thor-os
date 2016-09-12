@@ -24,6 +24,7 @@
 #include "tlib/errors.hpp"
 
 #include "net/icmp_layer.hpp"
+#include "net/dns_layer.hpp"
 
 namespace {
 
@@ -218,7 +219,7 @@ std::expected<network::socket_fd_t> network::open(network::socket_domain domain,
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
-    if(protocol != socket_protocol::ICMP){
+    if(protocol != socket_protocol::ICMP && protocol != socket_protocol::DNS){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_PROTOCOL);
     }
 
@@ -242,19 +243,37 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
     auto& socket = scheduler::get_socket(socket_fd);
 
-    switch(socket.protocol){
-        case network::socket_protocol::ICMP:
+    auto return_from_packet = [&socket](std::expected<network::ethernet::packet>& packet) -> std::tuple<size_t, size_t> {
+        if (packet) {
+            auto fd = socket.register_packet(*packet);
+
+            return {fd, packet->index};
+        } else {
+            return {-packet.error(), 0};
+        }
+    };
+
+    switch (socket.protocol) {
+        case network::socket_protocol::ICMP: {
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
             auto& interface = select_interface(descriptor->target_ip);
-            auto packet = network::icmp::prepare_packet(buffer, interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
+            auto packet     = network::icmp::prepare_packet(buffer, interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
 
-            if(packet){
-                auto fd = socket.register_packet(*packet);
+            return return_from_packet(packet);
+        }
 
-                return {fd, packet->index};
+        case network::socket_protocol::DNS: {
+            auto descriptor = static_cast<network::dns::packet_descriptor*>(desc);
+            auto& interface = select_interface(descriptor->target_ip);
+
+            if(descriptor->query){
+                auto packet = network::dns::prepare_packet_query(buffer, interface, descriptor->target_ip, descriptor->source_port, descriptor->identification, descriptor->payload_size);
+
+                return return_from_packet(packet);
             } else {
-                return {-packet.error(), 0};
+                return {-std::ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR, 0};
             }
+        }
     }
 
     return {-std::ERROR_SOCKET_UNIMPLEMENTED, 0};
@@ -277,6 +296,12 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
     switch(socket.protocol){
         case network::socket_protocol::ICMP:
             network::icmp::finalize_packet(interface, packet);
+            socket.erase_packet(packet_fd);
+
+            return std::make_expected();
+
+        case network::socket_protocol::DNS:
+            network::dns::finalize_packet(interface, packet);
             socket.erase_packet(packet_fd);
 
             return std::make_expected();
@@ -357,4 +382,24 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
     logging::logf(logging::log_level::TRACE, "network: %u received packet on socket %u\n", scheduler::get_pid(), socket_fd);
 
     return {packet.index};
+}
+
+void network::propagate_packet(const ethernet::packet& packet, socket_protocol protocol){
+    // TODO Need something better for this
+
+    for(size_t pid = 0; pid < scheduler::MAX_PROCESS; ++pid){
+        auto state = scheduler::get_process_state(pid);
+        if(state != scheduler::process_state::EMPTY && state != scheduler::process_state::NEW && state != scheduler::process_state::KILLED){
+            for(auto& socket : scheduler::get_sockets(pid)){
+                if(socket.listen && socket.protocol == protocol){
+                    auto copy = packet;
+                    copy.payload = new char[copy.payload_size];
+                    std::copy_n(packet.payload, packet.payload_size, copy.payload);
+
+                    socket.listen_packets.push(copy);
+                    socket.listen_queue.wake_up();
+                }
+            }
+        }
+    }
 }

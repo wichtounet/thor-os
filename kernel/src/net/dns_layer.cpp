@@ -180,6 +180,8 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
             logging::logf(logging::log_level::TRACE, "dns: Refused\n");
         }
     }
+
+    network::propagate_packet(packet, network::socket_protocol::DNS);
 }
 
 std::expected<network::ethernet::packet> network::dns::prepare_packet_query(network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size) {
