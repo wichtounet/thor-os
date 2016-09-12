@@ -19,6 +19,7 @@
 #include "physical_allocator.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
+#include "kernel_utils.hpp"
 
 #include "fs/sysfs.hpp"
 
@@ -26,6 +27,7 @@
 
 #include "net/icmp_layer.hpp"
 #include "net/dns_layer.hpp"
+#include "net/udp_layer.hpp"
 
 namespace {
 
@@ -432,13 +434,34 @@ void network::propagate_packet(const ethernet::packet& packet, socket_protocol p
         auto state = scheduler::get_process_state(pid);
         if(state != scheduler::process_state::EMPTY && state != scheduler::process_state::NEW && state != scheduler::process_state::KILLED){
             for(auto& socket : scheduler::get_sockets(pid)){
-                if(socket.listen && socket.protocol == protocol){
-                    auto copy = packet;
-                    copy.payload = new char[copy.payload_size];
-                    std::copy_n(packet.payload, packet.payload_size, copy.payload);
+                if(socket.listen){
+                    bool propagate = false;
+                    if(socket.type == socket_type::RAW){
+                        if(socket.protocol == protocol){
+                            propagate = true;
+                        }
+                    } else if(socket.type == socket_type::DGRAM){
+                        if(socket.protocol == protocol){
+                            auto local_port = socket.local_port;
 
-                    socket.listen_packets.push(copy);
-                    socket.listen_queue.wake_up();
+                            auto udp_index   = packet.tag(2);
+                            auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + udp_index);
+                            auto target_port = switch_endian_16(udp_header->target_port);
+
+                            if(local_port == target_port){
+                                propagate = true;
+                            }
+                        }
+                    }
+
+                    if (propagate) {
+                        auto copy    = packet;
+                        copy.payload = new char[copy.payload_size];
+                        std::copy_n(packet.payload, packet.payload_size, copy.payload);
+
+                        socket.listen_packets.push(copy);
+                        socket.listen_queue.wake_up();
+                    }
                 }
             }
         }
