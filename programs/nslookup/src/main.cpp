@@ -17,7 +17,7 @@ static constexpr const size_t retries    = 10;
 static constexpr const size_t timeout_ms = 2000;
 
 bool send_request(tlib::socket& sock, const std::string& domain){
-    auto status = tlib::dns::send_request(sock, domain, 255, 1);
+    auto status = tlib::dns::send_request(sock, domain, 1, 1);
 
     if (!status) {
         tlib::printf("nslookup: prepare_packet error: %s\n", std::error_message(status.error()));
