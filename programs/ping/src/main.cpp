@@ -9,11 +9,38 @@
 #include <tlib/errors.hpp>
 #include <tlib/print.hpp>
 #include <tlib/net.hpp>
+#include <tlib/dns.hpp>
 
 namespace {
 
 static constexpr const size_t N          = 4;
 static constexpr const size_t timeout_ms = 2000;
+
+bool is_digit(char c){
+    return c >= '0' && c <= '9';
+}
+
+bool is_ip(const std::string& value){
+    auto ip_parts = std::split(value, '.');
+
+    if(ip_parts.size() != 4){
+        return false;
+    }
+
+    for(auto& part : ip_parts){
+        if(part.empty() || part.size() > 3){
+            return false;
+        }
+
+        for(size_t i = 0; i < part.size(); ++i){
+            if(!is_digit(part[i])){
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
 
 } // end of anonymous namespace
 
@@ -23,7 +50,22 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string ip(argv[1]);
+    std::string query(argv[1]);
+
+    std::string ip;
+
+    if (is_ip(query)) {
+        ip = query;
+    } else {
+        auto resolved = tlib::dns::resolve(query);
+
+        if(resolved){
+            ip = *resolved;
+        } else {
+            tlib::printf("ping: failed to resolve name: %s\n", std::error_message(resolved.error()));
+        }
+    }
+
     auto ip_parts = std::split(ip, '.');
 
     if (ip_parts.size() != 4) {
