@@ -87,6 +87,26 @@ struct packet_descriptor {
 
 } // end of namespace icmp
 
+namespace dns {
+
+struct header {
+    uint16_t identification;
+    uint16_t flags;
+    uint16_t questions;
+    uint16_t answers;
+    uint16_t authority_rrs;
+    uint16_t additional_rrs;
+} __attribute__((packed));
+
+struct packet_descriptor {
+    size_t payload_size;
+    ip::address target_ip;
+    uint16_t source_port;
+    uint16_t identification;
+};
+
+} // end of dns namespace
+
 enum class socket_domain : size_t {
     AF_INET
 };
@@ -96,7 +116,8 @@ enum class socket_type : size_t {
 };
 
 enum class socket_protocol : size_t {
-    ICMP
+    ICMP,
+    DNS
 };
 
 } // end of network namespace

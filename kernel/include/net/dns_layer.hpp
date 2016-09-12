@@ -18,15 +18,6 @@ namespace network {
 
 namespace dns {
 
-struct header {
-    uint16_t identification;
-    uint16_t flags;
-    uint16_t questions;
-    uint16_t answers;
-    uint16_t authority_rrs;
-    uint16_t additional_rrs;
-} __attribute__((packed));
-
 static_assert(sizeof(header) == 12, "DNS flags must be 96 bits");
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
