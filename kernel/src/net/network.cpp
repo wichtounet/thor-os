@@ -7,6 +7,7 @@
 
 #include <vector.hpp>
 #include <string.hpp>
+#include <atomic.hpp>
 
 #include "net/network.hpp"
 #include "net/ethernet_layer.hpp"
@@ -28,8 +29,7 @@
 
 namespace {
 
-// TODO need to be atomic!
-size_t local_port = 1234;
+std::atomic<size_t> local_port;
 
 std::vector<network::interface_descriptor> interfaces;
 
@@ -172,6 +172,9 @@ void network::init(){
             }
         }
     }
+
+    // Set the first local port to be attributed
+    local_port = 1234;
 }
 
 void network::finalize(){
