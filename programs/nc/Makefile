@@ -1,6 +1,6 @@
 .PHONY: default clean
 
-EXEC_NAME=nslookup
+EXEC_NAME=nc
 
 default: link
 
