@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
                 auto questions = tlib::switch_endian_16(dns_header->questions);
                 auto answers   = tlib::switch_endian_16(dns_header->answers);
 
-                auto flags = dns_header->flags;
+                auto flags = tlib::switch_endian_16(dns_header->flags);
                 auto qr    = flags >> 15;
 
                 // Only handle Response
