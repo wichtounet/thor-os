@@ -292,9 +292,9 @@ void create_post_init_task(){
 
 void switch_to_process(size_t pid){
     if(pcb[current_pid].process.system){
-        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u to %u (rip:%u)\n", current_pid, pid, pcb[current_pid].process.context->rip);
+        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u (s:%u) to %u (rip:%u)\n", current_pid, static_cast<size_t>(pcb[current_pid].state), pid, pcb[current_pid].process.context->rip);
     } else {
-        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u to %u\n", current_pid, pid);
+        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u (s:%u) to %u\n", current_pid, static_cast<size_t>(pcb[current_pid].state), pid);
     }
 
     // This should never be interrupted
