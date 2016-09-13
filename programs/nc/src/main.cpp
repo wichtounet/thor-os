@@ -27,8 +27,18 @@ int main(int argc, char* argv[]) {
     std::string port_str(argv[2]);
     auto port = std::atoui(port_str);
 
+    auto ip_parts = std::split(server, '.');
+
+    if (ip_parts.size() != 4) {
+        tlib::print_line("Invalid address IP for the server");
+        return 1;
+    }
+
+    auto server_ip = tlib::ip::make_address(std::atoui(ip_parts[0]), std::atoui(ip_parts[1]), std::atoui(ip_parts[2]), std::atoui(ip_parts[3]));
+
     tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::STREAM, tlib::socket_protocol::TCP);
 
+    sock.connect(server_ip, port);
     sock.listen(true);
 
     if (!sock) {

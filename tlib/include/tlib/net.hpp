@@ -42,6 +42,7 @@ std::expected<packet> prepare_packet(size_t socket_fd, void* desc);
 std::expected<void> finalize_packet(size_t socket_fd, const packet& p);
 std::expected<void> listen(size_t socket_fd, bool l);
 std::expected<size_t> client_bind(size_t socket_fd);
+std::expected<size_t> connect(size_t socket_fd, tlib::ip::address server, size_t port);
 std::expected<packet> wait_for_packet(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd, size_t ms);
 
@@ -82,6 +83,8 @@ struct socket {
      * \brief Bind the socket as a client
      */
     void client_bind();
+
+    void connect(tlib::ip::address server, size_t port);
 
     void listen(bool l);
 

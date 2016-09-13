@@ -237,17 +237,22 @@ std::expected<network::socket_fd_t> network::open(network::socket_domain domain,
     }
 
     // Make sure the socket type is valid
-    if(type != socket_type::RAW && type != socket_type::DGRAM){
+    if(type != socket_type::RAW && type != socket_type::DGRAM && type != socket_type::STREAM){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
     // Make sure the socket protocol is valid
-    if(protocol != socket_protocol::ICMP && protocol != socket_protocol::DNS){
+    if(protocol != socket_protocol::ICMP && protocol != socket_protocol::DNS && protocol != socket_protocol::TCP){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_PROTOCOL);
     }
 
     // Make sure the socket protocol is valid for the given socket type
     if(type == socket_type::DGRAM && !(protocol == socket_protocol::DNS)){
+        return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
+
+    // Make sure the socket protocol is valid for the given socket type
+    if(type == socket_type::STREAM && !(protocol == socket_protocol::TCP)){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
 
@@ -372,7 +377,27 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd){
 
     socket.local_port = local_port++;
 
-    logging::logf(logging::log_level::TRACE, "network: %u socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
+    logging::logf(logging::log_level::TRACE, "network: %u datagram socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
+
+    return std::make_expected<size_t>(socket.local_port);
+}
+
+std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::address server, size_t port){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(socket.type != socket_type::STREAM){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
+    }
+
+    socket.local_port = local_port++;
+
+    logging::logf(logging::log_level::TRACE, "network: %u stream socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
+
+    //TODO TCP connect
 
     return std::make_expected<size_t>(socket.local_port);
 }

@@ -113,6 +113,15 @@ std::expected<void> listen(socket_fd_t socket_fd, bool listen);
 std::expected<size_t> client_bind(socket_fd_t socket_fd);
 
 /*!
+ * \brief Bind a socket stream as a client (bind a local random port)
+ * \param socket_fd The file descriptor of the packet
+ * \param server The ip address of the server
+ * \param port The port of the server
+ * \return the allocated port on success and a negative error code otherwise
+ */
+std::expected<size_t> connect(socket_fd_t socket_fd, network::ip::address address, size_t port);
+
+/*!
  * \brief Wait for a packet
  * \param socket_fd The file descriptor of the packet
  * \return the packet index
