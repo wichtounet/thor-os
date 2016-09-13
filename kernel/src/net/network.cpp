@@ -144,7 +144,7 @@ void network::init(){
             if(interface.enabled){
                 //TODO This should be configurable
                 interface.ip_address = network::ip::make_address(10, 0, 2, 15);
-                interface.gateway    = network::ip::make_address(10, 0, 2, 1);
+                interface.gateway    = network::ip::make_address(10, 0, 2, 2);
 
                 interface.tx_lock.init(1);
                 interface.tx_sem.init(0);
