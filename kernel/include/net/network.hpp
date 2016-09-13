@@ -26,14 +26,15 @@ namespace network {
 using socket_fd_t = size_t;
 
 struct interface_descriptor {
-    size_t id;
-    bool enabled;
-    std::string name;
-    std::string driver;
-    size_t pci_device;
-    size_t mac_address;
-    void* driver_data;
-    network::ip::address ip_address;
+    size_t id;                       ///< The interface ID
+    bool enabled;                    ///< true if the interface is enabled
+    std::string name;                ///< The name of the interface
+    std::string driver;              ///< The driver of the interface
+    size_t pci_device;               ///< The pci information
+    size_t mac_address;              ///< The inteface MAC address
+    void* driver_data;               ///<  The driver data
+    network::ip::address ip_address; ///< The interface IP address
+    network::ip::address gateway;    ///< The interface IP gateway
 
     mutable mutex<> tx_lock; //To synchronize the queue
     mutable semaphore tx_sem;

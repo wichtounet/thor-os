@@ -10,11 +10,14 @@
 #include <tlib/errors.hpp>
 #include <tlib/print.hpp>
 
-std::string read_file(const std::string& path){
+std::string read_file(const std::string& path, bool check = true){
     tlib::file f(path);
 
     if(!f){
-        tlib::printf("ifconfig: error: %s\n", std::error_message(f.error()));
+        if(check){
+            tlib::printf("ifconfig: error: %s\n", std::error_message(f.error()));
+        }
+
         return "";
     }
 
@@ -50,9 +53,14 @@ int main(int /*argc*/, char* /*argv*/[]){
         if(enabled == "true"){
             auto driver = read_file(base_path + entry_name + "/driver");
             auto ip = read_file(base_path + entry_name + "/ip");
+            auto gw = read_file(base_path + entry_name + "/gateway", false);
             auto mac = read_file(base_path + entry_name + "/mac");
 
             tlib::printf("%10s inet %s\n", entry_name, ip.c_str());
+
+            if(!gw.empty()){
+                tlib::printf("%10s   gw %s\n", "", gw.c_str());
+            }
 
             if(!mac.empty() && mac != "0"){
                 tlib::printf("%10s ether %s\n", "", mac.c_str());

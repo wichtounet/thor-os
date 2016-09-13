@@ -102,9 +102,17 @@ void sysfs_publish(const network::interface_descriptor& interface){
     sysfs::set_constant_value(path("/sys"), p / "mac", std::to_string(interface.mac_address));
 
     if(interface.enabled){
-        auto ip = interface.ip_address;
-        auto ip_addr = std::to_string(ip(0)) + "." + std::to_string(ip(1)) + "." +std::to_string(ip(2)) + "." +std::to_string(ip(3));
+        auto ip      = interface.ip_address;
+        auto ip_addr = std::to_string(ip(0)) + "." + std::to_string(ip(1)) + "." + std::to_string(ip(2)) + "." + std::to_string(ip(3));
+
         sysfs::set_constant_value(path("/sys"), p / "ip", ip_addr);
+
+        if (!interface.is_loopback()) {
+            auto gateway      = interface.gateway;
+            auto gateway_addr = std::to_string(gateway(0)) + "." + std::to_string(gateway(1)) + "." + std::to_string(gateway(2)) + "." + std::to_string(gateway(3));
+
+            sysfs::set_constant_value(path("/sys"), p / "gateway", gateway_addr);
+        }
     }
 }
 
@@ -125,9 +133,6 @@ void network::init(){
             interface.enabled = false;
             interface.driver = "";
             interface.driver_data = nullptr;
-            interface.tx_lock.init(1);
-            interface.tx_sem.init(0);
-            interface.rx_sem.init(0);
 
             if(pci_device.vendor_id == 0x10EC && pci_device.device_id == 0x8139){
                 interface.enabled = true;
@@ -139,6 +144,11 @@ void network::init(){
             if(interface.enabled){
                 //TODO This should be configurable
                 interface.ip_address = network::ip::make_address(10, 0, 2, 15);
+                interface.gateway    = network::ip::make_address(10, 0, 2, 1);
+
+                interface.tx_lock.init(1);
+                interface.tx_sem.init(0);
+                interface.rx_sem.init(0);
             }
 
             sysfs_publish(interface);
@@ -151,12 +161,14 @@ void network::init(){
 
     auto& interface = interfaces.emplace_back();
 
-    interface.id = interfaces.size() - 1;
-    interface.name = "loopback";
-    interface.pci_device = 0;
-    interface.enabled = true;
-    interface.driver = "loopback";
+    interface.id          = interfaces.size() - 1;
+    interface.name        = "loopback";
+    interface.pci_device  = 0;
+    interface.enabled     = true;
+    interface.driver      = "loopback";
     interface.driver_data = nullptr;
+    interface.ip_address  = network::ip::make_address(127, 0, 0, 1);
+
     interface.tx_lock.init(1);
     interface.tx_sem.init(0);
     interface.rx_sem.init(0);
