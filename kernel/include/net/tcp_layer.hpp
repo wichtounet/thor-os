@@ -35,6 +35,8 @@ std::expected<network::ethernet::packet> prepare_packet(network::interface_descr
 std::expected<network::ethernet::packet> prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
 void finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
+std::expected<void> connect(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target);
+
 } // end of tcp namespace
 
 } // end of network namespace

@@ -28,6 +28,7 @@
 #include "net/icmp_layer.hpp"
 #include "net/dns_layer.hpp"
 #include "net/udp_layer.hpp"
+#include "net/tcp_layer.hpp"
 
 namespace {
 
@@ -397,7 +398,11 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
 
     logging::logf(logging::log_level::TRACE, "network: %u stream socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
 
-    //TODO TCP connect
+    if(socket.protocol == socket_protocol::TCP){
+        network::tcp::connect(select_interface(server), server, socket.local_port, port);
+    } else {
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
 
     return std::make_expected<size_t>(socket.local_port);
 }
