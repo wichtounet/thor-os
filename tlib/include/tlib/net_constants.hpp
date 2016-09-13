@@ -114,12 +114,14 @@ enum class socket_domain : size_t {
 
 enum class socket_type : size_t {
     RAW,
-    DGRAM
+    DGRAM,
+    STREAM
 };
 
 enum class socket_protocol : size_t {
     ICMP,
-    DNS
+    DNS,
+    TCP
 };
 
 } // end of network namespace
