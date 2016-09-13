@@ -12,6 +12,7 @@
 #include "net/ethernet_layer.hpp"
 #include "net/icmp_layer.hpp"
 #include "net/udp_layer.hpp"
+#include "net/tcp_layer.hpp"
 #include "net/arp_cache.hpp"
 
 #include "logging.hpp"
@@ -143,7 +144,7 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
     if(protocol == 0x01){
         network::icmp::decode(interface, packet);
     } else if(protocol == 0x06){
-        logging::logf(logging::log_level::ERROR, "ip: TCP packet detected (unsupported)\n");
+        network::tcp::decode(interface, packet);
     } else if(protocol == 0x11){
         network::udp::decode(interface, packet);
     } else {
