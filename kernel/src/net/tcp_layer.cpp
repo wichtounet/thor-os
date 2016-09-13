@@ -9,6 +9,7 @@
 
 #include "net/tcp_layer.hpp"
 #include "net/dns_layer.hpp"
+#include "net/checksum.hpp"
 
 #include "kernel_utils.hpp"
 
@@ -32,7 +33,20 @@ void compute_checksum(network::ethernet::packet& packet){
 
     tcp_header->checksum = 0;
 
-    //TODO
+    // Accumulate the Payload
+    auto sum = network::checksum_add_bytes(packet.payload + packet.index, 20); // TODO What is the length
+
+    // Accumulate the IP addresses
+    sum += network::checksum_add_bytes(&ip_header->source_ip, 8);
+
+    // Accumulate the IP Protocol
+    sum += ip_header->protocol;
+
+    // Accumulate the UDP length
+    sum += 20;
+
+    // Complete the 1-complement sum
+    tcp_header->checksum = switch_endian_16(network::checksum_finalize_nz(sum));
 }
 
 uint16_t get_default_flags(){
