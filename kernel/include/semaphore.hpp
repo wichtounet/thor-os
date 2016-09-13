@@ -47,6 +47,7 @@ public:
         if(queue.empty()){
             ++value;
         } else {
+            // Wake up the process
             auto pid = queue.pop();
             scheduler::unblock_process(pid);
 
