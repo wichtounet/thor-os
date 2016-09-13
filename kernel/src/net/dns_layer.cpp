@@ -14,14 +14,14 @@
 
 namespace {
 
-using flag_qr     = std::bit_field<uint16_t, uint8_t, 0, 1>;
-using flag_opcode = std::bit_field<uint16_t, uint8_t, 1, 4>;
-using flag_aa     = std::bit_field<uint16_t, uint8_t, 5, 1>;
-using flag_tc     = std::bit_field<uint16_t, uint8_t, 6, 1>;
-using flag_rd     = std::bit_field<uint16_t, uint8_t, 7, 1>;
-using flag_ra     = std::bit_field<uint16_t, uint8_t, 8, 1>;
-using flag_zeroes = std::bit_field<uint16_t, uint8_t, 9, 3>;
-using flag_rcode  = std::bit_field<uint16_t, uint8_t, 12, 4>;
+using flag_qr     = std::bit_field<uint16_t, uint8_t, 15, 1>;
+using flag_opcode = std::bit_field<uint16_t, uint8_t, 11, 4>;
+using flag_aa     = std::bit_field<uint16_t, uint8_t, 10, 1>;
+using flag_tc     = std::bit_field<uint16_t, uint8_t, 9, 1>;
+using flag_rd     = std::bit_field<uint16_t, uint8_t, 8, 1>;
+using flag_ra     = std::bit_field<uint16_t, uint8_t, 7, 1>;
+using flag_zeroes = std::bit_field<uint16_t, uint8_t, 4, 3>;
+using flag_rcode  = std::bit_field<uint16_t, uint8_t, 0, 4>;
 
 void prepare_packet_query(network::ethernet::packet& packet, uint16_t identification) {
     packet.tag(3, packet.index);
@@ -39,15 +39,19 @@ void prepare_packet_query(network::ethernet::packet& packet, uint16_t identifica
     dns_header->authority_rrs  = switch_endian_16(0);
     dns_header->additional_rrs = switch_endian_16(0);
 
+    uint16_t flags = 0;
+
     // Set all the flags
-    flag_qr(&dns_header->flags) = 0;     // This is a query
-    flag_opcode(&dns_header->flags) = 0; // This is a standard query
-    flag_aa(&dns_header->flags) = 0;     // This is a query (field not used)
-    flag_tc(&dns_header->flags) = 0;     // The question is not truncated
-    flag_rd(&dns_header->flags) = 0;     // No need for recursion
-    flag_ra(&dns_header->flags) = 0;     // This is a query (field not used)
-    flag_zeroes(&dns_header->flags) = 0; // Always zero
-    flag_rcode(&dns_header->flags) = 0;  // This is a query (field not used)
+    (flag_qr(&flags)) = 0;     // This is a query
+    (flag_opcode(&flags)) = 0; // This is a standard query
+    (flag_aa(&flags)) = 0;     // This is a query (field not used)
+    (flag_tc(&flags)) = 0;     // The question is not truncated
+    (flag_rd(&flags)) = 1;     // No need for recursion
+    (flag_ra(&flags)) = 0;     // This is a query (field not used)
+    (flag_zeroes(&flags)) = 0; // Always zero
+    (flag_rcode(&flags)) = 0;  // This is a query (field not used)
+
+    dns_header->flags = switch_endian_16(flags);
 
     packet.index += sizeof(network::dns::header);
 }
@@ -99,10 +103,14 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
     logging::logf(logging::log_level::TRACE, "dns: Authorithy RRs %u \n", size_t(authority_rrs));
     logging::logf(logging::log_level::TRACE, "dns: Additional RRs %u \n", size_t(additional_rrs));
 
-    if (*flag_qr(&dns_header->flags)) {
+        logging::logf(logging::log_level::TRACE, "dns: fucking flags %u\n", size_t(dns_header->flags));
+
+    auto flags = switch_endian_16(dns_header->flags);
+
+    if (*flag_qr(&flags) == 0) {
         logging::logf(logging::log_level::TRACE, "dns: Query\n");
     } else {
-        auto response_code = *flag_opcode(&dns_header->flags);
+        auto response_code = *flag_opcode(&flags);
 
         if (response_code == 0x0) {
             logging::logf(logging::log_level::TRACE, "dns: Response OK\n");
