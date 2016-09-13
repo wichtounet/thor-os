@@ -7,45 +7,11 @@
 
 #include "net/udp_layer.hpp"
 #include "net/dns_layer.hpp"
+#include "net/checksum.hpp"
 
 #include "kernel_utils.hpp"
 
 namespace {
-
-template<typename T>
-uint32_t net_checksum_add_bytes(T* values, size_t length){
-    auto raw_values = reinterpret_cast<uint8_t*>(values);
-
-    uint32_t sum = 0;
-
-    for(size_t i = 0; i < length; ++i){
-        if(i & 1){
-            sum += static_cast<uint32_t>(raw_values[i]);
-        } else {
-            sum += static_cast<uint32_t>(raw_values[i]) << 8;
-        }
-    }
-
-    return sum;
-}
-
-uint16_t net_checksum_finalize(uint32_t sum){
-    while(sum >> 16){
-        sum = (sum & 0xFFFF) + (sum >> 16);
-    }
-
-    return ~sum;
-}
-
-uint16_t net_checksum_finalize_nz(uint32_t sum){
-    auto checksum = net_checksum_finalize(sum);
-
-    if(!checksum){
-        return ~checksum;
-    } else {
-        return checksum;
-    }
-}
 
 void compute_checksum(network::ethernet::packet& packet){
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
@@ -56,10 +22,10 @@ void compute_checksum(network::ethernet::packet& packet){
     auto length = switch_endian_16(udp_header->length);
 
     // Accumulate the Payload
-    auto sum = net_checksum_add_bytes(packet.payload + packet.index, length);
+    auto sum = network::checksum_add_bytes(packet.payload + packet.index, length);
 
     // Accumulate the IP addresses
-    sum += net_checksum_add_bytes(&ip_header->source_ip, 8);
+    sum += network::checksum_add_bytes(&ip_header->source_ip, 8);
 
     // Accumulate the IP Protocol
     sum += ip_header->protocol;
@@ -68,7 +34,7 @@ void compute_checksum(network::ethernet::packet& packet){
     sum += length;
 
     // Complete the 1-complement sum
-    udp_header->checksum = switch_endian_16(net_checksum_finalize_nz(sum));
+    udp_header->checksum = switch_endian_16(network::checksum_finalize_nz(sum));
 }
 
 void prepare_packet(network::ethernet::packet& packet, size_t source, size_t target, size_t payload_size){
