@@ -63,9 +63,21 @@ void prepare_packet(network::ethernet::packet& packet, network::interface_descri
 }
 
 std::expected<uint64_t> get_target_mac(network::interface_descriptor& interface, network::ip::address& target_ip){
-    auto target_mac = network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
+    // For loopback, there is no gateway
+    if(interface.is_loopback()){
+        return network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
+    }
 
-    return target_mac;
+    auto& interface_ip = interface.ip_address;
+
+    // If it is the same network, use ARP to get the MAC address
+    if(network::ip::same_network(interface_ip, target_ip)){
+        return network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
+    }
+
+    // If it is another network, use the gateway
+
+    return network::arp::get_mac_force(interface, interface.gateway, ARP_TIMEOUT);
 }
 
 } // end of anonymous namespace
@@ -88,6 +100,10 @@ std::string network::ip::ip_to_str(address ip){
     value += '.';
     value += std::to_string(ip(3));
     return value;
+}
+
+bool network::ip::same_network(address ip, address test) {
+    return ip(0) == test(0) && ip(1) == test(1) && ip(2) == test(2);
 }
 
 void network::ip::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){

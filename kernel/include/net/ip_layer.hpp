@@ -22,6 +22,8 @@ address ip32_to_ip(uint32_t raw);
 uint32_t ip_to_ip32(address ip);
 std::string ip_to_str(address ip);
 
+bool same_network(address ip, address test);
+
 struct header {
     uint8_t version_ihl;
     uint8_t dscp_ecn;
