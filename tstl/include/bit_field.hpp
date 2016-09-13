@@ -22,8 +22,10 @@ struct bit_field {
         return (*value >> Position) & ((1ULL << Size) - 1);
     }
 
-    bit_field& operator=(T new_value){
-        S mask = ((1ULL << Size) - 1) << Position;
+    bit_field& operator=(T new_value_real){
+        S new_value(new_value_real);
+
+        size_t mask = ((S(1) << Size) - 1) << Position;
         *value = (*value & ~mask) | ((new_value << Position) & mask);
         return *this;
     }
