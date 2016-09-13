@@ -75,7 +75,7 @@ void tx_thread(void* data){
 network::interface_descriptor& select_interface(network::ip::address address){
     if(address == network::ip::make_address(127, 0, 0, 1)){
         for(auto& interface : interfaces){
-            if(interface.enabled && interface.driver == "loopback"){
+            if(interface.enabled && interface.is_loopback()){
                 return interface;
             }
         }
@@ -167,7 +167,7 @@ void network::init(){
 
     for(auto& interface : interfaces){
         if(interface.enabled){
-            if(interface.driver == "loopback"){
+            if(interface.is_loopback()){
                 loopback::finalize_driver(interface);
             } else if(interface.driver == "rtl8139"){
                 rtl8139::finalize_driver(interface);

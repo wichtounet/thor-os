@@ -52,6 +52,10 @@ struct interface_descriptor {
         tx_queue.push(p);
         tx_sem.release();
     }
+
+    bool is_loopback() const {
+        return driver == "loopback";
+    }
 };
 
 void init();        // Called early on
