@@ -32,8 +32,6 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
 
     std::copy_n(packet.payload, packet.payload_size, packet_buffer);
 
-    direct_int_lock lock;
-
     interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
     interface.rx_sem.release();
 
