@@ -29,48 +29,48 @@ struct iterator_traits <T*> {
     using difference_type = size_t;
 };
 
-template<class T>
+template<typename T>
 struct remove_reference {
-    typedef T type;
+    using type = T;
 };
 
-template<class T>
+template<typename T>
 struct remove_reference<T&>{
-    typedef T type;
+    using type = T;
 };
 
-template<class T>
+template<typename T>
 struct remove_reference<T&&> {
-    typedef T type;
+    using type = T;
 };
 
 /* remove_extent */
 
-template<class T>
+template<typename T>
 struct remove_extent {
-    typedef T type;
+    using type = T;
 };
 
-template<class T>
+template<typename T>
 struct remove_extent<T[]> {
-    typedef T type;
+    using type = T;
 };
 
-template<class T, size_t N>
+template<typename T, size_t N>
 struct remove_extent<T[N]> {
-    typedef T type;
+    using type = T;
 };
 
 /* remove_const */
 
-template<class T>
+template<typename T>
 struct remove_const {
-    typedef T type;
+    using type = T;
 };
 
-template<class T>
+template<typename T>
 struct remove_const<const T> {
-    typedef T type;
+    using type = T;
 };
 
 /* add_const */
@@ -90,36 +90,36 @@ using add_const_t = typename add_const<T>::type;
 
 /* remove_volatile */
 
-template<class T>
+template<typename T>
 struct remove_volatile {
-    typedef T type;
+    using type = T;
 };
 
-template<class T>
+template<typename T>
 struct remove_volatile<volatile T> {
-    typedef T type;
+    using type = T;
 };
 
 /* remove_cv */
 
-template<class T>
+template<typename T>
 struct remove_cv {
-    typedef typename std::remove_volatile<typename std::remove_const<T>::type>::type type;
+    using type = typename std::remove_volatile<typename std::remove_const<T>::type>::type;
 };
 
 /* conditional */
 
-template<bool B, class T, class F>
+template<bool B, typename T, typename F>
 struct conditional {
-    typedef T type;
+    using type = T;
 };
 
-template<class T, class F>
+template<typename T, typename F>
 struct conditional<false, T, F> {
-    typedef F type;
+    using type = F;
 };
 
-template<bool B, class T, class F>
+template<bool B, typename T, typename F>
 using conditional_t = typename std::conditional<B, T, F>::type;
 
 /* is_trivially_destructible */
@@ -160,17 +160,17 @@ struct is_reference<T&&>{
 
 /* is_array */
 
-template<class T>
+template<typename T>
 struct is_array {
     static constexpr const bool value = false;
 };
 
-template<class T>
+template<typename T>
 struct is_array<T[]>{
     static constexpr const bool value = true;
 };
 
-template<class T, size_t N>
+template<typename T, size_t N>
 struct is_array<T[N]>{
     static constexpr const bool value = true;
 };
@@ -182,12 +182,12 @@ struct is_function {
     static constexpr const bool value = false;
 };
 
-template<class Ret, class... Args>
+template<typename Ret, typename... Args>
 struct is_function<Ret(Args...)> {
     static constexpr const bool value = true;
 };
 
-template<class Ret, class... Args>
+template<typename Ret, typename... Args>
 struct is_function<Ret(Args......)> {
     static constexpr const bool value = true;
 };
@@ -199,35 +199,33 @@ struct add_rvalue_reference;
 
 template<typename T>
 struct add_rvalue_reference<T, typename std::enable_if_t<std::is_reference<T>::value>> {
-    typedef T type;
+    using type = T;
 };
 
 template<typename T>
 struct add_rvalue_reference<T, typename std::disable_if_t<!std::is_reference<T>::value>> {
-    typedef T&& type;
+    using type = T&&;
 };
 
 /* add_pointer */
 
 template<typename T>
 struct add_pointer {
-    typedef typename std::remove_reference<T>::type* type;
+    using type = typename std::remove_reference<T>::type*;
 };
 
 /* decay */
 
 template<typename T>
 struct decay {
-    typedef typename std::remove_reference<T>::type U;
-    typedef typename std::conditional<
+    using U    = typename std::remove_reference<T>::type;
+    using type = typename std::conditional<
         std::is_array<U>::value,
         typename std::remove_extent<U>::type*,
         typename std::conditional<
             std::is_function<U>::value,
             typename std::add_pointer<U>::type,
-            typename std::remove_cv<U>::type
-        >::type
-    >::type type;
+            typename std::remove_cv<U>::type>::type>::type;
 };
 
 /* is_same */
