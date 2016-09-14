@@ -13,6 +13,7 @@
 void string_tests();
 void tuple_tests();
 void vector_tests();
+void list_tests();
 void traits_tests();
 void algorithms_tests();
 void circular_buffer_tests();
@@ -24,6 +25,7 @@ int main(){
     circular_buffer_tests();
     tuple_tests();
     vector_tests();
+    list_tests();
 
     printf("All tests finished\n");
 
