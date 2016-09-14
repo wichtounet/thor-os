@@ -35,6 +35,7 @@ struct tcp_listener {
     size_t source_port;
     size_t target_port;
     std::atomic<bool> active;
+    //TODO Use a sleep queue here
     semaphore sem;
     circular_buffer<network::ethernet::packet, 8> packets;
 
@@ -136,7 +137,6 @@ void network::tcp::decode(network::interface_descriptor& /*interface*/, network:
         ++it;
     }
 
-
     packet.index += sizeof(header);
 
     //TODO
@@ -218,11 +218,12 @@ std::expected<void> network::tcp::connect(network::interface_descriptor& interfa
             seq = switch_endian_32(tcp_header->sequence_number);
             ack = switch_endian_32(tcp_header->ack_number);
 
-            //TODO Release packet
+            delete[] received_packet.payload;
+
             break;
         }
 
-        //TODO Release packet
+        delete[] received_packet.payload;
     }
 
     listener.active = false;
@@ -249,7 +250,17 @@ std::expected<void> network::tcp::connect(network::interface_descriptor& interfa
         tcp::finalize_packet(interface, *packet);
     }
 
-    //TODO Remove the listener
+    auto end = listeners.end();
+    auto it = listeners.begin();
+
+    while(it != end){
+        if(&(*it) == &listener){
+            listeners.erase(it);
+            break;
+        }
+
+        ++it;
+    }
 
     return {};
 }
