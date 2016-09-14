@@ -15,13 +15,13 @@
 
 namespace std {
 
-template<typename Iterator>
-size_t distance(Iterator it, Iterator end){
+template <typename Iterator>
+size_t distance(Iterator it, Iterator end) {
     // For now, we only have random access iterator
     return end - it;
 }
 
-template< typename Iterator>
+template <typename Iterator>
 struct reverse_iterator {
     using iterator_type   = Iterator;
     using value_type      = typename std::iterator_traits<Iterator>::value_type;
@@ -29,29 +29,30 @@ struct reverse_iterator {
     using pointer         = typename std::iterator_traits<Iterator>::pointer;
     using reference       = typename std::iterator_traits<Iterator>::reference;
 
-    reverse_iterator(Iterator it) : it(it) {
+    reverse_iterator(Iterator it)
+            : it(it) {
         //Nothing else
     }
 
-    reference operator*(){
+    reference operator*() {
         return *it;
     }
 
-    reverse_iterator& operator++(){
+    reverse_iterator& operator++() {
         --it;
         return *this;
     }
 
-    reverse_iterator& operator--(){
+    reverse_iterator& operator--() {
         ++it;
         return *this;
     }
 
-    bool operator==(const reverse_iterator& rhs){
+    bool operator==(const reverse_iterator& rhs) {
         return it == rhs.it;
     }
 
-    bool operator!=(const reverse_iterator& rhs){
+    bool operator!=(const reverse_iterator& rhs) {
         return it != rhs.it;
     }
 
@@ -59,76 +60,78 @@ private:
     iterator_type it;
 };
 
-template< typename Container >
+template <typename Container>
 struct back_insert_iterator {
-    using container_type = Container;
-    using value_type = void;
+    using container_type  = Container;
+    using value_type      = void;
     using difference_type = void;
-    using reference = void;
+    using reference       = void;
     using const_reference = void;
 
     container_type& container;
 
-    explicit back_insert_iterator(container_type& container) : container(container) {}
+    explicit back_insert_iterator(container_type& container)
+            : container(container) {}
 
-    back_insert_iterator& operator=(const typename container_type::value_type& value){
+    back_insert_iterator& operator=(const typename container_type::value_type& value) {
         container.push_back(value);
 
         return *this;
     }
 
-    back_insert_iterator& operator=(typename container_type::value_type&& value){
+    back_insert_iterator& operator=(typename container_type::value_type&& value) {
         container.push_back(std::move(value));
 
         return *this;
     }
 
-    back_insert_iterator& operator*(){
+    back_insert_iterator& operator*() {
         return *this;
     }
 
-    back_insert_iterator& operator++(){
+    back_insert_iterator& operator++() {
         return *this;
     }
 
-    back_insert_iterator& operator++(int){
+    back_insert_iterator& operator++(int) {
         return *this;
     }
 };
 
-template< typename Container >
+template <typename Container>
 struct front_insert_iterator {
-    using container_type = Container;
-    using value_type = void;
+    using container_type  = Container;
+    using value_type      = void;
     using difference_type = void;
-    using reference = void;
+    using reference       = void;
     using const_reference = void;
 
     container_type& container;
 
-    explicit front_insert_iterator(container_type& container) : container(container) {}
+    explicit front_insert_iterator(container_type& container)
+            : container(container) {}
 
-    front_insert_iterator& operator=(const typename container_type::value_type& value){
+    front_insert_iterator& operator=(const typename container_type::value_type& value) {
         container.push_front(value);
 
         return *this;
     }
 
-    front_insert_iterator& operator=(typename container_type::value_type&& value){
+    front_insert_iterator& operator=(typename container_type::value_type&& value) {
         container.push_front(std::move(value));
 
         return *this;
     }
 
-    front_insert_iterator& operator*(){
+    front_insert_iterator& operator*() {
         return *this;
     }
 
-    front_insert_iterator& operator++(){
+    front_insert_iterator& operator++() {
         return *this;
     }
 
-    front_insert_iterator& operator++(int){
+    front_insert_iterator& operator++(int) {
         return *this;
     }
 };
