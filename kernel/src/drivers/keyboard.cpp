@@ -222,18 +222,18 @@ char qwertz[128] = {
     0,  /* < ... F10 */
     0,  /* 69 - Num lock*/
     0,  /* Scroll Lock */
-    0,  /* Home key */
-    0,  /* Up Arrow */
-    0,  /* Page Up */
-  '-',
-    0,  /* Left Arrow */
-    0,
-    0,  /* Right Arrow */
-  '+',
-    0,  /* 79 - End key*/
-    0,  /* Down Arrow */
-    0,  /* Page Down */
-    0,  /* Insert Key */
+    '7',
+    '8',
+    '9',
+    '-',
+    '4',
+    '5',
+    '6',
+    '+',
+    '1',
+    '2',
+    '3',
+    '0',
     0,  /* Delete Key */
     0,   0,   0,
     0,  /* F11 Key */
@@ -261,18 +261,18 @@ char shifted_qwertz[128] = {
     0,  /* < ... F10 */
     0,  /* 69 - Num lock*/
     0,  /* Scroll Lock */
-    0,  /* Home key */
-    0,  /* Up Arrow */
-    0,  /* Page Up */
-  '-',
-    0,  /* Left Arrow */
-    0,
-    0,  /* Right Arrow */
-  '+',
-    0,  /* 79 - End key*/
-    0,  /* Down Arrow */
-    0,  /* Page Down */
-    0,  /* Insert Key */
+    '7',
+    '8',
+    '9',
+    '-',
+    '4',
+    '5',
+    '6',
+    '+',
+    '1',
+    '2',
+    '3',
+    '0',
     0,  /* Delete Key */
     0,   0,   0,
     0,  /* F11 Key */
@@ -303,6 +303,7 @@ void keyboard::install_driver(){
 }
 
 char keyboard::key_to_ascii(uint8_t key){
+        logging::logf(logging::log_level::ERROR, "kbd: %u\n", size_t(key));
     return qwertz[key];
 }
 
