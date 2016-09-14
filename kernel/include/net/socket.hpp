@@ -29,7 +29,9 @@ struct socket {
     socket_protocol protocol;
     size_t next_fd;
     bool listen;
-    size_t local_port;
+    bool connected;
+    uint32_t local_port;
+    uint32_t server_port;
 
     std::vector<network::ethernet::packet> packets;
 
@@ -38,7 +40,7 @@ struct socket {
 
     socket(){}
     socket(size_t id, socket_domain domain, socket_type type, socket_protocol protocol, size_t next_fd, bool listen)
-            : id(id), domain(domain), type(type), protocol(protocol), next_fd(next_fd), listen(listen), local_port(0) {}
+            : id(id), domain(domain), type(type), protocol(protocol), next_fd(next_fd), listen(listen) {}
 
     void invalidate(){
         id = 0xFFFFFFFF;

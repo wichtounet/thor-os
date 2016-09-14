@@ -257,7 +257,15 @@ std::expected<network::socket_fd_t> network::open(network::socket_domain domain,
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
 
-    return scheduler::register_new_socket(domain, type, protocol);
+    auto socket_fd = scheduler::register_new_socket(domain, type, protocol);
+
+    // Initialize TCP connection values
+    auto& socket = scheduler::get_socket(socket_fd);
+    socket.connected = false;
+    socket.local_port = 0;
+    socket.server_port = 0;
+
+    return socket_fd;
 }
 
 void network::close(size_t fd){
@@ -394,12 +402,19 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
-    socket.local_port = local_port++;
+    socket.local_port  = local_port++;
+    socket.server_port = port;
 
     logging::logf(logging::log_level::TRACE, "network: %u stream socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
 
     if(socket.protocol == socket_protocol::TCP){
-        network::tcp::connect(select_interface(server), server, socket.local_port, port);
+        auto connection = network::tcp::connect(select_interface(server), server, socket.local_port, port);
+
+        if(connection){
+            socket.connected = true;
+        } else {
+            return std::make_unexpected<size_t>(connection.error());
+        }
     } else {
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
