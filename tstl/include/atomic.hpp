@@ -16,6 +16,29 @@ template<typename T>
 struct atomic;
 
 template<>
+struct atomic<bool> {
+    using value_type = uint64_t;
+
+    atomic() = default;
+
+    atomic(const atomic& rhs) = delete;
+    atomic& operator=(const atomic& rhs) = delete;
+
+    value_type load() const {
+        return __atomic_load_n(&value, __ATOMIC_CONSUME);
+    }
+
+    value_type operator=(bool new_value){
+        __atomic_store_n(&value, new_value, __ATOMIC_RELEASE);
+
+        return new_value;
+    }
+
+private:
+    volatile bool value;
+};
+
+template<>
 struct atomic<uint64_t> {
     using value_type = uint64_t;
 
