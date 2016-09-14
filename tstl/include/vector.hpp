@@ -268,7 +268,7 @@ public:
     //Iterators
 
     reverse_iterator rbegin(){
-        return iterator(&data[_size] - 1);
+        return reverse_iterator(&data[_size] - 1);
     }
 
     constexpr const_reverse_iterator rbegin() const {
