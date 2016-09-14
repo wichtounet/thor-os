@@ -29,6 +29,8 @@ struct iterator_traits <T*> {
     using difference_type = size_t;
 };
 
+/* remove_reference */
+
 template<typename T>
 struct remove_reference {
     using type = T;
@@ -43,6 +45,9 @@ template<typename T>
 struct remove_reference<T&&> {
     using type = T;
 };
+
+template<typename T>
+using remove_reference_t = typename remove_reference<T>::type;
 
 /* remove_extent */
 
@@ -61,6 +66,9 @@ struct remove_extent<T[N]> {
     using type = T;
 };
 
+template<typename T>
+using remove_extent_t = typename remove_extent<T>::type;
+
 /* remove_const */
 
 template<typename T>
@@ -72,6 +80,9 @@ template<typename T>
 struct remove_const<const T> {
     using type = T;
 };
+
+template<typename T>
+using remove_const_t = typename remove_const<T>::type;
 
 /* add_const */
 
@@ -100,12 +111,18 @@ struct remove_volatile<volatile T> {
     using type = T;
 };
 
+template<typename T>
+using remove_volatile_t = typename remove_volatile<T>::type;
+
 /* remove_cv */
 
 template<typename T>
 struct remove_cv {
     using type = typename std::remove_volatile<typename std::remove_const<T>::type>::type;
 };
+
+template<typename T>
+using remove_cv_t = typename remove_cv<T>::type;
 
 /* conditional */
 
@@ -214,18 +231,21 @@ struct add_pointer {
     using type = typename std::remove_reference<T>::type*;
 };
 
+template<typename T>
+using add_pointer_t = typename add_pointer<T>::type;
+
 /* decay */
 
 template<typename T>
 struct decay {
-    using U    = typename std::remove_reference<T>::type;
-    using type = typename std::conditional<
+    using U    = std::remove_reference_t<T>;
+    using type = std::conditional_t<
         std::is_array<U>::value,
-        typename std::remove_extent<U>::type*,
-        typename std::conditional<
+        std::remove_extent_t<U>*,
+        std::conditional_t<
             std::is_function<U>::value,
-            typename std::add_pointer<U>::type,
-            typename std::remove_cv<U>::type>::type>::type;
+            std::add_pointer_t<U>,
+            std::remove_cv_t<U>>>;
 };
 
 /* is_same */
