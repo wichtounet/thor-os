@@ -8,7 +8,11 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include <initializer_list.hpp>
+
 #include <types.hpp>
+#include <type_traits.hpp>
+#include <iterator.hpp>
 
 namespace std {
 
@@ -16,19 +20,75 @@ template<typename T>
 struct list_node;
 
 template<typename T>
-class list {
-public:
-    typedef T                       value_type;
-    typedef value_type*             pointer_type;
-    typedef size_t                  size_type;
-    typedef list_node<T>            node_type;
+struct list;
+
+template <typename T, typename V>
+struct list_iterator {
+    using value_type      = V;
+    using node_type       = list_node<T>;
+    using reference       = value_type&;
+    using pointer         = value_type*;
+    using difference_type = void;
+
+    list_iterator(node_type* current) : current(current){
+        //Nothing else to init
+    }
+
+    value_type& operator*(){
+        return current->value;
+    }
+
+    const value_type& operator*() const {
+        return current->value;
+    }
+
+    list_iterator& operator++(){
+        current = current->next;
+        return *this;
+    }
+
+    list_iterator operator++(int){
+        list_iterator v = *this;
+        current = current->next;
+        return v;
+    }
+
+    list_iterator& operator--(){
+        current = current->prev;
+        return *this;
+    }
+
+    list_iterator operator--(int){
+        list_iterator v = *this;
+        current = current->prev;
+        return v;
+    }
+
+    bool operator==(const list_iterator& rhs){
+        return current == rhs.current;
+    }
+
+    bool operator!=(const list_iterator& rhs){
+        return !(*this == rhs);
+    }
+
+    friend struct list<T>;
 
 private:
-    size_t _size;
-    node_type* head;
-    node_type* tail;
+    node_type* current;
+};
 
-public:
+template<typename T>
+struct list {
+    using value_type             = T;
+    using pointer_type           = value_type*;
+    using size_type              = size_t;
+    using node_type              = list_node<T>;
+    using iterator          = list_iterator<T, T>;
+    using const_iterator    = list_iterator<T, std::add_const_t<T>>;
+    using reverse_iterator       = std::reverse_iterator<list_iterator<T, T>>;
+    using const_reverse_iterator = std::reverse_iterator<list_iterator<T, std::add_const_t<T>>>;
+
     list() : _size(0), head(nullptr), tail(nullptr) {
         //Nothing else to init
     }
@@ -46,6 +106,12 @@ public:
         rhs._size = 0;
         rhs.head = nullptr;
         rhs.tail = nullptr;
+    }
+
+    list(initializer_list<T> values) : list() {
+        for(auto& v : values){
+            push_back(v);
+        }
     }
 
     list& operator=(list&& rhs){
@@ -134,23 +200,118 @@ public:
         --_size;
     }
 
-    const T& front() const {
-        return head->value;
+private:
+    iterator erase_node(node_type* node){
+        if(!node){
+            return end();
+        }
+
+        if(node->prev){
+            node->prev->next = node->next;
+        }
+
+        if(node->next){
+            node->next->prev = node->prev;
+        }
+
+        if(head == node){
+            head = node->next;
+        }
+
+        if(tail == node){
+            tail = node->prev;
+        }
+
+        delete node;
+
+        --_size;
+
+        return iterator(node->next);
     }
+
+public:
+    iterator erase(iterator it){
+        return erase_node(it.current);
+    }
+
+    iterator erase(const_iterator it){
+        return erase_node(it.current);
+    }
+
+    iterator erase(iterator it, iterator last){
+        while(it != last){
+            erase_node(it.current);
+            ++it;
+        }
+
+        return last;
+    }
+
+    iterator erase(const_iterator it, const_iterator last){
+        while(it != last){
+            erase_node(it.current);
+            ++it;
+        }
+
+        return iterator(last.current);
+    }
+
+    // Element access
 
     T& front(){
         return head->value;
     }
 
-    const T& back() const {
-        return tail->value;
+    const T& front() const {
+        return head->value;
     }
 
     T& back(){
         return tail->value;
     }
 
-    //TODO
+    const T& back() const {
+        return tail->value;
+    }
+
+    // Iterators
+
+    iterator begin(){
+        return iterator(head);
+    }
+
+    const iterator begin() const {
+        return const_iterator(head);
+    }
+
+    iterator end(){
+        return iterator(nullptr);
+    }
+
+    const_iterator end() const {
+        return const_iterator(nullptr);
+    }
+
+    reverse_iterator rbegin(){
+        return reverse_iterator(tail);
+    }
+
+    constexpr const_reverse_iterator rbegin() const {
+        return const_iterator(tail);
+    }
+
+    reverse_iterator rend(){
+        return reverse_iterator(nullptr);
+    }
+
+    constexpr const_reverse_iterator rend() const {
+        return const_reverse_iterator(nullptr);
+    }
+
+private:
+    size_t _size;
+    node_type* head;
+    node_type* tail;
 };
 
 template<typename T>
