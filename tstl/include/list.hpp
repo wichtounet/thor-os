@@ -170,6 +170,38 @@ struct list {
         ++_size;
     }
 
+    template<typename... Args>
+    value_type& emplace_front(Args&&... args){
+        if(_size == 0){
+            head = new node_type(nullptr, nullptr, std::forward<Args>(args)...);
+            tail = head;
+        } else {
+            auto node = new node_type(head, nullptr, std::forward<Args>(args)...);
+            head->prev = node;
+            head = node;
+        }
+
+        ++_size;
+
+        return head->value;
+    }
+
+    template<typename... Args>
+    value_type& emplace_back(Args&&... args){
+        if(_size == 0){
+            head = new node_type(nullptr, nullptr, std::forward<Args>(args)...);
+            tail = head;
+        } else {
+            auto node = new node_type(nullptr, tail, std::forward<Args>(args)...);
+            tail->next = node;
+            tail = node;
+        }
+
+        ++_size;
+
+        return tail->value;
+    }
+
     void pop_front(){
         auto old = head;
 
@@ -321,6 +353,11 @@ struct list_node {
     list_node<T>* prev;
 
     list_node(const T& v, list_node<T>* n, list_node<T>* p) : value(v), next(n), prev(p) {
+        //Nothing else to init
+    }
+
+    template<typename... Args>
+    list_node(list_node<T>* n, list_node<T>* p, Args&&... args) : value(std::forward<Args>(args)...), next(n), prev(p) {
         //Nothing else to init
     }
 };
