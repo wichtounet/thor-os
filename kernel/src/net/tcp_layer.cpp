@@ -48,7 +48,7 @@ struct tcp_listener {
 // Note: We need a list to not invalidate the values during insertions
 std::list<tcp_listener> listeners;
 
-void compute_checksum(network::ethernet::packet& packet){
+void compute_checksum(network::ethernet::packet& packet) {
     auto* ip_header  = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
     auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet.payload + packet.index);
 
@@ -70,7 +70,7 @@ void compute_checksum(network::ethernet::packet& packet){
     tcp_header->checksum = switch_endian_16(network::checksum_finalize_nz(sum));
 }
 
-uint16_t get_default_flags(){
+uint16_t get_default_flags() {
     uint16_t flags = 0; // By default
 
     (flag_data_offset(&flags)) = 5; // No options
@@ -80,7 +80,7 @@ uint16_t get_default_flags(){
     return flags;
 }
 
-void prepare_packet(network::ethernet::packet& packet, size_t source, size_t target, size_t payload_size){
+void prepare_packet(network::ethernet::packet& packet, size_t source, size_t target, size_t payload_size) {
     packet.tag(2, packet.index);
 
     // Set the TCP header
@@ -98,7 +98,7 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
 
 } //end of anonymous namespace
 
-void network::tcp::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet){
+void network::tcp::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
     packet.tag(2, packet.index);
 
     auto* tcp_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -120,12 +120,12 @@ void network::tcp::decode(network::interface_descriptor& /*interface*/, network:
     // Propagate to kernel listeners
 
     auto end = listeners.end();
-    auto it = listeners.begin();
+    auto it  = listeners.begin();
 
-    while(it != end){
+    while (it != end) {
         auto& listener = *it;
 
-        if(listener.active.load() && listener.source_port == source_port && listener.target_port == target_port){
+        if (listener.active.load() && listener.source_port == source_port && listener.target_port == target_port) {
             auto copy    = packet;
             copy.payload = new char[copy.payload_size];
             std::copy_n(packet.payload, packet.payload_size, copy.payload);
@@ -142,29 +142,29 @@ void network::tcp::decode(network::interface_descriptor& /*interface*/, network:
     //TODO
 }
 
-std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size){
+std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
     // Ask the IP layer to craft a packet
     auto packet = network::ip::prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x06);
 
-    if(packet){
+    if (packet) {
         ::prepare_packet(*packet, source, target, payload_size);
     }
 
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size){
+std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
     // Ask the IP layer to craft a packet
     auto packet = network::ip::prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x06);
 
-    if(packet){
+    if (packet) {
         ::prepare_packet(*packet, source, target, payload_size);
     }
 
     return packet;
 }
 
-void network::tcp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
+void network::tcp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
     p.index -= sizeof(header);
 
     // Compute the checksum
@@ -174,10 +174,10 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
     network::ip::finalize_packet(interface, p);
 }
 
-std::expected<void> network::tcp::connect(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target){
+std::expected<void> network::tcp::connect(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target) {
     auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
 
-    if(!packet){
+    if (!packet) {
         return std::make_unexpected<void>(packet.error());
     }
 
@@ -202,17 +202,17 @@ std::expected<void> network::tcp::connect(network::interface_descriptor& interfa
     uint32_t seq;
     uint32_t ack;
 
-    while(true){
+    while (true) {
         // TODO Need a timeout
         listener.sem.acquire();
         auto received_packet = listener.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
-        auto flags = switch_endian_16(tcp_header->flags);
+        auto flags       = switch_endian_16(tcp_header->flags);
 
         logging::logf(logging::log_level::TRACE, "tcp: Received answer\n");
 
-        if(*flag_syn(&flags) && *flag_ack(&flags)){
+        if (*flag_syn(&flags) && *flag_ack(&flags)) {
             logging::logf(logging::log_level::TRACE, "tcp: Received SYN/ACK\n");
 
             seq = switch_endian_32(tcp_header->sequence_number);
@@ -251,10 +251,10 @@ std::expected<void> network::tcp::connect(network::interface_descriptor& interfa
     }
 
     auto end = listeners.end();
-    auto it = listeners.begin();
+    auto it  = listeners.begin();
 
-    while(it != end){
-        if(&(*it) == &listener){
+    while (it != end) {
+        if (&(*it) == &listener) {
             listeners.erase(it);
             break;
         }
