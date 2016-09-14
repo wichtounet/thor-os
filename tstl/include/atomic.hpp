@@ -24,6 +24,8 @@ struct atomic<bool> {
     atomic(const atomic& rhs) = delete;
     atomic& operator=(const atomic& rhs) = delete;
 
+    explicit atomic(value_type value) : value(value) {}
+
     value_type load() const {
         return __atomic_load_n(&value, __ATOMIC_CONSUME);
     }
@@ -46,6 +48,8 @@ struct atomic<uint64_t> {
 
     atomic(const atomic& rhs) = delete;
     atomic& operator=(const atomic& rhs) = delete;
+
+    explicit atomic(value_type value) : value(value) {}
 
     value_type load() const {
         return __atomic_load_n(&value, __ATOMIC_CONSUME);
