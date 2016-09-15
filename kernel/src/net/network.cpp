@@ -285,6 +285,11 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
     auto& socket = scheduler::get_socket(socket_fd);
 
+    // Make sure stream sockets are connected
+    if(socket.type == socket_type::STREAM && !socket.connected){
+        return {-std::ERROR_SOCKET_NOT_CONNECTED, 0};
+    }
+
     auto return_from_packet = [&socket](std::expected<network::ethernet::packet>& packet) -> std::tuple<size_t, size_t> {
         if (packet) {
             auto fd = socket.register_packet(*packet);
@@ -308,6 +313,14 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
             auto& interface = select_interface(descriptor->target_ip);
             auto packet     = network::icmp::prepare_packet(buffer, interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
+
+            return return_from_packet(packet);
+        }
+
+        case network::socket_protocol::TCP: {
+            auto descriptor = static_cast<network::tcp::packet_descriptor*>(desc);
+            auto& interface = select_interface(socket.server_address);
+            auto packet     = network::tcp::prepare_packet(buffer, interface, socket, descriptor->payload_size);
 
             return return_from_packet(packet);
         }
@@ -341,12 +354,23 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
         return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_PACKET_FD);
     }
 
+    // Make sure stream sockets are connected
+    if(socket.type == socket_type::STREAM && !socket.connected){
+        return std::make_unexpected<void>(-std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
     auto& packet = socket.get_packet(packet_fd);
     auto& interface = network::interface(packet.interface);
 
     switch(socket.protocol){
         case network::socket_protocol::ICMP:
             network::icmp::finalize_packet(interface, packet);
+            socket.erase_packet(packet_fd);
+
+            return std::make_expected();
+
+        case network::socket_protocol::TCP:
+            network::tcp::finalize_packet(interface, socket, packet);
             socket.erase_packet(packet_fd);
 
             return std::make_expected();

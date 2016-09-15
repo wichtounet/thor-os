@@ -42,7 +42,30 @@ int main(int argc, char* argv[]) {
     sock.listen(true);
 
     if (!sock) {
-        tlib::printf("nc(2): socket error: %s\n", std::error_message(sock.error()));
+        tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
+    tlib::tcp::packet_descriptor desc;
+    desc.payload_size = 4;
+
+    auto packet = sock.prepare_packet(&desc);
+
+    if (!sock) {
+        tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
+    auto* payload = reinterpret_cast<char*>(packet.payload + packet.index);
+    payload[0] = 'T';
+    payload[1] = 'H';
+    payload[2] = 'O';
+    payload[3] = 'R';
+
+    sock.finalize_packet(packet);
+
+    if (!sock) {
+        tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
         return 1;
     }
 
@@ -51,7 +74,7 @@ int main(int argc, char* argv[]) {
     sock.listen(false);
 
     if (!sock) {
-        tlib::printf("nc(3): socket error: %s\n", std::error_message(sock.error()));
+        tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
         return 1;
     }
 

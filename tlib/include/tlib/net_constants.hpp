@@ -108,6 +108,14 @@ struct packet_descriptor {
 
 } // end of dns namespace
 
+namespace tcp {
+
+struct packet_descriptor {
+    size_t payload_size;
+};
+
+} // end of tcp namespace
+
 enum class socket_domain : size_t {
     AF_INET
 };

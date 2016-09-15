@@ -52,10 +52,12 @@ void compute_checksum(network::ethernet::packet& packet) {
     auto* ip_header  = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
     auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet.payload + packet.index);
 
+    auto tcp_len = switch_endian_16(ip_header->total_len) - sizeof(network::ip::header);
+
     tcp_header->checksum = 0;
 
     // Accumulate the Payload
-    auto sum = network::checksum_add_bytes(packet.payload + packet.index, 20); // TODO What is the length
+    auto sum = network::checksum_add_bytes(packet.payload + packet.index, tcp_len);
 
     // Accumulate the IP addresses
     sum += network::checksum_add_bytes(&ip_header->source_ip, 8);
@@ -63,8 +65,8 @@ void compute_checksum(network::ethernet::packet& packet) {
     // Accumulate the IP Protocol
     sum += ip_header->protocol;
 
-    // Accumulate the UDP length
-    sum += 20;
+    // Accumulate the TCP length
+    sum += tcp_len;
 
     // Complete the 1-complement sum
     tcp_header->checksum = switch_endian_16(network::checksum_finalize_nz(sum));
@@ -80,7 +82,7 @@ uint16_t get_default_flags() {
     return flags;
 }
 
-void prepare_packet(network::ethernet::packet& packet, size_t source, size_t target, size_t payload_size) {
+void prepare_packet(network::ethernet::packet& packet, size_t source, size_t target) {
     packet.tag(2, packet.index);
 
     // Set the TCP header
@@ -92,8 +94,6 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
     tcp_header->window_size = 1024;
 
     packet.index += sizeof(network::tcp::header);
-
-    //TODO
 }
 
 } //end of anonymous namespace
@@ -112,8 +112,6 @@ void network::tcp::decode(network::interface_descriptor& /*interface*/, network:
 
     logging::logf(logging::log_level::TRACE, "tcp: Source Port %u \n", size_t(source_port));
     logging::logf(logging::log_level::TRACE, "tcp: Target Port %u \n", size_t(target_port));
-    logging::logf(logging::log_level::TRACE, "tcp: Seq Number %u \n", size_t(tcp_header->sequence_number));
-    logging::logf(logging::log_level::TRACE, "tcp: Ack Number %u \n", size_t(tcp_header->ack_number));
     logging::logf(logging::log_level::TRACE, "tcp: Seq Number %u \n", size_t(sequence));
     logging::logf(logging::log_level::TRACE, "tcp: Ack Number %u \n", size_t(ack));
 
@@ -147,18 +145,33 @@ std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::i
     auto packet = network::ip::prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x06);
 
     if (packet) {
-        ::prepare_packet(*packet, source, target, payload_size);
+        ::prepare_packet(*packet, source, target);
     }
 
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
+std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::socket& socket, size_t payload_size){
+    auto target_ip = socket.server_address;
+
     // Ask the IP layer to craft a packet
     auto packet = network::ip::prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x06);
 
     if (packet) {
-        ::prepare_packet(*packet, source, target, payload_size);
+        auto source = socket.local_port;
+        auto target = socket.server_port;
+
+        ::prepare_packet(*packet, source, target);
+
+        auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
+
+        auto flags = get_default_flags();
+        (flag_psh(&flags)) = 1;
+        (flag_ack(&flags)) = 1;
+        tcp_header->flags = switch_endian_16(flags);
+
+        tcp_header->sequence_number = switch_endian_32(socket.seq_number);
+        tcp_header->ack_number      = switch_endian_32(socket.ack_number);
     }
 
     return packet;
@@ -172,6 +185,69 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
     // Give the packet to the IP layer for finalization
     network::ip::finalize_packet(interface, p);
+}
+
+void network::tcp::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p){
+    p.index -= sizeof(header);
+
+    // Compute the checksum
+    compute_checksum(p);
+
+    auto source = socket.local_port;
+    auto target = socket.server_port;
+
+    // TODO Wait for ACK or resend
+
+    auto& listener = listeners.emplace_back(target, source);
+
+    listener.active = true;
+
+    // Give the packet to the IP layer for finalization
+    network::ip::finalize_packet(interface, p);
+
+    uint32_t seq;
+    uint32_t ack;
+
+    while (true) {
+        // TODO Need a timeout
+        listener.sem.acquire();
+        auto received_packet = listener.packets.pop();
+
+        auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
+        auto flags       = switch_endian_16(tcp_header->flags);
+
+        logging::logf(logging::log_level::TRACE, "tcp: Received answer\n");
+
+        if (*flag_ack(&flags)) {
+            logging::logf(logging::log_level::TRACE, "tcp: Received ACK\n");
+
+            seq = switch_endian_32(tcp_header->sequence_number);
+            ack = switch_endian_32(tcp_header->ack_number);
+
+            delete[] received_packet.payload;
+
+            break;
+        }
+
+        delete[] received_packet.payload;
+    }
+
+    listener.active = false;
+
+    socket.seq_number = ack;
+    socket.ack_number = seq;
+
+    auto end = listeners.end();
+    auto it  = listeners.begin();
+
+    while (it != end) {
+        if (&(*it) == &listener) {
+            listeners.erase(it);
+            break;
+        }
+
+        ++it;
+    }
 }
 
 std::expected<void> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface) {
@@ -302,7 +378,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
 
     listener.active = true;
 
-    logging::logf(logging::log_level::TRACE, "tcp: Send FIN\n");
+    logging::logf(logging::log_level::TRACE, "tcp: Send FIN/ACK\n");
     tcp::finalize_packet(interface, *packet);
 
     uint32_t seq;
