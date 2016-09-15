@@ -8,7 +8,7 @@
 #include <bit_field.hpp>
 #include <atomic.hpp>
 #include <list.hpp>
-#include <semaphore.hpp>
+#include <sleep_queue.hpp>
 
 #include "net/tcp_layer.hpp"
 #include "net/dns_layer.hpp"
@@ -35,13 +35,12 @@ struct tcp_listener {
     size_t source_port;
     size_t target_port;
     std::atomic<bool> active;
-    //TODO Use a sleep queue here
-    semaphore sem;
+    sleep_queue queue;
     circular_buffer<network::ethernet::packet, 8> packets;
 
     tcp_listener(size_t source_port, size_t target_port)
             : source_port(source_port), target_port(target_port), active(false) {
-        sem.init(0);
+        //Nothing else to init
     }
 };
 
@@ -94,8 +93,6 @@ uint16_t get_default_flags() {
 
     (flag_data_offset(&flags)) = 5; // No options
 
-    //TODO
-
     return flags;
 }
 
@@ -146,7 +143,7 @@ void network::tcp::decode(network::interface_descriptor& /*interface*/, network:
             std::copy_n(packet.payload, packet.payload_size, copy.payload);
 
             listener.packets.push(copy);
-            listener.sem.release();
+            listener.queue.wake_up();
         }
 
         ++it;
@@ -232,7 +229,7 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
     while (true) {
         // TODO Need a timeout
-        listener.sem.acquire();
+        listener.queue.sleep();
         auto received_packet = listener.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
@@ -297,7 +294,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
     while (true) {
         // TODO Need a timeout
-        listener.sem.acquire();
+        listener.queue.sleep();
         auto received_packet = listener.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
@@ -385,7 +382,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
 
     while (true) {
         // TODO Need a timeout
-        listener.sem.acquire();
+        listener.queue.sleep();
         auto received_packet = listener.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
