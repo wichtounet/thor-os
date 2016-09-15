@@ -69,8 +69,6 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    tlib::sleep_ms(2000);
-
     sock.listen(false);
 
     if (!sock) {
