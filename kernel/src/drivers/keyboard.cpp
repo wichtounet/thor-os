@@ -303,7 +303,6 @@ void keyboard::install_driver(){
 }
 
 char keyboard::key_to_ascii(uint8_t key){
-        logging::logf(logging::log_level::ERROR, "kbd: %u\n", size_t(key));
     return qwertz[key];
 }
 
