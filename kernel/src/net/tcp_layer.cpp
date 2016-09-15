@@ -48,6 +48,23 @@ struct tcp_listener {
 // Note: We need a list to not invalidate the values during insertions
 std::list<tcp_listener> listeners;
 
+tcp_listener* get_listener(size_t source_port, size_t target_port){
+    auto end = listeners.end();
+    auto it = listeners.begin();
+
+    while(it != end){
+        auto& listener = *it;
+
+        if(listener.source_port == source_port && listener.target_port == target_port){
+            return &listener;
+        }
+
+        ++it;
+    }
+
+    return nullptr;
+}
+
 void compute_checksum(network::ethernet::packet& packet) {
     auto* ip_header  = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
     auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet.payload + packet.index);
@@ -196,9 +213,14 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
     auto source = socket.local_port;
     auto target = socket.server_port;
 
-    // TODO Wait for ACK or resend
+    auto listener_ptr = get_listener(target, source);
 
-    auto& listener = listeners.emplace_back(target, source);
+    if(!listener_ptr){
+        logging::logf(logging::log_level::ERROR, "tcp: Unable to find listener!\n");
+        return;
+    }
+
+    auto& listener = *listener_ptr;
 
     listener.active = true;
 
@@ -236,18 +258,6 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
     socket.seq_number = ack;
     socket.ack_number = seq;
-
-    auto end = listeners.end();
-    auto it  = listeners.begin();
-
-    while (it != end) {
-        if (&(*it) == &listener) {
-            listeners.erase(it);
-            break;
-        }
-
-        ++it;
-    }
 }
 
 std::expected<void> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface) {
@@ -336,18 +346,6 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
         tcp::finalize_packet(interface, *packet);
     }
 
-    auto end = listeners.end();
-    auto it  = listeners.begin();
-
-    while (it != end) {
-        if (&(*it) == &listener) {
-            listeners.erase(it);
-            break;
-        }
-
-        ++it;
-    }
-
     return {};
 }
 
@@ -371,8 +369,6 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
     (flag_fin(&flags)) = 1;
     (flag_ack(&flags)) = 1;
     tcp_header->flags = switch_endian_16(flags);
-
-    // Create the listener
 
     auto& listener = listeners.emplace_back(target, source);
 
