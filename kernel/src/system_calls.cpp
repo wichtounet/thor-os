@@ -433,6 +433,13 @@ void sc_connect(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(status);
 }
 
+void sc_disconnect(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+
+    auto status = network::disconnect(socket_fd);
+    regs->rax = expected_to_i64(status);
+}
+
 void sc_wait_for_packet(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
     auto user_buffer = reinterpret_cast<char*>(regs->rcx);
@@ -703,6 +710,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x3008:
             sc_connect(regs);
+            break;
+
+        case 0x3009:
+            sc_disconnect(regs);
             break;
 
         // Special system calls

@@ -43,6 +43,7 @@ std::expected<void> finalize_packet(size_t socket_fd, const packet& p);
 std::expected<void> listen(size_t socket_fd, bool l);
 std::expected<size_t> client_bind(size_t socket_fd);
 std::expected<size_t> connect(size_t socket_fd, tlib::ip::address server, size_t port);
+std::expected<void> disconnect(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd, size_t ms);
 
@@ -61,6 +62,12 @@ struct socket {
      * \return true if everything is good, false otherwise
      */
     bool good() const;
+
+    /*!
+     * \brief Indicates if the socket is connected
+     * \return true if the socket is connected, false otherwise
+     */
+    bool connected() const;
 
     /*!
      * \brief Indicates if everything is in order
@@ -85,6 +92,7 @@ struct socket {
     void client_bind();
 
     void connect(tlib::ip::address server, size_t port);
+    void disconnect();
 
     void listen(bool l);
 
@@ -100,6 +108,7 @@ private:
     size_t fd;                ///< The socket file descriptor
     size_t error_code;        ///< The error code
     size_t local_port;        ///< The local port
+    bool _connected;          ///< Connection flag
 };
 
 inline uint16_t switch_endian_16(uint16_t nb) {

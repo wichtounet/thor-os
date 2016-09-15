@@ -13,6 +13,7 @@
 #include "net/ethernet_layer.hpp"
 #include "net/ip_layer.hpp"
 #include "net/network.hpp"
+#include "net/socket.hpp"
 
 namespace network {
 
@@ -35,7 +36,8 @@ std::expected<network::ethernet::packet> prepare_packet(network::interface_descr
 std::expected<network::ethernet::packet> prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
 void finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
-std::expected<void> connect(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target);
+std::expected<void> connect(network::socket& socket, network::interface_descriptor& interface);
+std::expected<void> disconnect(network::socket& socket, network::interface_descriptor& interface);
 
 } // end of tcp namespace
 

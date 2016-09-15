@@ -29,9 +29,13 @@ struct socket {
     socket_protocol protocol;
     size_t next_fd;
     bool listen;
+
     bool connected;
     uint32_t local_port;
     uint32_t server_port;
+    ip::address server_address;
+    uint32_t ack_number;
+    uint32_t seq_number;
 
     std::vector<network::ethernet::packet> packets;
 

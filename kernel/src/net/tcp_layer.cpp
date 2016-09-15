@@ -174,7 +174,14 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
     network::ip::finalize_packet(interface, p);
 }
 
-std::expected<void> network::tcp::connect(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target) {
+std::expected<void> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface) {
+    auto target_ip = sock.server_address;
+    auto source = sock.local_port;
+    auto target = sock.server_port;
+
+    sock.seq_number = 0;
+    sock.ack_number = 0;
+
     auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
 
     if (!packet) {
@@ -228,6 +235,9 @@ std::expected<void> network::tcp::connect(network::interface_descriptor& interfa
 
     listener.active = false;
 
+    sock.seq_number = ack;
+    sock.ack_number = seq + 1;
+
     // At this point we have received the SYN/ACK, only remains to ACK
 
     {
@@ -239,8 +249,119 @@ std::expected<void> network::tcp::connect(network::interface_descriptor& interfa
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
-        tcp_header->sequence_number = switch_endian_32(ack);
-        tcp_header->ack_number      = switch_endian_32(seq + 1);
+        tcp_header->sequence_number = switch_endian_32(sock.seq_number);
+        tcp_header->ack_number      = switch_endian_32(sock.ack_number);
+
+        auto flags = get_default_flags();
+        (flag_ack(&flags)) = 1;
+        tcp_header->flags = switch_endian_16(flags);
+
+        logging::logf(logging::log_level::TRACE, "tcp: Send ACK\n");
+        tcp::finalize_packet(interface, *packet);
+    }
+
+    auto end = listeners.end();
+    auto it  = listeners.begin();
+
+    while (it != end) {
+        if (&(*it) == &listener) {
+            listeners.erase(it);
+            break;
+        }
+
+        ++it;
+    }
+
+    return {};
+}
+
+std::expected<void> network::tcp::disconnect(network::socket& sock, network::interface_descriptor& interface) {
+    auto target_ip = sock.server_address;
+    auto source = sock.local_port;
+    auto target = sock.server_port;
+
+    auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
+
+    if (!packet) {
+        return std::make_unexpected<void>(packet.error());
+    }
+
+    auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
+
+    tcp_header->sequence_number = switch_endian_32(sock.seq_number);
+    tcp_header->ack_number      = switch_endian_32(sock.ack_number);
+
+    auto flags = get_default_flags();
+    (flag_fin(&flags)) = 1;
+    (flag_ack(&flags)) = 1;
+    tcp_header->flags = switch_endian_16(flags);
+
+    // Create the listener
+
+    auto& listener = listeners.emplace_back(target, source);
+
+    listener.active = true;
+
+    logging::logf(logging::log_level::TRACE, "tcp: Send FIN\n");
+    tcp::finalize_packet(interface, *packet);
+
+    uint32_t seq;
+    uint32_t ack;
+
+    auto fin_rec     = false;
+    auto fin_ack_rec = false;
+
+    while (true) {
+        // TODO Need a timeout
+        listener.sem.acquire();
+        auto received_packet = listener.packets.pop();
+
+        auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
+        auto flags       = switch_endian_16(tcp_header->flags);
+
+        logging::logf(logging::log_level::TRACE, "tcp: Received answer\n");
+
+        if (*flag_fin(&flags) && *flag_ack(&flags)) {
+            logging::logf(logging::log_level::TRACE, "tcp: Received FIN/ACK\n");
+
+            seq = switch_endian_32(tcp_header->sequence_number);
+            ack = switch_endian_32(tcp_header->ack_number);
+
+            fin_ack_rec = true;
+        } else if (*flag_ack(&flags)) {
+            logging::logf(logging::log_level::TRACE, "tcp: Received ACK\n");
+
+            seq = switch_endian_32(tcp_header->sequence_number);
+            ack = switch_endian_32(tcp_header->ack_number);
+
+            fin_rec = true;
+        }
+
+        delete[] received_packet.payload;
+
+        if(fin_rec && fin_ack_rec){
+            break;
+        }
+    }
+
+    listener.active = false;
+
+    sock.seq_number = ack;
+    sock.ack_number = seq + 1;
+
+    // At this point we have received the FIN/ACK, only remains to ACK
+
+    {
+        auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
+
+        if (!packet) {
+            return std::make_unexpected<void>(packet.error());
+        }
+
+        auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
+
+        tcp_header->sequence_number = switch_endian_32(sock.seq_number);
+        tcp_header->ack_number      = switch_endian_32(sock.ack_number);
 
         auto flags = get_default_flags();
         (flag_ack(&flags)) = 1;

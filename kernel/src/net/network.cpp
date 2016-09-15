@@ -402,13 +402,14 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
-    socket.local_port  = local_port++;
-    socket.server_port = port;
+    socket.local_port     = local_port++;
+    socket.server_port    = port;
+    socket.server_address = server;
 
     logging::logf(logging::log_level::TRACE, "network: %u stream socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
 
     if(socket.protocol == socket_protocol::TCP){
-        auto connection = network::tcp::connect(select_interface(server), server, socket.local_port, port);
+        auto connection = network::tcp::connect(socket, select_interface(server));
 
         if(connection){
             socket.connected = true;
@@ -420,6 +421,38 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
     }
 
     return std::make_expected<size_t>(socket.local_port);
+}
+
+std::expected<void> network::disconnect(socket_fd_t socket_fd){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(socket.type != socket_type::STREAM){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE);
+    }
+
+    if(!socket.connected){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    logging::logf(logging::log_level::TRACE, "network: %u disconnect from stream socket %u\n", scheduler::get_pid(), socket_fd);
+
+    if(socket.protocol == socket_protocol::TCP){
+        auto disconnection = network::tcp::disconnect(socket, select_interface(socket.server_address));
+
+        if(disconnection){
+            socket.connected = false;
+        } else {
+            return std::make_unexpected<void>(disconnection.error());
+        }
+    } else {
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
+
+    return {};
 }
 
 std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_fd){

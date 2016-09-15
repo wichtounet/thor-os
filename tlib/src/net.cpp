@@ -134,6 +134,20 @@ std::expected<size_t> tlib::connect(size_t socket_fd, tlib::ip::address server, 
     }
 }
 
+std::expected<void> tlib::disconnect(size_t socket_fd) {
+    int64_t code;
+    asm volatile("mov rax, 0x3009; mov rbx, %[socket]; int 50; mov %[code], rax"
+                 : [code] "=m"(code)
+                 : [socket] "g" (socket_fd)
+                 : "rax", "rbx");
+
+    if (code < 0) {
+        return std::make_unexpected<void, size_t>(-code);
+    } else {
+        return {};
+    }
+}
+
 std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd) {
     auto buffer = malloc(2048);
 
@@ -190,6 +204,10 @@ tlib::socket::socket(socket_domain domain, socket_type type, socket_protocol pro
 }
 
 tlib::socket::~socket() {
+    if(connected()){
+        disconnect();
+    }
+
     if (fd) {
         tlib::socket_close(fd);
     }
@@ -201,6 +219,10 @@ bool tlib::socket::open() const {
 
 bool tlib::socket::good() const {
     return error_code == 0;
+}
+
+bool tlib::socket::connected() const {
+    return _connected;
 }
 
 tlib::socket::operator bool() {
@@ -245,11 +267,30 @@ void tlib::socket::connect(tlib::ip::address server, size_t port) {
     }
 
     auto status = tlib::connect(fd, server, port);
-    if (!status) {
+    if (status) {
+        _connected = true;
+        local_port = *status;
+    } else {
         error_code = status.error();
     }
+}
 
-    local_port = *status;
+void tlib::socket::disconnect() {
+    if (!good() || !open()) {
+        return;
+    }
+
+    if(!connected()){
+        return;
+    }
+
+    auto status = tlib::disconnect(fd);
+
+    if(status){
+        _connected = false;
+    } else {
+        error_code = status.error();
+    }
 }
 
 tlib::packet tlib::socket::prepare_packet(void* desc) {

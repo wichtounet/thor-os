@@ -42,11 +42,18 @@ int main(int argc, char* argv[]) {
     sock.listen(true);
 
     if (!sock) {
-        tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
+        tlib::printf("nc(2): socket error: %s\n", std::error_message(sock.error()));
         return 1;
     }
 
+    tlib::sleep_ms(2000);
+
     sock.listen(false);
+
+    if (!sock) {
+        tlib::printf("nc(3): socket error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
 
     return 0;
 }

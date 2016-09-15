@@ -122,6 +122,13 @@ std::expected<size_t> client_bind(socket_fd_t socket_fd);
 std::expected<size_t> connect(socket_fd_t socket_fd, network::ip::address address, size_t port);
 
 /*!
+ * \brief Disconnect from  a socket stream
+ * \param socket_fd The file descriptor of the packet
+ * \return the allocated port on success and a negative error code otherwise
+ */
+std::expected<void> disconnect(socket_fd_t socket_fd);
+
+/*!
  * \brief Wait for a packet
  * \param socket_fd The file descriptor of the packet
  * \return the packet index

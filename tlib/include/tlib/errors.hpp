@@ -42,6 +42,7 @@ constexpr const size_t ERROR_SOCKET_NOT_LISTEN                = 27;
 constexpr const size_t ERROR_SOCKET_TIMEOUT                   = 28;
 constexpr const size_t ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR = 29;
 constexpr const size_t ERROR_SOCKET_INVALID_TYPE_PROTOCOL     = 30;
+constexpr const size_t ERROR_SOCKET_NOT_CONNECTED             = 31;
 
 inline const char* error_message(size_t error){
     switch(error){
@@ -105,6 +106,8 @@ inline const char* error_message(size_t error){
             return "The packet descriptor for the packet to send is invalid";
         case ERROR_SOCKET_INVALID_TYPE_PROTOCOL:
             return "The socket protocol is not vaild with this type";
+        case ERROR_SOCKET_NOT_CONNECTED:
+            return "The socket is not connected";
         default:
             return "Unknonwn error";
     }
