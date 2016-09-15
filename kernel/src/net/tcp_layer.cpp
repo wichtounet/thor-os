@@ -47,14 +47,14 @@ struct tcp_listener {
 // Note: We need a list to not invalidate the values during insertions
 std::list<tcp_listener> listeners;
 
-tcp_listener* get_listener(size_t source_port, size_t target_port){
+tcp_listener* get_listener(size_t source_port, size_t target_port) {
     auto end = listeners.end();
-    auto it = listeners.begin();
+    auto it  = listeners.begin();
 
-    while(it != end){
+    while (it != end) {
         auto& listener = *it;
 
-        if(listener.source_port == source_port && listener.target_port == target_port){
+        if (listener.source_port == source_port && listener.target_port == target_port) {
             return &listener;
         }
 
@@ -165,7 +165,7 @@ std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::i
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::socket& socket, size_t payload_size){
+std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::socket& socket, size_t payload_size) {
     auto target_ip = socket.server_address;
 
     // Ask the IP layer to craft a packet
@@ -201,7 +201,7 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
     network::ip::finalize_packet(interface, p);
 }
 
-void network::tcp::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p){
+void network::tcp::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p) {
     p.index -= sizeof(header);
 
     // Compute the checksum
@@ -212,7 +212,7 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
     auto listener_ptr = get_listener(target, source);
 
-    if(!listener_ptr){
+    if (!listener_ptr) {
         logging::logf(logging::log_level::ERROR, "tcp: Unable to find listener!\n");
         return;
     }
@@ -259,8 +259,8 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
 std::expected<void> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface) {
     auto target_ip = sock.server_address;
-    auto source = sock.local_port;
-    auto target = sock.server_port;
+    auto source    = sock.local_port;
+    auto target    = sock.server_port;
 
     sock.seq_number = 0;
     sock.ack_number = 0;
@@ -348,8 +348,8 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
 std::expected<void> network::tcp::disconnect(network::socket& sock, network::interface_descriptor& interface) {
     auto target_ip = sock.server_address;
-    auto source = sock.local_port;
-    auto target = sock.server_port;
+    auto source    = sock.local_port;
+    auto target    = sock.server_port;
 
     auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
 
@@ -408,7 +408,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
 
         delete[] received_packet.payload;
 
-        if(fin_rec && fin_ack_rec){
+        if (fin_rec && fin_ack_rec) {
             break;
         }
     }
