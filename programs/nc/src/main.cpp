@@ -11,12 +11,6 @@
 #include <tlib/net.hpp>
 #include <tlib/dns.hpp>
 
-namespace {
-
-
-
-} // end of anonymous namespace
-
 int main(int argc, char* argv[]) {
     if (argc != 3) {
         tlib::print_line("usage: nc server port");
