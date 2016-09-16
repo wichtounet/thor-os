@@ -66,6 +66,7 @@ std::expected<tlib::packet> tlib::prepare_packet(size_t socket_fd, void* desc) {
                  : "rax", "rbx", "rcx", "rdx");
 
     if (fd < 0) {
+        free(buffer);
         return std::make_expected_from_error<tlib::packet, size_t>(-fd);
     } else {
         tlib::packet p;
@@ -158,8 +159,8 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd) {
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer))
                  : "rax", "rbx", "rcx");
 
+    free(buffer);
     if (code < 0) {
-        free(buffer);
         return std::make_expected_from_error<packet, size_t>(-code);
     } else {
         tlib::packet p;
@@ -179,8 +180,8 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd, size_t ms) {
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [ms] "g"(ms)
                  : "rax", "rbx", "rcx");
 
+    free(buffer);
     if (code < 0) {
-        free(buffer);
         return std::make_expected_from_error<packet, size_t>(-code);
     } else {
         tlib::packet p;
