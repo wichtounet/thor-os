@@ -35,31 +35,32 @@ using flag_rst         = std::bit_field<uint16_t, uint8_t, 2, 1>;
 using flag_syn         = std::bit_field<uint16_t, uint8_t, 1, 1>;
 using flag_fin         = std::bit_field<uint16_t, uint8_t, 0, 1>;
 
-struct tcp_listener {
+struct tcp_connection {
     size_t source_port;
     size_t target_port;
-    std::atomic<bool> active;
+
+    std::atomic<bool> listening;
     sleep_queue queue;
     circular_buffer<network::ethernet::packet, 8> packets;
 
-    tcp_listener(size_t source_port, size_t target_port)
-            : source_port(source_port), target_port(target_port), active(false) {
+    tcp_connection(size_t source_port, size_t target_port)
+            : source_port(source_port), target_port(target_port), listening(false) {
         //Nothing else to init
     }
 };
 
 // Note: We need a list to not invalidate the values during insertions
-std::list<tcp_listener> listeners;
+std::list<tcp_connection> connections;
 
-tcp_listener* get_listener(size_t source_port, size_t target_port) {
-    auto end = listeners.end();
-    auto it  = listeners.begin();
+tcp_connection* get_connection(size_t source_port, size_t target_port) {
+    auto end = connections.end();
+    auto it  = connections.begin();
 
     while (it != end) {
-        auto& listener = *it;
+        auto& connection = *it;
 
-        if (listener.source_port == source_port && listener.target_port == target_port) {
-            return &listener;
+        if (connection.source_port == source_port && connection.target_port == target_port) {
+            return &connection;
         }
 
         ++it;
@@ -150,21 +151,21 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
 
     auto flags = switch_endian_16(tcp_header->flags);
 
-    // Propagate to kernel listeners
+    // Propagate to kernel connections
 
-    auto end = listeners.end();
-    auto it  = listeners.begin();
+    auto end = connections.end();
+    auto it  = connections.begin();
 
     while (it != end) {
-        auto& listener = *it;
+        auto& connection = *it;
 
-        if (listener.active.load() && listener.source_port == source_port && listener.target_port == target_port) {
+        if (connection.listening.load() && connection.source_port == source_port && connection.target_port == target_port) {
             auto copy    = packet;
             copy.payload = new char[copy.payload_size];
             std::copy_n(packet.payload, packet.payload_size, copy.payload);
 
-            listener.packets.push(copy);
-            listener.queue.wake_up();
+            connection.packets.push(copy);
+            connection.queue.wake_up();
         }
 
         ++it;
@@ -263,16 +264,16 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
     auto source = socket.local_port;
     auto target = socket.server_port;
 
-    auto listener_ptr = get_listener(target, source);
+    auto connection_ptr = get_connection(target, source);
 
-    if (!listener_ptr) {
-        logging::logf(logging::log_level::ERROR, "tcp: Unable to find listener!\n");
+    if (!connection_ptr) {
+        logging::logf(logging::log_level::ERROR, "tcp: Unable to find connection!\n");
         return; //TODO Fail
     }
 
-    auto& listener = *listener_ptr;
+    auto& connection = *connection_ptr;
 
-    listener.active = true;
+    connection.listening = true;
 
     uint32_t seq = 0;
     uint32_t ack = 0;
@@ -294,8 +295,8 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
             auto remaining = timeout_ms - (after - before);
 
-            if(listener.queue.sleep(remaining)){
-                auto received_packet = listener.packets.pop();
+            if(connection.queue.sleep(remaining)){
+                auto received_packet = connection.packets.pop();
 
                 auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
                 auto flags       = switch_endian_16(tcp_header->flags);
@@ -327,7 +328,7 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
     }
 
     // Stop listening
-    listener.active = false;
+    connection.listening = false;
 
     if(received){
         // Set the future sequence and acknowledgement numbers
@@ -361,11 +362,11 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
     (flag_syn(&flags)) = 1;
     tcp_header->flags = switch_endian_16(flags);
 
-    // Create the listener
+    // Create the connection
 
-    auto& listener = listeners.emplace_back(target, source);
+    auto& connection = connections.emplace_back(target, source);
 
-    listener.active = true;
+    connection.listening = true;
 
     logging::logf(logging::log_level::TRACE, "tcp: Send SYN\n");
     tcp::finalize_packet(interface, *packet);
@@ -375,8 +376,8 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
     while (true) {
         // TODO Need a timeout
-        listener.queue.sleep();
-        auto received_packet = listener.packets.pop();
+        connection.queue.sleep();
+        auto received_packet = connection.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
         auto flags       = switch_endian_16(tcp_header->flags);
@@ -397,7 +398,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
         delete[] received_packet.payload;
     }
 
-    listener.active = false;
+    connection.listening = false;
 
     sock.seq_number = ack;
     sock.ack_number = seq + 1;
@@ -448,9 +449,9 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
     (flag_ack(&flags)) = 1;
     tcp_header->flags = switch_endian_16(flags);
 
-    auto& listener = listeners.emplace_back(target, source);
+    auto& connection = connections.emplace_back(target, source);
 
-    listener.active = true;
+    connection.listening = true;
 
     logging::logf(logging::log_level::TRACE, "tcp: Send FIN/ACK\n");
     tcp::finalize_packet(interface, *packet);
@@ -463,8 +464,8 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
 
     while (true) {
         // TODO Need a timeout
-        listener.queue.sleep();
-        auto received_packet = listener.packets.pop();
+        connection.queue.sleep();
+        auto received_packet = connection.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
         auto flags       = switch_endian_16(tcp_header->flags);
@@ -494,7 +495,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
         }
     }
 
-    listener.active = false;
+    connection.listening = false;
 
     sock.seq_number = ack;
     sock.ack_number = seq + 1;
@@ -521,12 +522,12 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
         tcp::finalize_packet(interface, *packet);
     }
 
-    auto end = listeners.end();
-    auto it  = listeners.begin();
+    auto end = connections.end();
+    auto it  = connections.begin();
 
     while (it != end) {
-        if (&(*it) == &listener) {
-            listeners.erase(it);
+        if (&(*it) == &connection) {
+            connections.erase(it);
             break;
         }
 
