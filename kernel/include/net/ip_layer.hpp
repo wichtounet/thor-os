@@ -24,19 +24,6 @@ std::string ip_to_str(address ip);
 
 bool same_network(address ip, address test);
 
-struct header {
-    uint8_t version_ihl;
-    uint8_t dscp_ecn;
-    uint16_t total_len;
-    uint16_t identification;
-    uint16_t flags_offset;
-    uint8_t ttl;
-    uint8_t protocol;
-    uint16_t header_checksum;
-    uint32_t source_ip;
-    uint32_t target_ip;
-} __attribute__((packed));
-
 static_assert(sizeof(header) == 20, "The size of an IPv4 header must be 20 bytes");
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);

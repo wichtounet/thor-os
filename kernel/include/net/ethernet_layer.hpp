@@ -18,16 +18,6 @@ namespace network {
 
 namespace ethernet {
 
-struct address {
-    char mac[6];
-} __attribute__((packed));
-
-struct header {
-    address target;
-    address source;
-    uint16_t type;
-} __attribute__((packed));
-
 static_assert(sizeof(address) == 6, "The size of a MAC address is 6 bytes");
 static_assert(sizeof(header) == 14, "The size of the Ethernet header is 14 bytes");
 

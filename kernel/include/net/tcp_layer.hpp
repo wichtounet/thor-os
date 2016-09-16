@@ -19,17 +19,6 @@ namespace network {
 
 namespace tcp {
 
-struct header {
-    uint16_t source_port;
-    uint16_t target_port;
-    uint32_t sequence_number;
-    uint32_t ack_number;
-    uint16_t flags;
-    uint16_t window_size;
-    uint16_t checksum;
-    uint16_t urgent_pointer;
-} __attribute__((packed));
-
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
 std::expected<network::ethernet::packet> prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);

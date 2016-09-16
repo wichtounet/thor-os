@@ -45,6 +45,20 @@ inline address make_address(uint8_t a, uint8_t b, uint8_t c, uint8_t d){
 
 } // end of namespace ip
 
+namespace ethernet {
+
+struct address {
+    char mac[6];
+} __attribute__((packed));
+
+struct header {
+    address target;
+    address source;
+    uint16_t type;
+} __attribute__((packed));
+
+} // end of namespace ethernet
+
 namespace icmp {
 
 enum class type : uint8_t {
@@ -87,6 +101,23 @@ struct packet_descriptor {
 
 } // end of namespace icmp
 
+namespace ip {
+
+struct header {
+    uint8_t version_ihl;
+    uint8_t dscp_ecn;
+    uint16_t total_len;
+    uint16_t identification;
+    uint16_t flags_offset;
+    uint8_t ttl;
+    uint8_t protocol;
+    uint16_t header_checksum;
+    uint32_t source_ip;
+    uint32_t target_ip;
+} __attribute__((packed));
+
+} // end of namespace ip
+
 namespace dns {
 
 struct header {
@@ -109,6 +140,17 @@ struct packet_descriptor {
 } // end of dns namespace
 
 namespace tcp {
+
+struct header {
+    uint16_t source_port;
+    uint16_t target_port;
+    uint32_t sequence_number;
+    uint32_t ack_number;
+    uint16_t flags;
+    uint16_t window_size;
+    uint16_t checksum;
+    uint16_t urgent_pointer;
+} __attribute__((packed));
 
 struct packet_descriptor {
     size_t payload_size;
