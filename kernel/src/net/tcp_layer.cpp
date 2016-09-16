@@ -114,24 +114,41 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
     packet.index += sizeof(network::tcp::header);
 }
 
+size_t tcp_payload_len(const network::ethernet::packet& packet){
+    auto* ip_header  = reinterpret_cast<const network::ip::header*>(packet.payload + packet.tag(1));
+    auto* tcp_header = reinterpret_cast<const network::tcp::header*>(packet.payload + packet.tag(2));
+
+    auto tcp_flags = switch_endian_16(tcp_header->flags);
+
+    auto ip_header_len   = (ip_header->version_ihl & 0xF) * 4;
+    auto tcp_len         = switch_endian_16(ip_header->total_len) - ip_header_len;
+    auto tcp_data_offset = *flag_data_offset(&tcp_flags) * 4;
+    auto payload_len     = tcp_len - tcp_data_offset;
+
+    return payload_len;
+}
+
 } //end of anonymous namespace
 
-void network::tcp::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
+void network::tcp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet) {
     packet.tag(2, packet.index);
 
-    auto* tcp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
+    auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet.payload + packet.index);
 
     logging::logf(logging::log_level::TRACE, "tcp: Start TCP packet handling\n");
 
     auto source_port = switch_endian_16(tcp_header->source_port);
     auto target_port = switch_endian_16(tcp_header->target_port);
-    auto sequence    = switch_endian_32(tcp_header->sequence_number);
+    auto seq         = switch_endian_32(tcp_header->sequence_number);
     auto ack         = switch_endian_32(tcp_header->ack_number);
 
     logging::logf(logging::log_level::TRACE, "tcp: Source Port %u \n", size_t(source_port));
     logging::logf(logging::log_level::TRACE, "tcp: Target Port %u \n", size_t(target_port));
-    logging::logf(logging::log_level::TRACE, "tcp: Seq Number %u \n", size_t(sequence));
+    logging::logf(logging::log_level::TRACE, "tcp: Seq Number %u \n", size_t(seq));
     logging::logf(logging::log_level::TRACE, "tcp: Ack Number %u \n", size_t(ack));
+
+    auto flags = switch_endian_16(tcp_header->flags);
 
     // Propagate to kernel listeners
 
@@ -153,9 +170,36 @@ void network::tcp::decode(network::interface_descriptor& /*interface*/, network:
         ++it;
     }
 
+    auto seq_number = ack;
+    auto ack_number = seq + tcp_payload_len(packet);
+
+    //TODO socket.seq_number = ack;
+    //TODO socket.ack_number = seq + tcp_payload_len(packet);
+
     packet.index += sizeof(header);
 
     network::propagate_packet(packet, network::socket_protocol::TCP);
+
+    // A push needs to be acknowledged
+    if (*flag_psh(&flags)) {
+        auto p = tcp::prepare_packet(interface, ip_header->source_ip, target_port, source_port, 0);
+
+        if (!p) {
+            logging::logf(logging::log_level::ERROR, "tcp: Impossible to prepare TCP packet for ACK\n");
+            return;
+        }
+
+        auto* ack_tcp_header = reinterpret_cast<header*>(p->payload + p->tag(2));
+
+        ack_tcp_header->sequence_number = switch_endian_32(seq_number);
+        ack_tcp_header->ack_number      = switch_endian_32(ack_number);
+
+        auto flags = get_default_flags();
+        (flag_ack(&flags)) = 1;
+        ack_tcp_header->flags = switch_endian_16(flags);
+
+        tcp::finalize_packet(interface, *p);
+    }
 }
 
 std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
