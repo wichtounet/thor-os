@@ -8,6 +8,7 @@
 #include "assert.hpp"
 #include "console.hpp"
 #include "kernel.hpp"
+#include "logging.hpp"
 
 void __thor_assert(bool condition){
     __thor_assert(condition, "assertion failed");
@@ -15,12 +16,14 @@ void __thor_assert(bool condition){
 
 void __thor_assert(bool condition, const char* message){
     if(!condition){
+        logging::logf(logging::log_level::ERROR, "Assertion failed: %s\n", message);
         k_print_line(message);
         suspend_kernel();
     }
 }
 
 void __thor_unreachable(const char* message){
+    logging::logf(logging::log_level::ERROR, "Reached unreachable block: %s\n", message);
     k_print_line(message);
     suspend_kernel();
 }
