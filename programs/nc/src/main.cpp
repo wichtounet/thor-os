@@ -5,11 +5,17 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+#include <bit_field.hpp>
+
 #include <tlib/system.hpp>
 #include <tlib/errors.hpp>
 #include <tlib/print.hpp>
 #include <tlib/net.hpp>
 #include <tlib/dns.hpp>
+
+static constexpr const size_t timeout_ms = 5000;
+
+using flag_data_offset = std::bit_field<uint16_t, uint8_t, 12, 4>;
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
@@ -51,16 +57,56 @@ int main(int argc, char* argv[]) {
     }
 
     auto* payload = reinterpret_cast<char*>(packet.payload + packet.index);
-    payload[0] = 'T';
-    payload[1] = 'H';
-    payload[2] = 'O';
-    payload[3] = 'R';
+    payload[0]    = 'T';
+    payload[1]    = 'H';
+    payload[2]    = 'O';
+    payload[3]    = 'R';
 
     sock.finalize_packet(packet);
 
     if (!sock) {
         tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
         return 1;
+    }
+
+    auto before = tlib::ms_time();
+    auto after  = before;
+
+    while (true) {
+        // Make sure we don't wait for more than the timeout
+        if (after > before + timeout_ms) {
+            break;
+        }
+
+        auto remaining = timeout_ms - (after - before);
+
+        auto p = sock.wait_for_packet(remaining);
+        if (!sock) {
+            if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
+                sock.clear();
+                break;
+            }
+
+            tlib::printf("nc: wait_for_packet error: %s\n", std::error_message(sock.error()));
+            return 1;
+        } else {
+            auto* ip_header  = reinterpret_cast<tlib::ip::header*>(p.payload + sizeof(tlib::ethernet::header));
+            auto* tcp_header = reinterpret_cast<tlib::tcp::header*>(p.payload + sizeof(tlib::ethernet::header) + sizeof(tlib::ip::header));
+            auto* payload    = p.payload + p.index;
+
+            auto tcp_flags = tlib::switch_endian_16(tcp_header->flags);
+
+            auto ip_len          = (ip_header->version_ihl & 0xF) * 4;
+            auto tcp_len         = tlib::switch_endian_16(ip_header->total_len) - ip_len;
+            auto tcp_data_offset = *flag_data_offset(&tcp_flags) * 4;
+            auto payload_len     = tcp_len - tcp_data_offset;
+
+            for (size_t i = 0; i < payload_len; ++i) {
+                tlib::print(payload[i]);
+            }
+        }
+
+        after = tlib::ms_time();
     }
 
     sock.listen(false);

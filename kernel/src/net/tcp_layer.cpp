@@ -155,7 +155,7 @@ void network::tcp::decode(network::interface_descriptor& /*interface*/, network:
 
     packet.index += sizeof(header);
 
-    //TODO
+    network::propagate_packet(packet, network::socket_protocol::TCP);
 }
 
 std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {

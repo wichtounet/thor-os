@@ -8,6 +8,7 @@
 #include <vector.hpp>
 #include <string.hpp>
 #include <atomic.hpp>
+#include <bit_field.hpp>
 
 #include "net/network.hpp"
 #include "net/ethernet_layer.hpp"
@@ -564,6 +565,28 @@ void network::propagate_packet(const ethernet::packet& packet, socket_protocol p
 
                             if(local_port == target_port){
                                 propagate = true;
+                            }
+                        }
+                    } else if(socket.type == socket_type::STREAM){
+                        if(socket.protocol == protocol && socket.connected){
+                            auto local_port = socket.local_port;
+                            auto server_port = socket.server_port;
+
+                            auto tcp_index   = packet.tag(2);
+                            auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet.payload + tcp_index);
+                            auto source_port = switch_endian_16(tcp_header->source_port);
+                            auto target_port = switch_endian_16(tcp_header->target_port);
+                            auto flags       = switch_endian_16(tcp_header->flags);
+
+                            using flag_psh         = std::bit_field<uint16_t, uint8_t, 3, 1>;
+
+                            // Don't propagate ack
+                            if (*flag_psh(&flags)) {
+                                logging::logf(logging::log_level::TRACE, "network: propagate on socket %u\n", socket.id);
+
+                                if(local_port == target_port && server_port == source_port){
+                                    propagate = true;
+                                }
                             }
                         }
                     }
