@@ -297,17 +297,17 @@ std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buff
     return packet;
 }
 
-void network::tcp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
+std::expected<void> network::tcp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
     p.index -= sizeof(header);
 
     // Compute the checksum
     compute_checksum(p);
 
     // Give the packet to the IP layer for finalization
-    network::ip::finalize_packet(interface, p);
+    return network::ip::finalize_packet(interface, p);
 }
 
-void network::tcp::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p) {
+std::expected<void> network::tcp::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p) {
     p.index -= sizeof(header);
 
     // Compute the checksum
@@ -315,15 +315,14 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
     if (!p.user) {
         logging::logf(logging::log_level::ERROR, "tcp: Function uniquely implemented for user packets!\n");
-        return; //TODO Fail
+        return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
     }
 
     auto& connection = socket.get_data<tcp_connection>();
 
     // Make sure stream sockets are connected
     if(!connection.connected){
-        //TODO return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
-        return;
+        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
     }
 
     connection.listening = true;
@@ -335,7 +334,11 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
     for(size_t t = 0; t < max_tries; ++t){
         // Give the packet to the IP layer for finalization
-        network::ip::finalize_packet(interface, p);
+        auto result = network::ip::finalize_packet(interface, p);
+
+        if(!result){
+            return result;
+        }
 
         auto before = timer::milliseconds();
         auto after  = before;
@@ -387,8 +390,10 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
         // Set the future sequence and acknowledgement numbers
         connection.seq_number = ack;
         connection.ack_number = seq;
+
+        return {};
     } else {
-        //TODO We need to be able to make finalize fail!
+        return std::make_unexpected<void>(std::ERROR_SOCKET_TCP_ERROR);
     }
 }
 

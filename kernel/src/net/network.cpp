@@ -345,24 +345,23 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
     auto& packet = socket.get_packet(packet_fd);
     auto& interface = network::interface(packet.interface);
 
+    auto check_and_return = [&socket, &packet_fd](const std::expected<void>& ret){
+        if(ret){
+            socket.erase_packet(packet_fd);
+        }
+
+        return ret;
+    };
+
     switch(socket.protocol){
         case network::socket_protocol::ICMP:
-            network::icmp::finalize_packet(interface, packet);
-            socket.erase_packet(packet_fd);
-
-            return std::make_expected();
+            return check_and_return(network::icmp::finalize_packet(interface, packet));
 
         case network::socket_protocol::TCP:
-            network::tcp::finalize_packet(interface, socket, packet);
-            socket.erase_packet(packet_fd);
-
-            return std::make_expected();
+            return check_and_return(network::tcp::finalize_packet(interface, packet));
 
         case network::socket_protocol::DNS:
-            network::dns::finalize_packet(interface, packet);
-            socket.erase_packet(packet_fd);
-
-            return std::make_expected();
+            return check_and_return(network::dns::finalize_packet(interface, packet));
     }
 
     return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);

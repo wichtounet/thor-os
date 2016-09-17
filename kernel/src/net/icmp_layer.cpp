@@ -136,7 +136,7 @@ std::expected<network::ethernet::packet> network::icmp::prepare_packet(char* buf
     return packet;
 }
 
-void network::icmp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
+std::expected<void> network::icmp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.index -= sizeof(header) - sizeof(uint32_t);
 
     auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -145,7 +145,7 @@ void network::icmp::finalize_packet(network::interface_descriptor& interface, ne
     compute_checksum(icmp_header, 0);
 
     // Give the packet to the IP layer for finalization
-    network::ip::finalize_packet(interface, packet);
+    return network::ip::finalize_packet(interface, packet);
 }
 
 void network::icmp::ping(network::interface_descriptor& interface, network::ip::address target_ip){

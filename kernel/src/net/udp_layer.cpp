@@ -97,7 +97,7 @@ std::expected<network::ethernet::packet> network::udp::prepare_packet(char* buff
     return packet;
 }
 
-void network::udp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
+std::expected<void> network::udp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
     p.index -= sizeof(header);
 
     // Compute the checksum

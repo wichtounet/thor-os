@@ -28,7 +28,8 @@ void decode(network::interface_descriptor& interface, packet& packet);
 
 std::expected<packet> prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
 std::expected<packet> prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
-void finalize_packet(network::interface_descriptor& interface, packet& p);
+
+std::expected<void> finalize_packet(network::interface_descriptor& interface, packet& p);
 
 } // end of ethernet namespace
 

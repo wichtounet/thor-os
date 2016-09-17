@@ -144,7 +144,7 @@ std::expected<network::ethernet::packet> network::ethernet::prepare_packet(char*
     return p;
 }
 
-void network::ethernet::finalize_packet(network::interface_descriptor& interface, packet& p){
+std::expected<void> network::ethernet::finalize_packet(network::interface_descriptor& interface, packet& p){
     if(p.user){
         // The packet will be handled by a kernel thread, needs to
         // be copied to kernel memory
@@ -160,4 +160,6 @@ void network::ethernet::finalize_packet(network::interface_descriptor& interface
     } else {
         interface.send(p);
     }
+
+    return {};
 }

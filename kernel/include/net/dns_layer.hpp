@@ -24,7 +24,8 @@ void decode(network::interface_descriptor& interface, network::ethernet::packet&
 
 std::expected<network::ethernet::packet> prepare_packet_query(network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size);
 std::expected<network::ethernet::packet> prepare_packet_query(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size);
-void finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
+
+std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
 } // end of dns namespace
 

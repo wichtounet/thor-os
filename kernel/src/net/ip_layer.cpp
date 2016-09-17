@@ -186,7 +186,7 @@ std::expected<network::ethernet::packet> network::ip::prepare_packet(char* buffe
     return packet;
 }
 
-void network::ip::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
+std::expected<void> network::ip::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
     // Send the packet to the ethernet layer
-    network::ethernet::finalize_packet(interface, p);
+    return network::ethernet::finalize_packet(interface, p);
 }

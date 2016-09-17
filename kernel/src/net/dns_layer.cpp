@@ -214,9 +214,9 @@ std::expected<network::ethernet::packet> network::dns::prepare_packet_query(char
     return packet;
 }
 
-void network::dns::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
+std::expected<void> network::dns::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
     p.index -= sizeof(header);
 
     // Give the packet to the UDP layer for finalization
-    network::udp::finalize_packet(interface, p);
+    return network::udp::finalize_packet(interface, p);
 }

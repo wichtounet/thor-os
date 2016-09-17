@@ -24,8 +24,8 @@ void decode(network::interface_descriptor& interface, network::ethernet::packet&
 std::expected<network::ethernet::packet> prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
 std::expected<network::ethernet::packet> prepare_packet(char* buffer, network::socket& socket, size_t payload_size);
 
-void finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
-void finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p);
+std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
+std::expected<void> finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p);
 
 std::expected<void> connect(network::socket& socket, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server);
 std::expected<void> disconnect(network::socket& socket);
