@@ -11,7 +11,8 @@
 #include <circular_buffer.hpp>
 #include <lock_guard.hpp>
 
-#include "spinlock.hpp"
+#include "conc/spinlock.hpp"
+
 #include "scheduler.hpp"
 
 /*!
@@ -47,6 +48,25 @@ struct semaphore {
             scheduler::block_process_light(pid);
             value_lock.unlock();
             scheduler::reschedule();
+        }
+    }
+
+    /*!
+     * \brief Try to acquire the lock.
+     *
+     * This function returns immediately.
+     *
+     * \return true if the lock was acquired, false otherwise.
+     */
+    bool try_lock() {
+        std::lock_guard<spinlock> l(value_lock);
+
+        if (value > 0) {
+            --value;
+
+            return true;
+        } else {
+            return false;
         }
     }
 

@@ -56,6 +56,25 @@ struct mutex {
     }
 
     /*!
+     * \brief Try to acquire the lock.
+     *
+     * This function returns immediately.
+     *
+     * \return true if the lock was acquired, false otherwise.
+     */
+    bool try_lock() {
+        std::lock_guard<spinlock> l(value_lock);
+
+        if (value > 0) {
+            value = 0;
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /*!
      * \brief Acquire the lock
      */
     void unlock() {

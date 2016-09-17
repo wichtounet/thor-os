@@ -27,6 +27,20 @@ struct spinlock {
     }
 
     /*!
+     * \brief Acquire the lock.
+     *
+     * This will wait indefinitely.
+     */
+    bool try_lock() {
+        if(__sync_bool_compare_and_swap(&value, 0, 1)){
+            __sync_synchronize();
+            return true;
+        }
+
+        return false;
+    }
+
+    /*!
      * \brief Release the lock
      */
     void unlock() {
