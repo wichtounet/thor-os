@@ -147,32 +147,3 @@ std::expected<void> network::icmp::finalize_packet(network::interface_descriptor
     // Give the packet to the IP layer for finalization
     return network::ip::finalize_packet(interface, packet);
 }
-
-void network::icmp::ping(network::interface_descriptor& interface, network::ip::address target_ip){
-    logging::logf(logging::log_level::TRACE, "icmp: Ping %u.%u.%u.%u \n",
-        uint64_t(target_ip(0)), uint64_t(target_ip(1)), uint64_t(target_ip(2)), uint64_t(target_ip(3)));
-
-    auto target_mac = network::arp::get_mac_force(interface, target_ip);
-
-    if(!target_mac){
-        logging::logf(logging::log_level::TRACE, "icmp: Failed to get MAC Address from IP\n");
-        return;
-    }
-
-    logging::logf(logging::log_level::TRACE, "icmp: Target MAC Address: %h\n", *target_mac);
-
-    // Ask the ICMP layer to craft a packet
-    auto packet = network::icmp::kernel_prepare_packet(interface, target_ip, 0, type::ECHO_REQUEST, 0);
-
-    if(packet){
-        // Set the Command header
-
-        auto* command_header = reinterpret_cast<echo_request_header*>(packet->payload + packet->index);
-
-        command_header->identifier = 0x666;
-        command_header->sequence = echo_sequence++;
-
-        // Send the packet back to ICMP
-        network::icmp::finalize_packet(interface, *packet);
-    }
-}

@@ -29,8 +29,6 @@ std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, netwo
 
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
-void ping(network::interface_descriptor& interface, network::ip::address addr);
-
 } // end of icmp namespace
 
 } // end of network namespace
