@@ -202,7 +202,7 @@ void k_print(const std::string& s){
 }
 
 void k_print(const char* str, uint64_t end){
-    for(uint64_t i = 0; str[i] != 0 && i < end; ++i){
+    for(uint64_t i = 0; i < end && str[i] != 0; ++i){
         k_print(str[i]);
     }
 }
