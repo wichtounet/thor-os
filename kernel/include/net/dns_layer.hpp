@@ -22,7 +22,6 @@ static_assert(sizeof(header) == 12, "DNS flags must be 96 bits");
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
-std::expected<network::ethernet::packet> kernel_prepare_packet_query(network::interface_descriptor& interface, const packet_descriptor& descriptor);
 std::expected<network::ethernet::packet> user_prepare_packet_query(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor);
 
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
