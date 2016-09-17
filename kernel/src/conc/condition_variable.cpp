@@ -23,7 +23,7 @@ scheduler::pid_t condition_variable::top_process() const {
     return queue.top();
 }
 
-scheduler::pid_t condition_variable::wake_up() {
+scheduler::pid_t condition_variable::notify_one() {
     std::lock_guard<spinlock> l(lock);
 
     while (!queue.empty()) {
@@ -48,7 +48,7 @@ scheduler::pid_t condition_variable::wake_up() {
     return scheduler::INVALID_PID;
 }
 
-void condition_variable::wake_up_all() {
+void condition_variable::notify_all() {
     std::lock_guard<spinlock> l(lock);
 
     while (!queue.empty()) {
@@ -69,7 +69,7 @@ void condition_variable::wake_up_all() {
     }
 }
 
-void condition_variable::sleep() {
+void condition_variable::wait() {
     lock.lock();
 
     //Get the current process information
@@ -90,7 +90,7 @@ void condition_variable::sleep() {
     scheduler::reschedule();
 }
 
-bool condition_variable::sleep(size_t ms) {
+bool condition_variable::wait_for(size_t ms) {
     if (!ms) {
         return false;
     }

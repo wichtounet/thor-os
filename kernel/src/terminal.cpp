@@ -72,7 +72,7 @@ void input_thread(void* data){
                                     terminal.canonical_buffer.push(terminal.input_buffer.pop());
                                 }
 
-                                terminal.input_queue.wake_up();
+                                terminal.input_queue.notify_one();
                             }
                         }
                     }
@@ -83,7 +83,7 @@ void input_thread(void* data){
                 auto code = keyboard::raw_key_to_keycode(key);
                 terminal.raw_buffer.push(static_cast<size_t>(code));
 
-                terminal.input_queue.wake_up();
+                terminal.input_queue.notify_one();
 
                 thor_assert(!terminal.raw_buffer.full(), "raw buffer is full!");
             }
@@ -96,7 +96,7 @@ void input_thread(void* data){
             if(!terminal.canonical && terminal.mouse){
                 terminal.raw_buffer.push(key);
 
-                terminal.input_queue.wake_up();
+                terminal.input_queue.notify_one();
 
                 thor_assert(!terminal.raw_buffer.full(), "raw buffer is full!");
             }
@@ -149,7 +149,7 @@ size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max){
             }
         }
 
-        input_queue.sleep();
+        input_queue.wait();
     }
 }
 
@@ -172,7 +172,7 @@ size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max, size_t 
             return read;
         }
 
-        if(!input_queue.sleep(ms)){
+        if(!input_queue.wait_for(ms)){
             return read;
         }
     }
@@ -180,7 +180,7 @@ size_t stdio::virtual_terminal::read_input_can(char* buffer, size_t max, size_t 
 
 size_t stdio::virtual_terminal::read_input_raw(){
     if(raw_buffer.empty()){
-        input_queue.sleep();
+        input_queue.wait();
     }
 
     return raw_buffer.pop();
@@ -192,7 +192,7 @@ size_t stdio::virtual_terminal::read_input_raw(size_t ms){
             return static_cast<size_t>(std::keycode::TIMEOUT);
         }
 
-        if(!input_queue.sleep(ms)){
+        if(!input_queue.wait_for(ms)){
             return static_cast<size_t>(std::keycode::TIMEOUT);
         }
     }

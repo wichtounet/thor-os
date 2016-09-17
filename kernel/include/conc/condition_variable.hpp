@@ -34,17 +34,17 @@ struct condition_variable {
     /*!
      * \brief Wake up the first process from the queue.
      */
-    scheduler::pid_t wake_up();
+    scheduler::pid_t notify_one();
 
     /*!
      * \brief Wake up all the processes from the queue.
      */
-    void wake_up_all();
+    void notify_all();
 
     /*!
      * \brief Wait inside the queue until woken up.
      */
-    void sleep();
+    void wait();
 
     /*!
      * \brief Wait inside the queue until woken up or until the
@@ -52,7 +52,7 @@ struct condition_variable {
      *
      * \return true if the thread was woken up, false if the timeout is passed
      */
-    bool sleep(size_t ms);
+    bool wait_for(size_t ms);
 
 private:
     mutable spinlock lock;                       ///< The spin lock used for protecting the queue

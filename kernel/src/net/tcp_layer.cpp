@@ -166,7 +166,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
             std::copy_n(packet.payload, packet.payload_size, copy.payload);
 
             connection.packets.push(copy);
-            connection.queue.wake_up();
+            connection.queue.notify_one();
         }
 
         ++it;
@@ -296,7 +296,7 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
             auto remaining = timeout_ms - (after - before);
 
-            if(connection.queue.sleep(remaining)){
+            if(connection.queue.wait_for(remaining)){
                 auto received_packet = connection.packets.pop();
 
                 auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
@@ -377,7 +377,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
     while (true) {
         // TODO Need a timeout
-        connection.queue.sleep();
+        connection.queue.wait();
         auto received_packet = connection.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
@@ -465,7 +465,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
 
     while (true) {
         // TODO Need a timeout
-        connection.queue.sleep();
+        connection.queue.wait();
         auto received_packet = connection.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);

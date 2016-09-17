@@ -148,14 +148,14 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
     } else if(operation == 0x2){
         logging::logf(logging::log_level::TRACE, "arp: Handle Reply\n");
 
-        wait_queue.wake_up_all();
+        wait_queue.notify_all();
     }
 }
 
 void network::arp::wait_for_reply(){
-    wait_queue.sleep();
+    wait_queue.wait();
 }
 
 void network::arp::wait_for_reply(size_t ms){
-    wait_queue.sleep(ms);
+    wait_queue.wait_for(ms);
 }

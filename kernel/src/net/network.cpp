@@ -494,7 +494,7 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
     logging::logf(logging::log_level::TRACE, "network: %u wait for packet on socket %u\n", scheduler::get_pid(), socket_fd);
 
     if(socket.listen_packets.empty()){
-        socket.listen_queue.sleep();
+        socket.listen_queue.wait();
     }
 
     auto packet = socket.listen_packets.pop();
@@ -526,7 +526,7 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
         }
 
-        if(!socket.listen_queue.sleep(ms)){
+        if(!socket.listen_queue.wait_for(ms)){
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
         }
     }
@@ -597,7 +597,7 @@ void network::propagate_packet(const ethernet::packet& packet, socket_protocol p
                         std::copy_n(packet.payload, packet.payload_size, copy.payload);
 
                         socket.listen_packets.push(copy);
-                        socket.listen_queue.wake_up();
+                        socket.listen_queue.notify_one();
                     }
                 }
             }
