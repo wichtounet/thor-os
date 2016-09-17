@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+#include "assert.hpp"
+
 namespace network {
 
 namespace ethernet {

@@ -5,7 +5,8 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#include "sleep_queue.hpp"
+#include "conc/sleep_queue.hpp"
+
 #include "scheduler.hpp"
 #include "logging.hpp"
 #include "assert.hpp"

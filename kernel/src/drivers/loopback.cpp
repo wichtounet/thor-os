@@ -7,17 +7,14 @@
 
 #include "drivers/loopback.hpp"
 
+#include "net/ethernet_layer.hpp"
+
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 #include "interrupts.hpp"
 #include "paging.hpp"
-#include "semaphore.hpp"
-#include "paging.hpp"
-#include "int_lock.hpp"
-
-#include "net/ethernet_layer.hpp"
 
 namespace {
 

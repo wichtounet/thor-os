@@ -10,7 +10,8 @@
 #include "physical_allocator.hpp"
 #include "paging.hpp"
 #include "e820.hpp"
-#include "int_lock.hpp"
+
+#include "conc/int_lock.hpp"
 
 #include "fs/sysfs.hpp"
 

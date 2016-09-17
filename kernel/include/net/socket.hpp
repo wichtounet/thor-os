@@ -15,10 +15,11 @@
 
 #include "tlib/net_constants.hpp"
 
-#include "assert.hpp"
-#include "sleep_queue.hpp"
+#include "conc/sleep_queue.hpp"
 
 #include "net/ethernet_packet.hpp"
+
+#include "assert.hpp"
 
 namespace network {
 

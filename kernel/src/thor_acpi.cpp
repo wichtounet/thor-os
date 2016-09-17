@@ -9,6 +9,10 @@
  * This file contains the OS specific layer
  */
 
+#include "conc/mutex.hpp"
+#include "conc/semaphore.hpp"
+#include "conc/int_lock.hpp"
+
 #include "acpica.hpp"
 
 #include "kalloc.hpp"
@@ -21,10 +25,6 @@
 #include "timer.hpp"
 #include "drivers/pci.hpp"
 #include "logging.hpp"
-
-#include "mutex.hpp"
-#include "semaphore.hpp"
-#include "int_lock.hpp"
 
 extern "C" {
 

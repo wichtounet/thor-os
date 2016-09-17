@@ -30,6 +30,7 @@ $(eval $(call compile_assembly_folder,src))
 
 $(eval $(call compile_cpp_folder,src))
 $(eval $(call compile_cpp_folder,src/net))
+$(eval $(call compile_cpp_folder,src/conc))
 $(eval $(call compile_cpp_folder,src/drivers))
 $(eval $(call compile_cpp_folder,src/fs))
 $(eval $(call compile_cpp_folder,src/vfs))

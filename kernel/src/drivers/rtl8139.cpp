@@ -7,17 +7,16 @@
 
 #include "drivers/rtl8139.hpp"
 
+#include "conc/int_lock.hpp"
+
+#include "net/ethernet_layer.hpp"
+
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 #include "interrupts.hpp"
 #include "paging.hpp"
-#include "semaphore.hpp"
-#include "paging.hpp"
-#include "int_lock.hpp"
-
-#include "net/ethernet_layer.hpp"
 
 #define MAC0 0x00
 #define MAC4 0x04

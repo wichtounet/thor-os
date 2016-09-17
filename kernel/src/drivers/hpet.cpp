@@ -7,10 +7,11 @@
 
 #include "drivers/hpet.hpp"
 
+#include "conc/int_lock.hpp"
+
 #include "acpica.hpp"
 #include "logging.hpp"
 #include "mmap.hpp"
-#include "int_lock.hpp"
 #include "kernel.hpp" // For suspend_kernel
 #include "scheduler.hpp" // For async init
 #include "timer.hpp"     // For setting the frequency

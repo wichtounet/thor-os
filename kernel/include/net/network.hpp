@@ -8,11 +8,12 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include <conc/mutex.hpp>
+#include <conc/semaphore.hpp>
+
 #include <types.hpp>
 #include <string.hpp>
 #include <circular_buffer.hpp>
-#include <mutex.hpp>
-#include <semaphore.hpp>
 #include <lock_guard.hpp>
 #include <tuple.hpp>
 #include <expected.hpp>

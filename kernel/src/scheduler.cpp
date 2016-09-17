@@ -14,6 +14,9 @@
 #include <tlib/errors.hpp>
 #include <tlib/elf.hpp>
 
+#include "conc/mutex.hpp"
+#include "conc/int_lock.hpp"
+
 #include "scheduler.hpp"
 #include "paging.hpp"
 #include "assert.hpp"
@@ -24,10 +27,8 @@
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 #include "physical_pointer.hpp"
-#include "mutex.hpp"
 #include "kernel_utils.hpp"
 #include "logging.hpp"
-#include "int_lock.hpp"
 #include "timer.hpp"
 
 #include "fs/procfs.hpp"

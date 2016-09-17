@@ -8,7 +8,8 @@
 #include <bit_field.hpp>
 #include <atomic.hpp>
 #include <list.hpp>
-#include <sleep_queue.hpp>
+
+#include "conc/sleep_queue.hpp"
 
 #include "net/tcp_layer.hpp"
 #include "net/dns_layer.hpp"

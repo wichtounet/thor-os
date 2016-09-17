@@ -11,7 +11,8 @@
 #include <circular_buffer.hpp>
 #include <lock_guard.hpp>
 
-#include "spinlock.hpp"
+#include "conc/spinlock.hpp"
+
 #include "scheduler.hpp"
 #include "logging.hpp"
 

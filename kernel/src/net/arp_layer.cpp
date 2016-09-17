@@ -14,9 +14,10 @@
 #include "net/arp_cache.hpp"
 #include "net/ip_layer.hpp"
 
+#include "conc/sleep_queue.hpp"
+
 #include "logging.hpp"
 #include "kernel_utils.hpp"
-#include "sleep_queue.hpp"
 
 namespace {
 

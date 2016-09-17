@@ -12,13 +12,14 @@
 #include "drivers/ata.hpp"
 #include "drivers/ata_constants.hpp"
 
+#include "conc/mutex.hpp"
+
 #include "kernel_utils.hpp"
 #include "kalloc.hpp"
 #include "thor.hpp"
 #include "interrupts.hpp"
 #include "console.hpp"
 #include "disks.hpp"
-#include "mutex.hpp"
 #include "block_cache.hpp"
 
 namespace {
