@@ -133,6 +133,15 @@ struct packet_descriptor {
 
 } // end of namespace icmp
 
+namespace http {
+
+struct packet_descriptor {
+    size_t payload_size;
+    ip::address target_ip;
+};
+
+} // end of http namespace
+
 namespace dns {
 
 struct header {
