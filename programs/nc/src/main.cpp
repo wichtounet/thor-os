@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
 
         auto remaining = timeout_ms - (after - before);
 
-        auto p = sock.wait_for_packet(remaining);
+        auto packet = sock.wait_for_packet(remaining);
         if (!sock) {
             if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
                 sock.clear();
@@ -96,9 +96,9 @@ int main(int argc, char* argv[]) {
             tlib::printf("nc: wait_for_packet error: %s\n", std::error_message(sock.error()));
             return 1;
         } else {
-            auto* ip_header  = reinterpret_cast<tlib::ip::header*>(p.payload + sizeof(tlib::ethernet::header));
-            auto* tcp_header = reinterpret_cast<tlib::tcp::header*>(p.payload + sizeof(tlib::ethernet::header) + sizeof(tlib::ip::header));
-            auto* payload    = p.payload + p.index;
+            auto* ip_header  = reinterpret_cast<tlib::ip::header*>(packet.payload + sizeof(tlib::ethernet::header));
+            auto* tcp_header = reinterpret_cast<tlib::tcp::header*>(packet.payload + sizeof(tlib::ethernet::header) + sizeof(tlib::ip::header));
+            auto* payload    = packet.payload + packet.index;
 
             auto tcp_flags = tlib::switch_endian_16(tcp_header->flags);
 
