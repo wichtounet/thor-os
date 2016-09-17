@@ -31,7 +31,8 @@ void network::alpha(){
     size_t payload_size = labels + characters + 1 + 2 * 2;
 
     // Ask the DNS layer to craft a packet
-    auto packet = network::dns::kernel_prepare_packet_query(interface, target_ip, 3456, 0x666, payload_size);
+    network::dns::packet_descriptor desc{payload_size, target_ip, 3456, 0x666, true};
+    auto packet = network::dns::kernel_prepare_packet_query(interface, desc);
 
     if(packet){
         auto* payload = reinterpret_cast<char*>(packet->payload + packet->index);

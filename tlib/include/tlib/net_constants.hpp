@@ -56,6 +56,12 @@ struct header {
     uint32_t target_ip;
 } __attribute__((packed));
 
+struct packet_descriptor {
+    size_t size;
+    address destination;
+    size_t protocol;
+};
+
 } // end of namespace ip
 
 namespace ethernet {
@@ -69,6 +75,19 @@ struct header {
     address source;
     uint16_t type;
 } __attribute__((packed));
+
+enum class ether_type {
+    IPV4,
+    IPV6,
+    ARP,
+    UNKNOWN
+};
+
+struct packet_descriptor {
+    size_t size;
+    size_t destination;
+    ether_type type;
+};
 
 } // end of namespace ethernet
 
@@ -134,6 +153,17 @@ struct packet_descriptor {
 };
 
 } // end of dns namespace
+
+namespace udp {
+
+struct packet_descriptor {
+    ip::address target_ip;
+    size_t source;
+    size_t target;
+    size_t payload_size;
+};
+
+} // end of udp namespace
 
 namespace tcp {
 

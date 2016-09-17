@@ -16,13 +16,6 @@ namespace network {
 
 namespace ethernet {
 
-enum class ether_type {
-    IPV4,
-    IPV6,
-    ARP,
-    UNKNOWN
-};
-
 struct packet {
     // Set from the beginning
     char* payload;

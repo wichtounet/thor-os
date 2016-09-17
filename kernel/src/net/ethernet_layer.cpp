@@ -48,19 +48,19 @@ uint16_t type_to_code(network::ethernet::ether_type type){
     return 0x0;
 }
 
-void prepare_packet(network::ethernet::packet& p, network::interface_descriptor& interface, size_t destination, network::ethernet::ether_type type){
+void prepare_packet(network::ethernet::packet& p, network::interface_descriptor& interface, const network::ethernet::packet_descriptor& descriptor){
     p.tag(0, 0);
-    p.type = type;
+    p.type = descriptor.type;
     p.index = sizeof(network::ethernet::header);
     p.interface = interface.id;
 
     auto source_mac = interface.mac_address;
 
     auto* ether_header = reinterpret_cast<network::ethernet::header*>(p.payload);
-    ether_header->type = switch_endian_16(type_to_code(type));
+    ether_header->type = switch_endian_16(type_to_code(descriptor.type));
 
     network::ethernet::mac64_to_mac6(source_mac, ether_header->source.mac);
-    network::ethernet::mac64_to_mac6(destination, ether_header->target.mac);
+    network::ethernet::mac64_to_mac6(descriptor.destination, ether_header->target.mac);
 }
 
 } //end of anonymous namespace
@@ -123,23 +123,23 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
     logging::logf(logging::log_level::TRACE, "ethernet: Finished decoding packet\n");
 }
 
-std::expected<network::ethernet::packet> network::ethernet::kernel_prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
-    auto total_size = size + sizeof(header);
+std::expected<network::ethernet::packet> network::ethernet::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
+    auto total_size = descriptor.size + sizeof(header);
 
     network::ethernet::packet p(new char[total_size], total_size);
 
-    ::prepare_packet(p, interface, destination, type);
+    ::prepare_packet(p, interface, descriptor);
 
     return p;
 }
 
-std::expected<network::ethernet::packet> network::ethernet::user_prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
-    auto total_size = size + sizeof(header);
+std::expected<network::ethernet::packet> network::ethernet::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
+    auto total_size = descriptor->size + sizeof(header);
 
     network::ethernet::packet p(buffer, total_size);
     p.user = true;
 
-    ::prepare_packet(p, interface, destination, type);
+    ::prepare_packet(p, interface, *descriptor);
 
     return p;
 }

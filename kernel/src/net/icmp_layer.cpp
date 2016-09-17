@@ -81,7 +81,8 @@ void network::icmp::decode(network::interface_descriptor& interface, network::et
                 if(target_ip == interface.ip_address){
                     logging::logf(logging::log_level::TRACE, "icmp: Reply to Echo Request for own IP\n");
 
-                    auto reply_packet = network::icmp::kernel_prepare_packet(interface, source_ip, 0x0, type::ECHO_REPLY, 0x0);
+                    network::icmp::packet_descriptor desc{0, source_ip, type::ECHO_REPLY, 0x0};
+                    auto reply_packet = network::icmp::kernel_prepare_packet(interface, desc);
 
                     if(reply_packet){
                         auto* command_header = reinterpret_cast<echo_request_header*>(packet.payload + command_index);
@@ -114,23 +115,25 @@ void network::icmp::decode(network::interface_descriptor& interface, network::et
     network::propagate_packet(packet, network::socket_protocol::ICMP);
 }
 
-std::expected<network::ethernet::packet> network::icmp::kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){
+std::expected<network::ethernet::packet> network::icmp::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
     // Ask the IP layer to craft a packet
-    auto packet = network::ip::kernel_prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x01);
+    network::ip::packet_descriptor desc{sizeof(header) + descriptor.payload_size, descriptor.target_ip, 0x01};
+    auto packet = network::ip::kernel_prepare_packet(interface, desc);
 
     if(packet){
-        ::prepare_packet(*packet, t, code);
+        ::prepare_packet(*packet, descriptor.type, descriptor.code);
     }
 
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::icmp::user_prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t payload_size, type t, size_t code){
+std::expected<network::ethernet::packet> network::icmp::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
     // Ask the IP layer to craft a packet
-    auto packet = network::ip::user_prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x01);
+    network::ip::packet_descriptor desc{sizeof(header) + descriptor->payload_size, descriptor->target_ip, 0x01};
+    auto packet = network::ip::user_prepare_packet(buffer, interface, &desc);
 
     if(packet){
-        ::prepare_packet(*packet, t, code);
+        ::prepare_packet(*packet, descriptor->type, descriptor->code);
     }
 
     return packet;
