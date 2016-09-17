@@ -40,17 +40,20 @@ using flag_syn         = std::bit_field<uint16_t, uint8_t, 1, 1>;
 using flag_fin         = std::bit_field<uint16_t, uint8_t, 0, 1>;
 
 struct tcp_connection {
-    size_t source_port; ///< The source port of the connection
-    size_t target_port; ///< The target port of the connection
+    size_t local_port;                   ///< The local source port
+    size_t server_port;                  ///< The server port
+    network::ip::address server_address; ///< The server address
 
     std::atomic<bool> listening;                           ///< Indicates if a kernel thread is listening on this connection
     condition_variable queue;                              ///< The listening queue
     circular_buffer<network::ethernet::packet, 8> packets; ///< The packets for the listening queue
 
-    tcp_connection(size_t source_port, size_t target_port)
-            : source_port(source_port), target_port(target_port), listening(false) {
-        //Nothing else to init
-    }
+    bool connected = false;
+
+    uint32_t ack_number = 0; ///< The next ack number
+    uint32_t seq_number = 0; ///< The next sequence number
+
+    network::socket* socket = nullptr;
 };
 
 // The lock used to protect the list of connections
@@ -59,12 +62,12 @@ rw_lock connections_lock;
 // Note: We need a list to not invalidate the values during insertions
 std::list<tcp_connection> connections;
 
-tcp_connection* get_connection(size_t source_port, size_t target_port) {
+tcp_connection* get_connection_for_packet(size_t source_port, size_t target_port) {
     auto lock = connections_lock.reader_lock();
     std::lock_guard<reader_rw_lock> l(lock);
 
     for(auto& connection : connections){
-        if (connection.source_port == source_port && connection.target_port == target_port) {
+        if (connection.server_port == source_port && connection.local_port == target_port) {
             return &connection;
         }
     }
@@ -72,11 +75,15 @@ tcp_connection* get_connection(size_t source_port, size_t target_port) {
     return nullptr;
 }
 
-tcp_connection& create_connection(size_t target, size_t source){
+tcp_connection& create_connection(){
     auto lock = connections_lock.writer_lock();
     std::lock_guard<writer_rw_lock> l(lock);
 
-    return connections.emplace_back(target, source);
+    auto& connection = connections.emplace_back();
+
+    connection.listening = false;
+
+    return connection;
 }
 
 void remove_connection(tcp_connection& connection){
@@ -178,35 +185,52 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
 
     auto flags = switch_endian_16(tcp_header->flags);
 
-    // Propagate to kernel connections
+    auto next_seq = ack;
+    auto next_ack = seq + tcp_payload_len(packet);;
 
-    {
-        auto lock = connections_lock.reader_lock();
-        std::lock_guard<reader_rw_lock> l(lock);
+    auto connection_ptr = get_connection_for_packet(source_port, target_port);
 
-        for (auto& connection : connections) {
-            if (connection.listening.load() && connection.source_port == source_port && connection.target_port == target_port) {
+    if(connection_ptr){
+        auto& connection = *connection_ptr;
+
+        // Update the connection status
+
+        connection.seq_number = next_seq;
+        connection.ack_number = next_ack;
+
+        // Propagate to kernel connections
+
+        if (connection.listening.load()) {
+            auto copy    = packet;
+            copy.payload = new char[copy.payload_size];
+            std::copy_n(packet.payload, packet.payload_size, copy.payload);
+
+            connection.packets.push(copy);
+            connection.queue.notify_one();
+        }
+
+        // Propagate to the kernel socket
+
+        if (*flag_psh(&flags) && connection.socket) {
+            auto& socket = *connection.socket;
+
+            packet.index += sizeof(header);
+
+            if (socket.listen) {
                 auto copy    = packet;
                 copy.payload = new char[copy.payload_size];
                 std::copy_n(packet.payload, packet.payload_size, copy.payload);
 
-                connection.packets.push(copy);
-                connection.queue.notify_one();
+                socket.listen_packets.push(copy);
+                socket.listen_queue.notify_one();
             }
         }
+    } else {
+        logging::logf(logging::log_level::DEBUG, "tcp: Received packet for which there are no connection\n");
     }
 
-    auto seq_number = ack;
-    auto ack_number = seq + tcp_payload_len(packet);
+    // Acknowledge if necessary
 
-    //TODO socket.seq_number = ack;
-    //TODO socket.ack_number = seq + tcp_payload_len(packet);
-
-    packet.index += sizeof(header);
-
-    network::propagate_packet(packet, network::socket_protocol::TCP);
-
-    // A push needs to be acknowledged
     if (*flag_psh(&flags)) {
         auto p = tcp::prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
 
@@ -217,12 +241,12 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
 
         auto* ack_tcp_header = reinterpret_cast<header*>(p->payload + p->tag(2));
 
-        ack_tcp_header->sequence_number = switch_endian_32(seq_number);
-        ack_tcp_header->ack_number      = switch_endian_32(ack_number);
+        ack_tcp_header->sequence_number = switch_endian_32(next_seq);
+        ack_tcp_header->ack_number      = switch_endian_32(next_ack);
 
-        auto flags = get_default_flags();
-        (flag_ack(&flags)) = 1;
-        ack_tcp_header->flags = switch_endian_16(flags);
+        auto ack_flags = get_default_flags();
+        (flag_ack(&ack_flags)) = 1;
+        ack_tcp_header->flags = switch_endian_16(ack_flags);
 
         tcp::finalize_packet(interface, *p);
     }
@@ -239,15 +263,23 @@ std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::i
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::socket& socket, size_t payload_size) {
-    auto target_ip = socket.server_address;
+std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::socket& socket, size_t payload_size) {
+    auto& connection = socket.get_data<tcp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<network::ethernet::packet>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    auto target_ip  = connection.server_address;
+    auto& interface = network::select_interface(target_ip);
 
     // Ask the IP layer to craft a packet
     auto packet = network::ip::prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x06);
 
     if (packet) {
-        auto source = socket.local_port;
-        auto target = socket.server_port;
+        auto source = connection.local_port;
+        auto target = connection.server_port;
 
         ::prepare_packet(*packet, source, target);
 
@@ -258,8 +290,8 @@ std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buff
         (flag_ack(&flags)) = 1;
         tcp_header->flags = switch_endian_16(flags);
 
-        tcp_header->sequence_number = switch_endian_32(socket.seq_number);
-        tcp_header->ack_number      = switch_endian_32(socket.ack_number);
+        tcp_header->sequence_number = switch_endian_32(connection.seq_number);
+        tcp_header->ack_number      = switch_endian_32(connection.ack_number);
     }
 
     return packet;
@@ -286,17 +318,13 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
         return; //TODO Fail
     }
 
-    auto source = socket.local_port;
-    auto target = socket.server_port;
+    auto& connection = socket.get_data<tcp_connection>();
 
-    auto connection_ptr = get_connection(target, source);
-
-    if (!connection_ptr) {
-        logging::logf(logging::log_level::ERROR, "tcp: Unable to find connection!\n");
-        return; //TODO Fail
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        //TODO return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
+        return;
     }
-
-    auto& connection = *connection_ptr;
 
     connection.listening = true;
 
@@ -357,22 +385,31 @@ void network::tcp::finalize_packet(network::interface_descriptor& interface, net
 
     if(received){
         // Set the future sequence and acknowledgement numbers
-        socket.seq_number = ack;
-        socket.ack_number = seq;
+        connection.seq_number = ack;
+        connection.ack_number = seq;
     } else {
         //TODO We need to be able to make finalize fail!
     }
 }
 
-std::expected<void> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface) {
-    auto target_ip = sock.server_address;
-    auto source    = sock.local_port;
-    auto target    = sock.server_port;
+std::expected<void> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server) {
+    // Create the connection
 
-    sock.seq_number = 0;
-    sock.ack_number = 0;
+    auto& connection = create_connection();
 
-    auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
+    connection.local_port     = local_port;
+    connection.server_port    = server_port;
+    connection.server_address = server;
+
+    // Link the socket and connection
+    sock.data = &connection;
+    connection.socket = &sock;
+
+    // Prepare the SYN packet
+
+    auto target_ip = connection.server_address;
+
+    auto packet = tcp::prepare_packet(interface, target_ip, local_port, server_port, 0);
 
     if (!packet) {
         return std::make_unexpected<void>(packet.error());
@@ -380,16 +417,12 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
     auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
-    tcp_header->sequence_number = 0;
-    tcp_header->ack_number      = 0;
-
     auto flags = get_default_flags();
     (flag_syn(&flags)) = 1;
     tcp_header->flags = switch_endian_16(flags);
 
-    // Create the connection
-
-    auto& connection = create_connection(target, source);
+    tcp_header->sequence_number = connection.seq_number;
+    tcp_header->ack_number      = connection.ack_number;
 
     connection.listening = true;
 
@@ -425,13 +458,13 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
     connection.listening = false;
 
-    sock.seq_number = ack;
-    sock.ack_number = seq + 1;
+    connection.seq_number = ack;
+    connection.ack_number = seq + 1;
 
     // At this point we have received the SYN/ACK, only remains to ACK
 
     {
-        auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
+        auto packet = tcp::prepare_packet(interface, target_ip, connection.local_port, connection.server_port, 0);
 
         if (!packet) {
             return std::make_unexpected<void>(packet.error());
@@ -439,8 +472,8 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
-        tcp_header->sequence_number = switch_endian_32(sock.seq_number);
-        tcp_header->ack_number      = switch_endian_32(sock.ack_number);
+        tcp_header->sequence_number = switch_endian_32(connection.seq_number);
+        tcp_header->ack_number      = switch_endian_32(connection.ack_number);
 
         auto flags = get_default_flags();
         (flag_ack(&flags)) = 1;
@@ -450,13 +483,25 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
         tcp::finalize_packet(interface, *packet);
     }
 
+    // Mark the connection as connected
+
+    connection.connected = true;
+
     return {};
 }
 
-std::expected<void> network::tcp::disconnect(network::socket& sock, network::interface_descriptor& interface) {
-    auto target_ip = sock.server_address;
-    auto source    = sock.local_port;
-    auto target    = sock.server_port;
+std::expected<void> network::tcp::disconnect(network::socket& sock) {
+    auto& connection = sock.get_data<tcp_connection>();
+
+    if(!connection.connected){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    auto target_ip = connection.server_address;
+    auto source    = connection.local_port;
+    auto target    = connection.server_port;
+
+    auto& interface = network::select_interface(target_ip);
 
     auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
 
@@ -466,22 +511,13 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
 
     auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
-    tcp_header->sequence_number = switch_endian_32(sock.seq_number);
-    tcp_header->ack_number      = switch_endian_32(sock.ack_number);
+    tcp_header->sequence_number = switch_endian_32(connection.seq_number);
+    tcp_header->ack_number      = switch_endian_32(connection.ack_number);
 
     auto flags = get_default_flags();
     (flag_fin(&flags)) = 1;
     (flag_ack(&flags)) = 1;
     tcp_header->flags = switch_endian_16(flags);
-
-    auto connection_ptr = get_connection(target, source);
-
-    if (!connection_ptr) {
-        logging::logf(logging::log_level::ERROR, "tcp: Unable to find connection!\n");
-        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_CONNECTION);
-    }
-
-    auto& connection = *connection_ptr;
 
     connection.listening = true;
 
@@ -529,8 +565,8 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
 
     connection.listening = false;
 
-    sock.seq_number = ack;
-    sock.ack_number = seq + 1;
+    connection.seq_number = ack;
+    connection.ack_number = seq + 1;
 
     // At this point we have received the FIN/ACK, only remains to ACK
 
@@ -543,8 +579,8 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
-        tcp_header->sequence_number = switch_endian_32(sock.seq_number);
-        tcp_header->ack_number      = switch_endian_32(sock.ack_number);
+        tcp_header->sequence_number = switch_endian_32(connection.seq_number);
+        tcp_header->ack_number      = switch_endian_32(connection.ack_number);
 
         auto flags = get_default_flags();
         (flag_ack(&flags)) = 1;
@@ -553,6 +589,10 @@ std::expected<void> network::tcp::disconnect(network::socket& sock, network::int
         logging::logf(logging::log_level::TRACE, "tcp: Send ACK\n");
         tcp::finalize_packet(interface, *packet);
     }
+
+    // Mark the connection as connected
+
+    connection.connected = false;
 
     remove_connection(connection);
 

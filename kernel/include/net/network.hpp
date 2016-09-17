@@ -67,6 +67,8 @@ size_t number_of_interfaces();
 
 interface_descriptor& interface(size_t index);
 
+interface_descriptor& select_interface(network::ip::address address);
+
 /*!
  * \brief Open a new socket
  * \param domain The socket domain

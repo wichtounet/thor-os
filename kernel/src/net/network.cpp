@@ -74,26 +74,6 @@ void tx_thread(void* data){
     }
 }
 
-network::interface_descriptor& select_interface(network::ip::address address){
-    if(address == network::ip::make_address(127, 0, 0, 1)){
-        for(auto& interface : interfaces){
-            if(interface.enabled && interface.is_loopback()){
-                return interface;
-            }
-        }
-    }
-
-    // Otherwise return the first enabled interface
-
-    for(auto& interface : interfaces){
-        if(interface.enabled){
-            return interface;
-        }
-    }
-
-    thor_unreachable("network: Should never happen");
-}
-
 void sysfs_publish(const network::interface_descriptor& interface){
     auto p = path("/net") / interface.name;
 
@@ -232,6 +212,27 @@ network::interface_descriptor& network::interface(size_t index){
     return interfaces[index];
 }
 
+network::interface_descriptor& network::select_interface(network::ip::address address){
+    if(address == network::ip::make_address(127, 0, 0, 1)){
+        for(auto& interface : interfaces){
+            if(interface.enabled && interface.is_loopback()){
+                return interface;
+            }
+        }
+    }
+
+    // Otherwise return the first enabled interface
+
+    for(auto& interface : interfaces){
+        if(interface.enabled){
+            return interface;
+        }
+    }
+
+    thor_unreachable("network: Should never happen");
+}
+
+
 std::expected<network::socket_fd_t> network::open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
     // Make sure the socket domain is valid
     if(domain != socket_domain::AF_INET){
@@ -258,15 +259,7 @@ std::expected<network::socket_fd_t> network::open(network::socket_domain domain,
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
 
-    auto socket_fd = scheduler::register_new_socket(domain, type, protocol);
-
-    // Initialize TCP connection values
-    auto& socket = scheduler::get_socket(socket_fd);
-    socket.connected = false;
-    socket.local_port = 0;
-    socket.server_port = 0;
-
-    return socket_fd;
+    return scheduler::register_new_socket(domain, type, protocol);
 }
 
 void network::close(size_t fd){
@@ -285,11 +278,6 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
     }
 
     auto& socket = scheduler::get_socket(socket_fd);
-
-    // Make sure stream sockets are connected
-    if(socket.type == socket_type::STREAM && !socket.connected){
-        return {-std::ERROR_SOCKET_NOT_CONNECTED, 0};
-    }
 
     auto return_from_packet = [&socket](std::expected<network::ethernet::packet>& packet) -> std::tuple<size_t, size_t> {
         if (packet) {
@@ -320,8 +308,7 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
         case network::socket_protocol::TCP: {
             auto descriptor = static_cast<network::tcp::packet_descriptor*>(desc);
-            auto& interface = select_interface(socket.server_address);
-            auto packet     = network::tcp::prepare_packet(buffer, interface, socket, descriptor->payload_size);
+            auto packet     = network::tcp::prepare_packet(buffer, socket, descriptor->payload_size);
 
             return return_from_packet(packet);
         }
@@ -353,11 +340,6 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
 
     if(!socket.has_packet(packet_fd)){
         return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_PACKET_FD);
-    }
-
-    // Make sure stream sockets are connected
-    if(socket.type == socket_type::STREAM && !socket.connected){
-        return std::make_unexpected<void>(-std::ERROR_SOCKET_NOT_CONNECTED);
     }
 
     auto& packet = socket.get_packet(packet_fd);
@@ -427,25 +409,21 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
-    socket.local_port     = local_port++;
-    socket.server_port    = port;
-    socket.server_address = server;
+    auto selected_port       = local_port++;
 
     logging::logf(logging::log_level::TRACE, "network: %u stream socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
 
     if(socket.protocol == socket_protocol::TCP){
-        auto connection = network::tcp::connect(socket, select_interface(server));
+        auto connection = network::tcp::connect(socket, select_interface(server), selected_port, port, server);
 
-        if(connection){
-            socket.connected = true;
-        } else {
+        if(!connection){
             return std::make_unexpected<size_t>(connection.error());
         }
     } else {
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
 
-    return std::make_expected<size_t>(socket.local_port);
+    return std::make_expected<size_t>(selected_port);
 }
 
 std::expected<void> network::disconnect(socket_fd_t socket_fd){
@@ -459,18 +437,12 @@ std::expected<void> network::disconnect(socket_fd_t socket_fd){
         return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
-    if(!socket.connected){
-        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
-    }
-
     logging::logf(logging::log_level::TRACE, "network: %u disconnect from stream socket %u\n", scheduler::get_pid(), socket_fd);
 
     if(socket.protocol == socket_protocol::TCP){
-        auto disconnection = network::tcp::disconnect(socket, select_interface(socket.server_address));
+        auto disconnection = network::tcp::disconnect(socket);
 
-        if(disconnection){
-            socket.connected = false;
-        } else {
+        if(!disconnection){
             return std::make_unexpected<void>(disconnection.error());
         }
     } else {
@@ -567,29 +539,9 @@ void network::propagate_packet(const ethernet::packet& packet, socket_protocol p
                                 propagate = true;
                             }
                         }
-                    } else if(socket.type == socket_type::STREAM){
-                        if(socket.protocol == protocol && socket.connected){
-                            auto local_port = socket.local_port;
-                            auto server_port = socket.server_port;
-
-                            auto tcp_index   = packet.tag(2);
-                            auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet.payload + tcp_index);
-                            auto source_port = switch_endian_16(tcp_header->source_port);
-                            auto target_port = switch_endian_16(tcp_header->target_port);
-                            auto flags       = switch_endian_16(tcp_header->flags);
-
-                            using flag_psh         = std::bit_field<uint16_t, uint8_t, 3, 1>;
-
-                            // Don't propagate ack
-                            if (*flag_psh(&flags)) {
-                                logging::logf(logging::log_level::TRACE, "network: propagate on socket %u\n", socket.id);
-
-                                if(local_port == target_port && server_port == source_port){
-                                    propagate = true;
-                                }
-                            }
-                        }
                     }
+
+                    // Note: Stream sockets are responsible for propagation
 
                     if (propagate) {
                         auto copy    = packet;
