@@ -208,7 +208,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
 
     // A push needs to be acknowledged
     if (*flag_psh(&flags)) {
-        auto p = tcp::prepare_packet(interface, ip_header->source_ip, target_port, source_port, 0);
+        auto p = tcp::prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
 
         if (!p) {
             logging::logf(logging::log_level::ERROR, "tcp: Impossible to prepare TCP packet for ACK\n");
