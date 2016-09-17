@@ -5,8 +5,8 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#ifndef SLEEP_QUEUE_H
-#define SLEEP_QUEUE_H
+#ifndef CONDITION_VARIABLE_H
+#define CONDITION_VARIABLE_H
 
 #include <circular_buffer.hpp>
 #include <lock_guard.hpp>
@@ -18,12 +18,7 @@
 /*!
  * \brief A simple sleep queue
  */
-struct sleep_queue {
-private:
-    mutable spinlock lock;
-    circular_buffer<scheduler::pid_t, 16> queue;
-
-public:
+struct condition_variable {
     /*!
      * \brief Test if the sleep queue is empty
      */
@@ -58,6 +53,10 @@ public:
      * \return true if the thread was woken up, false if the timeout is passed
      */
     bool sleep(size_t ms);
+
+private:
+    mutable spinlock lock;                       ///< The spin lock used for protecting the queue
+    circular_buffer<scheduler::pid_t, 16> queue; ///< The queue of waiting threads
 };
 
 #endif

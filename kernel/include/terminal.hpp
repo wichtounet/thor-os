@@ -13,7 +13,7 @@
 
 #include <tlib/keycode.hpp>
 
-#include "conc/sleep_queue.hpp"
+#include "conc/condition_variable.hpp"
 
 namespace stdio {
 
@@ -35,7 +35,7 @@ struct virtual_terminal {
     circular_buffer<char, 2 * INPUT_BUFFER_SIZE> canonical_buffer;
     circular_buffer<size_t, 3 * INPUT_BUFFER_SIZE> raw_buffer;
 
-    sleep_queue input_queue;
+    condition_variable input_queue;
 
     void print(char c);
 

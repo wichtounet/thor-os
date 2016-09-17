@@ -15,7 +15,7 @@
 
 #include "tlib/net_constants.hpp"
 
-#include "conc/sleep_queue.hpp"
+#include "conc/condition_variable.hpp"
 
 #include "net/ethernet_packet.hpp"
 
@@ -41,7 +41,7 @@ struct socket {
     std::vector<network::ethernet::packet> packets;
 
     circular_buffer<network::ethernet::packet, 32> listen_packets;
-    sleep_queue listen_queue;
+    condition_variable listen_queue;
 
     socket(){}
     socket(size_t id, socket_domain domain, socket_type type, socket_protocol protocol, size_t next_fd, bool listen)

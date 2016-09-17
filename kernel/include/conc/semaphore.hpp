@@ -14,17 +14,26 @@
 #include "spinlock.hpp"
 #include "scheduler.hpp"
 
+/*!
+ * \brief A semaphore implementation.
+ *
+ * The critical section can be open to several processes.
+ */
 struct semaphore {
-private:
-    mutable spinlock lock;
-    volatile size_t value;
-    circular_buffer<scheduler::pid_t, 16> queue;
-
-public:
+    /*!
+     * \brief Initialize the semaphore
+     * \param v The intial value of the semaphore
+     */
     void init(size_t v){
         value = v;
     }
 
+    /*!
+     * \brief Acquire the lock.
+     *
+     * This will effectively decrease the current counter by 1 once the critical
+     * section is entered.
+     */
     void acquire(){
         lock.acquire();
 
@@ -41,6 +50,12 @@ public:
         }
     }
 
+    /*!
+     * \brief Release the lock.
+     *
+     * This will effectively increase the current counter by 1 once the critical
+     * section is left.
+     */
     void release(){
         std::lock_guard<spinlock> l(lock);
 
@@ -56,23 +71,34 @@ public:
         }
     }
 
-    void release(size_t v){
+    /*!
+     * \brief Release the lock several times.
+     *
+     * This will effectively increase the current counter by n once the critical
+     * section is left.
+     */
+    void release(size_t n){
         std::lock_guard<spinlock> l(lock);
 
         if(queue.empty()){
-            value += v;
+            value += n;
         } else {
-            while(v && !queue.empty()){
+            while(n && !queue.empty()){
                 auto pid = queue.pop();
                 scheduler::unblock_process(pid);
-                --v;
+                --n;
             }
 
-            if(v){
-                value += v;
+            if(n){
+                value += n;
             }
         }
     }
+
+private:
+    mutable spinlock lock;                       ///< The spin lock protecting the counter
+    volatile size_t value;                       ///< The value of the counter
+    circular_buffer<scheduler::pid_t, 16> queue; ///< The sleep queue
 };
 
 #endif

@@ -12,32 +12,51 @@
 
 #include "arch.hpp"
 
+/*!
+ * \brief An interrupt lock. This lock disable preemption on acquire.
+ */
 struct int_lock {
-private:
-    size_t rflags;
-
-public:
+    /*!
+     * \brief Acquire the lock. This will disable preemption.
+     */
     void acquire(){
         arch::disable_hwint(rflags);
     }
 
+    /*!
+     * \brief Release the lock. This will enable preemption.
+     */
     void release(){
         arch::enable_hwint(rflags);
     }
+
+private:
+    size_t rflags; ///< The CPU flags
 };
 
+/*!
+ * \brief A direct interrupt lock (RAII).
+ *
+ * This is the equivalent of a std::lock_guard<int_lock> but does not need to
+ * store a lock.
+ */
 struct direct_int_lock {
-private:
-    int_lock lock;
-
-public:
+    /*!
+     * \brief Construct a new direct_int_lock and acquire the lock.
+     */
     direct_int_lock(){
         lock.acquire();
     }
 
+    /*!
+     * \brief Destruct a direct_int_lock and release the lock.
+     */
     ~direct_int_lock(){
         lock.release();
     }
+
+private:
+    int_lock lock; ///< The interrupt lock
 };
 
 #endif

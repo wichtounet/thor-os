@@ -9,7 +9,7 @@
 #include <atomic.hpp>
 #include <list.hpp>
 
-#include "conc/sleep_queue.hpp"
+#include "conc/condition_variable.hpp"
 
 #include "net/tcp_layer.hpp"
 #include "net/dns_layer.hpp"
@@ -41,7 +41,7 @@ struct tcp_connection {
     size_t target_port;
 
     std::atomic<bool> listening;
-    sleep_queue queue;
+    condition_variable queue;
     circular_buffer<network::ethernet::packet, 8> packets;
 
     tcp_connection(size_t source_port, size_t target_port)

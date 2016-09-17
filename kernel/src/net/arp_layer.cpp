@@ -14,14 +14,14 @@
 #include "net/arp_cache.hpp"
 #include "net/ip_layer.hpp"
 
-#include "conc/sleep_queue.hpp"
+#include "conc/condition_variable.hpp"
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 
 namespace {
 
-sleep_queue wait_queue;
+condition_variable wait_queue;
 
 } //end of anonymous namespace
 

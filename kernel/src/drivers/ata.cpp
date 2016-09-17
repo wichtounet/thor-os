@@ -28,10 +28,10 @@ static constexpr const size_t BLOCK_SIZE = 512;
 
 ata::drive_descriptor* drives;
 
-mutex<> ata_lock;
+mutex ata_lock;
 
-mutex<> primary_lock;
-mutex<> secondary_lock;
+mutex primary_lock;
+mutex secondary_lock;
 
 block_cache cache;
 
@@ -349,10 +349,6 @@ void ata::detect_disks(){
 
     primary_lock.init(0);
     secondary_lock.init(0);
-
-    ata_lock.set_name("ata_lock");
-    primary_lock.set_name("ata_primary_lock");
-    secondary_lock.set_name("ata_secondary_lock");
 
     // Init the cache with 256 blocks
     cache.init(BLOCK_SIZE, 256);

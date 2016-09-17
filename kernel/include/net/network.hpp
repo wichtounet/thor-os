@@ -37,7 +37,7 @@ struct interface_descriptor {
     network::ip::address ip_address; ///< The interface IP address
     network::ip::address gateway;    ///< The interface IP gateway
 
-    mutable mutex<> tx_lock; //To synchronize the queue
+    mutable mutex tx_lock; //To synchronize the queue
     mutable semaphore tx_sem;
     mutable semaphore rx_sem;
 
@@ -50,7 +50,7 @@ struct interface_descriptor {
     void (*hw_send)(interface_descriptor&, ethernet::packet& p);
 
     void send(ethernet::packet& p){
-        std::lock_guard<mutex<>> l(tx_lock);
+        std::lock_guard<mutex> l(tx_lock);
         tx_queue.push(p);
         tx_sem.release();
     }

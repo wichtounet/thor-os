@@ -5,25 +5,25 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#include "conc/sleep_queue.hpp"
+#include "conc/condition_variable.hpp"
 
 #include "scheduler.hpp"
 #include "logging.hpp"
 #include "assert.hpp"
 
-bool sleep_queue::empty() const {
+bool condition_variable::empty() const {
     std::lock_guard<spinlock> l(lock);
 
     return queue.empty();
 }
 
-scheduler::pid_t sleep_queue::top_process() const {
+scheduler::pid_t condition_variable::top_process() const {
     std::lock_guard<spinlock> l(lock);
 
     return queue.top();
 }
 
-scheduler::pid_t sleep_queue::wake_up() {
+scheduler::pid_t condition_variable::wake_up() {
     std::lock_guard<spinlock> l(lock);
 
     while (!queue.empty()) {
@@ -34,7 +34,7 @@ scheduler::pid_t sleep_queue::wake_up() {
         queue.pop();
 
         if (pid != scheduler::INVALID_PID) {
-            logging::logf(logging::log_level::TRACE, "sleep_queue: wake %d\n", pid);
+            logging::logf(logging::log_level::TRACE, "condition_variable: wake %d\n", pid);
 
             // Indicate to the scheduler that this process will be able to run
             // We use a hint here because it is possible that the thread was
@@ -48,7 +48,7 @@ scheduler::pid_t sleep_queue::wake_up() {
     return scheduler::INVALID_PID;
 }
 
-void sleep_queue::wake_up_all() {
+void condition_variable::wake_up_all() {
     std::lock_guard<spinlock> l(lock);
 
     while (!queue.empty()) {
@@ -59,7 +59,7 @@ void sleep_queue::wake_up_all() {
         queue.pop();
 
         if (pid != scheduler::INVALID_PID) {
-            logging::logf(logging::log_level::TRACE, "sleep_queue: wake(all) %d\n", pid);
+            logging::logf(logging::log_level::TRACE, "condition_variable: wake(all) %d\n", pid);
 
             // Indicate to the scheduler that this process will be able to run
             // We use a hint here because it is possible that the thread was
@@ -69,18 +69,18 @@ void sleep_queue::wake_up_all() {
     }
 }
 
-void sleep_queue::sleep() {
+void condition_variable::sleep() {
     lock.acquire();
 
     //Get the current process information
     auto pid = scheduler::get_pid();
 
-    logging::logf(logging::log_level::TRACE, "sleep_queue: wait %d\n", pid);
+    logging::logf(logging::log_level::TRACE, "condition_variable: wait %d\n", pid);
 
     //Enqueue the process in the sleep queue
     queue.push(pid);
 
-    thor_assert(!queue.full(), "The sleep_queue queue is full!");
+    thor_assert(!queue.full(), "The condition_variable queue is full!");
 
     //This process will sleep
     scheduler::block_process_light(pid);
@@ -90,7 +90,7 @@ void sleep_queue::sleep() {
     scheduler::reschedule();
 }
 
-bool sleep_queue::sleep(size_t ms) {
+bool condition_variable::sleep(size_t ms) {
     if (!ms) {
         return false;
     }
@@ -100,12 +100,12 @@ bool sleep_queue::sleep(size_t ms) {
     //Get the current process information
     auto pid = scheduler::get_pid();
 
-    logging::logf(logging::log_level::TRACE, "sleep_queue: %u wait with timeout %u\n", pid, ms);
+    logging::logf(logging::log_level::TRACE, "condition_variable: %u wait with timeout %u\n", pid, ms);
 
     //Enqueue the process in the sleep queue
     queue.push(pid);
 
-    thor_assert(!queue.full(), "The sleep_queue queue is full!");
+    thor_assert(!queue.full(), "The condition_variable queue is full!");
 
     //This process will sleep
     scheduler::block_process_timeout_light(pid, ms);

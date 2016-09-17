@@ -16,45 +16,38 @@
 #include "scheduler.hpp"
 #include "logging.hpp"
 
-template<bool Debug = false>
+/*!
+ * \brief A mutex implementation.
+ *
+ * Once the lock is acquired, the critical section is only accessible by the
+ * thread who acquired the mutex.
+ */
 struct mutex {
-private:
-    mutable spinlock lock;
-    volatile size_t value;
-    circular_buffer<scheduler::pid_t, 16> queue;
-    const char* name;
-
-public:
+    /*!
+     * \brief Initialize the mutex (either to 1 or 0)
+     * \param v The intial value of the mutex
+     */
     void init(size_t v = 1){
-        value = v;
-
-        if(Debug){
-            name = "";
+        if(v > 1){
+            value = 1;
+        } else {
+            value = v;
         }
     }
 
-    void set_name(const char* name){
-        this->name = name;
-    }
-
+    /*!
+     * \brief Acquire the lock
+     */
     void acquire(){
         lock.acquire();
 
         if(value > 0){
             value = 0;
 
-            if(Debug){
-                logging::logf(logging::log_level::TRACE, "%s(mutex): directly acquired (process %d)\n", name, scheduler::get_pid());
-            }
-
             lock.release();
         } else {
             auto pid = scheduler::get_pid();
             queue.push(pid);
-
-            if(Debug){
-                logging::logf(logging::log_level::TRACE, "%s(mutex): wait %d\n", name, pid);
-            }
 
             scheduler::block_process_light(pid);
             lock.release();
@@ -62,26 +55,27 @@ public:
         }
     }
 
+    /*!
+     * \brief Acquire the lock
+     */
     void release(){
         std::lock_guard<spinlock> l(lock);
 
         if(queue.empty()){
             value = 1;
-            if(Debug){
-                logging::logf(logging::log_level::TRACE, "%s(mutex): direct release (process %d)\n", name, scheduler::get_pid());
-            }
         } else {
             auto pid = queue.pop();
             scheduler::unblock_process(pid);
-
-            if(Debug){
-                logging::logf(logging::log_level::TRACE, "%s(mutex): wake %d\n", name, pid);
-            }
 
             //No need to increment value, the process won't
             //decrement it
         }
     }
+
+private:
+    mutable spinlock lock;                       ///< The spin protecting the value
+    volatile size_t value;                       ///< The value of the mutex
+    circular_buffer<scheduler::pid_t, 16> queue; ///< The sleep queue
 };
 
 #endif
