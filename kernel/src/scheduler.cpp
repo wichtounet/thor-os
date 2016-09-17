@@ -14,7 +14,6 @@
 #include <tlib/errors.hpp>
 #include <tlib/elf.hpp>
 
-#include "conc/mutex.hpp"
 #include "conc/int_lock.hpp"
 
 #include "scheduler.hpp"
