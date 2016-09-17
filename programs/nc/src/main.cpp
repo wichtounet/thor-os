@@ -46,28 +46,34 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    tlib::tcp::packet_descriptor desc;
-    desc.payload_size = 4;
+    // Send a packet to the server
 
-    auto packet = sock.prepare_packet(&desc);
+    {
+        tlib::tcp::packet_descriptor desc;
+        desc.payload_size = 4;
 
-    if (!sock) {
-        tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
-        return 1;
+        auto packet = sock.prepare_packet(&desc);
+
+        if (!sock) {
+            tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
+            return 1;
+        }
+
+        auto* payload = reinterpret_cast<char*>(packet.payload + packet.index);
+        payload[0]    = 'T';
+        payload[1]    = 'H';
+        payload[2]    = 'O';
+        payload[3]    = 'R';
+
+        sock.finalize_packet(packet);
+
+        if (!sock) {
+            tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
+            return 1;
+        }
     }
 
-    auto* payload = reinterpret_cast<char*>(packet.payload + packet.index);
-    payload[0]    = 'T';
-    payload[1]    = 'H';
-    payload[2]    = 'O';
-    payload[3]    = 'R';
-
-    sock.finalize_packet(packet);
-
-    if (!sock) {
-        tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
-        return 1;
-    }
+    // Listen for packets from the server
 
     auto before = tlib::ms_time();
     auto after  = before;
@@ -101,7 +107,7 @@ int main(int argc, char* argv[]) {
             auto tcp_data_offset = *flag_data_offset(&tcp_flags) * 4;
             auto payload_len     = tcp_len - tcp_data_offset;
 
-            for (size_t i = 0; i < payload_len; ++i) {
+            for (size_t i = 0; i < size_t(payload_len); ++i) {
                 tlib::print(payload[i]);
             }
         }
