@@ -409,8 +409,8 @@ size_t fat32::fat32_file_system::clear(const path& file_path, size_t count, size
     size_t last = offset + count;
 
     size_t read_bytes = 0;
-    size_t position = 0;
     size_t cluster = 0;
+    bool first = true;
 
     size_t cluster_size = 512 * fat_bs->sectors_per_cluster;
 
@@ -423,8 +423,9 @@ size_t fat32::fat32_file_system::clear(const path& file_path, size_t count, size
             if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
                 size_t i = 0;
 
-                if(position == 0){
+                if(first){
                     i = first % cluster_size;
+                    first = false;
                 }
 
                 for(; i < cluster_size && read_bytes < last; ++i, ++read_bytes){
