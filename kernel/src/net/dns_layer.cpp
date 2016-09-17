@@ -192,9 +192,9 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
     network::propagate_packet(packet, network::socket_protocol::DNS);
 }
 
-std::expected<network::ethernet::packet> network::dns::prepare_packet_query(network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size) {
+std::expected<network::ethernet::packet> network::dns::kernel_prepare_packet_query(network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size) {
     // Ask the UDP layer to craft a packet
-    auto packet = network::udp::prepare_packet(interface, target_ip, source_port, 53, sizeof(header) + payload_size);
+    auto packet = network::udp::kernel_prepare_packet(interface, target_ip, source_port, 53, sizeof(header) + payload_size);
 
     if (packet) {
         ::prepare_packet_query(*packet, identification);
@@ -203,9 +203,9 @@ std::expected<network::ethernet::packet> network::dns::prepare_packet_query(netw
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::dns::prepare_packet_query(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size) {
+std::expected<network::ethernet::packet> network::dns::user_prepare_packet_query(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, uint16_t source_port, uint16_t identification, size_t payload_size) {
     // Ask the UDP layer to craft a packet
-    auto packet = network::udp::prepare_packet(buffer, interface, target_ip, source_port, 53, sizeof(header) + payload_size);
+    auto packet = network::udp::user_prepare_packet(buffer, interface, target_ip, source_port, 53, sizeof(header) + payload_size);
 
     if (packet) {
         ::prepare_packet_query(*packet, identification);

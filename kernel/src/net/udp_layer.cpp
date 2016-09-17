@@ -75,9 +75,9 @@ void network::udp::decode(network::interface_descriptor& interface, network::eth
     }
 }
 
-std::expected<network::ethernet::packet> network::udp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size){
+std::expected<network::ethernet::packet> network::udp::kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size){
     // Ask the IP layer to craft a packet
-    auto packet = network::ip::prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x11);
+    auto packet = network::ip::kernel_prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x11);
 
     if(packet){
         ::prepare_packet(*packet, source, target, payload_size);
@@ -86,9 +86,9 @@ std::expected<network::ethernet::packet> network::udp::prepare_packet(network::i
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::udp::prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size){
+std::expected<network::ethernet::packet> network::udp::user_prepare_packet(char* buffer, network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size){
     // Ask the IP layer to craft a packet
-    auto packet = network::ip::prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x11);
+    auto packet = network::ip::user_prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x11);
 
     if(packet){
         ::prepare_packet(*packet, source, target, payload_size);

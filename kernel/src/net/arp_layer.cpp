@@ -121,7 +121,7 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
             logging::logf(logging::log_level::TRACE, "arp: Reply to Request for own IP\n");
 
             // Ask the ethernet layer to craft a packet
-            auto packet = network::ethernet::prepare_packet(interface, sizeof(header), source_hw, ethernet::ether_type::ARP);
+            auto packet = network::ethernet::kernel_prepare_packet(interface, sizeof(header), source_hw, ethernet::ether_type::ARP);
 
             if(packet){
                 auto* arp_reply_header = reinterpret_cast<header*>(packet->payload + packet->index);

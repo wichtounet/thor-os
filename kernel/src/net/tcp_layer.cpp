@@ -232,7 +232,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     // Acknowledge if necessary
 
     if (*flag_psh(&flags)) {
-        auto p = tcp::prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
+        auto p = tcp::kernel_prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
 
         if (!p) {
             logging::logf(logging::log_level::ERROR, "tcp: Impossible to prepare TCP packet for ACK\n");
@@ -252,9 +252,9 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     }
 }
 
-std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
+std::expected<network::ethernet::packet> network::tcp::kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
     // Ask the IP layer to craft a packet
-    auto packet = network::ip::prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x06);
+    auto packet = network::ip::kernel_prepare_packet(interface, sizeof(header) + payload_size, target_ip, 0x06);
 
     if (packet) {
         ::prepare_packet(*packet, source, target);
@@ -263,7 +263,7 @@ std::expected<network::ethernet::packet> network::tcp::prepare_packet(network::i
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buffer, network::socket& socket, size_t payload_size) {
+std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char* buffer, network::socket& socket, size_t payload_size) {
     auto& connection = socket.get_data<tcp_connection>();
 
     // Make sure stream sockets are connected
@@ -275,7 +275,7 @@ std::expected<network::ethernet::packet> network::tcp::prepare_packet(char* buff
     auto& interface = network::select_interface(target_ip);
 
     // Ask the IP layer to craft a packet
-    auto packet = network::ip::prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x06);
+    auto packet = network::ip::user_prepare_packet(buffer, interface, sizeof(header) + payload_size, target_ip, 0x06);
 
     if (packet) {
         auto source = connection.local_port;
@@ -414,7 +414,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
     auto target_ip = connection.server_address;
 
-    auto packet = tcp::prepare_packet(interface, target_ip, local_port, server_port, 0);
+    auto packet = tcp::kernel_prepare_packet(interface, target_ip, local_port, server_port, 0);
 
     if (!packet) {
         return std::make_unexpected<void>(packet.error());
@@ -469,7 +469,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
     // At this point we have received the SYN/ACK, only remains to ACK
 
     {
-        auto packet = tcp::prepare_packet(interface, target_ip, connection.local_port, connection.server_port, 0);
+        auto packet = tcp::kernel_prepare_packet(interface, target_ip, connection.local_port, connection.server_port, 0);
 
         if (!packet) {
             return std::make_unexpected<void>(packet.error());
@@ -508,7 +508,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
 
     auto& interface = network::select_interface(target_ip);
 
-    auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
+    auto packet = tcp::kernel_prepare_packet(interface, target_ip, source, target, 0);
 
     if (!packet) {
         return std::make_unexpected<void>(packet.error());
@@ -576,7 +576,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
     // At this point we have received the FIN/ACK, only remains to ACK
 
     {
-        auto packet = tcp::prepare_packet(interface, target_ip, source, target, 0);
+        auto packet = tcp::kernel_prepare_packet(interface, target_ip, source, target, 0);
 
         if (!packet) {
             return std::make_unexpected<void>(packet.error());

@@ -123,7 +123,7 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
     logging::logf(logging::log_level::TRACE, "ethernet: Finished decoding packet\n");
 }
 
-std::expected<network::ethernet::packet> network::ethernet::prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
+std::expected<network::ethernet::packet> network::ethernet::kernel_prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
     auto total_size = size + sizeof(header);
 
     network::ethernet::packet p(new char[total_size], total_size);
@@ -133,7 +133,7 @@ std::expected<network::ethernet::packet> network::ethernet::prepare_packet(netwo
     return p;
 }
 
-std::expected<network::ethernet::packet> network::ethernet::prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
+std::expected<network::ethernet::packet> network::ethernet::user_prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, size_t destination, ether_type type){
     auto total_size = size + sizeof(header);
 
     network::ethernet::packet p(buffer, total_size);

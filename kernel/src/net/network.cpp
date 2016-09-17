@@ -301,14 +301,14 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
         case network::socket_protocol::ICMP: {
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
             auto& interface = select_interface(descriptor->target_ip);
-            auto packet     = network::icmp::prepare_packet(buffer, interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
+            auto packet     = network::icmp::user_prepare_packet(buffer, interface, descriptor->target_ip, descriptor->payload_size, descriptor->type, descriptor->code);
 
             return return_from_packet(packet);
         }
 
         case network::socket_protocol::TCP: {
             auto descriptor = static_cast<network::tcp::packet_descriptor*>(desc);
-            auto packet     = network::tcp::prepare_packet(buffer, socket, descriptor->payload_size);
+            auto packet     = network::tcp::user_prepare_packet(buffer, socket, descriptor->payload_size);
 
             return return_from_packet(packet);
         }
@@ -319,7 +319,7 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
             if(descriptor->query){
                 auto source_port = get_port(descriptor->source_port);
-                auto packet = network::dns::prepare_packet_query(buffer, interface, descriptor->target_ip, source_port, descriptor->identification, descriptor->payload_size);
+                auto packet = network::dns::user_prepare_packet_query(buffer, interface, descriptor->target_ip, source_port, descriptor->identification, descriptor->payload_size);
 
                 return return_from_packet(packet);
             } else {

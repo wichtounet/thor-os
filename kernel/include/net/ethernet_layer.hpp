@@ -26,8 +26,9 @@ void mac64_to_mac6(uint64_t input, char* mac);
 
 void decode(network::interface_descriptor& interface, packet& packet);
 
-std::expected<packet> prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
-std::expected<packet> prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
+std::expected<packet> kernel_prepare_packet(network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
+
+std::expected<packet> user_prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, size_t destination, ether_type type);
 
 std::expected<void> finalize_packet(network::interface_descriptor& interface, packet& p);
 

@@ -33,7 +33,7 @@ std::vector<cache_entry> cache;
 
 std::expected<void> arp_request(network::interface_descriptor& interface, network::ip::address ip){
     // Ask the ethernet layer to craft a packet
-    auto packet = network::ethernet::prepare_packet(interface, sizeof(network::arp::header), 0xFFFFFFFFFFFF, network::ethernet::ether_type::ARP);
+    auto packet = network::ethernet::kernel_prepare_packet(interface, sizeof(network::arp::header), 0xFFFFFFFFFFFF, network::ethernet::ether_type::ARP);
 
     if(packet){
         auto* arp_request_header = reinterpret_cast<network::arp::header*>(packet->payload + packet->index);

@@ -152,7 +152,7 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
     }
 }
 
-std::expected<network::ethernet::packet> network::ip::prepare_packet(network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
+std::expected<network::ethernet::packet> network::ip::kernel_prepare_packet(network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
     auto target_mac = get_target_mac(interface, target_ip);
 
     if(!target_mac){
@@ -160,7 +160,7 @@ std::expected<network::ethernet::packet> network::ip::prepare_packet(network::in
     }
 
     // Ask the ethernet layer to craft a packet
-    auto packet = network::ethernet::prepare_packet(interface, size + sizeof(header), *target_mac, ethernet::ether_type::IPV4);
+    auto packet = network::ethernet::kernel_prepare_packet(interface, size + sizeof(header), *target_mac, ethernet::ether_type::IPV4);
 
     if(packet){
         ::prepare_packet(*packet, interface, size, target_ip, protocol);
@@ -169,7 +169,7 @@ std::expected<network::ethernet::packet> network::ip::prepare_packet(network::in
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::ip::prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
+std::expected<network::ethernet::packet> network::ip::user_prepare_packet(char* buffer, network::interface_descriptor& interface, size_t size, address& target_ip, size_t protocol){
     auto target_mac = get_target_mac(interface, target_ip);
 
     if(!target_mac){
@@ -177,7 +177,7 @@ std::expected<network::ethernet::packet> network::ip::prepare_packet(char* buffe
     }
 
     // Ask the ethernet layer to craft a packet
-    auto packet = network::ethernet::prepare_packet(buffer, interface, size + sizeof(header), *target_mac, ethernet::ether_type::IPV4);
+    auto packet = network::ethernet::user_prepare_packet(buffer, interface, size + sizeof(header), *target_mac, ethernet::ether_type::IPV4);
 
     if(packet){
         ::prepare_packet(*packet, interface, size, target_ip, protocol);
