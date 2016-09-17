@@ -34,18 +34,18 @@ struct semaphore {
      * This will effectively decrease the current counter by 1 once the critical
      * section is entered.
      */
-    void acquire(){
-        lock.acquire();
+    void lock(){
+        value_lock.lock();
 
         if(value > 0){
             --value;
-            lock.release();
+            value_lock.unlock();
         } else {
             auto pid = scheduler::get_pid();
             queue.push(pid);
 
             scheduler::block_process_light(pid);
-            lock.release();
+            value_lock.unlock();
             scheduler::reschedule();
         }
     }
@@ -56,8 +56,8 @@ struct semaphore {
      * This will effectively increase the current counter by 1 once the critical
      * section is left.
      */
-    void release(){
-        std::lock_guard<spinlock> l(lock);
+    void unlock(){
+        std::lock_guard<spinlock> l(value_lock);
 
         if(queue.empty()){
             ++value;
@@ -78,7 +78,7 @@ struct semaphore {
      * section is left.
      */
     void release(size_t n){
-        std::lock_guard<spinlock> l(lock);
+        std::lock_guard<spinlock> l(value_lock);
 
         if(queue.empty()){
             value += n;
@@ -96,7 +96,7 @@ struct semaphore {
     }
 
 private:
-    mutable spinlock lock;                       ///< The spin lock protecting the counter
+    mutable spinlock value_lock;                 ///< The spin lock protecting the counter
     volatile size_t value;                       ///< The value of the counter
     circular_buffer<scheduler::pid_t, 16> queue; ///< The sleep queue
 };

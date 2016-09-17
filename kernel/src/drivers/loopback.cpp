@@ -30,7 +30,7 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
     std::copy_n(packet.payload, packet.payload_size, packet_buffer);
 
     interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
-    interface.rx_sem.release();
+    interface.rx_sem.unlock();
 
     logging::logf(logging::log_level::TRACE, "loopback: Packet transmitted correctly\n");
 }

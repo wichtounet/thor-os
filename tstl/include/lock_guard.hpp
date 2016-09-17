@@ -15,7 +15,7 @@ struct lock_guard {
     Lock& lock;
 
     explicit lock_guard(Lock& l) : lock(l) {
-        lock.acquire();
+        lock.lock();
     }
 
     lock_guard(const lock_guard&) = delete;
@@ -25,7 +25,7 @@ struct lock_guard {
     lock_guard& operator=(const lock_guard&&) = delete;
 
     ~lock_guard(){
-        lock.release();
+        lock.unlock();
     }
 };
 

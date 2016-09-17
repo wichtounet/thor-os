@@ -40,7 +40,7 @@ volatile bool secondary_invoked = false;
 
 void primary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
-        primary_lock.release();
+        primary_lock.unlock();
     } else {
         primary_invoked = true;
     }
@@ -48,7 +48,7 @@ void primary_controller_handler(interrupt::syscall_regs*, void*){
 
 void secondary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
-        secondary_lock.release();
+        secondary_lock.unlock();
     } else {
         secondary_invoked = true;
     }
@@ -56,7 +56,7 @@ void secondary_controller_handler(interrupt::syscall_regs*, void*){
 
 void ata_wait_irq_primary(){
     if(scheduler::is_started()){
-        primary_lock.acquire();
+        primary_lock.lock();
     } else {
         while(!primary_invoked){
             asm volatile ("nop");
@@ -72,7 +72,7 @@ void ata_wait_irq_primary(){
 
 void ata_wait_irq_secondary(){
     if(scheduler::is_started()){
-        secondary_lock.acquire();
+        secondary_lock.lock();
     } else {
         while(!secondary_invoked){
             asm volatile ("nop");

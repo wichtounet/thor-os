@@ -45,7 +45,7 @@ void rx_thread(void* data){
     logging::logf(logging::log_level::TRACE, "network: RX Thread for interface %u started (pid:%u)\n", interface.id, pid);
 
     while(true){
-        interface.rx_sem.acquire();
+        interface.rx_sem.lock();
 
         auto packet = interface.rx_queue.pop();
         network::ethernet::decode(interface, packet);
@@ -63,7 +63,7 @@ void tx_thread(void* data){
     logging::logf(logging::log_level::TRACE, "network: TX Thread for interface %u started (pid:%u)\n", interface.id, pid);
 
     while(true){
-        interface.tx_sem.acquire();
+        interface.tx_sem.lock();
 
         auto packet = interface.tx_queue.pop();
         interface.hw_send(interface, packet);

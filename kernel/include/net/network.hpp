@@ -52,7 +52,7 @@ struct interface_descriptor {
     void send(ethernet::packet& p){
         std::lock_guard<mutex> l(tx_lock);
         tx_queue.push(p);
-        tx_sem.release();
+        tx_sem.unlock();
     }
 
     bool is_loopback() const {

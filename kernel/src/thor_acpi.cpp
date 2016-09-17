@@ -306,7 +306,7 @@ void AcpiOsDeleteMutex(ACPI_MUTEX handle){
 ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX handle, UINT16 Timeout){
     auto* lock = static_cast<mutex<false>*>(handle);
 
-    lock->acquire();
+    lock->lock();
 
     return AE_OK;
 }
@@ -317,7 +317,7 @@ ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX handle, UINT16 Timeout){
 void AcpiOsReleaseMutex(ACPI_MUTEX handle){
     auto* lock = static_cast<mutex<false>*>(handle);
 
-    lock->release();
+    lock->unlock();
 }
 
 #endif
@@ -353,7 +353,7 @@ ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 units, UINT16 /*ti
     auto* lock = static_cast<semaphore*>(handle);
 
     for(size_t i = 0; i < units; ++i){
-        lock->acquire();
+        lock->lock();
     }
 
     return AE_OK;
@@ -396,7 +396,7 @@ void AcpiOsDeleteLock(ACPI_HANDLE handle){
 ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle){
     auto* lock = static_cast<int_lock*>(handle);
 
-    lock->acquire();
+    lock->lock();
 
     return 0;
 }
@@ -407,7 +407,7 @@ ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle){
 void AcpiOsReleaseLock(ACPI_SPINLOCK handle, ACPI_CPU_FLAGS /*flags*/){
     auto* lock = static_cast<int_lock*>(handle);
 
-    lock->release();
+    lock->unlock();
 }
 
 // Input / Output

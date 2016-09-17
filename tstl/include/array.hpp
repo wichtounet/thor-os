@@ -77,13 +77,13 @@ public:
         array = new T[s];
     }
 
-    unique_heap_array(unique_heap_array&& u) : array(u.release()), _size(u._size) {
+    unique_heap_array(unique_heap_array&& u) : array(u.unlock()), _size(u._size) {
         u._size = 0;
     }
 
     unique_heap_array& operator=(unique_heap_array&& u){
         _size = u._size;
-        reset(u.release());
+        reset(u.unlock());
         u._size = 0;
         return *this;
     }
@@ -113,7 +113,7 @@ public:
         return array;
     }
 
-    pointer_type release(){
+    pointer_type unlock(){
         pointer_type p = array;
         array = nullptr;
         return p;

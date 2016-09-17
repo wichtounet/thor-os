@@ -186,7 +186,7 @@ void fat32::fat32_file_system::init(){
     std::unique_ptr<fat_bs_t> fat_bs_tmp(new fat_bs_t());
 
     if(read_sectors(0, 1, fat_bs_tmp.get())){
-        fat_bs = fat_bs_tmp.release();
+        fat_bs = fat_bs_tmp.unlock();
 
         //TODO fat_bs->signature should be 0xAA55
         //TODO fat_bs->file_system_type should be FAT32
@@ -199,7 +199,7 @@ void fat32::fat32_file_system::init(){
     std::unique_ptr<fat_is_t> fat_is_tmp(new fat_is_t());
 
     if(read_sectors(fs_information_sector, 1, fat_is_tmp.get())){
-        fat_is = fat_is_tmp.release();
+        fat_is = fat_is_tmp.unlock();
 
         //TODO fat_is->signature_start should be 0x52 0x52 0x61 0x41
         //TODO fat_is->signature_middle should be 0x72 0x72 0x41 0x61

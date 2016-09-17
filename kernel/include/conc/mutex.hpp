@@ -38,19 +38,19 @@ struct mutex {
     /*!
      * \brief Acquire the lock
      */
-    void acquire(){
-        lock.acquire();
+    void lock(){
+        value_lock.lock();
 
         if(value > 0){
             value = 0;
 
-            lock.release();
+            value_lock.unlock();
         } else {
             auto pid = scheduler::get_pid();
             queue.push(pid);
 
             scheduler::block_process_light(pid);
-            lock.release();
+            value_lock.unlock();
             scheduler::reschedule();
         }
     }
@@ -58,8 +58,8 @@ struct mutex {
     /*!
      * \brief Acquire the lock
      */
-    void release(){
-        std::lock_guard<spinlock> l(lock);
+    void unlock(){
+        std::lock_guard<spinlock> l(value_lock);
 
         if(queue.empty()){
             value = 1;
@@ -73,7 +73,7 @@ struct mutex {
     }
 
 private:
-    mutable spinlock lock;                       ///< The spin protecting the value
+    mutable spinlock value_lock;                       ///< The spin protecting the value
     volatile size_t value;                       ///< The value of the mutex
     circular_buffer<scheduler::pid_t, 16> queue; ///< The sleep queue
 };

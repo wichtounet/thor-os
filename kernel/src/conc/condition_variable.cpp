@@ -70,7 +70,7 @@ void condition_variable::wake_up_all() {
 }
 
 void condition_variable::sleep() {
-    lock.acquire();
+    lock.lock();
 
     //Get the current process information
     auto pid = scheduler::get_pid();
@@ -85,7 +85,7 @@ void condition_variable::sleep() {
     //This process will sleep
     scheduler::block_process_light(pid);
 
-    lock.release();
+    lock.unlock();
 
     scheduler::reschedule();
 }
@@ -95,7 +95,7 @@ bool condition_variable::sleep(size_t ms) {
         return false;
     }
 
-    lock.acquire();
+    lock.lock();
 
     //Get the current process information
     auto pid = scheduler::get_pid();
@@ -110,12 +110,12 @@ bool condition_variable::sleep(size_t ms) {
     //This process will sleep
     scheduler::block_process_timeout_light(pid, ms);
 
-    lock.release();
+    lock.unlock();
 
     scheduler::reschedule();
 
     // At this point we need the lock again to check the queue
-    lock.acquire();
+    lock.lock();
 
     bool obtained = true;
 
@@ -137,7 +137,7 @@ bool condition_variable::sleep(size_t ms) {
     }
 
     // Final release of the lock
-    lock.release();
+    lock.unlock();
 
     return obtained;
 }

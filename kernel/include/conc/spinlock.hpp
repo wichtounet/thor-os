@@ -19,8 +19,8 @@ struct spinlock {
      *
      * This will wait indefinitely.
      */
-    void acquire(){
-        while(!__sync_bool_compare_and_swap(&lock, 0, 1));
+    void lock(){
+        while(!__sync_bool_compare_and_swap(&value, 0, 1));
         __sync_synchronize();
         //TODO The last synchronize is probably not necessary
     }
@@ -28,13 +28,13 @@ struct spinlock {
     /*!
      * \brief Release the lock
      */
-    void release(){
+    void unlock(){
         __sync_synchronize();
-        lock = 0;
+        value = 0;
     }
 
 private:
-    volatile size_t lock = 0; ///< The value of the lock
+    volatile size_t value = 0; ///< The value of the lock
 };
 
 #endif

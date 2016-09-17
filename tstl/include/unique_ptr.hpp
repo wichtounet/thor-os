@@ -56,9 +56,9 @@ public:
 
     explicit unique_ptr(pointer_type p) : _data(make_tuple(p, deleter_type())) {}
 
-    unique_ptr(unique_ptr&& u) : _data(make_tuple(u.release(), u.get_deleter())) {}
+    unique_ptr(unique_ptr&& u) : _data(make_tuple(u.unlock(), u.get_deleter())) {}
     unique_ptr& operator=(unique_ptr&& u){
-        reset(u.release());
+        reset(u.unlock());
         get_deleter() = std::forward<deleter_type>(u.get_deleter());
         return *this;
     }
@@ -102,7 +102,7 @@ public:
         return get() == pointer_type() ? false : true;
     }
 
-    pointer_type release(){
+    pointer_type unlock(){
         pointer_type p = get();
         std::get<0>(_data) = pointer_type();
         return p;
@@ -136,9 +136,9 @@ public:
 
     explicit unique_ptr(pointer_type p) : _data(make_tuple(p, deleter_type())) {}
 
-    unique_ptr(unique_ptr&& u) : _data(make_tuple(u.release(), u.get_deleter())) {}
+    unique_ptr(unique_ptr&& u) : _data(make_tuple(u.unlock(), u.get_deleter())) {}
     unique_ptr& operator=(unique_ptr&& u){
-        reset(u.release());
+        reset(u.unlock());
         get_deleter() = std::forward<deleter_type>(u.get_deleter());
         return *this;
     }
@@ -176,7 +176,7 @@ public:
         return get() == pointer_type() ? false : true;
     }
 
-    pointer_type release(){
+    pointer_type unlock(){
         pointer_type p = get();
         std::get<0>(_data) = pointer_type();
         return p;

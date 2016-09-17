@@ -132,7 +132,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
                 direct_int_lock lock;
 
                 interface.rx_queue.push(packet);
-                interface.rx_sem.release();
+                interface.rx_sem.unlock();
             }
 
             cur_rx = (cur_rx + packet_length + 4 + 3) & ~3; //align on 4 bytes
@@ -198,7 +198,7 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
         direct_int_lock lock;
 
         interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
-        interface.rx_sem.release();
+        interface.rx_sem.unlock();
 
         logging::logf(logging::log_level::TRACE, "rtl8139: Packet to self transmitted correctly\n");
 
@@ -209,7 +209,7 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
     auto iobase = desc.iobase;
 
     // Wait for a free entry in the tx buffers
-    desc.tx_sem.acquire();
+    desc.tx_sem.lock();
 
     // Claim an entry in the tx buffers
     auto entry = __sync_fetch_and_add(&desc.cur_tx, 1) % tx_buffers;
