@@ -232,7 +232,6 @@ network::interface_descriptor& network::select_interface(network::ip::address ad
     thor_unreachable("network: Should never happen");
 }
 
-
 std::expected<network::socket_fd_t> network::open(network::socket_domain domain, network::socket_type type, network::socket_protocol protocol){
     // Make sure the socket domain is valid
     if(domain != socket_domain::AF_INET){
