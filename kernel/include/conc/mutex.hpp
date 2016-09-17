@@ -93,7 +93,7 @@ struct mutex {
 
 private:
     mutable spinlock value_lock;                 ///< The spin protecting the value
-    volatile size_t value;                       ///< The value of the mutex
+    volatile size_t value = 1;                   ///< The value of the mutex
     circular_buffer<scheduler::pid_t, 16> queue; ///< The sleep queue
 };
 
