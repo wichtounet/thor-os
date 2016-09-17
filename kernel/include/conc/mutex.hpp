@@ -27,8 +27,8 @@ struct mutex {
      * \brief Initialize the mutex (either to 1 or 0)
      * \param v The intial value of the mutex
      */
-    void init(size_t v = 1){
-        if(v > 1){
+    void init(size_t v = 1) {
+        if (v > 1) {
             value = 1;
         } else {
             value = v;
@@ -38,10 +38,10 @@ struct mutex {
     /*!
      * \brief Acquire the lock
      */
-    void lock(){
+    void lock() {
         value_lock.lock();
 
-        if(value > 0){
+        if (value > 0) {
             value = 0;
 
             value_lock.unlock();
@@ -58,10 +58,10 @@ struct mutex {
     /*!
      * \brief Acquire the lock
      */
-    void unlock(){
+    void unlock() {
         std::lock_guard<spinlock> l(value_lock);
 
-        if(queue.empty()){
+        if (queue.empty()) {
             value = 1;
         } else {
             auto pid = queue.pop();
@@ -73,7 +73,7 @@ struct mutex {
     }
 
 private:
-    mutable spinlock value_lock;                       ///< The spin protecting the value
+    mutable spinlock value_lock;                 ///< The spin protecting the value
     volatile size_t value;                       ///< The value of the mutex
     circular_buffer<scheduler::pid_t, 16> queue; ///< The sleep queue
 };

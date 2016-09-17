@@ -19,14 +19,14 @@ struct int_lock {
     /*!
      * \brief Acquire the lock. This will disable preemption.
      */
-    void lock(){
+    void lock() {
         arch::disable_hwint(rflags);
     }
 
     /*!
      * \brief Release the lock. This will enable preemption.
      */
-    void unlock(){
+    void unlock() {
         arch::enable_hwint(rflags);
     }
 
@@ -44,14 +44,14 @@ struct direct_int_lock {
     /*!
      * \brief Construct a new direct_int_lock and acquire the lock.
      */
-    direct_int_lock(){
+    direct_int_lock() {
         lock.lock();
     }
 
     /*!
      * \brief Destruct a direct_int_lock and release the lock.
      */
-    ~direct_int_lock(){
+    ~direct_int_lock() {
         lock.unlock();
     }
 

@@ -24,7 +24,7 @@ struct semaphore {
      * \brief Initialize the semaphore
      * \param v The intial value of the semaphore
      */
-    void init(size_t v){
+    void init(size_t v) {
         value = v;
     }
 
@@ -34,10 +34,10 @@ struct semaphore {
      * This will effectively decrease the current counter by 1 once the critical
      * section is entered.
      */
-    void lock(){
+    void lock() {
         value_lock.lock();
 
-        if(value > 0){
+        if (value > 0) {
             --value;
             value_lock.unlock();
         } else {
@@ -56,10 +56,10 @@ struct semaphore {
      * This will effectively increase the current counter by 1 once the critical
      * section is left.
      */
-    void unlock(){
+    void unlock() {
         std::lock_guard<spinlock> l(value_lock);
 
-        if(queue.empty()){
+        if (queue.empty()) {
             ++value;
         } else {
             // Wake up the process
@@ -77,19 +77,19 @@ struct semaphore {
      * This will effectively increase the current counter by n once the critical
      * section is left.
      */
-    void release(size_t n){
+    void release(size_t n) {
         std::lock_guard<spinlock> l(value_lock);
 
-        if(queue.empty()){
+        if (queue.empty()) {
             value += n;
         } else {
-            while(n && !queue.empty()){
+            while (n && !queue.empty()) {
                 auto pid = queue.pop();
                 scheduler::unblock_process(pid);
                 --n;
             }
 
-            if(n){
+            if (n) {
                 value += n;
             }
         }

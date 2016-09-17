@@ -22,14 +22,14 @@ struct condition_variable {
     /*!
      * \brief Test if the sleep queue is empty
      */
-    bool empty() const ;
+    bool empty() const;
 
     /*!
      * \brief Returns the top process in the queue.
      *
      * If the queue is empty, the behaviour is undefined.
      */
-    scheduler::pid_t top_process() const ;
+    scheduler::pid_t top_process() const;
 
     /*!
      * \brief Wake up the first process from the queue.
