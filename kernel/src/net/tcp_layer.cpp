@@ -265,7 +265,7 @@ std::expected<network::ethernet::packet> network::tcp::kernel_prepare_packet(net
 }
 
 std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
-    auto& connection = socket.get_data<tcp_connection>();
+    auto& connection = socket.get_connection_data<tcp_connection>();
 
     // Make sure stream sockets are connected
     if(!connection.connected){
@@ -320,7 +320,7 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
         return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
     }
 
-    auto& connection = socket.get_data<tcp_connection>();
+    auto& connection = socket.get_connection_data<tcp_connection>();
 
     // Make sure stream sockets are connected
     if(!connection.connected){
@@ -409,7 +409,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
     connection.server_address = server;
 
     // Link the socket and connection
-    sock.data = &connection;
+    sock.connection_data = &connection;
     connection.socket = &sock;
 
     // Prepare the SYN packet
@@ -498,7 +498,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 }
 
 std::expected<void> network::tcp::disconnect(network::socket& sock) {
-    auto& connection = sock.get_data<tcp_connection>();
+    auto& connection = sock.get_connection_data<tcp_connection>();
 
     if(!connection.connected){
         return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);

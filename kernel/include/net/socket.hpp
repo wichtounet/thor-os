@@ -24,36 +24,48 @@
 
 namespace network {
 
+/*!
+ * \brief Represent a network socket
+ */
 struct socket {
-    size_t id; ///< The socket file descriptor
-    socket_domain domain;
-    socket_type type;
-    socket_protocol protocol;
-    size_t next_fd;
-    bool listen;
-
-    void* data = nullptr;
+    size_t id;                       ///< The socket file descriptor
+    socket_domain domain;            ///< The socket domain
+    socket_type type;                ///< The socket type
+    socket_protocol protocol;        ///< The socket protocol
+    size_t next_fd;                  ///< The next file descriptor
+    bool listen;                     ///< Indicates if the socket is listening to packets
+    void* connection_data = nullptr; ///< Optional pointer to the connection data (TCP/UDP)
 
     uint32_t local_port; //TODO This should not be here since it belongs to UDP
 
-    std::vector<network::ethernet::packet> packets;
+    std::vector<network::ethernet::packet> packets; ///< Packets that are prepared with their fd
 
-    circular_buffer<network::ethernet::packet, 32> listen_packets;
-    condition_variable listen_queue;
+    circular_buffer<network::ethernet::packet, 32> listen_packets; ///< The packets that wait to be read in listen mode
+    condition_variable listen_queue;                               ///< Condition variable to wait for packets
 
-    socket(){}
+    socket() {}
     socket(size_t id, socket_domain domain, socket_type type, socket_protocol protocol, size_t next_fd, bool listen)
             : id(id), domain(domain), type(type), protocol(protocol), next_fd(next_fd), listen(listen) {}
 
-    void invalidate(){
+    /*!
+     * \brief Invalidate the socket
+     */
+    void invalidate() {
         id = 0xFFFFFFFF;
     }
 
+    /*!
+     * \brief Indicates if the socket is valid
+     */
     bool is_valid() const {
         return id != 0xFFFFFFFF;
     }
 
-    size_t register_packet(network::ethernet::packet packet){
+    /*!
+     * \brief Register a new packet into the socket
+     * \return The file descriptor of the packet
+     */
+    size_t register_packet(network::ethernet::packet packet) {
         auto fd = next_fd++;
 
         packet.fd = fd;
@@ -63,9 +75,12 @@ struct socket {
         return fd;
     }
 
-    bool has_packet(size_t packet_fd){
-        for(auto& packet : packets){
-            if(packet.fd == packet_fd){
+    /*!
+     * \brief Indicates if the socket has a packet with the given file descriptor
+     */
+    bool has_packet(size_t packet_fd) {
+        for (auto& packet : packets) {
+            if (packet.fd == packet_fd) {
                 return true;
             }
         }
@@ -73,9 +88,12 @@ struct socket {
         return false;
     }
 
-    network::ethernet::packet& get_packet(size_t fd){
-        for(auto& packet : packets){
-            if(packet.fd == fd){
+    /*!
+     * \brief Returns the packet with the given file descriptor
+     */
+    network::ethernet::packet& get_packet(size_t fd) {
+        for (auto& packet : packets) {
+            if (packet.fd == fd) {
                 return packet;
             }
         }
@@ -83,22 +101,37 @@ struct socket {
         thor_unreachable("Should not happen");
     }
 
-    void erase_packet(size_t fd){
-        packets.erase(std::remove_if(packets.begin(), packets.end(), [fd](network::ethernet::packet& packet){
-            return packet.fd == fd;
-        }), packets.end());
+    /*!
+     * \brief Removes the packet with the given file descriptor
+     */
+    void erase_packet(size_t fd) {
+        packets.erase(std::remove_if(packets.begin(), packets.end(), [fd](network::ethernet::packet& packet) {
+                          return packet.fd == fd;
+                      }), packets.end());
     }
 
-    template<typename T>
-    T& get_data(){
-        thor_assert(data);
-        return *reinterpret_cast<T*>(data);
+    /*!
+     * \brief Returns the connection data of the given type.
+     *
+     * This simple performs a cast to the given type, it must be the
+     * correct type.
+     */
+    template <typename T>
+    T& get_connection_data() {
+        thor_assert(connection_data);
+        return *reinterpret_cast<T*>(connection_data);
     }
 
-    template<typename T>
-    std::add_const_t<T>& get_data() const {
-        thor_assert(data);
-        return *reinterpret_cast<std::add_const_t<T>*>(data);
+    /*!
+     * \brief Returns the connection data of the given type.
+     *
+     * This simple performs a cast to the given type, it must be the
+     * correct type.
+     */
+    template <typename T>
+    std::add_const_t<T>& get_connection_data() const {
+        thor_assert(connection_data);
+        return *reinterpret_cast<std::add_const_t<T>*>(connection_data);
     }
 };
 
