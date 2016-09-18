@@ -125,6 +125,10 @@ size_t tcp_payload_len(const network::ethernet::packet& packet){
 
 } //end of anonymous namespace
 
+void network::tcp::init_layer(){
+    local_port = 1023;
+}
+
 void network::tcp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet) {
     packet.tag(2, packet.index);
 
@@ -360,11 +364,6 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 }
 
 std::expected<size_t> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface, size_t server_port, network::ip::address server) {
-    // TODO This is terrible
-    if(!local_port.load()){
-        local_port = 1024;
-    }
-
     // Create the connection
 
     auto& connection = connections.create_connection();

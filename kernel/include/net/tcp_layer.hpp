@@ -19,6 +19,8 @@ namespace network {
 
 namespace tcp {
 
+void init_layer();
+
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
 //TODO The parameters should be set in a descriptor

@@ -25,6 +25,8 @@ struct header {
     uint16_t checksum;
 } __attribute__((packed));
 
+void init_layer();
+
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
 std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor);

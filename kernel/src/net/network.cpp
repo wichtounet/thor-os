@@ -183,6 +183,11 @@ void network::init(){
             }
         }
     }
+
+    // Initialize the necessary network layers
+
+    network::udp::init_layer();
+    network::tcp::init_layer();
 }
 
 void network::finalize(){

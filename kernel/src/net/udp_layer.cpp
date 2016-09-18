@@ -72,6 +72,10 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
 
 } //end of anonymous namespace
 
+void network::udp::init_layer(){
+    local_port = 1023;
+}
+
 void network::udp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.tag(2, packet.index);
 
@@ -146,11 +150,6 @@ std::expected<void> network::udp::finalize_packet(network::interface_descriptor&
 }
 
 std::expected<size_t> network::udp::client_bind(network::socket& sock, size_t server_port, network::ip::address server){
-    // TODO This is terrible
-    if(!local_port.load()){
-        local_port = 1024;
-    }
-
     // Create the connection
 
     auto& connection = connections.create_connection();
