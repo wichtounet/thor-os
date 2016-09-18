@@ -10,8 +10,8 @@
 #include <list.hpp>
 
 #include "conc/condition_variable.hpp"
-#include "conc/rw_lock.hpp"
 
+#include "net/connection_handler.hpp"
 #include "net/tcp_layer.hpp"
 #include "net/dns_layer.hpp"
 #include "net/checksum.hpp"
@@ -56,52 +56,7 @@ struct tcp_connection {
     network::socket* socket = nullptr;
 };
 
-// The lock used to protect the list of connections
-rw_lock connections_lock;
-
-// Note: We need a list to not invalidate the values during insertions
-std::list<tcp_connection> connections;
-
-tcp_connection* get_connection_for_packet(size_t source_port, size_t target_port) {
-    auto lock = connections_lock.reader_lock();
-    std::lock_guard<reader_rw_lock> l(lock);
-
-    for(auto& connection : connections){
-        if (connection.server_port == source_port && connection.local_port == target_port) {
-            return &connection;
-        }
-    }
-
-    return nullptr;
-}
-
-tcp_connection& create_connection(){
-    auto lock = connections_lock.writer_lock();
-    std::lock_guard<writer_rw_lock> l(lock);
-
-    auto& connection = connections.emplace_back();
-
-    connection.listening = false;
-
-    return connection;
-}
-
-void remove_connection(tcp_connection& connection){
-    auto lock = connections_lock.writer_lock();
-    std::lock_guard<writer_rw_lock> l(lock);
-
-    auto end = connections.end();
-    auto it  = connections.begin();
-
-    while (it != end) {
-        if (&(*it) == &connection) {
-            connections.erase(it);
-            return;
-        }
-
-        ++it;
-    }
-}
+network::connection_handler<tcp_connection> connections;
 
 void compute_checksum(network::ethernet::packet& packet) {
     auto* ip_header  = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
@@ -188,7 +143,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     auto next_seq = ack;
     auto next_ack = seq + tcp_payload_len(packet);;
 
-    auto connection_ptr = get_connection_for_packet(source_port, target_port);
+    auto connection_ptr = connections.get_connection_for_packet(source_port, target_port);
 
     if(connection_ptr){
         auto& connection = *connection_ptr;
@@ -402,7 +357,7 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 std::expected<void> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server) {
     // Create the connection
 
-    auto& connection = create_connection();
+    auto& connection = connections.create_connection();
 
     connection.local_port     = local_port;
     connection.server_port    = server_port;
@@ -601,7 +556,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
 
     connection.connected = false;
 
-    remove_connection(connection);
+    connections.remove_connection(connection);
 
     return {};
 }
