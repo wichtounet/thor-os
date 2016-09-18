@@ -12,6 +12,8 @@
 
 #include "kernel_utils.hpp"
 
+#include "tlib/errors.hpp"
+
 namespace {
 
 using flag_qr     = std::bit_field<uint16_t, uint8_t, 15, 1>;
@@ -189,13 +191,18 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
         }
     }
 
-    network::propagate_packet(packet, network::socket_protocol::DNS);
+    // Note: Propagate is handled by UDP connections
 }
 
-std::expected<network::ethernet::packet> network::dns::user_prepare_packet_query(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor) {
+std::expected<network::ethernet::packet> network::dns::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
+    // Check the packet descriptor
+    if(!descriptor->query){
+        return std::make_unexpected<network::ethernet::packet>(std::ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR);
+    }
+
     // Ask the UDP layer to craft a packet
-    network::udp::packet_descriptor desc{descriptor->target_ip, descriptor->source_port, 53, sizeof(header) + descriptor->payload_size};
-    auto packet = network::udp::user_prepare_packet(buffer, interface, &desc);
+    network::udp::packet_descriptor desc{sizeof(header) + descriptor->payload_size};
+    auto packet = network::udp::user_prepare_packet(buffer, socket, &desc);
 
     if (packet) {
         ::prepare_packet_query(*packet, descriptor->identification);

@@ -288,14 +288,6 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
         }
     };
 
-    auto get_port = [&socket](size_t port) -> size_t {
-        if(socket.type == socket_type::DGRAM){
-            return socket.local_port;
-        } else {
-            return port;
-        }
-    };
-
     switch (socket.protocol) {
         case network::socket_protocol::ICMP: {
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
@@ -314,16 +306,9 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
         case network::socket_protocol::DNS: {
             auto descriptor = static_cast<network::dns::packet_descriptor*>(desc);
-            auto& interface = select_interface(descriptor->target_ip);
+            auto packet     = network::dns::user_prepare_packet(buffer, socket, descriptor);
 
-            if(descriptor->query){
-                descriptor->source_port = get_port(descriptor->source_port); //TODO This is bad
-                auto packet = network::dns::user_prepare_packet_query(buffer, interface, descriptor);
-
-                return return_from_packet(packet);
-            } else {
-                return {-std::ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR, 0};
-            }
+            return return_from_packet(packet);
         }
     }
 
@@ -396,7 +381,7 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::a
     //TODO extract the underlying protocol (UDP)
     //TODO Get the port from a function
     if(socket.protocol == socket_protocol::DNS){
-        auto connection = network::udp::client_bind(socket, select_interface(address), selected_port, 53, address);
+        auto connection = network::udp::client_bind(socket, selected_port, 53, address);
 
         if(!connection){
             return std::make_unexpected<size_t>(connection.error());
@@ -405,7 +390,7 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::a
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
 
-    return std::make_expected<size_t>(socket.local_port);
+    return std::make_expected<size_t>(selected_port);
 }
 
 std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::address server, size_t port){
@@ -537,21 +522,9 @@ void network::propagate_packet(const ethernet::packet& packet, socket_protocol p
                         if(socket.protocol == protocol){
                             propagate = true;
                         }
-                    } else if(socket.type == socket_type::DGRAM){
-                        if(socket.protocol == protocol){
-                            auto local_port = socket.local_port;
-
-                            auto udp_index   = packet.tag(2);
-                            auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + udp_index);
-                            auto target_port = switch_endian_16(udp_header->target_port);
-
-                            if(local_port == target_port){
-                                propagate = true;
-                            }
-                        }
                     }
 
-                    // Note: Stream sockets are responsible for propagation
+                    // Note: Stream and datagram sockets are responsible for propagation
 
                     if (propagate) {
                         auto copy    = packet;

@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
 
     tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::DGRAM, tlib::socket_protocol::DNS);
 
-    sock.client_bind();
+    sock.client_bind(tlib::dns::gateway_address());
     sock.listen(true);
 
     if (!sock) {

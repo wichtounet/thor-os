@@ -49,7 +49,6 @@ std::expected<void> tlib::dns::send_request(tlib::socket& sock, const std::strin
 
     tlib::dns::packet_descriptor desc;
     desc.payload_size   = labels + characters + 1 + 2 * 2;
-    desc.target_ip      = gateway_address();
     desc.identification = 0x666;
     desc.query          = true;
 

@@ -36,8 +36,6 @@ struct socket {
     bool listen;                     ///< Indicates if the socket is listening to packets
     void* connection_data = nullptr; ///< Optional pointer to the connection data (TCP/UDP)
 
-    uint32_t local_port; //TODO This should not be here since it belongs to UDP
-
     std::vector<network::ethernet::packet> packets; ///< Packets that are prepared with their fd
 
     circular_buffer<network::ethernet::packet, 32> listen_packets; ///< The packets that wait to be read in listen mode

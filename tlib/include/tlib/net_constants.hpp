@@ -155,8 +155,6 @@ struct header {
 
 struct packet_descriptor {
     size_t payload_size;
-    ip::address target_ip;
-    uint16_t source_port;
     uint16_t identification;
     bool query;
 };
@@ -166,9 +164,6 @@ struct packet_descriptor {
 namespace udp {
 
 struct packet_descriptor {
-    ip::address target_ip;
-    size_t source;
-    size_t target;
     size_t payload_size;
 };
 
