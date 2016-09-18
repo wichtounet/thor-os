@@ -24,6 +24,8 @@ std::expected<void> send_request(tlib::socket& sock, const std::string& domain, 
 
 std::expected<std::string> resolve(const std::string& domain, size_t timeout = 1000, size_t retries = 1);
 
+tlib::ip::address gateway_address();
+
 }  // end of namespace dns
 
 } // end of namespace tlib

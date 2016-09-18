@@ -37,6 +37,10 @@ std::string tlib::dns::decode_domain(char* payload, size_t& offset) {
     return domain;
 }
 
+tlib::ip::address tlib::dns::gateway_address(){
+    return tlib::ip::make_address(10, 0, 2, 3);
+}
+
 std::expected<void> tlib::dns::send_request(tlib::socket& sock, const std::string& domain, uint16_t rr_type, uint16_t rr_class){
     auto parts = std::split(domain, '.');
 
@@ -45,7 +49,7 @@ std::expected<void> tlib::dns::send_request(tlib::socket& sock, const std::strin
 
     tlib::dns::packet_descriptor desc;
     desc.payload_size   = labels + characters + 1 + 2 * 2;
-    desc.target_ip      = tlib::ip::make_address(10, 0, 2, 3);
+    desc.target_ip      = gateway_address();
     desc.identification = 0x666;
     desc.query          = true;
 
