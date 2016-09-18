@@ -23,9 +23,6 @@ void init_layer();
 
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
-//TODO The parameters should be set in a descriptor
-// + This should be done in the same manner as the other layers
-std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
 std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor);
 
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);

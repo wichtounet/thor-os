@@ -123,6 +123,41 @@ size_t tcp_payload_len(const network::ethernet::packet& packet){
     return payload_len;
 }
 
+// This is used for raw answer
+std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
+    // Ask the IP layer to craft a packet
+    network::ip::packet_descriptor desc{sizeof(network::tcp::header) + payload_size, target_ip, 0x06};
+    auto packet = network::ip::kernel_prepare_packet(interface, desc);
+
+    if (packet) {
+        ::prepare_packet(*packet, source, target);
+    }
+
+    return packet;
+}
+
+// This is used for TCP connection answers
+std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, tcp_connection& connection, size_t payload_size) {
+    auto target_ip   = connection.server_address;
+    auto local_port  = connection.local_port;
+    auto server_port = connection.server_port;
+
+    // Ask the IP layer to craft a packet
+    network::ip::packet_descriptor desc{sizeof(network::tcp::header) + payload_size, target_ip, 0x06};
+    auto packet = network::ip::kernel_prepare_packet(interface, desc);
+
+    if (packet) {
+        ::prepare_packet(*packet, local_port, server_port);
+
+        auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet->payload + packet->tag(2));
+
+        tcp_header->sequence_number = switch_endian_32(connection.seq_number);
+        tcp_header->ack_number      = switch_endian_32(connection.ack_number);
+    }
+
+    return packet;
+}
+
 } //end of anonymous namespace
 
 void network::tcp::init_layer(){
@@ -196,7 +231,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     // Acknowledge if necessary
 
     if (*flag_psh(&flags)) {
-        auto p = tcp::kernel_prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
+        auto p = kernel_prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
 
         if (!p) {
             logging::logf(logging::log_level::ERROR, "tcp: Impossible to prepare TCP packet for ACK\n");
@@ -214,18 +249,6 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
 
         tcp::finalize_packet(interface, *p);
     }
-}
-
-std::expected<network::ethernet::packet> network::tcp::kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
-    // Ask the IP layer to craft a packet
-    network::ip::packet_descriptor desc{sizeof(header) + payload_size, target_ip, 0x06};
-    auto packet = network::ip::kernel_prepare_packet(interface, desc);
-
-    if (packet) {
-        ::prepare_packet(*packet, source, target);
-    }
-
-    return packet;
 }
 
 std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
@@ -378,9 +401,7 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
 
     // Prepare the SYN packet
 
-    auto target_ip = connection.server_address;
-
-    auto packet = tcp::kernel_prepare_packet(interface, target_ip, connection.local_port, server_port, 0);
+    auto packet = kernel_prepare_packet(interface, connection, 0);
 
     if (!packet) {
         return std::make_unexpected<size_t>(packet.error());
@@ -391,9 +412,6 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
     auto flags = get_default_flags();
     (flag_syn(&flags)) = 1;
     tcp_header->flags = switch_endian_16(flags);
-
-    tcp_header->sequence_number = connection.seq_number;
-    tcp_header->ack_number      = connection.ack_number;
 
     connection.listening = true;
 
@@ -435,16 +453,13 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
     // At this point we have received the SYN/ACK, only remains to ACK
 
     {
-        auto packet = tcp::kernel_prepare_packet(interface, target_ip, connection.local_port, connection.server_port, 0);
+        auto packet = kernel_prepare_packet(interface, connection, 0);
 
         if (!packet) {
             return std::make_unexpected<size_t>(packet.error());
         }
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
-
-        tcp_header->sequence_number = switch_endian_32(connection.seq_number);
-        tcp_header->ack_number      = switch_endian_32(connection.ack_number);
 
         auto flags = get_default_flags();
         (flag_ack(&flags)) = 1;
@@ -462,28 +477,24 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
 }
 
 std::expected<void> network::tcp::disconnect(network::socket& sock) {
+    logging::logf(logging::log_level::TRACE, "tcp: Disconnect\n");
+
     auto& connection = sock.get_connection_data<tcp_connection>();
 
     if(!connection.connected){
         return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
     }
 
-    auto target_ip = connection.server_address;
-    auto source    = connection.local_port;
-    auto target    = connection.server_port;
-
+    auto target_ip  = connection.server_address;
     auto& interface = network::select_interface(target_ip);
 
-    auto packet = tcp::kernel_prepare_packet(interface, target_ip, source, target, 0);
+    auto packet = kernel_prepare_packet(interface, connection, 0);
 
     if (!packet) {
         return std::make_unexpected<void>(packet.error());
     }
 
     auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
-
-    tcp_header->sequence_number = switch_endian_32(connection.seq_number);
-    tcp_header->ack_number      = switch_endian_32(connection.ack_number);
 
     auto flags = get_default_flags();
     (flag_fin(&flags)) = 1;
@@ -495,8 +506,8 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
     logging::logf(logging::log_level::TRACE, "tcp: Send FIN/ACK\n");
     tcp::finalize_packet(interface, *packet);
 
-    uint32_t seq;
-    uint32_t ack;
+    uint32_t seq = 0;
+    uint32_t ack = 0;
 
     auto fin_rec     = false;
     auto fin_ack_rec = false;
@@ -542,16 +553,13 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
     // At this point we have received the FIN/ACK, only remains to ACK
 
     {
-        auto packet = tcp::kernel_prepare_packet(interface, target_ip, source, target, 0);
+        auto packet = kernel_prepare_packet(interface, connection, 0);
 
         if (!packet) {
             return std::make_unexpected<void>(packet.error());
         }
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
-
-        tcp_header->sequence_number = switch_endian_32(connection.seq_number);
-        tcp_header->ack_number      = switch_endian_32(connection.ack_number);
 
         auto flags = get_default_flags();
         (flag_ack(&flags)) = 1;
