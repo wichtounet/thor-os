@@ -119,7 +119,6 @@ private:
     socket_protocol protocol; ///< The socket protocol
     size_t fd;                ///< The socket file descriptor
     size_t error_code;        ///< The error code
-    size_t local_port;        ///< The local port
     bool _connected;          ///< Connection flag
     bool _bound;              ///< Bind flag
 };

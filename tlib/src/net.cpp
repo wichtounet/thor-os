@@ -215,8 +215,6 @@ tlib::socket::socket(socket_domain domain, socket_type type, socket_protocol pro
     } else {
         error_code = open_status.error();
     }
-
-    local_port = 0;
 }
 
 tlib::socket::~socket() {
@@ -276,7 +274,6 @@ void tlib::socket::client_bind(tlib::ip::address server) {
     auto status = tlib::client_bind(fd, server);
     if (!status) {
         _bound = false;
-        local_port = *status;
     } else {
         error_code = status.error();
     }
@@ -308,7 +305,6 @@ void tlib::socket::connect(tlib::ip::address server, size_t port) {
     auto status = tlib::connect(fd, server, port);
     if (status) {
         _connected = true;
-        local_port = *status;
     } else {
         error_code = status.error();
     }
