@@ -30,7 +30,7 @@ void decode(network::interface_descriptor& interface, network::ethernet::packet&
 std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor);
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
-std::expected<void> client_bind(network::socket& socket, size_t local_port, size_t server_port, network::ip::address server);
+std::expected<size_t> client_bind(network::socket& socket, size_t server_port, network::ip::address server);
 std::expected<void> client_unbind(network::socket& socket);
 
 } // end of upd namespace

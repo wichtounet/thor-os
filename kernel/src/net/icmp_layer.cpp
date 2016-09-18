@@ -127,7 +127,9 @@ std::expected<network::ethernet::packet> network::icmp::kernel_prepare_packet(ne
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::icmp::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
+std::expected<network::ethernet::packet> network::icmp::user_prepare_packet(char* buffer, network::socket& /*socket*/, const packet_descriptor* descriptor){
+    auto& interface = network::select_interface(descriptor->target_ip);
+
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{sizeof(header) + descriptor->payload_size, descriptor->target_ip, 0x01};
     auto packet = network::ip::user_prepare_packet(buffer, interface, &desc);

@@ -29,7 +29,7 @@ std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, netwo
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p);
 
-std::expected<void> connect(network::socket& socket, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server);
+std::expected<size_t> connect(network::socket& socket, network::interface_descriptor& interface, size_t server_port, network::ip::address server);
 std::expected<void> disconnect(network::socket& socket);
 
 } // end of tcp namespace

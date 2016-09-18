@@ -201,7 +201,8 @@ enum class socket_type : size_t {
 enum class socket_protocol : size_t {
     ICMP,
     DNS,
-    TCP
+    TCP,
+    UDP
 };
 
 } // end of network namespace

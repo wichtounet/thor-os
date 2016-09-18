@@ -7,7 +7,6 @@
 
 #include <bit_field.hpp>
 #include <atomic.hpp>
-#include <list.hpp>
 
 #include "conc/condition_variable.hpp"
 
@@ -23,6 +22,8 @@
 #include "timer.hpp"
 
 namespace {
+
+std::atomic<size_t> local_port;
 
 static constexpr size_t timeout_ms = 1000;
 static constexpr size_t max_tries  = 5;
@@ -358,12 +359,17 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
     }
 }
 
-std::expected<void> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server) {
+std::expected<size_t> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface, size_t server_port, network::ip::address server) {
+    // TODO This is terrible
+    if(!local_port.load()){
+        local_port = 1024;
+    }
+
     // Create the connection
 
     auto& connection = connections.create_connection();
 
-    connection.local_port     = local_port;
+    connection.local_port     = ++local_port;
     connection.server_port    = server_port;
     connection.server_address = server;
 
@@ -375,10 +381,10 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
     auto target_ip = connection.server_address;
 
-    auto packet = tcp::kernel_prepare_packet(interface, target_ip, local_port, server_port, 0);
+    auto packet = tcp::kernel_prepare_packet(interface, target_ip, connection.local_port, server_port, 0);
 
     if (!packet) {
-        return std::make_unexpected<void>(packet.error());
+        return std::make_unexpected<size_t>(packet.error());
     }
 
     auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
@@ -433,7 +439,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
         auto packet = tcp::kernel_prepare_packet(interface, target_ip, connection.local_port, connection.server_port, 0);
 
         if (!packet) {
-            return std::make_unexpected<void>(packet.error());
+            return std::make_unexpected<size_t>(packet.error());
         }
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
@@ -453,7 +459,7 @@ std::expected<void> network::tcp::connect(network::socket& sock, network::interf
 
     connection.connected = true;
 
-    return {};
+    return connection.local_port;
 }
 
 std::expected<void> network::tcp::disconnect(network::socket& sock) {

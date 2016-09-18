@@ -25,7 +25,8 @@ static_assert(sizeof(echo_request_header) == sizeof(header::rest), "Invalid size
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
 std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor);
-std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor);
+
+std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor);
 
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 

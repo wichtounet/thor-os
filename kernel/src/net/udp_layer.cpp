@@ -5,6 +5,8 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+#include <atomic.hpp>
+
 #include "net/connection_handler.hpp"
 #include "net/udp_layer.hpp"
 #include "net/dns_layer.hpp"
@@ -15,6 +17,8 @@
 #include "kernel_utils.hpp"
 
 namespace {
+
+std::atomic<size_t> local_port;
 
 struct udp_connection {
     size_t local_port;                   ///< The local source port
@@ -141,12 +145,17 @@ std::expected<void> network::udp::finalize_packet(network::interface_descriptor&
     return network::ip::finalize_packet(interface, p);
 }
 
-std::expected<void> network::udp::client_bind(network::socket& sock, size_t local_port, size_t server_port, network::ip::address server){
+std::expected<size_t> network::udp::client_bind(network::socket& sock, size_t server_port, network::ip::address server){
+    // TODO This is terrible
+    if(!local_port.load()){
+        local_port = 1024;
+    }
+
     // Create the connection
 
     auto& connection = connections.create_connection();
 
-    connection.local_port     = local_port;
+    connection.local_port     = ++local_port;
     connection.server_port    = server_port;
     connection.server_address = server;
 
@@ -158,7 +167,7 @@ std::expected<void> network::udp::client_bind(network::socket& sock, size_t loca
 
     connection.connected = true;
 
-    return {};
+    return {connection.local_port};
 }
 
 std::expected<void> network::udp::client_unbind(network::socket& sock){

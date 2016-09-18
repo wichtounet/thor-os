@@ -33,8 +33,6 @@
 
 namespace {
 
-std::atomic<size_t> local_port;
-
 std::vector<network::interface_descriptor> interfaces;
 
 void rx_thread(void* data){
@@ -95,6 +93,23 @@ void sysfs_publish(const network::interface_descriptor& interface){
 
             sysfs::set_constant_value(path("/sys"), p / "gateway", gateway_addr);
         }
+    }
+}
+
+network::socket_protocol datagram_protocol(network::socket_protocol protocol){
+    switch(protocol){
+        case network::socket_protocol::DNS:
+            return network::socket_protocol::UDP;
+
+        default:
+            return protocol;
+    }
+}
+
+network::socket_protocol stream_protocol(network::socket_protocol protocol){
+    switch(protocol){
+        default:
+            return protocol;
     }
 }
 
@@ -168,9 +183,6 @@ void network::init(){
             }
         }
     }
-
-    // Set the first local port to be attributed
-    local_port = 1234;
 }
 
 void network::finalize(){
@@ -291,8 +303,14 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
     switch (socket.protocol) {
         case network::socket_protocol::ICMP: {
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
-            auto& interface = select_interface(descriptor->target_ip);
-            auto packet     = network::icmp::user_prepare_packet(buffer, interface, descriptor);
+            auto packet     = network::icmp::user_prepare_packet(buffer, socket, descriptor);
+
+            return return_from_packet(packet);
+        }
+
+        case network::socket_protocol::UDP: {
+            auto descriptor = static_cast<network::udp::packet_descriptor*>(desc);
+            auto packet     = network::udp::user_prepare_packet(buffer, socket, descriptor);
 
             return return_from_packet(packet);
         }
@@ -344,6 +362,9 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
         case network::socket_protocol::TCP:
             return check_and_return(network::tcp::finalize_packet(interface, packet));
 
+        case network::socket_protocol::UDP:
+            return check_and_return(network::udp::finalize_packet(interface, packet));
+
         case network::socket_protocol::DNS:
             return check_and_return(network::dns::finalize_packet(interface, packet));
     }
@@ -374,23 +395,13 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::a
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
-    auto selected_port = local_port++;
+    switch(datagram_protocol(socket.protocol)){
+        case socket_protocol::UDP:
+            return network::udp::client_bind(socket, 53, address);
 
-    logging::logf(logging::log_level::TRACE, "network: %u datagram socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, selected_port);
-
-    //TODO extract the underlying protocol (UDP)
-    //TODO Get the port from a function
-    if(socket.protocol == socket_protocol::DNS){
-        auto connection = network::udp::client_bind(socket, selected_port, 53, address);
-
-        if(!connection){
-            return std::make_unexpected<size_t>(connection.error());
-        }
-    } else {
-        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+        default:
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
-
-    return std::make_expected<size_t>(selected_port);
 }
 
 std::expected<void> network::client_unbind(socket_fd_t socket_fd){
@@ -406,12 +417,13 @@ std::expected<void> network::client_unbind(socket_fd_t socket_fd){
 
     logging::logf(logging::log_level::TRACE, "network: %u disconnect from datagram socket %u\n", scheduler::get_pid(), socket_fd);
 
-    //TODO extract the underlying protocol (UDP)
-    if(socket.protocol == socket_protocol::DNS){
-        return network::udp::client_unbind(socket);
-    }
+    switch(datagram_protocol(socket.protocol)){
+        case network::socket_protocol::UDP:
+            return network::udp::client_unbind(socket);
 
-    return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+        default:
+            return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
 }
 
 std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::address server, size_t port){
@@ -425,21 +437,13 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
-    auto selected_port       = local_port++;
+    switch(stream_protocol(socket.protocol)){
+        case socket_protocol::TCP:
+            return network::tcp::connect(socket, select_interface(server), port, server);
 
-    logging::logf(logging::log_level::TRACE, "network: %u stream socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, selected_port);
-
-    if(socket.protocol == socket_protocol::TCP){
-        auto connection = network::tcp::connect(socket, select_interface(server), selected_port, port, server);
-
-        if(!connection){
-            return std::make_unexpected<size_t>(connection.error());
-        }
-    } else {
-        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+        default:
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
-
-    return std::make_expected<size_t>(selected_port);
 }
 
 std::expected<void> network::disconnect(socket_fd_t socket_fd){
@@ -455,17 +459,13 @@ std::expected<void> network::disconnect(socket_fd_t socket_fd){
 
     logging::logf(logging::log_level::TRACE, "network: %u disconnect from stream socket %u\n", scheduler::get_pid(), socket_fd);
 
-    if(socket.protocol == socket_protocol::TCP){
-        auto disconnection = network::tcp::disconnect(socket);
+    switch(datagram_protocol(socket.protocol)){
+        case network::socket_protocol::UDP:
+            return network::tcp::disconnect(socket);
 
-        if(!disconnection){
-            return std::make_unexpected<void>(disconnection.error());
-        }
-    } else {
-        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+        default:
+            return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
-
-    return {};
 }
 
 std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_fd){
