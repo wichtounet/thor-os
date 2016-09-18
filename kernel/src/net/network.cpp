@@ -31,6 +31,19 @@
 #include "net/udp_layer.hpp"
 #include "net/tcp_layer.hpp"
 
+/*
+ * TODO: Network layers
+ *
+ * Ideally, we should not have a switch for each network layer function that has
+ * the same think in each body. Solutions are:
+ *  - Generation by macro :(
+ *  - Generation by template
+ *  - Virtualization :(
+ *
+ *  Problem with template solution is that not all layers have the same
+ *  interface
+ */
+
 namespace {
 
 std::vector<network::interface_descriptor> interfaces;
