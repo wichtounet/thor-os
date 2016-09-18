@@ -468,7 +468,7 @@ std::expected<void> network::disconnect(socket_fd_t socket_fd){
     logging::logf(logging::log_level::TRACE, "network: %u disconnect from stream socket %u\n", scheduler::get_pid(), socket_fd);
 
     switch(datagram_protocol(socket.protocol)){
-        case network::socket_protocol::UDP:
+        case network::socket_protocol::TCP:
             return network::tcp::disconnect(socket);
 
         default:
