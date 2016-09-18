@@ -393,6 +393,27 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::a
     return std::make_expected<size_t>(selected_port);
 }
 
+std::expected<void> network::client_unbind(socket_fd_t socket_fd){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(socket.type != socket_type::DGRAM){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE);
+    }
+
+    logging::logf(logging::log_level::TRACE, "network: %u disconnect from datagram socket %u\n", scheduler::get_pid(), socket_fd);
+
+    //TODO extract the underlying protocol (UDP)
+    if(socket.protocol == socket_protocol::DNS){
+        return network::udp::client_unbind(socket);
+    }
+
+    return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+}
+
 std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::address server, size_t port){
     if(!scheduler::has_socket(socket_fd)){
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);

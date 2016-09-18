@@ -425,6 +425,13 @@ void sc_client_bind(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(status);
 }
 
+void sc_client_unbind(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+
+    auto status = network::client_unbind(socket_fd);
+    regs->rax = expected_to_i64(status);
+}
+
 void sc_connect(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
     auto ip = regs->rcx;
@@ -715,6 +722,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x3009:
             sc_disconnect(regs);
+            break;
+
+        case 0x300A:
+            sc_client_unbind(regs);
             break;
 
         // Special system calls

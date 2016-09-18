@@ -1,6 +1,5 @@
 //=======================================================================
-// Copyright Baptiste Wicht 2013-2016.
-// Distributed under the terms of the MIT License.
+// Copyright Baptiste Wicht 2013-2016.  // Distributed under the terms of the MIT License.
 // (See accompanying file LICENSE or copy at
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
@@ -123,6 +122,20 @@ std::expected<size_t> tlib::client_bind(size_t socket_fd, tlib::ip::address serv
     }
 }
 
+std::expected<void> tlib::client_unbind(size_t socket_fd) {
+    int64_t code;
+    asm volatile("mov rax, 0x300A; mov rbx, %[socket]; int 50; mov %[code], rax"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd)
+                 : "rax", "rbx");
+
+    if (code < 0) {
+        return std::make_unexpected<void, size_t>(-code);
+    } else {
+        return {};
+    }
+}
+
 std::expected<size_t> tlib::connect(size_t socket_fd, tlib::ip::address server, size_t port) {
     int64_t code;
     asm volatile("mov rax, 0x3008; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
@@ -211,6 +224,10 @@ tlib::socket::~socket() {
         disconnect();
     }
 
+    if (bound()) {
+        client_unbind();
+    }
+
     if (fd) {
         tlib::socket_close(fd);
     }
@@ -258,10 +275,29 @@ void tlib::socket::client_bind(tlib::ip::address server) {
 
     auto status = tlib::client_bind(fd, server);
     if (!status) {
+        _bound = false;
+        local_port = *status;
+    } else {
         error_code = status.error();
     }
+}
 
-    local_port = *status;
+void tlib::socket::client_unbind() {
+    if (!good() || !open()) {
+        return;
+    }
+
+    if (!bound()) {
+        return;
+    }
+
+    auto status = tlib::client_unbind(fd);
+
+    if (status) {
+        _bound = false;
+    } else {
+        error_code = status.error();
+    }
 }
 
 void tlib::socket::connect(tlib::ip::address server, size_t port) {

@@ -41,9 +41,13 @@ void socket_close(size_t socket_fd);
 std::expected<packet> prepare_packet(size_t socket_fd, void* desc);
 std::expected<void> finalize_packet(size_t socket_fd, const packet& p);
 std::expected<void> listen(size_t socket_fd, bool l);
+
 std::expected<size_t> client_bind(size_t socket_fd, tlib::ip::address server);
+std::expected<void> client_unbind(size_t socket_fd);
+
 std::expected<size_t> connect(size_t socket_fd, tlib::ip::address server, size_t port);
 std::expected<void> disconnect(size_t socket_fd);
+
 std::expected<packet> wait_for_packet(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd, size_t ms);
 
@@ -70,6 +74,12 @@ struct socket {
     bool connected() const;
 
     /*!
+     * \brief Indicates if the socket is bound
+     * \return true if the socket is bound, false otherwise
+     */
+    bool bound() const;
+
+    /*!
      * \brief Indicates if everything is in order
      * \return true if everything is good, false otherwise
      */
@@ -91,6 +101,7 @@ struct socket {
      * \param server The IP address
      */
     void client_bind(tlib::ip::address server);
+    void client_unbind();
 
     void connect(tlib::ip::address server, size_t port);
     void disconnect();
@@ -110,6 +121,7 @@ private:
     size_t error_code;        ///< The error code
     size_t local_port;        ///< The local port
     bool _connected;          ///< Connection flag
+    bool _bound;              ///< Bind flag
 };
 
 inline uint16_t switch_endian_16(uint16_t nb) {
