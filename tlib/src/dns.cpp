@@ -90,7 +90,7 @@ std::expected<void> tlib::dns::send_request(tlib::socket& sock, const std::strin
 std::expected<std::string> tlib::dns::resolve(const std::string& domain, size_t timeout_ms, size_t retries){
     tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::DGRAM, tlib::socket_protocol::DNS);
 
-    sock.client_bind();
+    sock.client_bind(gateway_address());
     sock.listen(true);
 
     if (!sock) {

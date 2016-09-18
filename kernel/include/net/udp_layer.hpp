@@ -31,6 +31,9 @@ std::expected<network::ethernet::packet> kernel_prepare_packet(network::interfac
 std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor);
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
+std::expected<void> client_bind(network::socket& socket, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server);
+std::expected<void> client_unbind(network::socket& socket);
+
 } // end of upd namespace
 
 } // end of network namespace

@@ -378,7 +378,7 @@ std::expected<void> network::listen(socket_fd_t socket_fd, bool listen){
     return std::make_expected();
 }
 
-std::expected<size_t> network::client_bind(socket_fd_t socket_fd){
+std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::address address){
     if(!scheduler::has_socket(socket_fd)){
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);
     }
@@ -389,9 +389,21 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd){
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
-    socket.local_port = local_port++;
+    auto selected_port = local_port++;
 
-    logging::logf(logging::log_level::TRACE, "network: %u datagram socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
+    logging::logf(logging::log_level::TRACE, "network: %u datagram socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, selected_port);
+
+    //TODO extract the underlying protocol (UDP)
+    //TODO Get the port from a function
+    if(socket.protocol == socket_protocol::DNS){
+        auto connection = network::udp::client_bind(socket, select_interface(address), selected_port, 53, address);
+
+        if(!connection){
+            return std::make_unexpected<size_t>(connection.error());
+        }
+    } else {
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
 
     return std::make_expected<size_t>(socket.local_port);
 }
@@ -409,7 +421,7 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
 
     auto selected_port       = local_port++;
 
-    logging::logf(logging::log_level::TRACE, "network: %u stream socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, socket.local_port);
+    logging::logf(logging::log_level::TRACE, "network: %u stream socket %u was assigned port %u\n", scheduler::get_pid(), socket_fd, selected_port);
 
     if(socket.protocol == socket_protocol::TCP){
         auto connection = network::tcp::connect(socket, select_interface(server), selected_port, port, server);

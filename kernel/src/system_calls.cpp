@@ -419,8 +419,9 @@ void sc_listen(interrupt::syscall_regs* regs){
 
 void sc_client_bind(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
+    auto server_ip = regs->rcx;
 
-    auto status = network::client_bind(socket_fd);
+    auto status = network::client_bind(socket_fd, server_ip);
     regs->rax = expected_to_i64(status);
 }
 

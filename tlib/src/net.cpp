@@ -109,11 +109,11 @@ std::expected<void> tlib::listen(size_t socket_fd, bool l) {
     }
 }
 
-std::expected<size_t> tlib::client_bind(size_t socket_fd) {
+std::expected<size_t> tlib::client_bind(size_t socket_fd, tlib::ip::address server) {
     int64_t code;
-    asm volatile("mov rax, 0x3007; mov rbx, %[socket]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0x3007; mov rbx, %[socket]; mov rcx, %[ip]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
-                 : [socket] "g"(socket_fd)
+                 : [socket] "g"(socket_fd), [ip] "g" (size_t(server.raw_address))
                  : "rax", "rbx", "rcx");
 
     if (code < 0) {
@@ -251,12 +251,12 @@ void tlib::socket::listen(bool l) {
     }
 }
 
-void tlib::socket::client_bind() {
+void tlib::socket::client_bind(tlib::ip::address server) {
     if (!good() || !open()) {
         return;
     }
 
-    auto status = tlib::client_bind(fd);
+    auto status = tlib::client_bind(fd, server);
     if (!status) {
         error_code = status.error();
     }

@@ -108,3 +108,11 @@ std::expected<void> network::udp::finalize_packet(network::interface_descriptor&
     // Give the packet to the IP layer for finalization
     return network::ip::finalize_packet(interface, p);
 }
+
+std::expected<void> network::udp::client_bind(network::socket& socket, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server){
+
+}
+
+std::expected<void> network::udp::client_unbind(network::socket& socket){
+
+}
