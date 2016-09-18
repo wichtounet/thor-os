@@ -38,5 +38,5 @@ std::expected<network::ethernet::packet> network::http::user_prepare_packet(char
 
 std::expected<void> network::http::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
     // Give the packet to the TCP layer for finalization
-    return network::tcp::finalize_packet(interface, p);
+    //TODO return network::tcp::finalize_packet(interface, p);
 }

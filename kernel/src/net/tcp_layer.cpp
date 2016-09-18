@@ -158,6 +158,17 @@ std::expected<network::ethernet::packet> kernel_prepare_packet(network::interfac
     return packet;
 }
 
+// finalize without waiting for ACK
+std::expected<void> finalize_packet_direct(network::interface_descriptor& interface, network::ethernet::packet& p) {
+    p.index -= sizeof(network::tcp::header);
+
+    // Compute the checksum
+    compute_checksum(p);
+
+    // Give the packet to the IP layer for finalization
+    return network::ip::finalize_packet(interface, p);
+}
+
 } //end of anonymous namespace
 
 void network::tcp::init_layer(){
@@ -247,7 +258,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
         (flag_ack(&ack_flags)) = 1;
         ack_tcp_header->flags = switch_endian_16(ack_flags);
 
-        tcp::finalize_packet(interface, *p);
+        finalize_packet_direct(interface, *p);
     }
 }
 
@@ -312,33 +323,13 @@ std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char*
     return packet;
 }
 
-std::expected<void> network::tcp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
-    p.index -= sizeof(header);
-
-    // Compute the checksum
-    compute_checksum(p);
-
-    // Give the packet to the IP layer for finalization
-    return network::ip::finalize_packet(interface, p);
-}
-
 std::expected<void> network::tcp::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p) {
     p.index -= sizeof(header);
 
     // Compute the checksum
     compute_checksum(p);
 
-    if (!p.user) {
-        logging::logf(logging::log_level::ERROR, "tcp: Function uniquely implemented for user packets!\n");
-        return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
-    }
-
     auto& connection = socket.get_connection_data<tcp_connection>();
-
-    // Make sure stream sockets are connected
-    if(!connection.connected){
-        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
-    }
 
     connection.listening = true;
 
@@ -372,6 +363,9 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
                 auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
                 auto flags       = switch_endian_16(tcp_header->flags);
 
+                //TODO Ideally, we should make sure that the ACK is related to
+                //the sent packet
+
                 if (*flag_ack(&flags)) {
                     logging::logf(logging::log_level::TRACE, "tcp: Received ACK\n");
 
@@ -404,7 +398,7 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
     if(received){
         // Set the future sequence and acknowledgement numbers
         connection.seq_number = ack;
-        connection.ack_number = seq;
+        connection.ack_number = seq + 1;
 
         return {};
     } else {
@@ -439,42 +433,15 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
     (flag_syn(&flags)) = 1;
     tcp_header->flags = switch_endian_16(flags);
 
-    connection.listening = true;
-
     logging::logf(logging::log_level::TRACE, "tcp: Send SYN\n");
-    tcp::finalize_packet(interface, *packet);
 
-    uint32_t seq;
-    uint32_t ack;
+    auto status = tcp::finalize_packet(interface, sock, *packet);
 
-    while (true) {
-        // TODO Need a timeout
-        connection.queue.wait();
-        auto received_packet = connection.packets.pop();
-
-        auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
-        auto flags       = switch_endian_16(tcp_header->flags);
-
-        logging::logf(logging::log_level::TRACE, "tcp: Received answer\n");
-
-        if (*flag_syn(&flags) && *flag_ack(&flags)) {
-            logging::logf(logging::log_level::TRACE, "tcp: Received SYN/ACK\n");
-
-            seq = switch_endian_32(tcp_header->sequence_number);
-            ack = switch_endian_32(tcp_header->ack_number);
-
-            delete[] received_packet.payload;
-
-            break;
-        }
-
-        delete[] received_packet.payload;
+    if(!status){
+        return std::make_unexpected<size_t, size_t>(status.error());
     }
 
-    connection.listening = false;
-
-    connection.seq_number = ack;
-    connection.ack_number = seq + 1;
+    // The SYN/ACK is ensured by finalize_packet
 
     // At this point we have received the SYN/ACK, only remains to ACK
 
@@ -492,7 +459,7 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
         tcp_header->flags = switch_endian_16(flags);
 
         logging::logf(logging::log_level::TRACE, "tcp: Send ACK\n");
-        tcp::finalize_packet(interface, *packet);
+        finalize_packet_direct(interface, *packet);
     }
 
     // Mark the connection as connected
@@ -530,51 +497,12 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
     connection.listening = true;
 
     logging::logf(logging::log_level::TRACE, "tcp: Send FIN/ACK\n");
-    tcp::finalize_packet(interface, *packet);
 
-    uint32_t seq = 0;
-    uint32_t ack = 0;
+    auto status = tcp::finalize_packet(interface, sock, *packet);
 
-    auto fin_rec     = false;
-    auto fin_ack_rec = false;
-
-    while (true) {
-        // TODO Need a timeout
-        connection.queue.wait();
-        auto received_packet = connection.packets.pop();
-
-        auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
-        auto flags       = switch_endian_16(tcp_header->flags);
-
-        logging::logf(logging::log_level::TRACE, "tcp: Received answer\n");
-
-        if (*flag_fin(&flags) && *flag_ack(&flags)) {
-            logging::logf(logging::log_level::TRACE, "tcp: Received FIN/ACK\n");
-
-            seq = switch_endian_32(tcp_header->sequence_number);
-            ack = switch_endian_32(tcp_header->ack_number);
-
-            fin_ack_rec = true;
-        } else if (*flag_ack(&flags)) {
-            logging::logf(logging::log_level::TRACE, "tcp: Received ACK\n");
-
-            seq = switch_endian_32(tcp_header->sequence_number);
-            ack = switch_endian_32(tcp_header->ack_number);
-
-            fin_rec = true;
-        }
-
-        delete[] received_packet.payload;
-
-        if (fin_rec && fin_ack_rec) {
-            break;
-        }
+    if(!status){
+        return status;
     }
-
-    connection.listening = false;
-
-    connection.seq_number = ack;
-    connection.ack_number = seq + 1;
 
     // At this point we have received the FIN/ACK, only remains to ACK
 
@@ -592,7 +520,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
         tcp_header->flags = switch_endian_16(flags);
 
         logging::logf(logging::log_level::TRACE, "tcp: Send ACK\n");
-        tcp::finalize_packet(interface, *packet);
+        finalize_packet_direct(interface, *packet);
     }
 
     // Mark the connection as connected
