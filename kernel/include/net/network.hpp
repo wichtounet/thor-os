@@ -101,6 +101,13 @@ std::tuple<size_t, size_t> prepare_packet(socket_fd_t socket_fd, void* desc, cha
 std::expected<void> finalize_packet(socket_fd_t socket_fd, size_t packet_fd);
 
 /*!
+ * \brief Send some data (not a packet, only a payload)
+ * \param socket_fd The file descriptor of the packet
+ * \return 0 on success and a negative error code otherwise
+ */
+std::expected<void> send(socket_fd_t socket_fd, const char* buffer, size_t n, char* target_buffer);
+
+/*!
  * \brief Listen to a socket or not
  * \param socket_fd The file descriptor of the packet
  * \param listen Indicates if listen or not

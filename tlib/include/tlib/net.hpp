@@ -40,6 +40,9 @@ void socket_close(size_t socket_fd);
 
 std::expected<packet> prepare_packet(size_t socket_fd, void* desc);
 std::expected<void> finalize_packet(size_t socket_fd, const packet& p);
+
+std::expected<void> send(size_t socket_fd, const char* buffer, size_t n);
+
 std::expected<void> listen(size_t socket_fd, bool l);
 
 std::expected<size_t> client_bind(size_t socket_fd, tlib::ip::address server);
@@ -119,6 +122,9 @@ struct socket {
 
     packet prepare_packet(void* desc);
     void finalize_packet(const packet& p);
+
+    void send(const char* buffer, size_t n);
+
     packet wait_for_packet();
     packet wait_for_packet(size_t ms);
 

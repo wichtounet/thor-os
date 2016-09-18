@@ -251,6 +251,32 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     }
 }
 
+std::expected<void> network::tcp::send(char* target_buffer, network::socket& socket, const char* buffer, size_t n){
+    auto& connection = socket.get_connection_data<tcp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    logging::logf(logging::log_level::ERROR, "tcp: Send %s(%u)\n", buffer, n);
+
+    network::tcp::packet_descriptor desc{n};
+    auto packet = user_prepare_packet(target_buffer, socket, &desc);
+
+    if (packet) {
+        for(size_t i = 0; i < n; ++i){
+            packet->payload[packet->index + i] = buffer[i];
+        }
+
+        auto target_ip  = connection.server_address;
+        auto& interface = network::select_interface(target_ip);
+        return finalize_packet(interface, socket, *packet);
+    }
+
+    return std::make_unexpected<void>(packet.error());
+}
+
 std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
     auto& connection = socket.get_connection_data<tcp_connection>();
 

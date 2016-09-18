@@ -49,23 +49,9 @@ int main(int argc, char* argv[]) {
     // Send a packet to the server
 
     {
-        tlib::tcp::packet_descriptor desc;
-        desc.payload_size = 4;
+        auto message = "THOR";
 
-        auto packet = sock.prepare_packet(&desc);
-
-        if (!sock) {
-            tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
-            return 1;
-        }
-
-        auto* payload = reinterpret_cast<char*>(packet.payload + packet.index);
-        payload[0]    = 'T';
-        payload[1]    = 'H';
-        payload[2]    = 'O';
-        payload[3]    = 'R';
-
-        sock.finalize_packet(packet);
+        sock.send(message, 4);
 
         if (!sock) {
             tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
