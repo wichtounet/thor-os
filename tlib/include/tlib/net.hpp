@@ -51,8 +51,17 @@ std::expected<void> disconnect(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd);
 std::expected<packet> wait_for_packet(size_t socket_fd, size_t ms);
 
+/*!
+ * \brief A network socket abstraction.
+ *
+ * This is easier to use than the free functions for sockets.
+ */
 struct socket {
     socket(socket_domain domain, socket_type type, socket_protocol protocol);
+
+    /*!
+     * \brief Destruct the socket and release all acquired connections
+     */
     ~socket();
 
     /*!
