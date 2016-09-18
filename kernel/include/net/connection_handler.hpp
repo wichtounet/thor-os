@@ -8,6 +8,8 @@
 #ifndef NET_CONNECTION_HANDLER_H
 #define NET_CONNECTION_HANDLER_H
 
+#include <list.hpp>
+
 #include "conc/rw_lock.hpp"
 
 namespace network {
@@ -33,11 +35,7 @@ struct connection_handler {
         auto lock = connections_lock.writer_lock();
         std::lock_guard<writer_rw_lock> l(lock);
 
-        auto& connection = connections.emplace_back();
-
-        connection.listening = false;
-
-        return connection;
+        return connections.emplace_back();
     }
 
     void remove_connection(connection_type& connection) {

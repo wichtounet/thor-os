@@ -54,6 +54,10 @@ struct tcp_connection {
     uint32_t seq_number = 0; ///< The next sequence number
 
     network::socket* socket = nullptr;
+
+    tcp_connection(){
+        listening = false;
+    }
 };
 
 network::connection_handler<tcp_connection> connections;

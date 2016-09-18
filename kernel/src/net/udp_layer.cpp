@@ -5,13 +5,28 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+#include "net/connection_handler.hpp"
 #include "net/udp_layer.hpp"
 #include "net/dns_layer.hpp"
 #include "net/checksum.hpp"
 
+#include "tlib/errors.hpp"
+
 #include "kernel_utils.hpp"
 
 namespace {
+
+struct udp_connection {
+    size_t local_port;                   ///< The local source port
+    size_t server_port;                  ///< The server port
+    network::ip::address server_address; ///< The server address
+
+    bool connected = false;
+
+    network::socket* socket = nullptr;
+};
+
+network::connection_handler<udp_connection> connections;
 
 void compute_checksum(network::ethernet::packet& packet){
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
@@ -109,10 +124,38 @@ std::expected<void> network::udp::finalize_packet(network::interface_descriptor&
     return network::ip::finalize_packet(interface, p);
 }
 
-std::expected<void> network::udp::client_bind(network::socket& socket, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server){
+std::expected<void> network::udp::client_bind(network::socket& sock, network::interface_descriptor& interface, size_t local_port, size_t server_port, network::ip::address server){
+    // Create the connection
 
+    auto& connection = connections.create_connection();
+
+    connection.local_port     = local_port;
+    connection.server_port    = server_port;
+    connection.server_address = server;
+
+    // Link the socket and connection
+    sock.connection_data = &connection;
+    connection.socket = &sock;
+
+    // Mark the connection as connected
+
+    connection.connected = true;
+
+    return {};
 }
 
-std::expected<void> network::udp::client_unbind(network::socket& socket){
+std::expected<void> network::udp::client_unbind(network::socket& sock){
+    auto& connection = sock.get_connection_data<udp_connection>();
 
+    if(!connection.connected){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    // Mark the connection as not connected
+
+    connection.connected = false;
+
+    connections.remove_connection(connection);
+
+    return {};
 }

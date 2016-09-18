@@ -159,19 +159,19 @@ private:
     bool writer    = false;   ///< Boolean flag indicating if there is a writer
 };
 
-void writer_rw_lock::lock(){
+inline void writer_rw_lock::lock(){
     l.read_lock();
 }
 
-void writer_rw_lock::unlock(){
+inline void writer_rw_lock::unlock(){
     l.read_unlock();
 }
 
-void reader_rw_lock::lock(){
+inline void reader_rw_lock::lock(){
     l.write_lock();
 }
 
-void reader_rw_lock::unlock(){
+inline void reader_rw_lock::unlock(){
     l.write_unlock();
 }
 
