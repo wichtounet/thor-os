@@ -24,18 +24,6 @@ void network::http::decode(network::interface_descriptor& /*interface*/, network
     //TODO network::propagate_packet(packet, network::socket_protocol::HTTP);
 }
 
-std::expected<network::ethernet::packet> network::http::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor) {
-    // Ask the TCP layer to craft a packet
-    //network::tcp::packet_descriptor desc{descriptor.target_ip, descriptor.source_port, 80, descriptor.payload_size};
-    //auto packet = network::tcp::kernel_prepare_packet(interface, desc);
-
-    //if (packet) {
-        //packet.tag(3, packet.index);
-    //}
-
-    //return packet;
-}
-
 std::expected<network::ethernet::packet> network::http::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor) {
     // Ask the TCP layer to craft a packet
     //network::tcp::packet_descriptor desc{descriptor->target_ip, descriptor->source_port, 80, descriptor->payload_size};
