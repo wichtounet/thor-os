@@ -328,9 +328,10 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
             return return_from_packet(packet);
         }
-    }
 
-    return {-std::ERROR_SOCKET_UNIMPLEMENTED, 0};
+        default:
+            return {-std::ERROR_SOCKET_UNIMPLEMENTED, 0};
+    }
 }
 
 std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packet_fd){
@@ -367,9 +368,11 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
 
         case network::socket_protocol::DNS:
             return check_and_return(network::dns::finalize_packet(interface, packet));
+
+        default:
+            return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
     }
 
-    return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
 }
 
 std::expected<void> network::listen(socket_fd_t socket_fd, bool listen){
