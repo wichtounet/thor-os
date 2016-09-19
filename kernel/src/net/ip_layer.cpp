@@ -42,14 +42,16 @@ void compute_checksum(network::ip::header* header){
     header->header_checksum = ~uint16_t(value);
 }
 
+constexpr size_t default_ip_header_len = 20;
+
 void prepare_packet(network::ethernet::packet& packet, network::interface_descriptor& interface, size_t size, network::ip::address target_ip, size_t protocol){
     packet.tag(1, packet.index);
 
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.index);
 
-    ip_header->version_ihl    = (4 << 4) + 5;
+    ip_header->version_ihl    = (4 << 4) + default_ip_header_len / 4;
     ip_header->dscp_ecn       = 0;
-    ip_header->total_len      = switch_endian_16(uint16_t(size) + sizeof(network::ip::header));
+    ip_header->total_len      = switch_endian_16(uint16_t(size) + default_ip_header_len);
     ip_header->identification = 0;
     ip_header->flags_offset   = 0;
     ip_header->flags_offset   = switch_endian_16(uint16_t(1) << 14);
@@ -60,7 +62,7 @@ void prepare_packet(network::ethernet::packet& packet, network::interface_descri
 
     compute_checksum(ip_header);
 
-    packet.index += sizeof(network::ip::header);
+    packet.index += default_ip_header_len;
 }
 
 std::expected<uint64_t> get_target_mac(network::interface_descriptor& interface, network::ip::address target_ip){
@@ -122,9 +124,9 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
         return;
     }
 
-    auto ihl = ip_header->version_ihl & 0xF;
-    auto length = switch_endian_16(ip_header->total_len);
-    auto data_length = length - ihl * 4;
+    const auto header_length = ip_header->version_ihl & 0xF;
+    auto length              = switch_endian_16(ip_header->total_len);
+    auto data_length         = length - header_length * 4;
 
     logging::logf(logging::log_level::TRACE, "ip: Data Length: %u\n", size_t(data_length));
     logging::logf(logging::log_level::TRACE, "ip: Time To Live: %u\n", size_t(ip_header->ttl));
@@ -133,19 +135,19 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
     auto target = ip32_to_ip(ip_header->target_ip);
 
     logging::logf(logging::log_level::TRACE, "ip: Source Protocol Address %u.%u.%u.%u \n",
-        uint64_t(source(0)), uint64_t(source(1)), uint64_t(source(2)), uint64_t(source(3)));
+                  uint64_t(source(0)), uint64_t(source(1)), uint64_t(source(2)), uint64_t(source(3)));
     logging::logf(logging::log_level::TRACE, "ip: Target Protocol Address %u.%u.%u.%u \n",
-        uint64_t(target(0)), uint64_t(target(1)), uint64_t(target(2)), uint64_t(target(3)));
+                  uint64_t(target(0)), uint64_t(target(1)), uint64_t(target(2)), uint64_t(target(3)));
 
     auto protocol = ip_header->protocol;
 
-    packet.index += sizeof(header);
+    packet.index += header_length;
 
-    if(protocol == 0x01){
+    if (protocol == 0x01) {
         network::icmp::decode(interface, packet);
-    } else if(protocol == 0x06){
+    } else if (protocol == 0x06) {
         network::tcp::decode(interface, packet);
-    } else if(protocol == 0x11){
+    } else if (protocol == 0x11) {
         network::udp::decode(interface, packet);
     } else {
         logging::logf(logging::log_level::ERROR, "ip: Packet of unknown protocol detected (%h)\n", size_t(protocol));
@@ -160,7 +162,7 @@ std::expected<network::ethernet::packet> network::ip::kernel_prepare_packet(netw
     }
 
     // Ask the ethernet layer to craft a packet
-    network::ethernet::packet_descriptor desc{descriptor.size + sizeof(header), *target_mac, ethernet::ether_type::IPV4};
+    network::ethernet::packet_descriptor desc{descriptor.size + default_ip_header_len, *target_mac, ethernet::ether_type::IPV4};
     auto packet = network::ethernet::kernel_prepare_packet(interface, desc);
 
     if(packet){
@@ -178,7 +180,7 @@ std::expected<network::ethernet::packet> network::ip::user_prepare_packet(char* 
     }
 
     // Ask the ethernet layer to craft a packet
-    network::ethernet::packet_descriptor desc{descriptor->size + sizeof(header), *target_mac, ethernet::ether_type::IPV4};
+    network::ethernet::packet_descriptor desc{descriptor->size + default_ip_header_len, *target_mac, ethernet::ether_type::IPV4};
     auto packet = network::ethernet::user_prepare_packet(buffer, interface, &desc);
 
     if(packet){
