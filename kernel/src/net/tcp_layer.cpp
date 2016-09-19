@@ -414,10 +414,29 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 
     for(size_t t = 0; t < max_tries; ++t){
         // Give the packet to the IP layer for finalization
-        auto result = network::ip::finalize_packet(interface, p);
+        if(p.user){
+            auto result = network::ip::finalize_packet(interface, p);
 
-        if(!result){
-            return result;
+            if(!result){
+                delete[] p.payload;
+
+                return result;
+            }
+        } else {
+            auto copy = p;
+
+            copy.payload = new char[copy.payload_size];
+
+            std::copy_n(p.payload, copy.payload_size, copy.payload);
+
+            auto result = network::ip::finalize_packet(interface, copy);
+
+            if(!result){
+                delete[] copy.payload;
+                delete[] p.payload;
+
+                return result;
+            }
         }
 
         auto before = timer::milliseconds();
@@ -466,6 +485,11 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
         }
 
         after = timer::milliseconds();
+    }
+
+    // Release the memory of the original memory since it was copied
+    if(!p.user){
+        delete[] p.payload;
     }
 
     // Stop listening
