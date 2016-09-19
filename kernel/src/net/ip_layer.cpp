@@ -124,9 +124,9 @@ void network::ip::decode(network::interface_descriptor& interface, network::ethe
         return;
     }
 
-    const auto header_length = ip_header->version_ihl & 0xF;
+    const auto header_length = 4 * (ip_header->version_ihl & 0xF);
     auto length              = switch_endian_16(ip_header->total_len);
-    auto data_length         = length - header_length * 4;
+    auto data_length         = length - header_length;
 
     logging::logf(logging::log_level::TRACE, "ip: Data Length: %u\n", size_t(data_length));
     logging::logf(logging::log_level::TRACE, "ip: Time To Live: %u\n", size_t(ip_header->ttl));
