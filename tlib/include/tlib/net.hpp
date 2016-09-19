@@ -5,6 +5,17 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+/*!
+ * \file
+ * \brief Network support for the Thor OS
+ *
+ * There are two ways of using the interface:
+ *  * The free functions
+ *  * The socket structure
+ *
+ * The second interface is easier and handles more thing automatically.
+ */
+
 #ifndef TLIB_NET_H
 #define TLIB_NET_H
 
@@ -18,6 +29,11 @@ ASSERT_ONLY_THOR_PROGRAM
 
 namespace tlib {
 
+/*!
+ * \brief A network packet abstraction
+ *
+ * The resources are automatically freed
+ */
 struct packet {
     size_t fd;     ///< The packet file descriptor
     char* payload; ///< The payload pointer
@@ -29,29 +45,103 @@ struct packet {
     packet& operator=(const packet& p) = delete;
 
     packet(packet&& rhs);
-
     packet& operator=(packet&& rhs);
 
     ~packet();
 };
 
+/*!
+ * \brief Open a socket
+ * \param domain The socket domain
+ * \param type The socket type
+ * \param protocol The socket protocol
+ * \return The socket file descriptor or an error
+ */
 std::expected<size_t> socket_open(socket_domain domain, socket_type type, socket_protocol protocol);
+
+/*!
+ * \brief Close a socket.
+ * \param socket_fd The socket file descriptor
+ */
 void socket_close(size_t socket_fd);
 
+/*!
+ * \brief Prepare a packet
+ * \param socket_fd The socket file descriptor
+ * \param desc The packet descriptor
+ * \return The prepared packet or an error
+ */
 std::expected<packet> prepare_packet(size_t socket_fd, void* desc);
+
+/*!
+ * \brief Finalize a packet (send it)
+ * \param socket_fd The socket file descriptor
+ * \param p The packet to finalize
+ * \return nothing, or an error
+ */
 std::expected<void> finalize_packet(size_t socket_fd, const packet& p);
 
+/*!
+ * \brief Send a message through the socket
+ * \param socket_fd The socket file descriptor
+ * \param buffer The source buffer
+ * \param n The message's size
+ * \return nothing, or an error
+ */
 std::expected<void> send(size_t socket_fd, const char* buffer, size_t n);
 
+/*!
+ * \brief Listen for messages on the socket
+ * \param socket_fd The socket file descriptor
+ * \param l Indicating the listening status
+ * \return nothing, or an error
+ */
 std::expected<void> listen(size_t socket_fd, bool l);
 
+/*!
+ * \brief Bind a destination to the datagram socket
+ * \param socket_fd The socket file descriptor
+ * \param server The server address
+ * \return the local port, or an error
+ */
 std::expected<size_t> client_bind(size_t socket_fd, tlib::ip::address server);
+
+/*!
+ * \brief Unbind from destination from the datagram socket
+ * \param socket_fd The socket file descriptor
+ * \return nothing, or an error
+ */
 std::expected<void> client_unbind(size_t socket_fd);
 
+/*!
+ * \brief Connect to  a destination to the stream socket
+ * \param socket_fd The socket file descriptor
+ * \param server The server address
+ * \param port The server port
+ * \return the local port, or an error
+ */
 std::expected<size_t> connect(size_t socket_fd, tlib::ip::address server, size_t port);
+
+/*!
+ * \brief Disconnect from destination from the datagram socket
+ * \param socket_fd The socket file descriptor
+ * \return nothing, or an error
+ */
 std::expected<void> disconnect(size_t socket_fd);
 
+/*!
+ * \brief Wait for a packet, indifinitely
+ * \param socket_fd The socket file descriptor
+ * \return the received packet, or an error
+ */
 std::expected<packet> wait_for_packet(size_t socket_fd);
+
+/*!
+ * \brief Wait for a packet, for the given time in milliseconds
+ * \param socket_fd The socket file descriptor
+ * \param ms The maximum time to wait
+ * \return the received packet, or an error
+ */
 std::expected<packet> wait_for_packet(size_t socket_fd, size_t ms);
 
 /*!
@@ -113,19 +203,62 @@ struct socket {
      * \param server The IP address
      */
     void client_bind(tlib::ip::address server);
+
+    /*!
+     * \brief Unbind the client socket
+     */
     void client_unbind();
 
+    /*!
+     * \brief Connect to the server (stream socket)
+     * \param server The IP of the server
+     * \param port The port of the server
+     */
     void connect(tlib::ip::address server, size_t port);
+
+    /*!
+     * \brief Disconnnect from the server (stream socket)
+     */
     void disconnect();
 
+    /*!
+     * \brief Listen to the socket (start receiving packets)
+     */
     void listen(bool l);
 
+    /*!
+     * \brief Prepare a packet to send
+     * \param desc The descriptor of the packet
+     * \return The prepared packet
+     */
     packet prepare_packet(void* desc);
+
+    /*!
+     * \brief Finalize the packet (send it)
+     * \param p The packet to send
+     */
     void finalize_packet(const packet& p);
 
+    /*!
+     * \brief Send a message
+     * \param buffer The source buffer (the contents)
+     * \param n The size of the message
+     */
     void send(const char* buffer, size_t n);
 
+    /*!
+     * \brief Wait for a packet, indefinitely.
+     * \return the received packet
+     */
     packet wait_for_packet();
+
+    /*!
+     * \brief Wait for a packet, for ms milliseconds.
+     *
+     * If a packet is not received during the given time, the error is set in socket and the received packet is a fake one.
+     *
+     * \return the received packet
+     */
     packet wait_for_packet(size_t ms);
 
 private:
@@ -138,10 +271,18 @@ private:
     bool _bound;              ///< Bind flag
 };
 
+/*!
+ * \brief Switch endianness of a 16 bit value
+ * \return the input value with switched endianness
+ */
 inline uint16_t switch_endian_16(uint16_t nb) {
     return (nb >> 8) | (nb << 8);
 }
 
+/*!
+ * \brief Switch endianness of a 32 bit value
+ * \return the input value with switched endianness
+ */
 inline uint32_t switch_endian_32(uint32_t nb) {
     return ((nb >> 24) & 0xff) |
            ((nb << 8) & 0xff0000) |
