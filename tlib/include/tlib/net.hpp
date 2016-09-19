@@ -91,6 +91,22 @@ std::expected<void> finalize_packet(size_t socket_fd, const packet& p);
 std::expected<void> send(size_t socket_fd, const char* buffer, size_t n);
 
 /*!
+ * \brief Receive a message from the socket
+ * \param socket_fd The socket file descriptor
+ * \param buffer The source buffer
+ * \return the size of the message, or an error
+ */
+std::expected<size_t> receive(size_t socket_fd, char* buffers, size_t n);
+
+/*!
+ * \brief Receive a message from the socket
+ * \param socket_fd The socket file descriptor
+ * \param buffer The source buffer
+ * \return the size of the message, or an error
+ */
+std::expected<size_t> receive(size_t socket_fd, char* buffers, size_t n, size_t ms);
+
+/*!
  * \brief Listen for messages on the socket
  * \param socket_fd The socket file descriptor
  * \param l Indicating the listening status
@@ -245,6 +261,20 @@ struct socket {
      * \param n The size of the message
      */
     void send(const char* buffer, size_t n);
+
+    /*!
+     * \brief Wait for a message, indifinitely.
+     * \param buffer The target buffer (the contents)
+     * \return The size of the message
+     */
+    size_t receive(char* buffers, size_t n);
+
+    /*!
+     * \brief Wait for a message, indifinitely.
+     * \param buffer The target buffer (the contents)
+     * \return The size of the message
+     */
+    size_t receive(char* buffers, size_t n, size_t ms);
 
     /*!
      * \brief Wait for a packet, indefinitely.

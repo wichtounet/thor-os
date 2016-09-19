@@ -112,6 +112,20 @@ std::expected<void> tlib::send(size_t socket_fd, const char* buffer, size_t n) {
     }
 }
 
+std::expected<size_t> tlib::receive(size_t socket_fd, char* buffer, size_t n, size_t ms) {
+    int64_t code;
+    asm volatile("mov rax, 0x300C; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[ms]; int 50; mov %[code], rax;"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [ms] "g" (ms)
+                 : "rax", "rbx", "rcx", "rdx", "rsi");
+
+    if (code < 0) {
+        return std::make_unexpected<size_t, size_t>(-code);
+    } else {
+        return code;
+    }
+}
+
 std::expected<void> tlib::listen(size_t socket_fd, bool l) {
     int64_t code;
     asm volatile("mov rax, 0x3004; mov rbx, %[socket]; mov rcx, %[listen]; int 50; mov %[code], rax"
@@ -411,6 +425,32 @@ void tlib::socket::send(const char* buffer, size_t n) {
     auto p = tlib::send(fd, buffer, n);
     if (!p) {
         error_code = p.error();
+    }
+}
+
+size_t tlib::socket::receive(char* buffer, size_t n, size_t ms) {
+    if (!good() || !open()) {
+        return 0;
+    }
+
+    if (type == socket_type::DGRAM) {
+        if (!bound()) {
+            return 0;
+        }
+    } else if (type == socket_type::STREAM) {
+        if (!connected()) {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+
+    auto p = tlib::receive(fd, buffer, n, ms);
+    if (!p) {
+        error_code = p.error();
+        return 0;
+    } else {
+        return *p;
     }
 }
 

@@ -131,6 +131,20 @@ std::expected<void> finalize_packet(socket_fd_t socket_fd, size_t packet_fd);
 std::expected<void> send(socket_fd_t socket_fd, const char* buffer, size_t n, char* target_buffer);
 
 /*!
+ * \brief Receive some data (not a packet, only a payload)
+ * \param socket_fd The file descriptor of the packet
+ * \return the size of the message on success and a negative error code otherwise
+ */
+std::expected<size_t> receive(socket_fd_t socket_fd, char* buffer, size_t n);
+
+/*!
+ * \brief Receive some data (not a packet, only a payload)
+ * \param socket_fd The file descriptor of the packet
+ * \return the size of the message on success and a negative error code otherwise
+ */
+std::expected<size_t> receive(socket_fd_t socket_fd, char* buffer, size_t n, size_t ms);
+
+/*!
  * \brief Listen to a socket or not
  * \param socket_fd The file descriptor of the packet
  * \param listen Indicates if listen or not

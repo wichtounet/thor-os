@@ -61,6 +61,8 @@ int main(int argc, char* argv[]) {
 
     // Listen for packets from the server
 
+    char message_buffer[2049];
+
     auto before = tlib::ms_time();
     auto after  = before;
 
@@ -72,30 +74,18 @@ int main(int argc, char* argv[]) {
 
         auto remaining = timeout_ms - (after - before);
 
-        auto packet = sock.wait_for_packet(remaining);
+        auto size = sock.receive(message_buffer, 2048, remaining);
         if (!sock) {
             if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
                 sock.clear();
                 break;
             }
 
-            tlib::printf("nc: wait_for_packet error: %s\n", std::error_message(sock.error()));
+            tlib::printf("nc: receive error: %s\n", std::error_message(sock.error()));
             return 1;
         } else {
-            auto* ip_header  = reinterpret_cast<tlib::ip::header*>(packet.payload + sizeof(tlib::ethernet::header));
-            auto* tcp_header = reinterpret_cast<tlib::tcp::header*>(packet.payload + sizeof(tlib::ethernet::header) + sizeof(tlib::ip::header));
-            auto* payload    = packet.payload + packet.index;
-
-            auto tcp_flags = tlib::switch_endian_16(tcp_header->flags);
-
-            auto ip_len          = (ip_header->version_ihl & 0xF) * 4;
-            auto tcp_len         = tlib::switch_endian_16(ip_header->total_len) - ip_len;
-            auto tcp_data_offset = *flag_data_offset(&tcp_flags) * 4;
-            auto payload_len     = tcp_len - tcp_data_offset;
-
-            for (size_t i = 0; i < size_t(payload_len); ++i) {
-                tlib::print(payload[i]);
-            }
+            message_buffer[size] = '\0';
+            tlib::print(message_buffer);
         }
 
         after = tlib::ms_time();

@@ -418,6 +418,15 @@ void sc_send(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(network::send(socket_fd, buffer, n, target_buffer));
 }
 
+void sc_receive(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto buffer    = reinterpret_cast<char*>(regs->rcx);
+    auto n         = regs->rdx;
+    auto ms         = regs->rsi;
+
+    regs->rax = expected_to_i64(network::receive(socket_fd, buffer, n, ms));
+}
+
 void sc_listen(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
     auto listen = bool(regs->rcx);
@@ -739,6 +748,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x300B:
             sc_send(regs);
+            break;
+
+        case 0x300C:
+            sc_receive(regs);
             break;
 
         // Special system calls

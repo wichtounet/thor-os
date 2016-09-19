@@ -288,6 +288,70 @@ std::expected<void> network::tcp::send(char* target_buffer, network::socket& soc
     return std::make_unexpected<void>(packet.error());
 }
 
+std::expected<size_t> network::tcp::receive(char* buffer, network::socket& socket, size_t n){
+    auto& connection = socket.get_connection_data<tcp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    if(socket.listen_packets.empty()){
+        socket.listen_queue.wait();
+    }
+
+    auto packet = socket.listen_packets.pop();
+
+    auto payload_len = tcp_payload_len(packet);
+
+    if(payload_len > n){
+        delete[] packet.payload;
+
+        return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
+    }
+
+    std::copy_n(packet.payload + packet.index, payload_len, buffer);
+
+    delete[] packet.payload;
+
+    return payload_len;
+}
+
+std::expected<size_t> network::tcp::receive(char* buffer, network::socket& socket, size_t n, size_t ms){
+    auto& connection = socket.get_connection_data<tcp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    if(socket.listen_packets.empty()){
+        if(!ms){
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
+        }
+
+        if(!socket.listen_queue.wait_for(ms)){
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
+        }
+    }
+
+    auto packet = socket.listen_packets.pop();
+
+    auto payload_len = tcp_payload_len(packet);
+
+    if(payload_len > n){
+        delete[] packet.payload;
+
+        return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
+    }
+
+    std::copy_n(packet.payload + packet.index, payload_len, buffer);
+
+    delete[] packet.payload;
+
+    return payload_len;
+}
+
 std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
     auto& connection = socket.get_connection_data<tcp_connection>();
 
