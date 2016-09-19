@@ -26,6 +26,9 @@ namespace network {
 
 using socket_fd_t = size_t;
 
+/*!
+ * \brief Abstraction of a network interface
+ */
 struct interface_descriptor {
     size_t id;                       ///< The interface ID
     bool enabled;                    ///< true if the interface is enabled
@@ -37,15 +40,15 @@ struct interface_descriptor {
     network::ip::address ip_address; ///< The interface IP address
     network::ip::address gateway;    ///< The interface IP gateway
 
-    mutable mutex tx_lock; //To synchronize the queue
-    mutable semaphore tx_sem;
-    mutable semaphore rx_sem;
+    mutable mutex tx_lock; ///< Mutex protecting the queues
+    mutable semaphore tx_sem; ///< Semaphore for transmission
+    mutable semaphore rx_sem; ///< Semaphore for reception
 
-    size_t rx_thread_pid;
-    size_t tx_thread_pid;
+    size_t rx_thread_pid; ///< The pid of the rx thread
+    size_t tx_thread_pid; ///< The pid of the tx thread
 
-    circular_buffer<ethernet::packet, 32> rx_queue;
-    circular_buffer<ethernet::packet, 32> tx_queue;
+    circular_buffer<ethernet::packet, 32> rx_queue; ///< The reception queue
+    circular_buffer<ethernet::packet, 32> tx_queue; ///< The transmission queue
 
     void (*hw_send)(interface_descriptor&, ethernet::packet& p);
 
@@ -60,13 +63,33 @@ struct interface_descriptor {
     }
 };
 
-void init();        // Called early on
-void finalize();    // Called after scheduler is initialized
+/*!
+ * \brief Early initialization of the network
+ */
+void init();
 
+/*
+ * \brief Finalization of the network initialization.
+ *
+ * Must be called after initialization of the scheduler.
+ */
+void finalize();
+
+/*!
+ * \brief Returns the number of interfaces
+ */
 size_t number_of_interfaces();
 
+/*!
+ * \brief Returns the interface with the given id
+ * \param index The id of the interface
+ */
 interface_descriptor& interface(size_t index);
 
+/*!
+ * \brief Select an interface for the given IP address
+ * \þaram address The destination address
+ */
 interface_descriptor& select_interface(network::ip::address address);
 
 /*!
@@ -160,6 +183,14 @@ std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd);
  */
 std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms);
 
+/*!
+ * \brief Propagate a packet through the raw sockets.
+ *
+ * This must only be called from non-dgram, non-stream network layers.
+ *
+ * \param packet The packet to propagate
+ * \param protocol The destination protocol
+ */
 void propagate_packet(const ethernet::packet& packet, socket_protocol protocol);
 
 } // end of network namespace
