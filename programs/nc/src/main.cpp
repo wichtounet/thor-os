@@ -46,8 +46,6 @@ int netcat_tcp_client(const tlib::ip::address& server, size_t port){
     {
         auto message = "THOR";
 
-        tlib::printf("nc: socket error: %u %u %u\n", size_t(sock.open()), size_t(sock.good()), size_t(sock.bound()));
-
         sock.send(message, 4);
 
         if (!sock) {
