@@ -216,7 +216,7 @@ void printf(const std::string& format, ...){
 // Raw versions
 
 //TODO Check for n
-void vsprintf_raw(char* out_buffer, size_t n, const char* format, va_list va){
+void vsprintf_raw(char* out_buffer, size_t /*n*/, const char* format, va_list va){
     char ch;
     int fi = 0;
 

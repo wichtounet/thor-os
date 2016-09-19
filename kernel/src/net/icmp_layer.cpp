@@ -18,8 +18,6 @@
 
 namespace {
 
-uint16_t echo_sequence = 0;
-
 void compute_checksum(network::icmp::header* icmp_header, size_t payload_size){
     icmp_header->checksum = 0;
 
