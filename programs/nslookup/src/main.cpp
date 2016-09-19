@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
 
     std::string domain(argv[1]);
 
-    auto resolved = tlib::dns::resolve(domain);
+    auto resolved = tlib::dns::resolve_str(domain);
 
     if(resolved){
         tlib::printf("resolve(%s): %s\n", domain.c_str(), resolved->c_str());

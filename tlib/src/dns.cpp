@@ -86,21 +86,21 @@ std::expected<void> tlib::dns::send_request(tlib::socket& sock, const std::strin
     return {};
 }
 
-std::expected<std::string> tlib::dns::resolve(const std::string& domain, size_t timeout_ms, size_t retries){
+std::expected<tlib::ip::address> tlib::dns::resolve(const std::string& domain, size_t timeout_ms, size_t retries){
     tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::DGRAM, tlib::socket_protocol::DNS);
 
     sock.client_bind(gateway_address());
     sock.listen(true);
 
     if (!sock) {
-        return std::make_unexpected<std::string>(sock.error());;
+        return std::make_unexpected<tlib::ip::address>(sock.error());;
     }
 
     size_t tries = 0;
 
     auto sr = send_request(sock, domain, 0x1, 0x1);
     if(!sr){
-        return std::make_unexpected<std::string>(sr.error());;
+        return std::make_unexpected<tlib::ip::address>(sr.error());;
     }
 
     auto before = tlib::ms_time();
@@ -116,7 +116,7 @@ std::expected<std::string> tlib::dns::resolve(const std::string& domain, size_t 
 
         auto p = sock.wait_for_packet(remaining);
         if (!sock) {
-            return std::make_unexpected<std::string>(sock.error());;
+            return std::make_unexpected<tlib::ip::address>(sock.error());;
         } else {
             auto* dns_header = reinterpret_cast<tlib::dns::header*>(p.payload + p.index);
 
@@ -160,7 +160,7 @@ std::expected<std::string> tlib::dns::resolve(const std::string& domain, size_t 
                                 size_t ignored;
                                 tlib::dns::decode_domain(p.payload + p.index + offset, ignored);
                             } else {
-                                return std::make_unexpected<std::string>(std::ERROR_UNSUPPORTED);
+                                return std::make_unexpected<tlib::ip::address>(std::ERROR_UNSUPPORTED);
                             }
 
                             auto rr_type = tlib::switch_endian_16(*reinterpret_cast<uint16_t*>(payload));
@@ -178,8 +178,8 @@ std::expected<std::string> tlib::dns::resolve(const std::string& domain, size_t 
                                 if (rr_type == 0x1) { // A record
                                     auto ip = reinterpret_cast<uint8_t*>(payload);
 
-                                    auto result = sprintf("%u.%u.%u.%u", ip[3], ip[2], ip[1], ip[0]);
-                                    return std::make_expected<std::string>(result);
+                                    auto result = tlib::ip::make_address(ip[3], ip[2], ip[1], ip[0]);
+                                    return std::make_expected<tlib::ip::address>(result);
                                 }
                             }
 
@@ -190,7 +190,7 @@ std::expected<std::string> tlib::dns::resolve(const std::string& domain, size_t 
                     } else {
                         // There was an error, retry
                         if(++tries == retries || !send_request(sock, domain)){
-                            return std::make_unexpected<std::string>(std::ERROR_SOCKET_TIMEOUT);
+                            return std::make_unexpected<tlib::ip::address>(std::ERROR_SOCKET_TIMEOUT);
                         }
                     }
                 }
@@ -200,5 +200,17 @@ std::expected<std::string> tlib::dns::resolve(const std::string& domain, size_t 
         after = tlib::ms_time();
     }
 
-    return std::make_unexpected<std::string>(std::ERROR_SOCKET_TIMEOUT);
+    return std::make_unexpected<tlib::ip::address>(std::ERROR_SOCKET_TIMEOUT);
+}
+
+std::expected<std::string> tlib::dns::resolve_str(const std::string& domain, size_t timeout_ms, size_t retries){
+    auto result = resolve(domain, timeout_ms, retries);
+
+    if(result){
+        auto& ip = *result;
+        auto result = sprintf("%u.%u.%u.%u", ip(3), ip(2), ip(1), ip(0));
+        return std::make_expected<std::string>(result);
+    }
+
+    return std::make_unexpected<std::string>(result.error());
 }

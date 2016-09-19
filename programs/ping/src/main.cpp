@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     if (is_ip(query)) {
         ip = query;
     } else {
-        auto resolved = tlib::dns::resolve(query);
+        auto resolved = tlib::dns::resolve_str(query);
 
         if(resolved){
             ip = *resolved;
