@@ -456,6 +456,8 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
                 }
 
                 delete[] received_packet.payload;
+            } else {
+                break;
             }
         }
 
