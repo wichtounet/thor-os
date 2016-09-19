@@ -184,3 +184,93 @@ std::expected<void> network::udp::client_unbind(network::socket& sock){
 
     return {};
 }
+
+std::expected<void> network::udp::send(char* target_buffer, network::socket& socket, const char* buffer, size_t n){
+    auto& connection = socket.get_connection_data<udp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    network::udp::packet_descriptor desc{n};
+    auto packet = user_prepare_packet(target_buffer, socket, &desc);
+
+    if (packet) {
+        for(size_t i = 0; i < n; ++i){
+            packet->payload[packet->index + i] = buffer[i];
+        }
+
+        auto target_ip  = connection.server_address;
+        auto& interface = network::select_interface(target_ip);
+        return network::udp::finalize_packet(interface, *packet);
+    }
+
+    return std::make_unexpected<void>(packet.error());
+}
+
+std::expected<size_t> network::udp::receive(char* buffer, network::socket& socket, size_t n){
+    auto& connection = socket.get_connection_data<udp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    if(socket.listen_packets.empty()){
+        socket.listen_queue.wait();
+    }
+
+    auto packet = socket.listen_packets.pop();
+
+    auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.tag(2));
+    auto payload_len = switch_endian_16(udp_header->length);
+
+    if(payload_len > n){
+        delete[] packet.payload;
+
+        return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
+    }
+
+    std::copy_n(packet.payload + packet.index, payload_len, buffer);
+
+    delete[] packet.payload;
+
+    return payload_len;
+}
+
+std::expected<size_t> network::udp::receive(char* buffer, network::socket& socket, size_t n, size_t ms){
+    auto& connection = socket.get_connection_data<udp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    if(socket.listen_packets.empty()){
+        if(!ms){
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
+        }
+
+        if(!socket.listen_queue.wait_for(ms)){
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
+        }
+    }
+
+    auto packet = socket.listen_packets.pop();
+
+    auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.tag(2));
+    auto payload_len = switch_endian_16(udp_header->length);
+
+    if(payload_len > n){
+        delete[] packet.payload;
+
+        return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
+    }
+
+    std::copy_n(packet.payload + packet.index, payload_len, buffer);
+
+    delete[] packet.payload;
+
+    return payload_len;
+}

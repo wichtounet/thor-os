@@ -274,12 +274,12 @@ std::expected<network::socket_fd_t> network::open(network::socket_domain domain,
     }
 
     // Make sure the socket protocol is valid
-    if(protocol != socket_protocol::ICMP && protocol != socket_protocol::DNS && protocol != socket_protocol::TCP){
+    if(protocol != socket_protocol::ICMP && protocol != socket_protocol::DNS && protocol != socket_protocol::TCP && protocol != socket_protocol::UDP){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_PROTOCOL);
     }
 
     // Make sure the socket protocol is valid for the given socket type
-    if(type == socket_type::DGRAM && !(protocol == socket_protocol::DNS)){
+    if(type == socket_type::DGRAM && !(protocol == socket_protocol::DNS || protocol == socket_protocol::UDP)){
         return std::make_expected_from_error<network::socket_fd_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
 
@@ -367,6 +367,9 @@ std::expected<void> network::send(socket_fd_t socket_fd, const char* buffer, siz
         case network::socket_protocol::TCP:
             return network::tcp::send(target_buffer, socket, buffer, n);
 
+        case network::socket_protocol::UDP:
+            return network::udp::send(target_buffer, socket, buffer, n);
+
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
     }
@@ -388,6 +391,9 @@ std::expected<size_t> network::receive(socket_fd_t socket_fd, char* buffer, size
     }
 
     switch (socket.protocol) {
+        case network::socket_protocol::UDP:
+            return network::udp::receive(buffer, socket, n);
+
         case network::socket_protocol::TCP:
             return network::tcp::receive(buffer, socket, n);
 
@@ -412,6 +418,9 @@ std::expected<size_t> network::receive(socket_fd_t socket_fd, char* buffer, size
     }
 
     switch (socket.protocol) {
+        case network::socket_protocol::UDP:
+            return network::udp::receive(buffer, socket, n, ms);
+
         case network::socket_protocol::TCP:
             return network::tcp::receive(buffer, socket, n, ms);
 

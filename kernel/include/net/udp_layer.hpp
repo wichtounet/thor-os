@@ -61,6 +61,11 @@ std::expected<void> finalize_packet(network::interface_descriptor& interface, ne
 std::expected<size_t> client_bind(network::socket& socket, size_t server_port, network::ip::address server);
 std::expected<void> client_unbind(network::socket& socket);
 
+std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n);
+std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n, size_t ms);
+
+std::expected<void> send(char* target_buffer, network::socket& socket, const char* buffer, size_t n);
+
 } // end of upd namespace
 
 } // end of network namespace

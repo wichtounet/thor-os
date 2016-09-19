@@ -322,9 +322,10 @@ void tlib::socket::client_bind(tlib::ip::address server) {
     }
 
     auto status = tlib::client_bind(fd, server);
-    if (!status) {
-        _bound = false;
+    if (status) {
+        _bound = true;
     } else {
+        _bound = false;
         error_code = status.error();
     }
 }
@@ -335,10 +336,11 @@ void tlib::socket::client_bind(tlib::ip::address server, size_t port) {
     }
 
     auto status = tlib::client_bind(fd, server, port);
-    if (!status) {
-        _bound = false;
+    if (status) {
+        _bound = true;
     } else {
         error_code = status.error();
+        _bound = false;
     }
 }
 
@@ -370,6 +372,7 @@ void tlib::socket::connect(tlib::ip::address server, size_t port) {
         _connected = true;
     } else {
         error_code = status.error();
+        _connected = false;
     }
 }
 
