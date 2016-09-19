@@ -129,10 +129,8 @@ void packet_handler(interrupt::syscall_regs*, void* data){
 
                 network::ethernet::packet packet(packet_buffer, packet_only_length);
 
-                direct_int_lock lock;
-
                 interface.rx_queue.push(packet);
-                interface.rx_sem.unlock();
+                interface.rx_sem.irq_unlock();
             }
 
             cur_rx = (cur_rx + packet_length + 4 + 3) & ~3; //align on 4 bytes
@@ -174,7 +172,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
             ++dirty_tx;
         }
 
-        desc.tx_sem.release(cleaned_up);
+        desc.tx_sem.irq_release(cleaned_up);
     }
 
     if(!(status & (RX_OK | TX_OK | TX_ERR))){

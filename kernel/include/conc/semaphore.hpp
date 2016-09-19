@@ -92,6 +92,28 @@ struct semaphore {
     }
 
     /*!
+     * \brief Release the lock, from an IRQ handler.
+     *
+     * This will effectively increase the current counter by 1 once the critical
+     * section is left.
+     */
+    void irq_unlock() {
+        //TODO Deadlock!  If the lock is already held
+        std::lock_guard<spinlock> l(value_lock);
+
+        if (queue.empty()) {
+            ++value;
+        } else {
+            // Wake up the process
+            auto pid = queue.pop();
+            scheduler::unblock_process_hint(pid);
+
+            //No need to increment value, the process won't
+            //decrement it
+        }
+    }
+
+    /*!
      * \brief Release the lock several times.
      *
      * This will effectively increase the current counter by n once the critical
@@ -106,6 +128,31 @@ struct semaphore {
             while (n && !queue.empty()) {
                 auto pid = queue.pop();
                 scheduler::unblock_process(pid);
+                --n;
+            }
+
+            if (n) {
+                value += n;
+            }
+        }
+    }
+
+    /*!
+     * \brief Release the lock several times, from an IRQ
+     *
+     * This will effectively increase the current counter by n once the critical
+     * section is left.
+     */
+    void irq_release(size_t n) {
+        //TODO Deadlock!  If the lock is already held
+        std::lock_guard<spinlock> l(value_lock);
+
+        if (queue.empty()) {
+            value += n;
+        } else {
+            while (n && !queue.empty()) {
+                auto pid = queue.pop();
+                scheduler::unblock_process_hint(pid);
                 --n;
             }
 
