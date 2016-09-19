@@ -10,7 +10,7 @@
 #include <tlib/system.hpp>
 #include <tlib/print.hpp>
 
-int main(int argc, char* argv[]){
+int main(){
     std::default_random_engine engine(tlib::ms_time());
     std::uniform_int_distribution<> dist(0, 100);
 
