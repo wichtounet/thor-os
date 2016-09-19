@@ -443,6 +443,15 @@ void sc_client_bind(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(status);
 }
 
+void sc_client_bind_port(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto server_ip = regs->rcx;
+    auto port      = regs->rdx;
+
+    auto status = network::client_bind(socket_fd, server_ip, port);
+    regs->rax = expected_to_i64(status);
+}
+
 void sc_client_unbind(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
 
@@ -752,6 +761,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x300C:
             sc_receive(regs);
+            break;
+
+        case 0x300D:
+            sc_client_bind_port(regs);
             break;
 
         // Special system calls
