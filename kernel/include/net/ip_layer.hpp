@@ -26,11 +26,39 @@ bool same_network(address ip, address test);
 
 static_assert(sizeof(header) == 20, "The size of an IPv4 header must be 20 bytes");
 
+/*!
+ * \brief Decode a network packet.
+ *
+ * This must only be called from the ethernet layer.
+ *
+ * \param interface The interface on which the packet was received
+ * \param packet The packet to decode
+ */
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
+/*!
+ * \brief Prepare a packet for the kernel
+ * \param interface The interface on which to prepare the packet for
+ * \param descriptor The packet descriptor
+ * \return the prepared packet or an error
+ */
 std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& desc);
+
+/*!
+ * \brief Prepare a packet for the user
+ * \param buffer The buffer to write the packet to
+ * \param interface The interface on which to prepare the packet for
+ * \param descriptor The packet descriptor
+ * \return the prepared packet or an error
+ */
 std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* desc);
 
+/*!
+ * \brief Finalize a prepared packet
+ * \param interface The interface on which to finalize the packet
+ * \param p The packet to finalize
+ * \return nothing or an error
+ */
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
 } // end of ip namespace
