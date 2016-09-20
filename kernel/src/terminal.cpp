@@ -120,6 +120,7 @@ void stdio::virtual_terminal::send_input(char key){
     keyboard_buffer.push(key);
     thor_assert(!keyboard_buffer.full(), "keyboard buffer is full!");
 
+    // Need hint here because it is coming from an IRQ
     scheduler::unblock_process_hint(input_thread_pid);
 }
 
@@ -132,6 +133,7 @@ void stdio::virtual_terminal::send_mouse_input(std::keycode key){
     mouse_buffer.push(size_t(key));
     thor_assert(!mouse_buffer.full(), "mouse buffer is full!");
 
+    // Need hint here because it is coming from an IRQ
     scheduler::unblock_process_hint(input_thread_pid);
 }
 
