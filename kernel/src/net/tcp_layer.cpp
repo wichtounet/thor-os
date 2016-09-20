@@ -106,7 +106,7 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
 
     tcp_header->source_port = switch_endian_16(source);
     tcp_header->target_port = switch_endian_16(target);
-    tcp_header->window_size = 1024;
+    tcp_header->window_size = switch_endian_16(1024);
 
     packet.index += default_tcp_header_length;
 }
