@@ -11,6 +11,36 @@
 #include "tlib/errors.hpp"
 #include "tlib/print.hpp"
 
+namespace {
+
+bool is_digit(char c){
+    return c >= '0' && c <= '9';
+}
+
+} // end of anonymous namespace
+
+bool tlib::dns::is_ip(const std::string& value){
+    auto ip_parts = std::split(value, '.');
+
+    if(ip_parts.size() != 4){
+        return false;
+    }
+
+    for(auto& part : ip_parts){
+        if(part.empty() || part.size() > 3){
+            return false;
+        }
+
+        for(size_t i = 0; i < part.size(); ++i){
+            if(!is_digit(part[i])){
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 std::string tlib::dns::decode_domain(char* payload, size_t& offset) {
     std::string domain;
 

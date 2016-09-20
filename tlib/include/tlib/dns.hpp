@@ -27,6 +27,8 @@ std::expected<std::string> resolve_str(const std::string& domain, size_t timeout
 
 tlib::ip::address gateway_address();
 
+bool is_ip(const std::string& value);
+
 }  // end of namespace dns
 
 } // end of namespace tlib
