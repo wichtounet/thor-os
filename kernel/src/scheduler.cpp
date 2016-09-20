@@ -320,7 +320,7 @@ size_t select_next_process(){
     //1. Run a process of higher priority, if any
     for(size_t p = scheduler::MAX_PRIORITY; p > current_priority; --p){
         for(auto pid : run_queue(p)){
-            if(pcb[pid].state == scheduler::process_state::READY){
+            if(pcb[pid].state == scheduler::process_state::READY || pcb[pid].state == scheduler::process_state::RUNNING){
                 return pid;
             }
         }
@@ -343,7 +343,7 @@ size_t select_next_process(){
             auto index = (next_index + i) % current_run_queue.size();
             auto pid = current_run_queue[index];
 
-            if(pcb[pid].state == scheduler::process_state::READY){
+            if(pcb[pid].state == scheduler::process_state::READY || pcb[pid].state == scheduler::process_state::RUNNING){
                 return pid;
             }
         }
@@ -355,7 +355,7 @@ size_t select_next_process(){
 
     for(size_t p = current_priority - 1; p >= scheduler::MIN_PRIORITY; --p){
         for(auto pid : run_queue(p)){
-            if(pcb[pid].state == scheduler::process_state::READY){
+            if(pcb[pid].state == scheduler::process_state::READY || pcb[pid].state == scheduler::process_state::RUNNING){
                 return pid;
             }
         }
