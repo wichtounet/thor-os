@@ -878,7 +878,11 @@ void scheduler::unblock_process_hint(pid_t pid){
     thor_assert(pid != idle_pid, "No reason to unblock the idle task");
     thor_assert(is_started(), "The scheduler is not started");
 
-    pcb[pid].state = process_state::READY;
+    auto state = pcb[pid].state;
+
+    if(state != process_state::RUNNING){
+        pcb[pid].state = process_state::READY;
+    }
 }
 
 void scheduler::sleep_ms(size_t time){
