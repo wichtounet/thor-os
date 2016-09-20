@@ -36,10 +36,7 @@ scheduler::pid_t condition_variable::notify_one() {
         if (pid != scheduler::INVALID_PID) {
             logging::logf(logging::log_level::TRACE, "condition_variable: wake %d\n", pid);
 
-            // Indicate to the scheduler that this process will be able to run
-            // We use a hint here because it is possible that the thread was
-            // already woken up from sleep
-            scheduler::unblock_process_hint(pid);
+            scheduler::unblock_process(pid);
 
             return pid;
         }
@@ -61,10 +58,7 @@ void condition_variable::notify_all() {
         if (pid != scheduler::INVALID_PID) {
             logging::logf(logging::log_level::TRACE, "condition_variable: wake(all) %d\n", pid);
 
-            // Indicate to the scheduler that this process will be able to run
-            // We use a hint here because it is possible that the thread was
-            // already woken up from sleep
-            scheduler::unblock_process_hint(pid);
+            scheduler::unblock_process(pid);
         }
     }
 }
