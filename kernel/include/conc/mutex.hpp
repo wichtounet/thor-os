@@ -75,7 +75,7 @@ struct mutex {
     }
 
     /*!
-     * \brief Acquire the lock
+     * \brief Release the lock
      */
     void unlock() {
         std::lock_guard<spinlock> l(value_lock);
@@ -85,6 +85,23 @@ struct mutex {
         } else {
             auto pid = queue.pop();
             scheduler::unblock_process(pid);
+
+            //No need to increment value, the process won't
+            //decrement it
+        }
+    }
+
+    /*!
+     * \brief Release the lock, from an IRQ
+     */
+    void irq_unlock() {
+        std::lock_guard<spinlock> l(value_lock);
+
+        if (queue.empty()) {
+            value = 1;
+        } else {
+            auto pid = queue.pop();
+            scheduler::unblock_process_hint(pid);
 
             //No need to increment value, the process won't
             //decrement it

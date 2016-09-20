@@ -40,7 +40,7 @@ volatile bool secondary_invoked = false;
 
 void primary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
-        primary_lock.unlock();
+        primary_lock.irq_unlock();
     } else {
         primary_invoked = true;
     }
@@ -48,7 +48,7 @@ void primary_controller_handler(interrupt::syscall_regs*, void*){
 
 void secondary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
-        secondary_lock.unlock();
+        secondary_lock.irq_unlock();
     } else {
         secondary_invoked = true;
     }
