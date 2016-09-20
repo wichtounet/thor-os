@@ -172,6 +172,8 @@ void next_line(){
 void k_print(char key){
     if(key == '\n'){
         next_line();
+    } else if(key == '\r'){
+        // Ignore \r for now
     } else if(key == '\b'){
         --current_column;
         k_print(' ');
