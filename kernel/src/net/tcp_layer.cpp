@@ -396,9 +396,9 @@ std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char*
 std::expected<void> network::tcp::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p) {
     auto* tcp_header = reinterpret_cast<network::tcp::header*>(p.payload + p.tag(2));
 
-    auto flags = switch_endian_16(tcp_header->flags);
+    auto source_flags = switch_endian_16(tcp_header->flags);
 
-    p.index -= *flag_data_offset(&flags) * 4;
+    p.index -= *flag_data_offset(&source_flags) * 4;
 
     // Compute the checksum
     compute_checksum(p);
@@ -456,10 +456,17 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
                 auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
                 auto flags       = switch_endian_16(tcp_header->flags);
 
+                bool correct_ack = false;
+                if(*flag_syn(&source_flags)){
+                    correct_ack = *flag_syn(&flags) && *flag_ack(&flags);
+                } else {
+                    correct_ack = *flag_ack(&flags);
+                }
+
                 //TODO Ideally, we should make sure that the ACK is related to
                 //the sent packet
 
-                if (*flag_ack(&flags)) {
+                if (correct_ack) {
                     logging::logf(logging::log_level::TRACE, "tcp: Received ACK\n");
 
                     seq = switch_endian_32(tcp_header->sequence_number);
