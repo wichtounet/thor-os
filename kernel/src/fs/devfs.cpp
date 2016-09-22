@@ -21,11 +21,11 @@ namespace {
 struct device {
     std::string name;
     devfs::device_type type;
-    devfs::dev_driver* driver;
+    void* driver;
     void* data;
 
     device(){}
-    device(std::string name, devfs::device_type type, devfs::dev_driver* driver, void* data)
+    device(std::string name, devfs::device_type type, void* driver, void* data)
         : name(name), type(type), driver(driver), data(data) {}
 };
 
@@ -94,11 +94,31 @@ size_t devfs::devfs_file_system::read(const path& file_path, char* buffer, size_
         if(device_list.mount_point == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.base_name()){
-                    if(!device.driver){
-                        return std::ERROR_UNSUPPORTED;
-                    }
+                    switch (device.type) {
+                        case device_type::BLOCK_DEVICE: {
+                            auto* driver = reinterpret_cast<devfs::dev_driver*>(device.driver);
 
-                    return device.driver->read(device.data, buffer, count, offset, read);
+                            if (!driver) {
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            return driver->read(device.data, buffer, count, offset, read);
+                        }
+
+                        case device_type::CHAR_DEVICE: {
+                            if (offset) {
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            auto* driver = reinterpret_cast<devfs::char_driver*>(device.driver);
+
+                            if(!driver){
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            return driver->read(device.data, buffer, count, read);
+                        }
+                    }
                 }
             }
         }
@@ -117,11 +137,31 @@ size_t devfs::devfs_file_system::write(const path& file_path, const char* buffer
         if(device_list.mount_point == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.base_name()){
-                    if(!device.driver){
-                        return std::ERROR_UNSUPPORTED;
-                    }
+                    switch (device.type) {
+                        case device_type::BLOCK_DEVICE: {
+                            auto* driver = reinterpret_cast<devfs::dev_driver*>(device.driver);
 
-                    return device.driver->write(device.data, buffer, count, offset, written);
+                            if(!driver){
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            return driver->write(device.data, buffer, count, offset, written);
+                        }
+
+                        case device_type::CHAR_DEVICE: {
+                            if (offset) {
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            auto* driver = reinterpret_cast<devfs::char_driver*>(device.driver);
+
+                            if(!driver){
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            return driver->write(device.data, buffer, count, written);
+                        }
+                    }
                 }
             }
         }
@@ -140,11 +180,21 @@ size_t devfs::devfs_file_system::clear(const path& file_path, size_t count, size
         if(device_list.mount_point == mount_point){
             for(auto& device : device_list.devices){
                 if(device.name == file_path.base_name()){
-                    if(!device.driver){
-                        return std::ERROR_UNSUPPORTED;
-                    }
+                    switch (device.type) {
+                        case device_type::BLOCK_DEVICE: {
+                            auto* driver = reinterpret_cast<devfs::dev_driver*>(device.driver);
 
-                    return device.driver->clear(device.data, count, offset, written);
+                            if (!driver) {
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            return driver->clear(device.data, count, offset, written);
+                        }
+
+                        case device_type::CHAR_DEVICE: {
+                            return std::ERROR_UNSUPPORTED;
+                        }
+                    }
                 }
             }
         }
@@ -201,7 +251,7 @@ size_t devfs::devfs_file_system::statfs(vfs::statfs_info& file){
     return 0;
 }
 
-void devfs::register_device(const std::string& mp, const std::string& name, device_type type, dev_driver* driver, void* data){
+void devfs::register_device(const std::string& mp, const std::string& name, device_type type, void* driver, void* data){
     for(auto& device_list : devices){
         if(device_list.mount_point == mp){
             device_list.devices.emplace_back(name, type, driver, data);
@@ -229,17 +279,23 @@ uint64_t devfs::get_device_size(const path& device_name, size_t& size){
         return std::ERROR_INVALID_DEVICE;
     }
 
-    for(auto& device_list : devices){
-        if(device_list.mount_point == device_name.branch_path()){
-            for(auto& device : device_list.devices){
-                if(device.name == device_name.base_name()){
-                    if(device.type == device_type::BLOCK_DEVICE){
-                        size = device.driver->size(device.data);
+    for (auto& device_list : devices) {
+        if (device_list.mount_point == device_name.branch_path()) {
+            for (auto& device : device_list.devices) {
+                if (device.name == device_name.base_name()) {
+                    switch (device.type) {
+                        case device_type::BLOCK_DEVICE: {
+                            auto* driver = reinterpret_cast<devfs::dev_driver*>(device.driver);
 
-                        return 0;
+                            size = driver->size(device.data);
+
+                            return 0;
+                        }
+
+                        case device_type::CHAR_DEVICE: {
+                            return std::ERROR_INVALID_DEVICE;
+                        }
                     }
-
-                    return std::ERROR_INVALID_DEVICE;
                 }
             }
         }
