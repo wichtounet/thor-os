@@ -36,7 +36,10 @@ scheduler::pid_t condition_variable::notify_one() {
         if (pid != scheduler::INVALID_PID) {
             logging::logf(logging::log_level::TRACE, "condition_variable: wake %d\n", pid);
 
-            scheduler::unblock_process(pid);
+            // Here we must use a hint since the process may have
+            // used a timeout and may have been woken up by the
+            // scheduler but not yet removed its pid from the queue
+            scheduler::unblock_process_hint(pid);
 
             return pid;
         }
@@ -58,7 +61,10 @@ void condition_variable::notify_all() {
         if (pid != scheduler::INVALID_PID) {
             logging::logf(logging::log_level::TRACE, "condition_variable: wake(all) %d\n", pid);
 
-            scheduler::unblock_process(pid);
+            // Here we must use a hint since the process may have
+            // used a timeout and may have been woken up by the
+            // scheduler but not yet removed its pid from the queue
+            scheduler::unblock_process_hint(pid);
         }
     }
 }
