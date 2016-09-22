@@ -208,6 +208,9 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     auto next_seq = ack;
     auto next_ack = seq + tcp_payload_len(packet);;
 
+    logging::logf(logging::log_level::TRACE, "tcp: Next Seq Number %u \n", size_t(next_seq));
+    logging::logf(logging::log_level::TRACE, "tcp: Next Ack Number %u \n", size_t(next_ack));
+
     auto connection_ptr = connections.get_connection_for_packet(source_port, target_port);
 
     if(connection_ptr){
@@ -411,9 +414,6 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 
     connection.listening = true;
 
-    uint32_t seq = 0;
-    uint32_t ack = 0;
-
     bool received = false;
 
     for(size_t t = 0; t < max_tries; ++t){
@@ -473,9 +473,6 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
                 if (correct_ack) {
                     logging::logf(logging::log_level::TRACE, "tcp: Received ACK\n");
 
-                    seq = switch_endian_32(tcp_header->sequence_number);
-                    ack = switch_endian_32(tcp_header->ack_number);
-
                     delete[] received_packet.payload;
 
                     received = true;
@@ -507,10 +504,6 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
     connection.listening = false;
 
     if(received){
-        // Set the future sequence and acknowledgement numbers
-        connection.seq_number = ack;
-        connection.ack_number = seq + 1;
-
         return {};
     } else {
         return std::make_unexpected<void>(std::ERROR_SOCKET_TCP_ERROR);
@@ -748,7 +741,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
         connection.ack_number = seq + 1;
 
         logging::logf(logging::log_level::TRACE, "tcp: Received FIN/ACK waiting for ACK\n");
-    } else {
+    } else if(rec_fin_ack) {
         logging::logf(logging::log_level::TRACE, "tcp: Received FIN/ACK directly waiting for ACK\n");
     }
 
