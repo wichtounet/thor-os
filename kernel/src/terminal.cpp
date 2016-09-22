@@ -7,14 +7,18 @@
 
 #include <array.hpp>
 
-#include "terminal.hpp"
 #include "drivers/keyboard.hpp"
+
+#include "terminal.hpp"
 #include "console.hpp"
 #include "assert.hpp"
 #include "logging.hpp"
 #include "scheduler.hpp"
 
 namespace {
+
+stdio::terminal_driver terminal_driver_impl;
+stdio::terminal_driver* tty_driver = &terminal_driver_impl;
 
 constexpr const size_t MAX_TERMINALS = 2;
 size_t active_terminal;
@@ -230,6 +234,14 @@ void stdio::init_terminals(){
     terminals[active_terminal].active = true;
 }
 
+void stdio::register_devices(){
+    for(auto& terminal : terminals){
+        std::string name = std::string("tty") + std::to_string(terminal.id);
+
+        devfs::register_device("/dev/", name, devfs::device_type::CHAR_DEVICE, tty_driver, &terminal);
+    }
+}
+
 void stdio::finalize(){
     for(auto& terminal : terminals){
         auto* user_stack = new char[scheduler::user_stack_size];
@@ -244,6 +256,16 @@ void stdio::finalize(){
 
         terminal.input_thread_pid = input_process.pid;
     }
+}
+
+size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size_t& read){
+
+    return 0;
+}
+
+size_t stdio::terminal_driver::write(void* data, const char* buffer, size_t count, size_t& written){
+
+    return 0;
 }
 
 stdio::virtual_terminal& stdio::get_active_terminal(){

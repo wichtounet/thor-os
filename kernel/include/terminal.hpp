@@ -15,6 +15,8 @@
 
 #include "conc/condition_variable.hpp"
 
+#include "fs/devfs.hpp"
+
 namespace stdio {
 
 constexpr const size_t INPUT_BUFFER_SIZE = 256;
@@ -93,7 +95,13 @@ struct virtual_terminal {
     virtual_terminal& operator=(virtual_terminal&& rhs) = delete;
 };
 
+struct terminal_driver : devfs::char_driver {
+    size_t read(void* data, char* buffer, size_t count, size_t& read);
+    size_t write(void* data, const char* buffer, size_t count, size_t& written);
+};
+
 void init_terminals();
+void register_devices();
 void finalize();
 
 virtual_terminal& get_active_terminal();

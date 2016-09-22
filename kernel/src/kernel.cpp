@@ -111,6 +111,7 @@ void kernel_main(){
     disks::detect_disks();
     pci::detect_devices();
     network::init();
+    stdio::register_devices();
 
     //Init the virtual file system
     vfs::init();
