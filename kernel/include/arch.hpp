@@ -5,6 +5,9 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+#ifndef ARCH_H
+#define ARCH_H
+
 #include <types.hpp>
 
 namespace arch {
@@ -31,3 +34,5 @@ inline bool interrupts_enabled(){
 }
 
 } //enf of arch namespace
+
+#endif
