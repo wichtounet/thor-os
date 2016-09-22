@@ -91,23 +91,6 @@ struct mutex {
         }
     }
 
-    /*!
-     * \brief Release the lock, from an IRQ
-     */
-    void irq_unlock() {
-        std::lock_guard<spinlock> l(value_lock);
-
-        if (queue.empty()) {
-            value = 1;
-        } else {
-            auto pid = queue.pop();
-            scheduler::unblock_process_hint(pid);
-
-            //No need to increment value, the process won't
-            //decrement it
-        }
-    }
-
 private:
     mutable spinlock value_lock;                 ///< The spin protecting the value
     volatile size_t value = 1;                   ///< The value of the mutex

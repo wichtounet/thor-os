@@ -13,6 +13,7 @@
 #include "drivers/ata_constants.hpp"
 
 #include "conc/mutex.hpp"
+#include "conc/deferred_unique_mutex.hpp"
 
 #include "kernel_utils.hpp"
 #include "kalloc.hpp"
@@ -30,8 +31,8 @@ ata::drive_descriptor* drives;
 
 mutex ata_lock;
 
-mutex primary_lock;
-mutex secondary_lock;
+deferred_unique_mutex primary_lock;
+deferred_unique_mutex secondary_lock;
 
 block_cache cache;
 
@@ -40,7 +41,7 @@ volatile bool secondary_invoked = false;
 
 void primary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
-        primary_lock.irq_unlock();
+        primary_lock.notify();
     } else {
         primary_invoked = true;
     }
@@ -48,7 +49,7 @@ void primary_controller_handler(interrupt::syscall_regs*, void*){
 
 void secondary_controller_handler(interrupt::syscall_regs*, void*){
     if(scheduler::is_started()){
-        secondary_lock.irq_unlock();
+        secondary_lock.notify();
     } else {
         secondary_invoked = true;
     }
@@ -56,7 +57,8 @@ void secondary_controller_handler(interrupt::syscall_regs*, void*){
 
 void ata_wait_irq_primary(){
     if(scheduler::is_started()){
-        primary_lock.lock();
+        primary_lock.claim();
+        primary_lock.wait();
     } else {
         while(!primary_invoked){
             asm volatile ("nop");
@@ -72,7 +74,8 @@ void ata_wait_irq_primary(){
 
 void ata_wait_irq_secondary(){
     if(scheduler::is_started()){
-        secondary_lock.lock();
+        secondary_lock.claim();
+        secondary_lock.wait();
     } else {
         while(!secondary_invoked){
             asm volatile ("nop");
@@ -346,9 +349,6 @@ void identify(ata::drive_descriptor& drive){
 
 void ata::detect_disks(){
     ata_lock.init();
-
-    primary_lock.init(0);
-    secondary_lock.init(0);
 
     // Init the cache with 256 blocks
     cache.init(BLOCK_SIZE, 256);
