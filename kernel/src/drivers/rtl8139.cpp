@@ -7,6 +7,8 @@
 
 #include "drivers/rtl8139.hpp"
 
+#include "conc/mutex.hpp"
+#include "conc/int_lock.hpp"
 #include "conc/int_lock.hpp"
 
 #include "net/ethernet_layer.hpp"
@@ -82,7 +84,9 @@ struct rtl8139_t {
     volatile uint64_t dirty_tx; //Index inside the transmit buffer
 
     tx_desc_t tx_desc[tx_buffers];
-    semaphore tx_sem;
+
+    mutex tx_lock;
+    deferred_unique_semaphore tx_sem;
 
     network::interface_descriptor* interface;
 };
@@ -172,7 +176,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
             ++dirty_tx;
         }
 
-        desc.tx_sem.irq_release(cleaned_up);
+        desc.tx_sem.notify(cleaned_up);
     }
 
     if(!(status & (RX_OK | TX_OK | TX_ERR))){
@@ -193,10 +197,12 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
 
         std::copy_n(packet.payload, packet.payload_size, packet_buffer);
 
-        direct_int_lock lock;
+        {
+            direct_int_lock lock;
 
-        interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
-        interface.rx_sem.pt_notify();
+            interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
+            interface.rx_sem.notify();
+        }
 
         logging::logf(logging::log_level::TRACE, "rtl8139: Packet to self transmitted correctly\n");
 
@@ -206,11 +212,16 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
     auto& desc = *reinterpret_cast<rtl8139_t*>(interface.driver_data);
     auto iobase = desc.iobase;
 
+    desc.tx_lock.lock();
+
     // Wait for a free entry in the tx buffers
-    desc.tx_sem.lock();
+    desc.tx_sem.claim();
+    desc.tx_sem.wait();
 
     // Claim an entry in the tx buffers
-    auto entry = __sync_fetch_and_add(&desc.cur_tx, 1) % tx_buffers;
+    auto entry = desc.cur_tx++ % tx_buffers;
+
+    desc.tx_lock.unlock();
 
     auto& tx_desc = desc.tx_desc[entry];
 

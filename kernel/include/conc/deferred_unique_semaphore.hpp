@@ -28,6 +28,10 @@ struct deferred_unique_semaphore {
         this->pid = scheduler::get_pid();
     }
 
+    void init(size_t value){
+        this->value = value;
+    }
+
     /*!
      * \brief Wait for the lock
      */
@@ -55,19 +59,6 @@ struct deferred_unique_semaphore {
      * \brief Release the lock, from an IRQ handler.
      */
     void notify() {
-        if (!waiting) {
-            ++value;
-        } else {
-            scheduler::unblock_process_hint(pid);
-        }
-    }
-
-    /*!
-     * \brief Release the lock, from a preeemptible process
-     */
-    void pt_notify() {
-        direct_int_lock lock;
-
         if (!waiting) {
             ++value;
         } else {
