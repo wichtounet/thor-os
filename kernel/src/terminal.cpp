@@ -281,7 +281,7 @@ size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size
     if(terminal->is_canonical()){
         read = terminal->read_input_can(reinterpret_cast<char*>(buffer), count, ms);
     } else {
-        buffer[0] = terminal->read_input_raw();
+        buffer[0] = terminal->read_input_raw(ms);
 
         read = 1;
     }
