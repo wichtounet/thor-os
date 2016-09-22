@@ -46,34 +46,6 @@ void sc_log_string(interrupt::syscall_regs* regs){
     logging::logf(logging::log_level::USER, "%s\n", m);
 }
 
-void sc_get_input(interrupt::syscall_regs* regs){
-    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
-    auto& tty = stdio::get_terminal(ttyid);
-
-    regs->rax = tty.read_input_can(reinterpret_cast<char*>(regs->rbx), regs->rcx);
-}
-
-void sc_get_input_timeout(interrupt::syscall_regs* regs){
-    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
-    auto& tty = stdio::get_terminal(ttyid);
-
-    regs->rax = tty.read_input_can(reinterpret_cast<char*>(regs->rbx), regs->rcx, regs->rdx);
-}
-
-void sc_get_input_raw(interrupt::syscall_regs* regs){
-    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
-    auto& tty = stdio::get_terminal(ttyid);
-
-    regs->rax = tty.read_input_raw();
-}
-
-void sc_get_input_raw_timeout(interrupt::syscall_regs* regs){
-    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
-    auto& tty = stdio::get_terminal(ttyid);
-
-    regs->rax = tty.read_input_raw(regs->rbx);
-}
-
 void sc_set_canonical(interrupt::syscall_regs* regs){
     auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
     auto& tty = stdio::get_terminal(ttyid);
@@ -531,22 +503,6 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 9:
             sc_sbrk(regs);
-            break;
-
-        case 0x10:
-            sc_get_input(regs);
-            break;
-
-        case 0x11:
-            sc_get_input_timeout(regs);
-            break;
-
-        case 0x12:
-            sc_get_input_raw(regs);
-            break;
-
-        case 0x13:
-            sc_get_input_raw_timeout(regs);
             break;
 
         case 0x20:
