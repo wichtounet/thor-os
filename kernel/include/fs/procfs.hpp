@@ -28,6 +28,7 @@ public:
 
     size_t statfs(vfs::statfs_info& file);
     size_t read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read);
+    size_t read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read, size_t ms);
     size_t write(const path& file_path, const char* buffer, size_t count, size_t offset, size_t& written);
     size_t clear(const path& file_path, size_t count, size_t offset, size_t& written);
     size_t truncate(const path& file_path, size_t size);

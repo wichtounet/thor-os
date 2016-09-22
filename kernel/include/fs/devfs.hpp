@@ -30,6 +30,7 @@ struct dev_driver {
 
 struct char_driver {
     virtual size_t read(void* data, char* buffer, size_t count, size_t& read) = 0;
+    virtual size_t read(void* data, char* buffer, size_t count, size_t& read, size_t ms) = 0;
     virtual size_t write(void* data, const char* buffer, size_t count, size_t& written) = 0;
 };
 
@@ -43,6 +44,7 @@ public:
 
     size_t statfs(vfs::statfs_info& file);
     size_t read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read);
+    size_t read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read, size_t ms);
     size_t write(const path& file_path, const char* buffer, size_t count, size_t offset, size_t& written);
     size_t clear(const path& file_path, size_t count, size_t offset, size_t& written);
     size_t truncate(const path& file_path, size_t size);

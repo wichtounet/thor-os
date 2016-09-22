@@ -299,6 +299,10 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
     return 0;
 }
 
+size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read, size_t ms){
+    return std::ERROR_UNSUPPORTED;
+}
+
 size_t fat32::fat32_file_system::write(const path& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
     vfs::file file;
     auto result = get_file(file_path, file);

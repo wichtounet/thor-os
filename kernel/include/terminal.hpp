@@ -97,6 +97,7 @@ struct virtual_terminal {
 
 struct terminal_driver : devfs::char_driver {
     size_t read(void* data, char* buffer, size_t count, size_t& read);
+    size_t read(void* data, char* buffer, size_t count, size_t& read, size_t ms);
     size_t write(void* data, const char* buffer, size_t count, size_t& written);
 };
 

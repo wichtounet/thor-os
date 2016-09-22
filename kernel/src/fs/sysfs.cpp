@@ -260,6 +260,10 @@ size_t sysfs::sysfs_file_system::read(const path& file_path, char* buffer, size_
     }
 }
 
+size_t sysfs::sysfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read, size_t ms) {
+    return std::ERROR_UNSUPPORTED;
+}
+
 size_t sysfs::sysfs_file_system::write(const path&, const char*, size_t, size_t, size_t&) {
     return std::ERROR_PERMISSION_DENIED;
 }

@@ -89,6 +89,17 @@ std::expected<void> rm(const char* file);
 std::expected<size_t> read(fd_t fd, char* buffer, size_t count, size_t offset = 0);
 
 /*!
+ * \brief Read from a file with a timeout
+ * \param fd The file descriptor to the file
+ * \param buffer The buffer to write to
+ * \param count The number of bytes to read
+ * \param offset The index where to start reading the file
+ * \param ms The maximum time in milliseconds to wait for
+ * \return a status code
+ */
+std::expected<size_t> read(fd_t fd, char* buffer, size_t count, size_t offset, size_t ms);
+
+/*!
  * \brief Write to a file
  * \param fd The file descriptor to the file
  * \param buffer The buffer to read from

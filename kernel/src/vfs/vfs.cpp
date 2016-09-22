@@ -385,6 +385,30 @@ std::expected<size_t> vfs::read(fd_t fd, char* buffer, size_t count, size_t offs
     }
 }
 
+std::expected<size_t> vfs::read(fd_t fd, char* buffer, size_t count, size_t offset, size_t ms) {
+    if (!scheduler::has_handle(fd)) {
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_DESCRIPTOR);
+    }
+
+    auto& base_path = scheduler::get_handle(fd);
+
+    if (base_path.is_root()) {
+        return std::make_unexpected<size_t>(std::ERROR_INVALID_FILE_PATH);
+    }
+
+    auto& fs     = get_fs(base_path);
+    auto fs_path = get_fs_path(base_path, fs);
+
+    size_t read = 0;
+    auto result = fs.file_system->read(fs_path, buffer, count, offset, read, ms);
+
+    if (result) {
+        return std::make_unexpected<size_t>(result);
+    } else {
+        return read;
+    }
+}
+
 std::expected<size_t> vfs::direct_read(const path& base_path, char* buffer, size_t count, size_t offset) {
     auto& fs     = get_fs(base_path);
     auto fs_path = get_fs_path(base_path, fs);

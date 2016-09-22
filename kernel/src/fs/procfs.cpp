@@ -165,6 +165,10 @@ size_t procfs::procfs_file_system::read(const path& file_path, char* buffer, siz
     return std::ERROR_NOT_EXISTS;
 }
 
+size_t procfs::procfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read, size_t ms){
+    return std::ERROR_UNSUPPORTED;
+}
+
 size_t procfs::procfs_file_system::ls(const path& file_path, std::vector<vfs::file>& contents){
     if(file_path.is_root()){
         for(size_t i = 0; i < scheduler::MAX_PROCESS; ++i){

@@ -127,6 +127,43 @@ size_t devfs::devfs_file_system::read(const path& file_path, char* buffer, size_
     return std::ERROR_NOT_EXISTS;
 }
 
+size_t devfs::devfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read, size_t ms){
+    //Cannot access the root for reading
+    if(file_path.is_root()){
+        return std::ERROR_PERMISSION_DENIED;
+    }
+
+    for(auto& device_list : devices){
+        if(device_list.mount_point == mount_point){
+            for(auto& device : device_list.devices){
+                if(device.name == file_path.base_name()){
+                    switch (device.type) {
+                        case device_type::BLOCK_DEVICE: {
+                            return std::ERROR_UNSUPPORTED;
+                        }
+
+                        case device_type::CHAR_DEVICE: {
+                            if (offset) {
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            auto* driver = reinterpret_cast<devfs::char_driver*>(device.driver);
+
+                            if(!driver){
+                                return std::ERROR_UNSUPPORTED;
+                            }
+
+                            return driver->read(device.data, buffer, count, read, ms);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return std::ERROR_NOT_EXISTS;
+}
+
 size_t devfs::devfs_file_system::write(const path& file_path, const char* buffer, size_t count, size_t offset, size_t& written){
     //Cannot access the root for writing
     if(file_path.is_root()){

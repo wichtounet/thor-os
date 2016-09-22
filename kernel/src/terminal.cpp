@@ -263,6 +263,11 @@ size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size
     return 0;
 }
 
+size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size_t& read, size_t ms){
+
+    return 0;
+}
+
 size_t stdio::terminal_driver::write(void* data, const char* buffer, size_t count, size_t& written){
     auto* terminal = reinterpret_cast<stdio::virtual_terminal*>(data);
 
