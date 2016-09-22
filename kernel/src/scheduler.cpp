@@ -271,6 +271,13 @@ void create_init_task(){
     scheduler::queue_system_process(init_process.pid);
 
     init_pid = init_process.pid;
+
+    //TODO Get the tty from the current terminal
+
+    // Create the 0,1,2 file descriptors
+    pcb[init_pid].handles.emplace_back("/dev/tty0");
+    pcb[init_pid].handles.emplace_back("/dev/tty0");
+    pcb[init_pid].handles.emplace_back("/dev/tty0");
 }
 
 void create_gc_task(){
@@ -657,6 +664,11 @@ std::expected<scheduler::pid_t> scheduler::exec(const std::string& file, const s
     init_context(process, buffer, file, params);
 
     pcb[process.pid].working_directory = pcb[current_pid].working_directory;
+
+    // Inherit standard file descriptors from the parent
+    pcb[process.pid].handles.emplace_back(pcb[current_pid].handles[0]);
+    pcb[process.pid].handles.emplace_back(pcb[current_pid].handles[1]);
+    pcb[process.pid].handles.emplace_back(pcb[current_pid].handles[2]);
 
     logging::logf(logging::log_level::DEBUG, "scheduler: Exec process pid=%u, ppid=%u\n", process.pid, process.ppid);
 
