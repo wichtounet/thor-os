@@ -25,6 +25,7 @@ std::expected<size_t> open(const char* file, size_t flags = 0);
 int64_t mkdir(const char* file);
 int64_t rm(const char* file);
 std::expected<size_t> read(size_t fd, char* buffer, size_t max, size_t offset = 0);
+std::expected<size_t> read(size_t fd, char* buffer, size_t max, size_t offset, size_t ms);
 std::expected<size_t> write(size_t fd, const char* buffer, size_t max, size_t offset = 0);
 std::expected<size_t> clear(size_t fd, size_t max, size_t offset = 0);
 std::expected<size_t> truncate(size_t fd, size_t size);

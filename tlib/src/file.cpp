@@ -91,6 +91,19 @@ std::expected<size_t> tlib::read(size_t fd, char* buffer, size_t max, size_t off
         return std::make_expected<size_t>(code);
     }
 }
+std::expected<size_t> tlib::read(size_t fd, char* buffer, size_t max, size_t offset, size_t ms){
+    int64_t code;
+    asm volatile("mov rax, 315; mov rbx, %[fd]; mov rcx, %[buffer]; mov rdx, %[max]; mov rsi, %[offset]; mov rdi, %[ms]; int 50; mov %[code], rax"
+        : [code] "=m" (code)
+        : [fd] "g" (fd), [buffer] "g" (reinterpret_cast<size_t>(buffer)), [max] "g" (max), [offset] "g" (offset), [ms] "g" (ms)
+        : "rax", "rbx", "rcx", "rdx", "rsi", "rdi");
+
+    if(code < 0){
+        return std::make_expected_from_error<size_t, size_t>(-code);
+    } else {
+        return std::make_expected<size_t>(code);
+    }
+}
 
 std::expected<size_t> tlib::write(size_t fd, const char* buffer, size_t max, size_t offset){
     int64_t code;

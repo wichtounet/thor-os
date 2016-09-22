@@ -196,12 +196,23 @@ void sc_statfs(interrupt::syscall_regs* regs){
 }
 
 void sc_read(interrupt::syscall_regs* regs){
-    auto fd = regs->rbx;
+    auto fd     = regs->rbx;
     auto buffer = reinterpret_cast<char*>(regs->rcx);
-    auto max = regs->rdx;
+    auto max    = regs->rdx;
     auto offset = regs->rsi;
 
     auto status = vfs::read(fd, buffer, max, offset);
+    regs->rax = expected_to_i64(status);
+}
+
+void sc_read_timeout(interrupt::syscall_regs* regs){
+    auto fd     = regs->rbx;
+    auto buffer = reinterpret_cast<char*>(regs->rcx);
+    auto max    = regs->rdx;
+    auto offset = regs->rsi;
+    auto ms     = regs->rdi;
+
+    auto status = vfs::read(fd, buffer, max, offset, ms);
     regs->rax = expected_to_i64(status);
 }
 
@@ -624,6 +635,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 314:
             sc_mount(regs);
+            break;
+
+        case 315:
+            sc_read_timeout(regs);
             break;
 
         case 0x400:
