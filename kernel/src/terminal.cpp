@@ -220,14 +220,18 @@ void stdio::virtual_terminal::set_mouse(bool m){
     mouse = m;
 }
 
+bool stdio::virtual_terminal::is_canonical() const {
+    return canonical;
+}
+
 void stdio::init_terminals(){
     size_t id = 0;
 
     for(auto& terminal : terminals){
-        terminal.id = id++;
-        terminal.active = false;
+        terminal.id        = id++;
+        terminal.active    = false;
         terminal.canonical = true;
-        terminal.mouse = false;
+        terminal.mouse     = false;
     }
 
     active_terminal = 0;
@@ -244,12 +248,11 @@ void stdio::register_devices(){
 
 void stdio::finalize(){
     for(auto& terminal : terminals){
-        auto* user_stack = new char[scheduler::user_stack_size];
+        auto* user_stack   = new char[scheduler::user_stack_size];
         auto* kernel_stack = new char[scheduler::kernel_stack_size];
 
         auto& input_process = scheduler::create_kernel_task_args("tty_input", user_stack, kernel_stack, &input_thread, &terminal);
-
-        input_process.ppid = 1;
+        input_process.ppid     = 1;
         input_process.priority = scheduler::DEFAULT_PRIORITY;
 
         scheduler::queue_system_process(input_process.pid);
@@ -261,7 +264,13 @@ void stdio::finalize(){
 size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size_t& read){
     auto* terminal = reinterpret_cast<stdio::virtual_terminal*>(data);
 
-    read = terminal->read_input_can(reinterpret_cast<char*>(buffer), count);
+    if (terminal->is_canonical()) {
+        read = terminal->read_input_can(reinterpret_cast<char*>(buffer), count);
+    } else {
+        buffer[0] = terminal->read_input_raw();
+
+        read = 1;
+    }
 
     return 0;
 }
@@ -269,7 +278,13 @@ size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size
 size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size_t& read, size_t ms){
     auto* terminal = reinterpret_cast<stdio::virtual_terminal*>(data);
 
-    read = terminal->read_input_can(reinterpret_cast<char*>(buffer), count, ms);
+    if(terminal->is_canonical()){
+        read = terminal->read_input_can(reinterpret_cast<char*>(buffer), count, ms);
+    } else {
+        buffer[0] = terminal->read_input_raw();
+
+        read = 1;
+    }
 
     return 0;
 }

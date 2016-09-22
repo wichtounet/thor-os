@@ -110,21 +110,31 @@ size_t tlib::read_input(char* buffer, size_t max, size_t ms){
 }
 
 std::keycode tlib::read_input_raw(){
-    size_t value;
-    asm volatile("mov rax, 0x12; int 50; mov %[input], rax"
-        : [input] "=m" (value)
-        :
-        : "rax");
-    return static_cast<std::keycode>(value);
+    char value;
+    auto c = tlib::read(1, &value, 1, 0);
+    if(c){
+        if (*c) {
+            return static_cast<std::keycode>(value);
+        } else {
+            return static_cast<std::keycode>(0);
+        }
+    } else {
+        return static_cast<std::keycode>(0);
+    }
 }
 
 std::keycode tlib::read_input_raw(size_t ms){
-    size_t value;
-    asm volatile("mov rax, 0x13; mov rbx, %[ms]; int 50; mov %[input], rax"
-        : [input] "=m" (value)
-        : [ms] "g" (ms)
-        : "rax");
-    return static_cast<std::keycode>(value);
+    char value;
+    auto c = tlib::read(1, &value, 1, 0, ms);
+    if(c){
+        if (*c) {
+            return static_cast<std::keycode>(value);
+        } else {
+            return static_cast<std::keycode>(0);
+        }
+    } else {
+        return static_cast<std::keycode>(0);
+    }
 }
 
 void  tlib::clear(){

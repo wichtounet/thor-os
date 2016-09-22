@@ -22,22 +22,13 @@ namespace stdio {
 constexpr const size_t INPUT_BUFFER_SIZE = 256;
 
 struct virtual_terminal {
-    size_t id;
-    bool active;
-    bool canonical;
-    bool mouse;
-    size_t input_thread_pid;
+    virtual_terminal(){}
 
-    // Filled by the IRQ
-    circular_buffer<char, 128> keyboard_buffer;
-    circular_buffer<size_t, 128> mouse_buffer;
+    virtual_terminal(const virtual_terminal& rhs) = delete;
+    virtual_terminal& operator=(const virtual_terminal& rhs) = delete;
 
-    // Handled by the input thread
-    circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
-    circular_buffer<char, 2 * INPUT_BUFFER_SIZE> canonical_buffer;
-    circular_buffer<size_t, 3 * INPUT_BUFFER_SIZE> raw_buffer;
-
-    condition_variable input_queue;
+    virtual_terminal(virtual_terminal&& rhs) = delete;
+    virtual_terminal& operator=(virtual_terminal&& rhs) = delete;
 
     void print(char c);
 
@@ -86,13 +77,24 @@ struct virtual_terminal {
     void set_canonical(bool can);
     void set_mouse(bool m);
 
-    virtual_terminal(){}
+    bool is_canonical() const;
 
-    virtual_terminal(const virtual_terminal& rhs) = delete;
-    virtual_terminal& operator=(const virtual_terminal& rhs) = delete;
+    size_t id;
+    bool active;
+    bool canonical;
+    bool mouse;
+    size_t input_thread_pid;
 
-    virtual_terminal(virtual_terminal&& rhs) = delete;
-    virtual_terminal& operator=(virtual_terminal&& rhs) = delete;
+    // Filled by the IRQ
+    circular_buffer<char, 128> keyboard_buffer;
+    circular_buffer<size_t, 128> mouse_buffer;
+
+    // Handled by the input thread
+    circular_buffer<char, INPUT_BUFFER_SIZE> input_buffer;
+    circular_buffer<char, 2 * INPUT_BUFFER_SIZE> canonical_buffer;
+    circular_buffer<size_t, 3 * INPUT_BUFFER_SIZE> raw_buffer;
+
+    condition_variable input_queue;
 };
 
 struct terminal_driver : devfs::char_driver {
