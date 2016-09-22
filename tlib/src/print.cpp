@@ -25,15 +25,15 @@ size_t strlen(const char* c){
 } //end of anonymous namespace
 
 void tlib::print(char c){
-    tlib::write(1, &c, 1, 0);
+    tlib::write(2, &c, 1, 0);
 }
 
 void tlib::print(const char* s){
-    tlib::write(1, s, strlen(s), 0);
+    tlib::write(2, s, strlen(s), 0);
 }
 
 void tlib::print(const std::string& s){
-    tlib::write(1, s.c_str(), s.size(), 0);
+    tlib::write(2, s.c_str(), s.size(), 0);
 }
 
 void log(const char* s){
