@@ -92,21 +92,21 @@ void tlib::set_mouse(bool m){
 }
 
 size_t tlib::read_input(char* buffer, size_t max){
-    size_t value;
-    asm volatile("mov rax, 0x10; mov rbx, %[buffer]; mov rcx, %[max]; int 50; mov %[read], rax"
-        : [read] "=m" (value)
-        : [buffer] "g" (buffer), [max] "g" (max)
-        : "rax", "rbx", "rcx");
-    return value;
+    auto c = tlib::read(1, buffer, max, 0);
+    if(c){
+        return *c;
+    } else {
+        return 0;
+    }
 }
 
 size_t tlib::read_input(char* buffer, size_t max, size_t ms){
-    size_t value;
-    asm volatile("mov rax, 0x11; mov rbx, %[buffer]; mov rcx, %[max]; mov rdx, %[ms]; int 50; mov %[read], rax"
-        : [read] "=m" (value)
-        : [buffer] "g" (buffer), [max] "g" (max), [ms] "g" (ms)
-        : "rax", "rbx", "rcx");
-    return value;
+    auto c = tlib::read(1, buffer, max, 0, ms);
+    if(c){
+        return *c;
+    } else {
+        return 0;
+    }
 }
 
 std::keycode tlib::read_input_raw(){

@@ -259,11 +259,17 @@ void stdio::finalize(){
 }
 
 size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size_t& read){
+    auto* terminal = reinterpret_cast<stdio::virtual_terminal*>(data);
+
+    read = terminal->read_input_can(reinterpret_cast<char*>(buffer), count);
 
     return 0;
 }
 
 size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size_t& read, size_t ms){
+    auto* terminal = reinterpret_cast<stdio::virtual_terminal*>(data);
+
+    read = terminal->read_input_can(reinterpret_cast<char*>(buffer), count, ms);
 
     return 0;
 }
