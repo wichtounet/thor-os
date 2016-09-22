@@ -8,19 +8,32 @@
 #include <stdarg.h>
 
 #include "tlib/print.hpp"
+#include "tlib/file.hpp"
+
+namespace {
+
+size_t strlen(const char* c){
+    size_t s = 0;
+
+    while(*c++){
+        ++s;
+    }
+
+    return s;
+}
+
+} //end of anonymous namespace
 
 void tlib::print(char c){
-    asm volatile("mov rax, 0; mov rbx, %[c]; int 50"
-        : //No outputs
-        : [c] "g" (static_cast<size_t>(c))
-        : "rax", "rbx");
+    tlib::write(1, &c, 1, 0);
 }
 
 void tlib::print(const char* s){
-    asm volatile("mov rax, 1; mov rbx, %[s]; int 50"
-        : //No outputs
-        : [s] "g" (reinterpret_cast<size_t>(s))
-        : "rax", "rbx");
+    tlib::write(1, s, strlen(s), 0);
+}
+
+void tlib::print(const std::string& s){
+    tlib::write(1, s.c_str(), s.size(), 0);
 }
 
 void log(const char* s){
@@ -137,10 +150,6 @@ size_t tlib::get_rows(){
         : //No inputs
         : "rax");
     return value;
-}
-
-void tlib::print(const std::string& s){
-    return print(s.c_str());
 }
 
 void tlib::print_line(){
