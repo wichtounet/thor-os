@@ -66,6 +66,7 @@ size_t next_pid = 0;
 
 size_t gc_pid = 0;
 size_t idle_pid = 0;
+size_t init_pid = 0;
 
 std::vector<scheduler::pid_t>& run_queue(size_t priority){
     return run_queues[priority - scheduler::MIN_PRIORITY];
@@ -268,6 +269,8 @@ void create_init_task(){
     init_process.priority = scheduler::MIN_PRIORITY + 1;
 
     scheduler::queue_system_process(init_process.pid);
+
+    init_pid = init_process.pid;
 }
 
 void create_gc_task(){
