@@ -53,10 +53,12 @@ void rx_thread(void* data){
 
     auto pid = scheduler::get_pid();
 
+    interface.rx_sem.claim();
+
     logging::logf(logging::log_level::TRACE, "network: RX Thread for interface %u started (pid:%u)\n", interface.id, pid);
 
     while(true){
-        interface.rx_sem.lock();
+        interface.rx_sem.wait();
 
         auto packet = interface.rx_queue.pop();
         network::ethernet::decode(interface, packet);
@@ -158,7 +160,6 @@ void network::init(){
 
                 interface.tx_lock.init(1);
                 interface.tx_sem.init(0);
-                interface.rx_sem.init(0);
             }
 
             sysfs_publish(interface);
@@ -181,7 +182,6 @@ void network::init(){
 
     interface.tx_lock.init(1);
     interface.tx_sem.init(0);
-    interface.rx_sem.init(0);
 
     loopback::init_driver(interface);
 

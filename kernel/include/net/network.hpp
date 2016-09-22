@@ -8,15 +8,16 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include <conc/mutex.hpp>
-#include <conc/semaphore.hpp>
-
 #include <types.hpp>
 #include <string.hpp>
 #include <circular_buffer.hpp>
 #include <lock_guard.hpp>
 #include <tuple.hpp>
 #include <expected.hpp>
+
+#include <conc/mutex.hpp>
+#include <conc/semaphore.hpp>
+#include <conc/deferred_unique_semaphore.hpp>
 
 #include "tlib/net_constants.hpp"
 
@@ -40,9 +41,9 @@ struct interface_descriptor {
     network::ip::address ip_address; ///< The interface IP address
     network::ip::address gateway;    ///< The interface IP gateway
 
-    mutable mutex tx_lock; ///< Mutex protecting the queues
-    mutable semaphore tx_sem; ///< Semaphore for transmission
-    mutable semaphore rx_sem; ///< Semaphore for reception
+    mutable mutex tx_lock;                    ///< Mutex protecting the queues
+    mutable semaphore tx_sem;                 ///< Semaphore for transmission
+    mutable deferred_unique_semaphore rx_sem; ///< Semaphore for reception
 
     size_t rx_thread_pid; ///< The pid of the rx thread
     size_t tx_thread_pid; ///< The pid of the tx thread

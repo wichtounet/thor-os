@@ -130,7 +130,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
                 network::ethernet::packet packet(packet_buffer, packet_only_length);
 
                 interface.rx_queue.push(packet);
-                interface.rx_sem.irq_unlock();
+                interface.rx_sem.notify();
             }
 
             cur_rx = (cur_rx + packet_length + 4 + 3) & ~3; //align on 4 bytes
@@ -196,7 +196,7 @@ void send_packet(network::interface_descriptor& interface, network::ethernet::pa
         direct_int_lock lock;
 
         interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
-        interface.rx_sem.unlock();
+        interface.rx_sem.pt_notify();
 
         logging::logf(logging::log_level::TRACE, "rtl8139: Packet to self transmitted correctly\n");
 
