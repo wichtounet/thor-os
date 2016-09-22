@@ -11,7 +11,6 @@
 #include "conc/int_lock.hpp"
 
 #include "scheduler.hpp"
-#include "logging.hpp"
 
 /*!
  * \brief A deferred unique mutex lock implementation.
