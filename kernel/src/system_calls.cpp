@@ -41,14 +41,6 @@ int64_t expected_to_i64(const std::expected<size_t>& status){
     }
 }
 
-void sc_print_char(interrupt::syscall_regs* regs){
-    k_print(static_cast<char>(regs->rbx));
-}
-
-void sc_print_string(interrupt::syscall_regs* regs){
-    k_print(reinterpret_cast<const char*>(regs->rbx));
-}
-
 void sc_log_string(interrupt::syscall_regs* regs){
     auto m = reinterpret_cast<const char*>(regs->rbx);
     logging::logf(logging::log_level::USER, "%s\n", m);
@@ -502,14 +494,6 @@ void system_call_entry(interrupt::syscall_regs* regs){
     auto code = regs->rax;
 
     switch(code){
-        case 0:
-            sc_print_char(regs);
-            break;
-
-        case 1:
-            sc_print_string(regs);
-            break;
-
         case 2:
             sc_log_string(regs);
             break;
