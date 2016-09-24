@@ -261,6 +261,16 @@ void stdio::finalize(){
     }
 }
 
+stdio::virtual_terminal& stdio::get_active_terminal(){
+    return terminals[active_terminal];
+}
+
+stdio::virtual_terminal& stdio::get_terminal(size_t id){
+    thor_assert(id < MAX_TERMINALS, "Out of bound tty");
+
+    return terminals[id];
+}
+
 size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size_t& read){
     auto* terminal = reinterpret_cast<stdio::virtual_terminal*>(data);
 
@@ -299,14 +309,4 @@ size_t stdio::terminal_driver::write(void* data, const char* buffer, size_t coun
     written = count;
 
     return 0;
-}
-
-stdio::virtual_terminal& stdio::get_active_terminal(){
-    return terminals[active_terminal];
-}
-
-stdio::virtual_terminal& stdio::get_terminal(size_t id){
-    thor_assert(id < MAX_TERMINALS, "Out of bound tty");
-
-    return terminals[id];
 }
