@@ -51,14 +51,14 @@ struct segment_t {
 };
 
 struct process_t {
-    pid_t pid;
-    pid_t ppid;
+    pid_t pid;  ///< The process id
+    pid_t ppid; ///< The parent's process id
 
-    bool system;
+    bool system; ///< Indicates if the process is a system process
 
-    size_t priority;
+    size_t priority; ///< The priority of the process
 
-    size_t tty;
+    size_t tty; ///< The terminal the process is linked to
 
     size_t physical_cr3;
     size_t paging_size;
