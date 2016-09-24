@@ -46,13 +46,15 @@ void fill_buffer(uint32_t color) {
 }
 
 void draw_pixel(size_t x, size_t y, uint32_t color) {
-    z_buffer[x + y * y_shift] = color;
+    if(x < width && y < height){
+        z_buffer[x + y * y_shift] = color;
+    }
 }
 
 void draw_hline(size_t x, size_t y, size_t w, uint32_t color) {
     auto where = x + y * y_shift;
 
-    for (size_t i = 0; i < w; ++i) {
+    for (size_t i = 0; i < w && x + i < width; ++i) {
         z_buffer[where + i] = color;
     }
 }
@@ -60,7 +62,7 @@ void draw_hline(size_t x, size_t y, size_t w, uint32_t color) {
 void draw_vline(size_t x, size_t y, size_t h, uint32_t color) {
     auto where = x + y * y_shift;
 
-    for (size_t j = 0; j < h; ++j) {
+    for (size_t j = 0; j < h && y + j < height; ++j) {
         z_buffer[where] = color;
         where += y_shift;
     }
@@ -69,8 +71,8 @@ void draw_vline(size_t x, size_t y, size_t h, uint32_t color) {
 void draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color) {
     auto where = x + y * y_shift;
 
-    for (size_t j = 0; j < h; ++j) {
-        for (size_t i = 0; i < w; ++i) {
+    for (size_t j = 0; j < h && y + j < height; ++j) {
+        for (size_t i = 0; i < w && x + i < width; ++i) {
             z_buffer[where + i] = color;
         }
 
