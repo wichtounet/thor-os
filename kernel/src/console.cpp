@@ -35,6 +35,12 @@ void stdio::init_console(){
     }
 }
 
+void stdio::console::init(){
+    if(!text){
+        buffer = vesa::create_buffer();
+    }
+}
+
 size_t stdio::console::get_rows() const {
     if(text){
         return t_console.lines();
@@ -67,7 +73,11 @@ void stdio::console::print(char key){
         if(text){
             t_console.print_char(current_line, current_column, key);
         } else {
-            v_console.print_char(current_line, current_column, key);
+            if(active){
+                v_console.print_char(current_line, current_column, key);
+            } else {
+                v_console.print_char(buffer, current_line, current_column, key);
+            }
         }
 
         ++current_column;
@@ -82,7 +92,11 @@ void stdio::console::wipeout(){
     if(text){
         t_console.clear();
     } else {
-        v_console.clear();
+        if(active){
+            v_console.clear();
+        } else {
+            v_console.clear(buffer);
+        }
     }
 
     current_line = 0;
@@ -101,6 +115,10 @@ void stdio::console::restore(){
     v_console.restore(buffer);
 }
 
+void stdio::console::set_active(bool active){
+    this->active = active;
+}
+
 void stdio::console::next_line(){
     ++current_line;
 
@@ -108,7 +126,11 @@ void stdio::console::next_line(){
         if(text){
             t_console.scroll_up();
         } else {
-            v_console.scroll_up();
+            if(active){
+                v_console.scroll_up();
+            } else {
+                v_console.scroll_up(buffer);
+            }
         }
 
         --current_line;

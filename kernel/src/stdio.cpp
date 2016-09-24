@@ -136,8 +136,11 @@ void stdio::init_terminals(){
         terminal.mouse     = false;
     }
 
+    // Initialize the active terminal
+
     active_terminal = 0;
     terminals[active_terminal].active = true;
+    terminals[active_terminal].get_console().set_active(true);
 }
 
 void stdio::register_devices(){
@@ -162,7 +165,7 @@ void stdio::finalize(){
         terminal.input_thread_pid = input_process.pid;
 
         // Save the initial image of the terminal
-        terminal.save();
+        terminal.get_console().save();
     }
 }
 
@@ -184,8 +187,9 @@ void stdio::switch_terminal(size_t id){
     if(active_terminal != id){
         logging::logf(logging::log_level::TRACE, "stdio: Switch activate virtual terminal %u\n", id);
 
-        terminals[active_terminal].save();
-        terminals[id].restore();
+        // Effectively switch the terminal
+        terminals[active_terminal].set_active(false);
+        terminals[id].set_active(true);
 
         active_terminal = id;
     }

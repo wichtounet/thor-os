@@ -19,6 +19,8 @@ namespace stdio {
 void init_console();
 
 struct console {
+    void init();
+
     size_t get_columns() const ;
     size_t get_rows() const ;
 
@@ -26,16 +28,18 @@ struct console {
 
     void wipeout();
 
+    void set_active(bool active);
     void save();
     void restore();
 
 private:
     void next_line();
 
-    size_t current_line = 0;
+    size_t current_line   = 0;
     size_t current_column = 0;
 
-    void* buffer;
+    void* buffer = nullptr;
+    bool active  = false;
 };
 
 } // end of namespace stdio

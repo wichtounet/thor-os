@@ -130,12 +130,20 @@ bool stdio::virtual_terminal::is_canonical() const {
     return canonical;
 }
 
-void stdio::virtual_terminal::save(){
-    cons.save();
-}
+void stdio::virtual_terminal::set_active(bool active){
+    if(this->active == active){
+        return;
+    }
 
-void stdio::virtual_terminal::restore(){
-    cons.restore();
+    this->active = active;
+
+    cons.set_active(active);
+
+    if(active){
+        cons.restore();
+    } else {
+        cons.save();
+    }
 }
 
 stdio::console& stdio::virtual_terminal::get_console(){

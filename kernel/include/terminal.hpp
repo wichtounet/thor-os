@@ -83,9 +83,6 @@ struct virtual_terminal {
 
     void set_active(bool);
 
-    void save();
-    void restore();
-
     console& get_console();
 
     size_t id;

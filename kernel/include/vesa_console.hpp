@@ -12,11 +12,19 @@
 
 struct vesa_console {
     void init();
-    size_t lines();
-    size_t columns();
+
+    size_t lines() const ;
+    size_t columns() const ;
+
     void clear();
+    void clear(void* buffer);
+
     void scroll_up();
+    void scroll_up(void* buffer);
+
     void print_char(size_t line, size_t column, char c);
+    void print_char(void* buffer, size_t line, size_t column, char c);
+
     void* save(void* buffer);
     void restore(void* buffer);
 };
