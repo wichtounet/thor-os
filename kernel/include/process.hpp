@@ -13,6 +13,7 @@
 
 #include "paging.hpp"
 #include "interrupts.hpp"
+#include "conc/wait_list.hpp"
 
 #include "vfs/path.hpp"
 
@@ -77,6 +78,8 @@ struct process_t {
     char* kernel_stack;
 
     volatile interrupt::syscall_regs* context;
+
+    wait_node wait;
 
     std::vector<segment_t> segments;
 

@@ -231,6 +231,9 @@ scheduler::process_t& new_process(){
     process.process.brk_start = 0;
     process.process.brk_end = 0;
 
+    process.process.wait.pid = pid;
+    process.process.wait.next = nullptr;
+
     // By default, a process is working in root
     process.working_directory = path("/");
 
