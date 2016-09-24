@@ -22,7 +22,7 @@ namespace {
 stdio::terminal_driver terminal_driver_impl;
 stdio::terminal_driver* tty_driver = &terminal_driver_impl;
 
-constexpr const size_t MAX_TERMINALS = 2;
+constexpr const size_t MAX_TERMINALS = 3;
 size_t active_terminal;
 
 std::array<stdio::virtual_terminal, MAX_TERMINALS> terminals;
@@ -54,6 +54,8 @@ void input_thread(void* data){
                         stdio::switch_terminal(0);
                     } else if(alt && key == keyboard::KEY_F2){
                         stdio::switch_terminal(1);
+                    } else if(alt && key == keyboard::KEY_F3){
+                        stdio::switch_terminal(2);
                     }
 
                     if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){

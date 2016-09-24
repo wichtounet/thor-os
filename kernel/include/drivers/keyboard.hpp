@@ -24,6 +24,7 @@ const char KEY_LEFT_CTRL   = 0x1D;
 const char KEY_ALT         = 56;
 const char KEY_F1          = 59;
 const char KEY_F2          = 60;
+const char KEY_F3          = 61;
 
 void install_driver();
 char get_char();
