@@ -56,12 +56,12 @@ size_t vesa_console::columns() {
 }
 
 void vesa_console::clear() {
-    vesa::draw_rect(LEFT, TOP, _columns * 8, _lines * 16, 0, 0, 0);
+    vesa::draw_rect(LEFT, TOP, _columns * 8, _lines * 16, vesa::make_color(0, 0, 0));
 }
 
 void vesa_console::scroll_up() {
     vesa::move_lines_up(TOP + 16, LEFT, _columns * 8, (_lines - 1) * 16, 16);
-    vesa::draw_rect(LEFT, TOP + (_lines - 1) * 16, _columns * 8, 16, 0, 0, 0);
+    vesa::draw_rect(LEFT, TOP + (_lines - 1) * 16, _columns * 8, 16, vesa::make_color(0, 0, 0));
 }
 
 void vesa_console::print_char(size_t line, size_t column, char c) {

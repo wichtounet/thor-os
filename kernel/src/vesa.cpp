@@ -35,6 +35,8 @@ size_t red_shift;
 size_t blue_shift;
 size_t green_shift;
 
+size_t total_size;
+
 #include <tlib/Liberation.inl>
 
 } //end of anonymous namespace
@@ -50,7 +52,7 @@ void vesa::disable(){
 bool vesa::init(){
     auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
 
-    size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
+    total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
 
     //Get the physicaladdress of the LFB
     auto physical = block.linear_video_buffer;
@@ -126,16 +128,9 @@ uint32_t vesa::make_color(uint8_t r, uint8_t g, uint8_t b){
     return (r << red_shift) + (g << green_shift) + (b << blue_shift);
 }
 
-void vesa::draw_pixel(size_t x, size_t y, uint32_t color){
-    auto where = x + y * y_shift;
-    screen[where] = color;
-}
+void vesa::draw_hline(void* buffer, size_t x, size_t y, size_t w, uint32_t color){
+    auto screen = static_cast<uint32_t*>(buffer);
 
-void vesa::draw_pixel(size_t x, size_t y, uint8_t r, uint8_t g, uint8_t b){
-    draw_pixel(x, y, make_color(r, g, b));
-}
-
-void vesa::draw_hline(size_t x, size_t y, size_t w, uint32_t color){
     auto where = x + y * y_shift;
 
     for(size_t i = 0; i < w; ++i){
@@ -143,11 +138,13 @@ void vesa::draw_hline(size_t x, size_t y, size_t w, uint32_t color){
     }
 }
 
-void vesa::draw_hline(size_t x, size_t y, size_t w, uint8_t r, uint8_t g, uint8_t b){
-    draw_hline(x, y, w, make_color(r, g, b));
+void vesa::draw_hline(size_t x, size_t y, size_t w, uint32_t color){
+    draw_hline(screen, x, y, w, color);
 }
 
-void vesa::draw_vline(size_t x, size_t y, size_t h, uint32_t color){
+void vesa::draw_vline(void* buffer, size_t x, size_t y, size_t h, uint32_t color){
+    auto screen = static_cast<uint32_t*>(buffer);
+
     auto where = x + y * y_shift;
 
     for(size_t i = 0; i < h; ++i){
@@ -155,11 +152,13 @@ void vesa::draw_vline(size_t x, size_t y, size_t h, uint32_t color){
     }
 }
 
-void vesa::draw_vline(size_t x, size_t y, size_t h, uint8_t r, uint8_t g, uint8_t b){
-    draw_vline(x, y, h, make_color(r, g, b));
+void vesa::draw_vline(size_t x, size_t y, size_t h, uint32_t color){
+    draw_vline(screen, x, y, h, color);
 }
 
-void vesa::draw_char(size_t x, size_t y, char c, uint32_t color){
+void vesa::draw_char(void* buffer, size_t x, size_t y, char c, uint32_t color){
+    auto screen = static_cast<uint32_t*>(buffer);
+
     auto where = x + y * y_shift;
 
     auto font_char = &Liberation_VESA_data[c * 16];
@@ -177,11 +176,13 @@ void vesa::draw_char(size_t x, size_t y, char c, uint32_t color){
     }
 }
 
-void vesa::draw_char(size_t x, size_t y, char c, uint8_t r, uint8_t g, uint8_t b){
-    draw_char(x, y, c, make_color(r, g, b));
+void vesa::draw_char(size_t x, size_t y, char c, uint32_t color){
+    draw_char(screen, x, y, c, color);
 }
 
-void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
+void vesa::draw_rect(void* buffer, size_t x, size_t y, size_t w, size_t h, uint32_t color){
+    auto screen = static_cast<uint32_t*>(buffer);
+
     auto where = x + y * y_shift;
 
     for(size_t j = 0; j < h; ++j){
@@ -193,11 +194,13 @@ void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
     }
 }
 
-void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint8_t r, uint8_t g, uint8_t b){
-    draw_rect(x, y, w, h, make_color(r, g, b));
+void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
+    draw_rect(x, y, w, h, color);
 }
 
-void vesa::move_lines_up(size_t y, size_t x, size_t w, size_t lines, size_t n){
+void vesa::move_lines_up(void* buffer, size_t y, size_t x, size_t w, size_t lines, size_t n){
+    auto screen = static_cast<uint32_t*>(buffer);
+
     for(size_t i = 0; i < lines; ++i){
         auto destination = reinterpret_cast<size_t*>(screen + (y - n + i) * y_shift + x);
         auto source = reinterpret_cast<size_t*>(screen + (y + i) * y_shift + x);
@@ -206,16 +209,18 @@ void vesa::move_lines_up(size_t y, size_t x, size_t w, size_t lines, size_t n){
     }
 }
 
-void vesa::redraw(const char* buffer){
-    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
-    size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
+void vesa::move_lines_up(size_t y, size_t x, size_t w, size_t lines, size_t n){
+    move_lines_up(screen, y, x, w, lines, n);
+}
 
+void* vesa::create_buffer(){
+    return new char[total_size];
+}
+
+void vesa::redraw(const char* buffer){
     std::copy_n(buffer, total_size, reinterpret_cast<char*>(screen));
 }
 
 void vesa::save(char* buffer){
-    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
-    size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
-
     std::copy_n(reinterpret_cast<const char*>(screen), total_size, buffer);
 }
