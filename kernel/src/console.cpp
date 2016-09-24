@@ -26,24 +26,24 @@ bool text = true;
 
 } //end of anonymous namespace
 
-void stdio::init_console(){
+void stdio::init_console() {
     text = !vesa::enabled();
 
-    if(text){
+    if (text) {
         t_console.init();
     } else {
         v_console.init();
     }
 }
 
-void stdio::console::init(){
-    if(!text){
+void stdio::console::init() {
+    if (!text) {
         buffer = vesa::create_buffer();
     }
 }
 
 size_t stdio::console::get_rows() const {
-    if(text){
+    if (text) {
         return t_console.lines();
     } else {
         return v_console.lines();
@@ -51,30 +51,30 @@ size_t stdio::console::get_rows() const {
 }
 
 size_t stdio::console::get_columns() const {
-    if(text){
+    if (text) {
         return t_console.columns();
     } else {
         return v_console.columns();
     }
 }
 
-void stdio::console::print(char key){
-    if(key == '\n'){
+void stdio::console::print(char key) {
+    if (key == '\n') {
         next_line();
-    } else if(key == '\r'){
+    } else if (key == '\r') {
         // Ignore \r for now
-    } else if(key == '\b'){
+    } else if (key == '\b') {
         --current_column;
         print(' ');
         --current_column;
-    } else if(key == '\t'){
+    } else if (key == '\t') {
         print(' ');
         print(' ');
     } else {
-        if(text){
+        if (text) {
             t_console.print_char(current_line, current_column, key);
         } else {
-            if(active){
+            if (active) {
                 v_console.print_char(current_line, current_column, key);
             } else {
                 v_console.print_char(buffer, current_line, current_column, key);
@@ -83,51 +83,51 @@ void stdio::console::print(char key){
 
         ++current_column;
 
-        if(current_column == console::get_columns()){
+        if (current_column == console::get_columns()) {
             next_line();
         }
     }
 }
 
-void stdio::console::wipeout(){
-    if(text){
+void stdio::console::wipeout() {
+    if (text) {
         t_console.clear();
     } else {
-        if(active){
+        if (active) {
             v_console.clear();
         } else {
             v_console.clear(buffer);
         }
     }
 
-    current_line = 0;
+    current_line   = 0;
     current_column = 0;
 }
 
-void stdio::console::save(){
+void stdio::console::save() {
     thor_assert(!text, "save/restore of the text console is not yet supported");
 
     buffer = v_console.save(buffer);
 }
 
-void stdio::console::restore(){
+void stdio::console::restore() {
     thor_assert(!text, "save/restore of the text console is not yet supported");
 
     v_console.restore(buffer);
 }
 
-void stdio::console::set_active(bool active){
+void stdio::console::set_active(bool active) {
     this->active = active;
 }
 
-void stdio::console::next_line(){
+void stdio::console::next_line() {
     ++current_line;
 
-    if(current_line == console::get_rows()){
-        if(text){
+    if (current_line == console::get_rows()) {
+        if (text) {
             t_console.scroll_up();
         } else {
-            if(active){
+            if (active) {
                 v_console.scroll_up();
             } else {
                 v_console.scroll_up(buffer);

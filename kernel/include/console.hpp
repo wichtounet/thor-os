@@ -16,30 +16,68 @@
 
 namespace stdio {
 
+/*!
+ * \brief Init the console
+ */
 void init_console();
 
+/*!
+ * \brief A console
+ */
 struct console {
+    /*!
+     * \brief Init the console
+     */
     void init();
 
-    size_t get_columns() const ;
-    size_t get_rows() const ;
+    /*!
+     * \brief Returns the number of columns of the console
+     */
+    size_t get_columns() const;
 
+    /*!
+     * \brief Returns the number of rows of the console
+     */
+    size_t get_rows() const;
+
+    /*!
+     * \brief Print the given char to the console
+     * \param c The character to print
+     */
     void print(char c);
 
+    /*!
+     * \brief Clear the console
+     */
     void wipeout();
 
+    /*!
+     * \brief Set the active status of the console
+     * \param active The active status of the console
+     */
     void set_active(bool active);
+
+    /*!
+     * \brief Save the state of the console
+     */
     void save();
+
+    /*!
+     * \brief Restore the state of the console
+     */
     void restore();
 
 private:
+    /*!
+     * \brief Move to the next line
+     */
     void next_line();
 
-    size_t current_line   = 0;
-    size_t current_column = 0;
+    size_t current_line   = 0; ///< The current line of the console
+    size_t current_column = 0; ///< The current column of the console
 
-    void* buffer = nullptr;
-    bool active  = false;
+    void* buffer = nullptr; ///< The buffer to save the state
+    bool active  = false;   ///< The active status of the console
 };
 
 } // end of namespace stdio

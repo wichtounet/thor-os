@@ -27,7 +27,7 @@ size_t active_terminal;
 
 std::array<stdio::virtual_terminal, MAX_TERMINALS> terminals;
 
-void input_thread(void* data){
+void input_thread(void* data) {
     auto& terminal = *reinterpret_cast<stdio::virtual_terminal*>(data);
 
     auto pid = scheduler::get_pid();
@@ -35,62 +35,62 @@ void input_thread(void* data){
     logging::logf(logging::log_level::TRACE, "stdio: Input Thread for terminal %u started (pid:%u)\n", terminal.id, pid);
 
     bool shift = false;
-    bool alt = false;
+    bool alt   = false;
 
-    while(true){
+    while (true) {
         // Wait for some input
         scheduler::block_process(pid);
 
         // Handle keyboard input
-        while(!terminal.keyboard_buffer.empty()){
+        while (!terminal.keyboard_buffer.empty()) {
             auto key = terminal.keyboard_buffer.pop();
 
-            if(terminal.canonical){
+            if (terminal.canonical) {
                 //Key released
-                if(key & 0x80){
+                if (key & 0x80) {
                     key &= ~(0x80);
 
-                    if(alt && key == keyboard::KEY_F1){
+                    if (alt && key == keyboard::KEY_F1) {
                         stdio::switch_terminal(0);
-                    } else if(alt && key == keyboard::KEY_F2){
+                    } else if (alt && key == keyboard::KEY_F2) {
                         stdio::switch_terminal(1);
-                    } else if(alt && key == keyboard::KEY_F3){
+                    } else if (alt && key == keyboard::KEY_F3) {
                         stdio::switch_terminal(2);
                     }
 
-                    if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
+                    if (key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT) {
                         shift = false;
                     }
 
-                    if(key == keyboard::KEY_ALT){
+                    if (key == keyboard::KEY_ALT) {
                         alt = false;
                     }
                 }
                 //Key pressed
                 else {
-                    if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
+                    if (key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT) {
                         shift = true;
-                    } else if(key == keyboard::KEY_ALT){
+                    } else if (key == keyboard::KEY_ALT) {
                         alt = true;
-                    } else if(key == keyboard::KEY_BACKSPACE){
-                        if(!terminal.input_buffer.empty()){
+                    } else if (key == keyboard::KEY_BACKSPACE) {
+                        if (!terminal.input_buffer.empty()) {
                             terminal.input_buffer.pop_last();
                             terminal.print('\b');
                         }
                     } else {
                         auto qwertz_key =
                             shift
-                            ? keyboard::shift_key_to_ascii(key)
-                            : keyboard::key_to_ascii(key);
+                                ? keyboard::shift_key_to_ascii(key)
+                                : keyboard::key_to_ascii(key);
 
-                        if(qwertz_key){
+                        if (qwertz_key) {
                             terminal.input_buffer.push(qwertz_key);
 
                             terminal.print(qwertz_key);
 
-                            if(qwertz_key == '\n'){
+                            if (qwertz_key == '\n') {
                                 // Transfer current line to the canonical buffer
-                                while(!terminal.input_buffer.empty()){
+                                while (!terminal.input_buffer.empty()) {
                                     terminal.canonical_buffer.push(terminal.input_buffer.pop());
                                 }
 
@@ -112,10 +112,10 @@ void input_thread(void* data){
         }
 
         // Handle mouse input
-        while(!terminal.mouse_buffer.empty()){
+        while (!terminal.mouse_buffer.empty()) {
             auto key = terminal.mouse_buffer.pop();
 
-            if(!terminal.canonical && terminal.mouse){
+            if (!terminal.canonical && terminal.is_mouse()) {
                 terminal.raw_buffer.push(key);
 
                 terminal.input_queue.notify_one();
@@ -128,10 +128,10 @@ void input_thread(void* data){
 
 } //end of anonymous namespace
 
-void stdio::init_terminals(){
+void stdio::init_terminals() {
     size_t id = 0;
 
-    for(auto& terminal : terminals){
+    for (auto& terminal : terminals) {
         terminal.id        = id++;
         terminal.active    = false;
         terminal.canonical = true;
@@ -140,25 +140,25 @@ void stdio::init_terminals(){
 
     // Initialize the active terminal
 
-    active_terminal = 0;
+    active_terminal                   = 0;
     terminals[active_terminal].active = true;
     terminals[active_terminal].get_console().set_active(true);
 }
 
-void stdio::register_devices(){
-    for(auto& terminal : terminals){
+void stdio::register_devices() {
+    for (auto& terminal : terminals) {
         std::string name = std::string("tty") + std::to_string(terminal.id);
 
         devfs::register_device("/dev/", name, devfs::device_type::CHAR_DEVICE, tty_driver, &terminal);
     }
 }
 
-void stdio::finalize(){
-    for(auto& terminal : terminals){
+void stdio::finalize() {
+    for (auto& terminal : terminals) {
         auto* user_stack   = new char[scheduler::user_stack_size];
         auto* kernel_stack = new char[scheduler::kernel_stack_size];
 
-        auto& input_process = scheduler::create_kernel_task_args("tty_input", user_stack, kernel_stack, &input_thread, &terminal);
+        auto& input_process    = scheduler::create_kernel_task_args("tty_input", user_stack, kernel_stack, &input_thread, &terminal);
         input_process.ppid     = 1;
         input_process.priority = scheduler::DEFAULT_PRIORITY;
 
@@ -172,22 +172,22 @@ void stdio::finalize(){
     }
 }
 
-size_t stdio::terminals_count(){
+size_t stdio::terminals_count() {
     return MAX_TERMINALS;
 }
 
-stdio::virtual_terminal& stdio::get_active_terminal(){
+stdio::virtual_terminal& stdio::get_active_terminal() {
     return terminals[active_terminal];
 }
 
-stdio::virtual_terminal& stdio::get_terminal(size_t id){
+stdio::virtual_terminal& stdio::get_terminal(size_t id) {
     thor_assert(id < MAX_TERMINALS, "Out of bound tty");
 
     return terminals[id];
 }
 
-void stdio::switch_terminal(size_t id){
-    if(active_terminal != id){
+void stdio::switch_terminal(size_t id) {
+    if (active_terminal != id) {
         logging::logf(logging::log_level::TRACE, "stdio: Switch activate virtual terminal %u\n", id);
 
         // Effectively switch the terminal

@@ -23,7 +23,13 @@ namespace stdio {
 
 constexpr const size_t INPUT_BUFFER_SIZE = 256;
 
+/*!
+ * \brief A virtual terminal
+ */
 struct virtual_terminal {
+    /*!
+     * \brief Construct a new virtual_terminal
+     */
     virtual_terminal(){}
 
     virtual_terminal(const virtual_terminal& rhs) = delete;
@@ -32,6 +38,10 @@ struct virtual_terminal {
     virtual_terminal(virtual_terminal&& rhs) = delete;
     virtual_terminal& operator=(virtual_terminal&& rhs) = delete;
 
+    /*!
+     * \brief Print the given char to the terminal
+     * \param c The character to print
+     */
     void print(char c);
 
     /*!
@@ -76,13 +86,36 @@ struct virtual_terminal {
      */
     size_t read_input_raw(size_t ms);
 
+    /*!
+     * \brief Set the canonical mode of the terminal
+     * \param can The canonical mode of the terminal
+     */
     void set_canonical(bool can);
+
+    /*!
+     * \brief Set the mouse mode of the terminal
+     * \param can The mouse mode of the terminal
+     */
     void set_mouse(bool m);
 
+    /*!
+     * \brief Returns true if the terminal is in canonical mode, false otherwise
+     */
     bool is_canonical() const;
 
+    /*!
+     * \brief Returns true if the terminal is in mouse mode, false otherwise
+     */
+    bool is_mouse() const;
+
+    /*!
+     * \brief Set the active mode of the terminal
+     */
     void set_active(bool);
 
+    /*!
+     * \brief Returns the console linked to this terminal
+     */
     console& get_console();
 
     size_t id;
