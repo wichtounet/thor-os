@@ -122,16 +122,37 @@ size_t console::get_columns(){
     }
 }
 
+struct console_state {
+    size_t current_line;
+    size_t current_column;
+    void* buffer = nullptr;
+};
+
 void* console::save(void* buffer){
     thor_assert(!text, "save/restore of the text console is not yet supported");
 
-    return v_console.save(buffer);
+    auto* state = static_cast<console_state*>(buffer);
+    if(!state){
+        state = new console_state;
+    }
+
+    state->current_line   = current_line;
+    state->current_column = current_column;
+
+    state->buffer = v_console.save(state->buffer);
+
+    return state;
 }
 
 void console::restore(void* buffer){
     thor_assert(!text, "save/restore of the text console is not yet supported");
 
-    v_console.restore(buffer);
+    auto* state = static_cast<console_state*>(buffer);
+
+    current_line   = state->current_line;
+    current_column = state->current_column;
+
+    v_console.restore(state->buffer);
 }
 
 void console::set_column(size_t column){
