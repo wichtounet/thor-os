@@ -82,9 +82,21 @@ void print_signed(D number){
     }
 }
 
+void next_line(){
+    ++current_line;
+
+    if(current_line == console::get_rows()){
+        scroll_up();
+
+        --current_line;
+    }
+
+    current_column = 0;
+}
+
 } //end of anonymous namespace
 
-void init_console(){
+void console::init(){
     text = !vesa::enabled();
 
     if(text){
@@ -94,7 +106,7 @@ void init_console(){
     }
 }
 
-size_t get_rows(){
+size_t console::get_rows(){
     if(text){
         return t_console.lines();
     } else {
@@ -102,7 +114,7 @@ size_t get_rows(){
     }
 }
 
-size_t get_columns(){
+size_t console::get_columns(){
     if(text){
         return t_console.columns();
     } else {
@@ -110,32 +122,39 @@ size_t get_columns(){
     }
 }
 
-void* save(void* buffer){
+void* console::save(void* buffer){
     thor_assert(!text, "save/restore of the text console is not yet supported");
 
     return v_console.save(buffer);
 }
 
-void restore(void* buffer){
+void console::restore(void* buffer){
     thor_assert(!text, "save/restore of the text console is not yet supported");
 
     v_console.restore(buffer);
 }
 
-void set_column(size_t column){
+void console::set_column(size_t column){
     current_column = column;
 }
 
-size_t get_column(){
+size_t console::get_column(){
     return current_column;
 }
 
-void set_line(size_t line){
+void console::set_line(size_t line){
     current_line = line;
 }
 
-size_t get_line(){
+size_t console::get_line(){
     return current_line;
+}
+
+void console::wipeout(){
+    clear();
+
+    current_line = 0;
+    current_column = 0;
 }
 
 void k_print(uint8_t number){
@@ -170,18 +189,6 @@ void k_print(int64_t number){
     print_signed<20,uint64_t,int64_t>(number);
 }
 
-void next_line(){
-    ++current_line;
-
-    if(current_line == get_rows()){
-        scroll_up();
-
-        --current_line;
-    }
-
-    current_column = 0;
-}
-
 void k_print(char key){
     if(key == '\n'){
         next_line();
@@ -198,7 +205,7 @@ void k_print(char key){
 
         ++current_column;
 
-        if(current_column == get_columns()){
+        if(current_column == console::get_columns()){
             next_line();
         }
     }
@@ -220,13 +227,6 @@ void k_print(const char* str, uint64_t end){
     for(uint64_t i = 0; i < end && str[i] != 0; ++i){
         k_print(str[i]);
     }
-}
-
-void wipeout(){
-    clear();
-
-    current_line = 0;
-    current_column = 0;
 }
 
 #include "printf_def.hpp"

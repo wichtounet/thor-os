@@ -108,15 +108,15 @@ void sc_sbrk(interrupt::syscall_regs* regs){
 }
 
 void sc_get_columns(interrupt::syscall_regs* regs){
-    regs->rax = get_columns();
+    regs->rax = console::get_columns();
 }
 
 void sc_get_rows(interrupt::syscall_regs* regs){
-    regs->rax = get_rows();
+    regs->rax = console::get_rows();
 }
 
 void sc_clear_screen(interrupt::syscall_regs*){
-    wipeout();
+    console::wipeout();
 }
 
 void sc_reboot(interrupt::syscall_regs*){

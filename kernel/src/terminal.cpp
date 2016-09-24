@@ -239,11 +239,11 @@ bool stdio::virtual_terminal::is_canonical() const {
 }
 
 void stdio::virtual_terminal::save(){
-    buffer = ::save(buffer);
+    buffer = console::save(buffer);
 }
 
 void stdio::virtual_terminal::restore(){
-    ::restore(buffer);
+    console::restore(buffer);
 }
 
 void stdio::init_terminals(){

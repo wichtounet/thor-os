@@ -14,9 +14,9 @@
 #include <enable_if.hpp>
 #include <string.hpp>
 
-// TODO Use a namespace
+namespace console {
 
-void init_console();
+void init();
 
 size_t get_columns();
 size_t get_rows();
@@ -31,6 +31,9 @@ void set_line(size_t line);
 size_t get_line();
 
 void wipeout();
+
+} // end of namespace console
+
 void k_print(char key);
 void k_print(const char* string);
 void k_print(const char* string, uint64_t end);
