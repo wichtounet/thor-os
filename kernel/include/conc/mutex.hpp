@@ -49,8 +49,6 @@ struct mutex {
         } else {
             queue.enqueue();
 
-            auto pid = scheduler::get_pid();
-            scheduler::block_process_light(pid);
             value_lock.unlock();
             scheduler::reschedule();
         }
@@ -84,8 +82,7 @@ struct mutex {
         if (queue.empty()) {
             value = 1;
         } else {
-            auto pid = queue.dequeue();
-            scheduler::unblock_process(pid);
+            queue.dequeue();
 
             //No need to increment value, the process won't
             //decrement it

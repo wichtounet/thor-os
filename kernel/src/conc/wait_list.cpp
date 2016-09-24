@@ -24,6 +24,8 @@ void wait_list::enqueue() {
     } else {
         tail = tail->next = &process.wait;
     }
+
+    scheduler::block_process_light(pid);
 }
 
 size_t wait_list::dequeue() {
@@ -34,6 +36,8 @@ size_t wait_list::dequeue() {
     } else {
         head = head->next;
     }
+
+    scheduler::unblock_process(pid);
 
     return pid;
 }

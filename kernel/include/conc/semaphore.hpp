@@ -45,8 +45,6 @@ struct semaphore {
         } else {
             queue.enqueue();
 
-            auto pid = scheduler::get_pid();
-            scheduler::block_process_light(pid);
             value_lock.unlock();
             scheduler::reschedule();
         }
@@ -84,8 +82,7 @@ struct semaphore {
             ++value;
         } else {
             // Wake up the process
-            auto pid = queue.dequeue();
-            scheduler::unblock_process(pid);
+            queue.dequeue();
 
             //No need to increment value, the process won't
             //decrement it
@@ -105,8 +102,7 @@ struct semaphore {
             value += n;
         } else {
             while (n && !queue.empty()) {
-                auto pid = queue.dequeue();
-                scheduler::unblock_process(pid);
+                queue.dequeue();
                 --n;
             }
 
