@@ -8,6 +8,8 @@
 #ifndef SPINLOCK_H
 #define SPINLOCK_H
 
+#include <types.hpp>
+
 /*!
  * \brief Implementation of a spinlock
  *
