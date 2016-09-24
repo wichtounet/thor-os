@@ -8,10 +8,11 @@
 #ifndef MUTEX_H
 #define MUTEX_H
 
-#include <circular_buffer.hpp>
+#include <types.hpp>
 #include <lock_guard.hpp>
 
 #include "conc/spinlock.hpp"
+#include "conc/wait_list.hpp"
 
 #include "scheduler.hpp"
 #include "logging.hpp"
@@ -46,9 +47,9 @@ struct mutex {
 
             value_lock.unlock();
         } else {
-            auto pid = scheduler::get_pid();
-            queue.push(pid);
+            queue.enqueue();
 
+            auto pid = scheduler::get_pid();
             scheduler::block_process_light(pid);
             value_lock.unlock();
             scheduler::reschedule();
@@ -83,7 +84,7 @@ struct mutex {
         if (queue.empty()) {
             value = 1;
         } else {
-            auto pid = queue.pop();
+            auto pid = queue.dequeue();
             scheduler::unblock_process(pid);
 
             //No need to increment value, the process won't
@@ -92,9 +93,9 @@ struct mutex {
     }
 
 private:
-    mutable spinlock value_lock;                 ///< The spin protecting the value
-    volatile size_t value = 1;                   ///< The value of the mutex
-    circular_buffer<scheduler::pid_t, 16> queue; ///< The sleep queue
+    mutable spinlock value_lock; ///< The spin protecting the value
+    volatile size_t value = 1;   ///< The value of the mutex
+    wait_list queue;             ///< The sleep queue
 };
 
 #endif
