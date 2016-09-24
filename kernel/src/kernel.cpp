@@ -22,6 +22,7 @@
 #include "arch.hpp"
 #include "vesa.hpp"
 #include "console.hpp"
+#include "print.hpp"
 #include "gdt.hpp"
 #include "stdio.hpp"
 #include "scheduler.hpp"

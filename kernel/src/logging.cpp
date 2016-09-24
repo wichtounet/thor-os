@@ -11,7 +11,7 @@
 
 #include "logging.hpp"
 #include "assert.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "virtual_debug.hpp"
 #include "early_memory.hpp"
 #include "vfs/vfs.hpp"

@@ -6,7 +6,7 @@
 //=======================================================================
 
 #include "kalloc.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "physical_allocator.hpp"
 #include "paging.hpp"
 #include "e820.hpp"

@@ -12,7 +12,7 @@
 #include "paging.hpp"
 #include "kernel.hpp"
 #include "physical_allocator.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "assert.hpp"
 #include "process.hpp"
 #include "physical_pointer.hpp"

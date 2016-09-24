@@ -8,7 +8,7 @@
 #include <types.hpp>
 
 #include "interrupts.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "kernel_utils.hpp"
 #include "gdt.hpp"
 #include "scheduler.hpp"

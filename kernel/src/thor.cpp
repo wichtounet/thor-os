@@ -9,7 +9,7 @@
 #include "kalloc.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
-#include "console.hpp"
+#include "print.hpp"
 
 void* operator new(uint64_t size){
     return kalloc::k_malloc(size);

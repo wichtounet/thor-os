@@ -7,6 +7,7 @@
 
 #include "system_calls.hpp"
 #include "console.hpp"
+#include "print.hpp"
 #include "scheduler.hpp"
 #include "timer.hpp"
 #include "drivers/keyboard.hpp"

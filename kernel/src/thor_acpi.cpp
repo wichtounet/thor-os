@@ -16,7 +16,7 @@
 #include "acpica.hpp"
 
 #include "kalloc.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "scheduler.hpp"
 #include "virtual_allocator.hpp"
 #include "paging.hpp"

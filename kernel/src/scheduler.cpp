@@ -22,7 +22,7 @@
 #include "gdt.hpp"
 #include "stdio.hpp"
 #include "disks.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "physical_allocator.hpp"
 #include "virtual_allocator.hpp"
 #include "physical_pointer.hpp"

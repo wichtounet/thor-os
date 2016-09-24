@@ -15,6 +15,8 @@
 #include "logging.hpp"
 #include "scheduler.hpp"
 
+#include "print.hpp"
+
 void stdio::virtual_terminal::print(char key){
     //TODO If it is not the active terminal, buffer it
     k_print(key);

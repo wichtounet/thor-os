@@ -17,7 +17,7 @@
 
 //For problems during boot
 #include "kernel.hpp"
-#include "console.hpp"
+#include "print.hpp"
 
 namespace {
 

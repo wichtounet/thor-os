@@ -6,7 +6,7 @@
 //=======================================================================
 
 #include "assert.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "kernel.hpp"
 #include "logging.hpp"
 

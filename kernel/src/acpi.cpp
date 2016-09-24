@@ -10,7 +10,7 @@
 #include "kernel_utils.hpp"
 #include "timer.hpp"
 #include "paging.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "logging.hpp"
 #include "scheduler.hpp"
 #include "arch.hpp"

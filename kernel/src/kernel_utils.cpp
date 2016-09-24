@@ -6,7 +6,7 @@
 //=======================================================================
 
 #include "kernel_utils.hpp"
-#include "console.hpp"
+#include "print.hpp"
 
 void print_stack(const char* s, size_t check){
     printf("%s stack: %u (16B-a:%u) \n", s, check, static_cast<size_t>(check % 16));

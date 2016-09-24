@@ -11,7 +11,7 @@
 
 #include "disks.hpp"
 #include "thor.hpp"
-#include "console.hpp"
+#include "print.hpp"
 #include "logging.hpp"
 
 // The disks implementation
