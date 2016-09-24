@@ -13,7 +13,7 @@
 #include "kernel_utils.hpp"
 #include "logging.hpp"
 #include "vesa.hpp"
-#include "terminal.hpp"
+#include "stdio.hpp"
 
 namespace {
 

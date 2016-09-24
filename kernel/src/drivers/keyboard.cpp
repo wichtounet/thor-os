@@ -9,7 +9,7 @@
 
 #include "interrupts.hpp"
 #include "kernel_utils.hpp"
-#include "terminal.hpp"
+#include "stdio.hpp"
 #include "logging.hpp"
 
 using keycode = std::keycode;

@@ -10,7 +10,7 @@
 #include "scheduler.hpp"
 #include "timer.hpp"
 #include "drivers/keyboard.hpp"
-#include "terminal.hpp"
+#include "stdio.hpp"
 #include "acpi.hpp"
 #include "drivers/rtc.hpp"
 #include "kernel_utils.hpp"

@@ -20,7 +20,7 @@
 #include "paging.hpp"
 #include "assert.hpp"
 #include "gdt.hpp"
-#include "terminal.hpp"
+#include "stdio.hpp"
 #include "disks.hpp"
 #include "console.hpp"
 #include "physical_allocator.hpp"

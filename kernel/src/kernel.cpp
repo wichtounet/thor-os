@@ -23,7 +23,7 @@
 #include "vesa.hpp"
 #include "console.hpp"
 #include "gdt.hpp"
-#include "terminal.hpp"
+#include "stdio.hpp"
 #include "scheduler.hpp"
 #include "logging.hpp"
 #include "net/network.hpp"

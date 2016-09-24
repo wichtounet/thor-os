@@ -102,22 +102,6 @@ struct virtual_terminal {
     void* buffer = nullptr;
 };
 
-struct terminal_driver : devfs::char_driver {
-    size_t read(void* data, char* buffer, size_t count, size_t& read);
-    size_t read(void* data, char* buffer, size_t count, size_t& read, size_t ms);
-    size_t write(void* data, const char* buffer, size_t count, size_t& written);
-};
-
-void init_terminals();
-void register_devices();
-void finalize();
-
-void switch_terminal(size_t id);
-
-size_t terminals_count();
-virtual_terminal& get_active_terminal();
-virtual_terminal& get_terminal(size_t id);
-
 } //end of namespace stdio
 
 #endif
