@@ -37,6 +37,12 @@ struct wait_list {
      */
     size_t dequeue();
 
+    /*!
+     * \brief Returns the top process of queue
+     * \return The pid of the top process
+     */
+    size_t top();
+
 private:
     wait_node* head = nullptr; ///< The head of the list
     wait_node* tail = nullptr; ///< The tail of the list

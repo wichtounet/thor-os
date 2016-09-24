@@ -37,3 +37,7 @@ size_t wait_list::dequeue() {
 
     return pid;
 }
+
+size_t wait_list::top() {
+    return head->pid;
+}
