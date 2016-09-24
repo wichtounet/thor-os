@@ -214,7 +214,7 @@ public:
         auto mouse_x = tlib::graphics::mouse_x();
         auto mouse_y = tlib::graphics::mouse_y();
 
-        return mouse_x >= x && mouse_x <= x + width && mouse_y >= y + 2 && mouse_y <= mouse_y + 18;
+        return mouse_x >= x && mouse_x <= x + width && mouse_y >= y + 2 && mouse_y <= y + 18;
     }
 
     bool inside(size_t look_x, size_t look_y) {
@@ -327,6 +327,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     raise();
 
                     if (windows.front().mouse_in_title()) {
+                        tlib::user_logf("odin: start drag");
                         windows.front().start_drag();
                     }
 
