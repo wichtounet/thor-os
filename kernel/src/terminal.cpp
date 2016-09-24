@@ -18,8 +18,7 @@
 #include "print.hpp"
 
 void stdio::virtual_terminal::print(char key){
-    //TODO If it is not the active terminal, buffer it
-    k_print(key);
+    cons.print(key);
 }
 
 void stdio::virtual_terminal::send_input(char key){
@@ -132,9 +131,13 @@ bool stdio::virtual_terminal::is_canonical() const {
 }
 
 void stdio::virtual_terminal::save(){
-    buffer = console::save(buffer);
+    cons.save();
 }
 
 void stdio::virtual_terminal::restore(){
-    console::restore(buffer);
+    cons.restore();
+}
+
+stdio::console& stdio::virtual_terminal::get_console(){
+    return cons;
 }

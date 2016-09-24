@@ -6,7 +6,6 @@
 //=======================================================================
 
 #include "system_calls.hpp"
-#include "console.hpp"
 #include "print.hpp"
 #include "scheduler.hpp"
 #include "timer.hpp"
@@ -109,15 +108,24 @@ void sc_sbrk(interrupt::syscall_regs* regs){
 }
 
 void sc_get_columns(interrupt::syscall_regs* regs){
-    regs->rax = console::get_columns();
+    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
+    auto& tty = stdio::get_terminal(ttyid);
+
+    regs->rax = tty.get_console().get_columns();
 }
 
 void sc_get_rows(interrupt::syscall_regs* regs){
-    regs->rax = console::get_rows();
+    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
+    auto& tty = stdio::get_terminal(ttyid);
+
+    regs->rax = tty.get_console().get_rows();
 }
 
 void sc_clear_screen(interrupt::syscall_regs*){
-    console::wipeout();
+    auto ttyid = scheduler::get_process(scheduler::get_pid()).tty;
+    auto& tty = stdio::get_terminal(ttyid);
+
+    tty.get_console().wipeout();
 }
 
 void sc_reboot(interrupt::syscall_regs*){

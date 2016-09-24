@@ -14,24 +14,30 @@
 #include <enable_if.hpp>
 #include <string.hpp>
 
-namespace console {
+namespace stdio {
 
-void init();
+void init_console();
 
-size_t get_columns();
-size_t get_rows();
+struct console {
+    size_t get_columns() const ;
+    size_t get_rows() const ;
 
-void* save(void* buffer);
-void restore(void* buffer);
+    void print(char c);
 
-void set_column(size_t column);
-size_t get_column();
+    void wipeout();
 
-void set_line(size_t line);
-size_t get_line();
+    void save();
+    void restore();
 
-void wipeout();
+private:
+    void next_line();
 
-} // end of namespace console
+    size_t current_line = 0;
+    size_t current_column = 0;
+
+    void* buffer;
+};
+
+} // end of namespace stdio
 
 #endif

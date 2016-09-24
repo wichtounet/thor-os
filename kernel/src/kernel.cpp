@@ -92,7 +92,7 @@ void kernel_main(){
         suspend_boot();
     }
 
-    console::init();
+    stdio::init_console();
     stdio::init_terminals();
 
     //Finalize memory operations (register sysfs values)

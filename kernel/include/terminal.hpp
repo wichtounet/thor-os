@@ -17,6 +17,8 @@
 
 #include "fs/devfs.hpp"
 
+#include "console.hpp"
+
 namespace stdio {
 
 constexpr const size_t INPUT_BUFFER_SIZE = 256;
@@ -79,8 +81,12 @@ struct virtual_terminal {
 
     bool is_canonical() const;
 
+    void set_active(bool);
+
     void save();
     void restore();
+
+    console& get_console();
 
     size_t id;
     bool active;
@@ -99,7 +105,8 @@ struct virtual_terminal {
 
     condition_variable input_queue;
 
-    void* buffer = nullptr;
+private:
+    console cons;
 };
 
 } //end of namespace stdio
