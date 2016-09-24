@@ -226,7 +226,7 @@ scheduler::process_t& new_process(){
     process.process.ppid = current_pid;
     process.process.priority = scheduler::DEFAULT_PRIORITY;
     process.state = scheduler::process_state::NEW;
-    process.process.tty = stdio::get_active_terminal().id;
+    process.process.tty = pcb[current_pid].process.tty;;
 
     process.process.brk_start = 0;
     process.process.brk_end = 0;
@@ -269,6 +269,8 @@ void create_init_tasks(){
         init_process.ppid = 0;
         init_process.priority = scheduler::MIN_PRIORITY + 1;
 
+        init_process.tty = i;
+
         auto pid = init_process.pid;
         if(i == 0){
             init_pid = pid;
@@ -282,6 +284,8 @@ void create_init_tasks(){
         pcb[pid].handles.emplace_back(tty);
 
         scheduler::queue_system_process(pid);
+
+        logging::logf(logging::log_level::DEBUG, "scheduler: init_task %u tty:%u fd:%s\n", pid, init_process.tty, tty.c_str());
     }
 }
 
@@ -614,7 +618,7 @@ void scheduler::init(){
 
 void scheduler::start(){
     //Run the init task by default
-    current_pid = 1;
+    current_pid = init_pid;
     pcb[current_pid].state = scheduler::process_state::RUNNING;
 
     started = true;
