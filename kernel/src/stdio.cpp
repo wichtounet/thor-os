@@ -165,6 +165,7 @@ void stdio::finalize(){
         terminal.input_thread_pid = input_process.pid;
 
         // Save the initial image of the terminal
+        terminal.get_console().init();
         terminal.get_console().save();
     }
 }

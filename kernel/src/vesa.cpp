@@ -195,7 +195,7 @@ void vesa::draw_rect(void* buffer, size_t x, size_t y, size_t w, size_t h, uint3
 }
 
 void vesa::draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color){
-    draw_rect(x, y, w, h, color);
+    draw_rect(screen, x, y, w, h, color);
 }
 
 void vesa::move_lines_up(void* buffer, size_t y, size_t x, size_t w, size_t lines, size_t n){

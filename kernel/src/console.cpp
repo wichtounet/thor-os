@@ -13,6 +13,7 @@
 #include "assert.hpp"
 #include "console.hpp"
 #include "vesa.hpp"
+#include "logging.hpp"
 
 #include "text_console.hpp"
 #include "vesa_console.hpp"
