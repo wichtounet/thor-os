@@ -79,6 +79,9 @@ struct virtual_terminal {
 
     bool is_canonical() const;
 
+    void save();
+    void restore();
+
     size_t id;
     bool active;
     bool canonical;
@@ -95,6 +98,8 @@ struct virtual_terminal {
     circular_buffer<size_t, 3 * INPUT_BUFFER_SIZE> raw_buffer;
 
     condition_variable input_queue;
+
+    void* buffer = nullptr;
 };
 
 struct terminal_driver : devfs::char_driver {
@@ -107,6 +112,9 @@ void init_terminals();
 void register_devices();
 void finalize();
 
+void switch_terminal(size_t id);
+
+size_t terminals_count();
 virtual_terminal& get_active_terminal();
 virtual_terminal& get_terminal(size_t id);
 

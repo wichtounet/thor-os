@@ -10,6 +10,7 @@
 #include <types.hpp>
 #include <string.hpp>
 
+#include "assert.hpp"
 #include "console.hpp"
 #include "vesa.hpp"
 
@@ -107,6 +108,18 @@ size_t get_columns(){
     } else {
         return v_console.columns();
     }
+}
+
+void* save(void* buffer){
+    thor_assert(!text, "save/restore of the text console is not yet supported");
+
+    return v_console.save(buffer);
+}
+
+void restore(void* buffer){
+    thor_assert(!text, "save/restore of the text console is not yet supported");
+
+    v_console.restore(buffer);
 }
 
 void set_column(size_t column){

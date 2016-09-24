@@ -33,6 +33,7 @@ void input_thread(void* data){
     logging::logf(logging::log_level::TRACE, "stdio: Input Thread for terminal %u started (pid:%u)\n", terminal.id, pid);
 
     bool shift = false;
+    bool alt = false;
 
     while(true){
         // Wait for some input
@@ -46,14 +47,27 @@ void input_thread(void* data){
                 //Key released
                 if(key & 0x80){
                     key &= ~(0x80);
+
+                    if(alt && key == keyboard::KEY_F1){
+                        stdio::switch_terminal(0);
+                    } else if(alt && key == keyboard::KEY_F2){
+                        stdio::switch_terminal(1);
+                    }
+
                     if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
                         shift = false;
+                    }
+
+                    if(key == keyboard::KEY_ALT){
+                        alt = false;
                     }
                 }
                 //Key pressed
                 else {
                     if(key == keyboard::KEY_LEFT_SHIFT || key == keyboard::KEY_RIGHT_SHIFT){
                         shift = true;
+                    } else if(key == keyboard::KEY_ALT){
+                        alt = true;
                     } else if(key == keyboard::KEY_BACKSPACE){
                         if(!terminal.input_buffer.empty()){
                             terminal.input_buffer.pop_last();
@@ -224,6 +238,14 @@ bool stdio::virtual_terminal::is_canonical() const {
     return canonical;
 }
 
+void stdio::virtual_terminal::save(){
+    buffer = ::save(buffer);
+}
+
+void stdio::virtual_terminal::restore(){
+    ::restore(buffer);
+}
+
 void stdio::init_terminals(){
     size_t id = 0;
 
@@ -258,7 +280,14 @@ void stdio::finalize(){
         scheduler::queue_system_process(input_process.pid);
 
         terminal.input_thread_pid = input_process.pid;
+
+        // Save the initial image of the terminal
+        terminal.save();
     }
+}
+
+size_t stdio::terminals_count(){
+    return MAX_TERMINALS;
 }
 
 stdio::virtual_terminal& stdio::get_active_terminal(){
@@ -269,6 +298,17 @@ stdio::virtual_terminal& stdio::get_terminal(size_t id){
     thor_assert(id < MAX_TERMINALS, "Out of bound tty");
 
     return terminals[id];
+}
+
+void stdio::switch_terminal(size_t id){
+    if(active_terminal != id){
+        logging::logf(logging::log_level::TRACE, "stdio: Switch activate virtual terminal %u\n", id);
+
+        terminals[active_terminal].save();
+        terminals[id].restore();
+
+        active_terminal = id;
+    }
 }
 
 size_t stdio::terminal_driver::read(void* data, char* buffer, size_t count, size_t& read){

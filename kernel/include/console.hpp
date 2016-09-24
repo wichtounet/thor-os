@@ -14,10 +14,15 @@
 #include <enable_if.hpp>
 #include <string.hpp>
 
+// TODO Use a namespace
+
 void init_console();
 
 size_t get_columns();
 size_t get_rows();
+
+void* save(void* buffer);
+void restore(void* buffer);
 
 void set_column(size_t column);
 size_t get_column();

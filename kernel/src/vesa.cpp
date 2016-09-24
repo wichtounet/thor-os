@@ -212,3 +212,10 @@ void vesa::redraw(const char* buffer){
 
     std::copy_n(buffer, total_size, reinterpret_cast<char*>(screen));
 }
+
+void vesa::save(char* buffer){
+    auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
+    size_t total_size = static_cast<size_t>(block.height) * block.bytes_per_scan_line;
+
+    std::copy_n(reinterpret_cast<const char*>(screen), total_size, buffer);
+}

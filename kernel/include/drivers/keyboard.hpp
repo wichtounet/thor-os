@@ -14,14 +14,16 @@
 
 namespace keyboard {
 
-const char KEY_ENTER = 0x1C;
-const char KEY_BACKSPACE = 0x0E;
-const char KEY_UP = 0x48;
-const char KEY_DOWN = 0x50;
-const char KEY_LEFT_SHIFT = 0x2A;
+const char KEY_ENTER       = 0x1C;
+const char KEY_BACKSPACE   = 0x0E;
+const char KEY_UP          = 0x48;
+const char KEY_DOWN        = 0x50;
+const char KEY_LEFT_SHIFT  = 0x2A;
 const char KEY_RIGHT_SHIFT = 0x36;
-
-const char KEY_LEFT_CTRL = 0x1D;
+const char KEY_LEFT_CTRL   = 0x1D;
+const char KEY_ALT         = 56;
+const char KEY_F1          = 59;
+const char KEY_F2          = 60;
 
 void install_driver();
 char get_char();

@@ -19,6 +19,7 @@ constexpr const size_t TOP = 40;
 size_t _lines;
 size_t _columns;
 uint32_t _color;
+size_t buffer_size;
 
 } //end of anonymous namespace
 
@@ -28,6 +29,8 @@ void vesa_console::init(){
     _columns = (block.width - (MARGIN + PADDING) * 2) / 8;
     _lines = (block.height - TOP - MARGIN - PADDING) / 16;
     _color = vesa::make_color(0, 255, 0);
+
+    buffer_size = block.height * block.bytes_per_scan_line;
 
     vesa::draw_hline(MARGIN, MARGIN, block.width - 2 * MARGIN, _color);
     vesa::draw_hline(MARGIN, 35, block.width - 2 * MARGIN, _color);
@@ -62,4 +65,19 @@ void vesa_console::scroll_up(){
 
 void vesa_console::print_char(size_t line, size_t column, char c){
     vesa::draw_char(LEFT + 8 * column, TOP + 16 * line, c, _color);
+}
+
+void* vesa_console::save(void* buffer){
+    void* buffer32 = static_cast<uint32_t*>(buffer);
+    if(!buffer32){
+        buffer32 = new uint32_t[buffer_size];
+    }
+
+    vesa::save(static_cast<char*>(buffer32));
+
+    return buffer32;
+}
+
+void vesa_console::restore(void* buffer){
+    vesa::redraw(static_cast<char*>(buffer));
 }

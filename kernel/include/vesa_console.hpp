@@ -17,7 +17,8 @@ struct vesa_console {
     void clear();
     void scroll_up();
     void print_char(size_t line, size_t column, char c);
+    void* save(void* buffer);
+    void restore(void* buffer);
 };
 
 #endif
-

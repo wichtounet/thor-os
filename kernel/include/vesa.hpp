@@ -48,6 +48,7 @@ uint64_t get_green_shift();
 uint64_t get_blue_shift();
 
 void redraw(const char* buffer);
+void save(char* buffer);
 
 } //end of vesa namespace
 

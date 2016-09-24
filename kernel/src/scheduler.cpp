@@ -262,22 +262,27 @@ void create_idle_task(){
     idle_pid = idle_process.pid;
 }
 
-void create_init_task(){
-    auto& init_process = scheduler::create_kernel_task("init", new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &init_task);
+void create_init_tasks(){
+    for(size_t i = 0; i < stdio::terminals_count(); ++i){
+        auto& init_process = scheduler::create_kernel_task("init", new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &init_task);
 
-    init_process.ppid = 0;
-    init_process.priority = scheduler::MIN_PRIORITY + 1;
+        init_process.ppid = 0;
+        init_process.priority = scheduler::MIN_PRIORITY + 1;
 
-    scheduler::queue_system_process(init_process.pid);
+        auto pid = init_process.pid;
+        if(i == 0){
+            init_pid = pid;
+        }
 
-    init_pid = init_process.pid;
+        auto tty = "/dev/tty" + std::to_string(i);
 
-    //TODO Get the tty from the current terminal
+        // Create the 0,1,2 file descriptors
+        pcb[pid].handles.emplace_back(tty);
+        pcb[pid].handles.emplace_back(tty);
+        pcb[pid].handles.emplace_back(tty);
 
-    // Create the 0,1,2 file descriptors
-    pcb[init_pid].handles.emplace_back("/dev/tty0");
-    pcb[init_pid].handles.emplace_back("/dev/tty0");
-    pcb[init_pid].handles.emplace_back("/dev/tty0");
+        scheduler::queue_system_process(pid);
+    }
 }
 
 void create_gc_task(){
@@ -600,7 +605,7 @@ uint64_t get_process_cr3(size_t pid){
 void scheduler::init(){
     //Create all the kernel tasks
     create_idle_task();
-    create_init_task();
+    create_init_tasks();
     create_gc_task();
     create_post_init_task();
 
