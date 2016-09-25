@@ -66,7 +66,7 @@ union trivial_expected_storage {
 
 template <typename E>
 union trivial_expected_storage<void, E> {
-    using value_type = Type; ///< The value type
+    using value_type = void; ///< The value type
     using error_type = E;    ///< The error type
 
     error_type error; ///< The error value
@@ -112,7 +112,7 @@ struct non_trivial_expected_storage {
 
 template <typename E>
 struct non_trivial_expected_storage<void, E> {
-    using value_type = Type; ///< The value type
+    using value_type = void; ///< The value type
     using error_type = E;    ///< The error type
 
     error_type error; ///< The error value
