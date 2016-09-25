@@ -8,9 +8,6 @@
 #ifndef CONDITION_VARIABLE_H
 #define CONDITION_VARIABLE_H
 
-#include <circular_buffer.hpp>
-#include <lock_guard.hpp>
-
 #include "conc/wait_list.hpp"
 #include "conc/spinlock.hpp"
 

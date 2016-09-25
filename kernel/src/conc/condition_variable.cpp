@@ -5,6 +5,8 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+#include <lock_guard.hpp>
+
 #include "conc/condition_variable.hpp"
 
 #include "scheduler.hpp"
