@@ -314,9 +314,9 @@ void create_post_init_task(){
 
 void switch_to_process(size_t pid){
     if(pcb[current_pid].process.system){
-        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u (s:%u) to %u (rip:%u)\n", current_pid, static_cast<size_t>(pcb[current_pid].state), pid, pcb[current_pid].process.context->rip);
+        verbose_logf(logging::log_level::DEBUG, "scheduler: Switch from %u (s:%u) to %u (rip:%u)\n", current_pid, static_cast<size_t>(pcb[current_pid].state), pid, pcb[current_pid].process.context->rip);
     } else {
-        logging::logf(logging::log_level::DEBUG, "scheduler: Switch from %u (s:%u) to %u\n", current_pid, static_cast<size_t>(pcb[current_pid].state), pid);
+        verbose_logf(logging::log_level::DEBUG, "scheduler: Switch from %u (s:%u) to %u\n", current_pid, static_cast<size_t>(pcb[current_pid].state), pid);
     }
 
     // This should never be interrupted
@@ -855,7 +855,7 @@ scheduler::process_state scheduler::get_process_state(pid_t pid){
 void scheduler::block_process_light(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
-    logging::logf(logging::log_level::DEBUG, "scheduler: Block process (light) %u\n", pid);
+    verbose_logf(logging::log_level::DEBUG, "scheduler: Block process (light) %u\n", pid);
 
     pcb[pid].state = process_state::BLOCKED;
 }
@@ -863,7 +863,7 @@ void scheduler::block_process_light(pid_t pid){
 void scheduler::block_process_timeout_light(pid_t pid, size_t ms){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
 
-    logging::logf(logging::log_level::DEBUG, "scheduler: Block process (light) %u with timeout %u\n", pid, ms);
+    verbose_logf(logging::log_level::DEBUG, "scheduler: Block process (light) %u with timeout %u\n", pid, ms);
 
     // Compute the amount of ticks to sleep
     auto sleep_ticks = ms * (timer::timer_frequency() / 1000);
@@ -880,7 +880,7 @@ void scheduler::block_process(pid_t pid){
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pid != idle_pid, "No reason to block the idle task");
 
-    logging::logf(logging::log_level::DEBUG, "scheduler: Block process %u\n", pid);
+    verbose_logf(logging::log_level::DEBUG, "scheduler: Block process %u\n", pid);
 
     pcb[pid].state = process_state::BLOCKED;
 
@@ -888,7 +888,7 @@ void scheduler::block_process(pid_t pid){
 }
 
 void scheduler::unblock_process(pid_t pid){
-    logging::logf(logging::log_level::DEBUG, "scheduler: Unblock process %u (%u)\n", pid, size_t(pcb[pid].state));
+    verbose_logf(logging::log_level::DEBUG, "scheduler: Unblock process %u (%u)\n", pid, size_t(pcb[pid].state));
 
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pid != idle_pid, "No reason to unblock the idle task");
@@ -899,7 +899,7 @@ void scheduler::unblock_process(pid_t pid){
 }
 
 void scheduler::unblock_process_hint(pid_t pid){
-    logging::logf(logging::log_level::DEBUG, "scheduler: Unblock process (hint) %u (%u)\n", pid, size_t(pcb[pid].state));
+    verbose_logf(logging::log_level::DEBUG, "scheduler: Unblock process (hint) %u (%u)\n", pid, size_t(pcb[pid].state));
 
     thor_assert(pid < scheduler::MAX_PROCESS, "pid out of bounds");
     thor_assert(pid != idle_pid, "No reason to unblock the idle task");
