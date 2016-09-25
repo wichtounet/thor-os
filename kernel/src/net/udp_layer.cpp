@@ -10,6 +10,7 @@
 #include "net/connection_handler.hpp"
 #include "net/udp_layer.hpp"
 #include "net/dns_layer.hpp"
+#include "net/dhcp_layer.hpp"
 #include "net/checksum.hpp"
 
 #include "tlib/errors.hpp"
@@ -112,8 +113,10 @@ void network::udp::decode(network::interface_descriptor& interface, network::eth
 
     packet.index += sizeof(header);
 
-    if(source_port == 53){
+    if (source_port == 53) {
         network::dns::decode(interface, packet);
+    } else if (source_port == 67) {
+        network::dhcp::decode(interface, packet);
     }
 
     auto connection_ptr = connections.get_connection_for_packet(source_port, target_port);
