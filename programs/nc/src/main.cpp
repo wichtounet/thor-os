@@ -10,7 +10,6 @@
 #include <tlib/print.hpp>
 #include <tlib/net.hpp>
 #include <tlib/dns.hpp>
-
 static constexpr const size_t timeout_ms = 5000;
 
 namespace {
@@ -165,15 +164,20 @@ int netcat_udp_client(const tlib::ip::address& server, size_t port){
     return 0;
 }
 
+int netcat_udp_server(const tlib::ip::address& local, size_t port){
+    return 0;
+}
+
+int netcat_tcp_server(const tlib::ip::address& local, size_t port){
+    return 0;
+}
+
 } // end of anonymous namespace
 
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        tlib::print_line("usage: nc server port");
-        return 1;
-    }
 
     bool udp = false;
+    bool server = false;
 
     size_t i = 1;
     for(; i < size_t(argc); ++i){
@@ -181,28 +185,62 @@ int main(int argc, char* argv[]) {
 
         if(param == "-u"){
             udp = true;
+        } else if(param == "-l"){
+            server = true;
         } else {
             break;
         }
     }
 
-    std::string server(argv[i]);
-    std::string port_str(argv[i+ 1]);
+    if(server){
+        if (argc - i != 2) {
+            tlib::print_line("usage: nc -l local port");
+            return 1;
+        }
 
-    auto port = std::atoui(port_str);
+        std::string local(argv[i]);
+        std::string port_str(argv[i + 1]);
 
-    auto ip_parts = std::split(server, '.');
+        auto port = std::atoui(port_str);
 
-    if (ip_parts.size() != 4) {
-        tlib::print_line("Invalid address IP for the server");
-        return 1;
-    }
+        auto ip_parts = std::split(local, '.');
 
-    auto server_ip = tlib::ip::make_address(std::atoui(ip_parts[0]), std::atoui(ip_parts[1]), std::atoui(ip_parts[2]), std::atoui(ip_parts[3]));
+        if (ip_parts.size() != 4) {
+            tlib::print_line("Invalid address IP for the local interface");
+            return 1;
+        }
 
-    if(udp){
-        return netcat_udp_client(server_ip, port);
+        auto local_ip = tlib::ip::make_address(std::atoui(ip_parts[0]), std::atoui(ip_parts[1]), std::atoui(ip_parts[2]), std::atoui(ip_parts[3]));
+
+        if (udp) {
+            return netcat_udp_server(local_ip, port);
+        } else {
+            return netcat_tcp_server(local_ip, port);
+        }
     } else {
-        return netcat_tcp_client(server_ip, port);
+        if (argc - i != 2) {
+            tlib::print_line("usage: nc server port");
+            return 1;
+        }
+
+        std::string server(argv[i]);
+        std::string port_str(argv[i + 1]);
+
+        auto port = std::atoui(port_str);
+
+        auto ip_parts = std::split(server, '.');
+
+        if (ip_parts.size() != 4) {
+            tlib::print_line("Invalid address IP for the server");
+            return 1;
+        }
+
+        auto server_ip = tlib::ip::make_address(std::atoui(ip_parts[0]), std::atoui(ip_parts[1]), std::atoui(ip_parts[2]), std::atoui(ip_parts[3]));
+
+        if (udp) {
+            return netcat_udp_client(server_ip, port);
+        } else {
+            return netcat_tcp_client(server_ip, port);
+        }
     }
 }
