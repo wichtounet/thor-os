@@ -26,7 +26,7 @@ struct udp_connection {
     network::ip::address server_address; ///< The server address
 
     bool connected = false;
-    bool server = false;
+    bool server    = false;
 
     network::socket* socket = nullptr;
 };
@@ -69,6 +69,24 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
     udp_header->length      = switch_endian_16(sizeof(network::udp::header) + payload_size);
 
     packet.index += sizeof(network::udp::header);
+}
+
+std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& sock, const network::udp::packet_descriptor* descriptor, network::inet_address* address){
+    auto& connection = sock.get_connection_data<udp_connection>();
+
+    auto ip = connection.server_address;
+    auto ip_str = network::ip::ip_to_str(ip);
+    logging::logf(logging::log_level::ERROR, "udp: Craft destination=%s\n", ip_str.c_str());
+
+    // Ask the IP layer to craft a packet
+    network::ip::packet_descriptor desc{sizeof(network::udp::header) + descriptor->payload_size, address->address, 0x11};
+    auto packet = network::ip::user_prepare_packet(buffer, network::select_interface(connection.server_address), &desc);
+
+    if(packet){
+        ::prepare_packet(*packet, connection.server_port, address->port, descriptor->payload_size);
+    }
+
+    return packet;
 }
 
 } //end of anonymous namespace
@@ -230,6 +248,32 @@ std::expected<void> network::udp::send(char* target_buffer, network::socket& soc
     return std::make_unexpected<void>(packet.error());
 }
 
+std::expected<void> network::udp::send_to(char* target_buffer, network::socket& socket, const char* buffer, size_t n, void* addr){
+    auto& connection = socket.get_connection_data<udp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    auto* address = static_cast<network::inet_address*>(addr);
+
+    network::udp::packet_descriptor desc{n};
+    auto packet = ::user_prepare_packet(target_buffer, socket, &desc, address);
+
+    if (packet) {
+        for(size_t i = 0; i < n; ++i){
+            packet->payload[packet->index + i] = buffer[i];
+        }
+
+        auto target_ip  = connection.server_address;
+        auto& interface = network::select_interface(target_ip);
+        return network::udp::finalize_packet(interface, *packet);
+    }
+
+    return std::make_unexpected<void>(packet.error());
+}
+
 std::expected<size_t> network::udp::receive(char* buffer, network::socket& socket, size_t n){
     auto& connection = socket.get_connection_data<udp_connection>();
 
@@ -288,6 +332,86 @@ std::expected<size_t> network::udp::receive(char* buffer, network::socket& socke
 
         return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
     }
+
+    std::copy_n(packet.payload + packet.index, payload_len, buffer);
+
+    delete[] packet.payload;
+
+    return payload_len;
+}
+
+std::expected<size_t> network::udp::receive_from(char* buffer, network::socket& socket, size_t n, void* addr){
+    auto& connection = socket.get_connection_data<udp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    auto* address = static_cast<network::inet_address*>(addr);
+
+    if(socket.listen_packets.empty()){
+        socket.listen_queue.wait();
+    }
+
+    auto packet = socket.listen_packets.pop();
+
+    auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.tag(2));
+    auto payload_len = switch_endian_16(udp_header->length);
+
+    if(payload_len > n){
+        delete[] packet.payload;
+
+        return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
+    }
+
+    auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
+
+    address->port    = switch_endian_16(udp_header->source_port);
+    address->address = switch_endian_32(ip_header->source_ip);
+
+    std::copy_n(packet.payload + packet.index, payload_len, buffer);
+
+    delete[] packet.payload;
+
+    return payload_len;
+}
+
+std::expected<size_t> network::udp::receive_from(char* buffer, network::socket& socket, size_t n, size_t ms, void* addr){
+    auto& connection = socket.get_connection_data<udp_connection>();
+
+    // Make sure stream sockets are connected
+    if(!connection.connected){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    auto* address = static_cast<network::inet_address*>(addr);
+
+    if(socket.listen_packets.empty()){
+        if(!ms){
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
+        }
+
+        if(!socket.listen_queue.wait_for(ms)){
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
+        }
+    }
+
+    auto packet = socket.listen_packets.pop();
+
+    auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.tag(2));
+    auto payload_len = switch_endian_16(udp_header->length);
+
+    if(payload_len > n){
+        delete[] packet.payload;
+
+        return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
+    }
+
+    auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
+
+    address->port    = switch_endian_16(udp_header->source_port);
+    address->address = switch_endian_32(ip_header->source_ip);
 
     std::copy_n(packet.payload + packet.index, payload_len, buffer);
 

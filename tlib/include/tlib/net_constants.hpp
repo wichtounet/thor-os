@@ -64,6 +64,11 @@ struct packet_descriptor {
 
 } // end of namespace ip
 
+struct inet_address {
+    ip::address address;
+    size_t port;
+};
+
 namespace ethernet {
 
 struct address {

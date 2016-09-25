@@ -412,6 +412,26 @@ std::expected<void> network::send(socket_fd_t socket_fd, const char* buffer, siz
     }
 }
 
+std::expected<void> network::send_to(socket_fd_t socket_fd, const char* buffer, size_t n, char* target_buffer, void* address){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    if(!network::number_of_interfaces()){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_NO_INTERFACE);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    switch (socket.protocol) {
+        case network::socket_protocol::UDP:
+            return network::udp::send_to(target_buffer, socket, buffer, n, address);
+
+        default:
+            return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
+    }
+}
+
 std::expected<size_t> network::receive(socket_fd_t socket_fd, char* buffer, size_t n){
     if(!scheduler::has_socket(socket_fd)){
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);
@@ -460,6 +480,54 @@ std::expected<size_t> network::receive(socket_fd_t socket_fd, char* buffer, size
 
         case network::socket_protocol::TCP:
             return network::tcp::receive(buffer, socket, n, ms);
+
+        default:
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_UNIMPLEMENTED);
+    }
+}
+
+std::expected<size_t> network::receive_from(socket_fd_t socket_fd, char* buffer, size_t n, void* address){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    if(!network::number_of_interfaces()){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NO_INTERFACE);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(!socket.listen){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_LISTEN);
+    }
+
+    switch (socket.protocol) {
+        case network::socket_protocol::UDP:
+            return network::udp::receive_from(buffer, socket, n, address);
+
+        default:
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_UNIMPLEMENTED);
+    }
+}
+
+std::expected<size_t> network::receive_from(socket_fd_t socket_fd, char* buffer, size_t n, size_t ms, void* address){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    if(!network::number_of_interfaces()){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NO_INTERFACE);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(!socket.listen){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_LISTEN);
+    }
+
+    switch (socket.protocol) {
+        case network::socket_protocol::UDP:
+            return network::udp::receive_from(buffer, socket, n, ms, address);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_UNIMPLEMENTED);

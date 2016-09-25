@@ -112,12 +112,72 @@ std::expected<void> tlib::send(size_t socket_fd, const char* buffer, size_t n) {
     }
 }
 
+std::expected<void> tlib::send_to(size_t socket_fd, const char* buffer, size_t n, void* address) {
+    auto* target_buffer = new char[2048];
+
+    int64_t code;
+    asm volatile("mov rax, 0x3013; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[target_buffer]; mov rdi, %[address]; int 50; mov %[code], rax;"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [target_buffer] "g"(reinterpret_cast<size_t>(target_buffer)), [address] "g"(reinterpret_cast<size_t>(address))
+                 : "rax", "rbx", "rcx", "rdx", "rsi", "rdi");
+
+    delete[] target_buffer;
+
+    if (code < 0) {
+        return std::make_unexpected<void, size_t>(-code);
+    } else {
+        return {};
+    }
+}
+
+std::expected<size_t> tlib::receive(size_t socket_fd, char* buffer, size_t n) {
+    int64_t code;
+    asm volatile("mov rax, 0x3010; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; int 50; mov %[code], rax;"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n)
+                 : "rax", "rbx", "rcx", "rdx");
+
+    if (code < 0) {
+        return std::make_unexpected<size_t, size_t>(-code);
+    } else {
+        return code;
+    }
+}
+
 std::expected<size_t> tlib::receive(size_t socket_fd, char* buffer, size_t n, size_t ms) {
     int64_t code;
     asm volatile("mov rax, 0x300C; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[ms]; int 50; mov %[code], rax;"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [ms] "g" (ms)
                  : "rax", "rbx", "rcx", "rdx", "rsi");
+
+    if (code < 0) {
+        return std::make_unexpected<size_t, size_t>(-code);
+    } else {
+        return code;
+    }
+}
+
+std::expected<size_t> tlib::receive_from(size_t socket_fd, char* buffer, size_t n, void* address) {
+    int64_t code;
+    asm volatile("mov rax, 0x3011; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[address]; int 50; mov %[code], rax;"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [address] "g" (reinterpret_cast<size_t>(address))
+                 : "rax", "rbx", "rcx", "rdx", "rsi");
+
+    if (code < 0) {
+        return std::make_unexpected<size_t, size_t>(-code);
+    } else {
+        return code;
+    }
+}
+
+std::expected<size_t> tlib::receive_from(size_t socket_fd, char* buffer, size_t n, size_t ms, void* address) {
+    int64_t code;
+    asm volatile("mov rax, 0x3012; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[ms]; mov rdi, %[address]; int 50; mov %[code], rax;"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [ms] "g" (ms), [address] "g" (reinterpret_cast<size_t>(address))
+                 : "rax", "rbx", "rcx", "rdx", "rsi", "rdi");
 
     if (code < 0) {
         return std::make_unexpected<size_t, size_t>(-code);
@@ -514,6 +574,55 @@ void tlib::socket::send(const char* buffer, size_t n) {
     }
 }
 
+void tlib::socket::send_to(const char* buffer, size_t n, void* address) {
+    if (!good() || !open()) {
+        return;
+    }
+
+    if (type == socket_type::DGRAM) {
+        if (!bound()) {
+            return;
+        }
+    } else if (type == socket_type::STREAM) {
+        if (!connected()) {
+            return;
+        }
+    } else {
+        return;
+    }
+
+    auto p = tlib::send_to(fd, buffer, n, address);
+    if (!p) {
+        error_code = p.error();
+    }
+}
+
+size_t tlib::socket::receive(char* buffer, size_t n) {
+    if (!good() || !open()) {
+        return 0;
+    }
+
+    if (type == socket_type::DGRAM) {
+        if (!bound()) {
+            return 0;
+        }
+    } else if (type == socket_type::STREAM) {
+        if (!connected()) {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+
+    auto p = tlib::receive(fd, buffer, n);
+    if (!p) {
+        error_code = p.error();
+        return 0;
+    } else {
+        return *p;
+    }
+}
+
 size_t tlib::socket::receive(char* buffer, size_t n, size_t ms) {
     if (!good() || !open()) {
         return 0;
@@ -532,6 +641,58 @@ size_t tlib::socket::receive(char* buffer, size_t n, size_t ms) {
     }
 
     auto p = tlib::receive(fd, buffer, n, ms);
+    if (!p) {
+        error_code = p.error();
+        return 0;
+    } else {
+        return *p;
+    }
+}
+
+size_t tlib::socket::receive_from(char* buffer, size_t n, void* address) {
+    if (!good() || !open()) {
+        return 0;
+    }
+
+    if (type == socket_type::DGRAM) {
+        if (!bound()) {
+            return 0;
+        }
+    } else if (type == socket_type::STREAM) {
+        if (!connected()) {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+
+    auto p = tlib::receive_from(fd, buffer, n, address);
+    if (!p) {
+        error_code = p.error();
+        return 0;
+    } else {
+        return *p;
+    }
+}
+
+size_t tlib::socket::receive_from(char* buffer, size_t n, size_t ms, void* address) {
+    if (!good() || !open()) {
+        return 0;
+    }
+
+    if (type == socket_type::DGRAM) {
+        if (!bound()) {
+            return 0;
+        }
+    } else if (type == socket_type::STREAM) {
+        if (!connected()) {
+            return 0;
+        }
+    } else {
+        return 0;
+    }
+
+    auto p = tlib::receive_from(fd, buffer, n, ms, address);
     if (!p) {
         error_code = p.error();
         return 0;

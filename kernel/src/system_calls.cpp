@@ -402,13 +402,50 @@ void sc_send(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(network::send(socket_fd, buffer, n, target_buffer));
 }
 
+void sc_send_to(interrupt::syscall_regs* regs){
+    auto socket_fd     = regs->rbx;
+    auto buffer        = reinterpret_cast<char*>(regs->rcx);
+    auto n             = regs->rdx;
+    auto target_buffer = reinterpret_cast<char*>(regs->rsi);
+    auto address       = reinterpret_cast<void*>(regs->rdi);
+
+    regs->rax = expected_to_i64(network::send_to(socket_fd, buffer, n, target_buffer, address));
+}
+
 void sc_receive(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
     auto buffer    = reinterpret_cast<char*>(regs->rcx);
     auto n         = regs->rdx;
-    auto ms         = regs->rsi;
+
+    regs->rax = expected_to_i64(network::receive(socket_fd, buffer, n));
+}
+
+void sc_receive_timeout(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto buffer    = reinterpret_cast<char*>(regs->rcx);
+    auto n         = regs->rdx;
+    auto ms        = regs->rsi;
 
     regs->rax = expected_to_i64(network::receive(socket_fd, buffer, n, ms));
+}
+
+void sc_receive_from(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto buffer    = reinterpret_cast<char*>(regs->rcx);
+    auto n         = regs->rdx;
+    auto address   = reinterpret_cast<void*>(regs->rsi);
+
+    regs->rax = expected_to_i64(network::receive_from(socket_fd, buffer, n, address));
+}
+
+void sc_receive_from_timeout(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto buffer    = reinterpret_cast<char*>(regs->rcx);
+    auto n         = regs->rdx;
+    auto ms        = regs->rsi;
+    auto address   = reinterpret_cast<void*>(regs->rdi);
+
+    regs->rax = expected_to_i64(network::receive_from(socket_fd, buffer, n, ms, address));
 }
 
 void sc_listen(interrupt::syscall_regs* regs){
@@ -741,7 +778,7 @@ void system_call_entry(interrupt::syscall_regs* regs){
             break;
 
         case 0x300C:
-            sc_receive(regs);
+            sc_receive_timeout(regs);
             break;
 
         case 0x300D:
@@ -754,6 +791,22 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x300F:
             sc_server_bind_port(regs);
+            break;
+
+        case 0x3010:
+            sc_receive(regs);
+            break;
+
+        case 0x3011:
+            sc_receive_from(regs);
+            break;
+
+        case 0x3012:
+            sc_receive_from_timeout(regs);
+            break;
+
+        case 0x3013:
+            sc_send_to(regs);
             break;
 
         // Special system calls

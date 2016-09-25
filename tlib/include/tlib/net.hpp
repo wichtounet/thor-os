@@ -91,12 +91,13 @@ std::expected<void> finalize_packet(size_t socket_fd, const packet& p);
 std::expected<void> send(size_t socket_fd, const char* buffer, size_t n);
 
 /*!
- * \brief Receive a message from the socket
+ * \brief Send a message through the socket
  * \param socket_fd The socket file descriptor
  * \param buffer The source buffer
- * \return the size of the message, or an error
+ * \param n The message's size
+ * \return nothing, or an error
  */
-std::expected<size_t> receive(size_t socket_fd, char* buffers, size_t n);
+std::expected<void> send_to(size_t socket_fd, const char* buffer, size_t n, void* address);
 
 /*!
  * \brief Receive a message from the socket
@@ -104,7 +105,31 @@ std::expected<size_t> receive(size_t socket_fd, char* buffers, size_t n);
  * \param buffer The source buffer
  * \return the size of the message, or an error
  */
-std::expected<size_t> receive(size_t socket_fd, char* buffers, size_t n, size_t ms);
+std::expected<size_t> receive(size_t socket_fd, char* buffer, size_t n);
+
+/*!
+ * \brief Receive a message from the socket
+ * \param socket_fd The socket file descriptor
+ * \param buffer The source buffer
+ * \return the size of the message, or an error
+ */
+std::expected<size_t> receive(size_t socket_fd, char* buffer, size_t n, size_t ms);
+
+/*!
+ * \brief Receive a message from the socket
+ * \param socket_fd The socket file descriptor
+ * \param buffer The source buffer
+ * \return the size of the message, or an error
+ */
+std::expected<size_t> receive_from(size_t socket_fd, char* buffer, size_t n, void* address);
+
+/*!
+ * \brief Receive a message from the socket
+ * \param socket_fd The socket file descriptor
+ * \param buffer The source buffer
+ * \return the size of the message, or an error
+ */
+std::expected<size_t> receive_from(size_t socket_fd, char* buffer, size_t n, size_t ms, void* address);
 
 /*!
  * \brief Listen for messages on the socket
@@ -306,18 +331,39 @@ struct socket {
     void send(const char* buffer, size_t n);
 
     /*!
-     * \brief Wait for a message, indifinitely.
-     * \param buffer The target buffer (the contents)
-     * \return The size of the message
+     * \brief Send a message
+     * \param buffer The source buffer (the contents)
+     * \param n The size of the message
      */
-    size_t receive(char* buffers, size_t n);
+    void send_to(const char* buffer, size_t n, void* address);
 
     /*!
      * \brief Wait for a message, indifinitely.
      * \param buffer The target buffer (the contents)
      * \return The size of the message
      */
-    size_t receive(char* buffers, size_t n, size_t ms);
+    size_t receive(char* buffer, size_t n);
+
+    /*!
+     * \brief Wait for a message, indifinitely.
+     * \param buffer The target buffer (the contents)
+     * \return The size of the message
+     */
+    size_t receive(char* buffer, size_t n, size_t ms);
+
+    /*!
+     * \brief Wait for a message, indifinitely.
+     * \param buffer The target buffer (the contents)
+     * \return The size of the message
+     */
+    size_t receive_from(char* buffer, size_t n, void* address);
+
+    /*!
+     * \brief Wait for a message, indifinitely.
+     * \param buffer The target buffer (the contents)
+     * \return The size of the message
+     */
+    size_t receive_from(char* buffer, size_t n, size_t ms, void* address);
 
     /*!
      * \brief Wait for a packet, indefinitely.

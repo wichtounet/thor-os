@@ -50,6 +50,7 @@ struct tcp_connection {
     circular_buffer<network::ethernet::packet, 8> packets; ///< The packets for the listening queue
 
     bool connected = false;
+    bool server    = false;
 
     uint32_t ack_number = 0; ///< The next ack number
     uint32_t seq_number = 0; ///< The next sequence number

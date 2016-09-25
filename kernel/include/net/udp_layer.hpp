@@ -66,7 +66,12 @@ std::expected<void> client_unbind(network::socket& socket);
 std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n);
 std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n, size_t ms);
 
+std::expected<size_t> receive_from(char* buffer, network::socket& socket, size_t n, void* address);
+std::expected<size_t> receive_from(char* buffer, network::socket& socket, size_t n, size_t ms, void* address);
+
 std::expected<void> send(char* target_buffer, network::socket& socket, const char* buffer, size_t n);
+
+std::expected<void> send_to(char* target_buffer, network::socket& socket, const char* buffer, size_t n, void* address);
 
 } // end of upd namespace
 
