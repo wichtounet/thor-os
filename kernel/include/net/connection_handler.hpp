@@ -23,8 +23,14 @@ struct connection_handler {
         std::lock_guard<reader_rw_lock> l(lock);
 
         for (auto& connection : connections) {
-            if (connection.server_port == source_port && connection.local_port == target_port) {
-                return &connection;
+            if(connection.server){
+                if (connection.server_port == target_port && connection.local_port == source_port) {
+                    return &connection;
+                }
+            } else {
+                if (connection.server_port == source_port && connection.local_port == target_port) {
+                    return &connection;
+                }
             }
         }
 
