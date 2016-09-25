@@ -21,7 +21,9 @@ namespace {
 struct sys_value {
     std::string name;
     std::string _value;
-    sysfs::dynamic_fun_t fun = nullptr;
+    sysfs::dynamic_fun_t fun           = nullptr;
+    sysfs::dynamic_fun_data_t fun_data = nullptr;
+    void* data                         = nullptr;
 
     sys_value() {}
     sys_value(std::string name, std::string value)
@@ -34,8 +36,15 @@ struct sys_value {
         //Nothing else to init
     }
 
+    sys_value(std::string name, sysfs::dynamic_fun_data_t fun_data, void* data)
+            : name(name), fun_data(fun_data), data(data) {
+        //Nothing else to init
+    }
+
     std::string value() const {
-        if (fun) {
+        if (fun_data){
+            return fun_data(data);
+        } else if (fun) {
             return fun();
         } else {
             return _value;
@@ -195,6 +204,18 @@ void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_t
     folder.values.emplace_back(name, fun);
 }
 
+void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_data_t fun, void* data) {
+    for (auto& v : folder.values) {
+        if (v.name == name) {
+            v.fun_data = fun;
+            v.data     = data;
+            return;
+        }
+    }
+
+    folder.values.emplace_back(name, fun, data);
+}
+
 void delete_value(sys_folder& folder, const std::string& name) {
     folder.values.erase(std::remove_if(folder.values.begin(), folder.values.end(), [&name](const sys_value& value){
         return value.name == name;
@@ -330,6 +351,17 @@ void sysfs::set_dynamic_value(const path& mount_point, const path& file_path, dy
     } else {
         auto& folder = find_folder(root_folder, file_path, 1, file_path.size() - 1);
         ::set_value(folder, file_path.base_name(), fun);
+    }
+}
+
+void sysfs::set_dynamic_value_data(const path& mount_point, const path& file_path, dynamic_fun_data_t fun, void* data) {
+    auto& root_folder = find_root_folder(mount_point);
+
+    if (file_path.size() == 2) {
+        ::set_value(root_folder, file_path.base_name(), fun, data);
+    } else {
+        auto& folder = find_folder(root_folder, file_path, 1, file_path.size() - 1);
+        ::set_value(folder, file_path.base_name(), fun, data);
     }
 }
 

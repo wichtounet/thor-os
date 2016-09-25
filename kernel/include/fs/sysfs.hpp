@@ -38,9 +38,11 @@ public:
 };
 
 typedef std::string (*dynamic_fun_t)();
+typedef std::string (*dynamic_fun_data_t)(void* data);
 
 void set_constant_value(const path& mount_point, const path& file_path, const std::string& value);
 void set_dynamic_value(const path& mount_point, const path& file_path, dynamic_fun_t fun);
+void set_dynamic_value_data(const path& mount_point, const path& file_path, dynamic_fun_data_t fun, void* data);
 
 void delete_value(const path& mount_point, const path& file_path);
 void delete_folder(const path& mount_point, const path& file_path);
