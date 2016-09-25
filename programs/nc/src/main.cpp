@@ -167,6 +167,18 @@ int netcat_udp_client(const tlib::ip::address& server, size_t port){
 }
 
 int netcat_tcp_server(const tlib::ip::address& local, size_t port){
+    auto ip_str = ip_to_str(local);
+    tlib::printf("netcat TCP server %s:%u\n", ip_str.c_str(), port);
+
+    tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::STREAM, tlib::socket_protocol::TCP);
+
+    sock.server_start(local, port);
+
+    if (!sock) {
+        tlib::printf("nc: socket error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
     return 0;
 }
 
