@@ -20,7 +20,7 @@ size_t e820_entries = 0;
 void e820::finalize_memory_detection(){
     e820_entries = early::e820_entry_count();
 
-    auto t = mmap_entry_count();;
+    auto t = mmap_entry_count();
 
     auto* smap = reinterpret_cast<e820::bios_e820_entry*>(early::e820_entry_address);
 

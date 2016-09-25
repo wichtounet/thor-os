@@ -130,7 +130,7 @@ int main(){
             }
 
             if(current_input.size() > 0){
-                auto params = std::split(current_input);;
+                auto params = std::split(current_input);
 
                 bool found = false;
                 for(auto& command : commands){

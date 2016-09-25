@@ -123,14 +123,14 @@ std::expected<tlib::ip::address> tlib::dns::resolve(const std::string& domain, s
     sock.listen(true);
 
     if (!sock) {
-        return std::make_unexpected<tlib::ip::address>(sock.error());;
+        return std::make_unexpected<tlib::ip::address>(sock.error());
     }
 
     size_t tries = 0;
 
     auto sr = send_request(sock, domain, 0x1, 0x1);
     if(!sr){
-        return std::make_unexpected<tlib::ip::address>(sr.error());;
+        return std::make_unexpected<tlib::ip::address>(sr.error());
     }
 
     auto before = tlib::ms_time();
@@ -146,7 +146,7 @@ std::expected<tlib::ip::address> tlib::dns::resolve(const std::string& domain, s
 
         auto p = sock.wait_for_packet(remaining);
         if (!sock) {
-            return std::make_unexpected<tlib::ip::address>(sock.error());;
+            return std::make_unexpected<tlib::ip::address>(sock.error());
         } else {
             auto* dns_header = reinterpret_cast<tlib::dns::header*>(p.payload + p.index);
 

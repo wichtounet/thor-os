@@ -59,7 +59,7 @@ struct sys_folder {
 
     sys_folder() {}
 
-    sys_folder(std::string name)
+    explicit sys_folder(std::string name)
             : name(name) {
         //Nothing else to init
     }

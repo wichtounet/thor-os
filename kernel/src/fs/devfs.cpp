@@ -34,7 +34,7 @@ struct device_list {
     std::vector<device> devices;
 
     device_list(){};
-    device_list(path mp) : mount_point(mp){}
+    explicit device_list(path mp) : mount_point(mp){}
 };
 
 std::vector<device_list> devices;
@@ -338,5 +338,5 @@ uint64_t devfs::get_device_size(const path& device_name, size_t& size){
         }
     }
 
-    return std::ERROR_NOT_EXISTS;;
+    return std::ERROR_NOT_EXISTS;
 }

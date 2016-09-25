@@ -453,7 +453,7 @@ size_t ata::ata_driver::size(void* data){
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
 
-    return disk->size;;
+    return disk->size;
 }
 
 size_t ata::ata_part_driver::read(void* data, char* destination, size_t count, size_t offset, size_t& read){

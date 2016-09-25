@@ -292,7 +292,7 @@ size_t paging::physical_address(size_t virt){
     auto pde = pd_entry(virt);
     auto pte = pt_entry(virt);
 
-    auto pml4t = find_pml4t();;
+    auto pml4t = find_pml4t();
     auto pdpt = find_pdpt(pml4t, pml4e);
     auto pd = find_pd(pdpt, pdpte);
     auto pt = find_pt(pd, pde);
@@ -307,7 +307,7 @@ bool paging::page_present(size_t virt){
     auto pde = pd_entry(virt);
     auto pte = pt_entry(virt);
 
-    auto pml4t = find_pml4t();;
+    auto pml4t = find_pml4t();
     if(!(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & PRESENT)){
         return false;
     }
@@ -350,7 +350,7 @@ bool paging::map(size_t virt, size_t physical, uint8_t flags){
     auto pde = pd_entry(virt);
     auto pte = pt_entry(virt);
 
-    auto pml4t = find_pml4t();;
+    auto pml4t = find_pml4t();
     thor_assert(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & PRESENT, "A PML4T entry is not PRESENT");
 
     auto pdpt = find_pdpt(pml4t, pml4e);
@@ -419,7 +419,7 @@ bool paging::unmap(size_t virt){
     auto pde = pd_entry(virt);
     auto pte = pt_entry(virt);
 
-    auto pml4t = find_pml4t();;
+    auto pml4t = find_pml4t();
 
     //If not present, returns directly
     if(!(reinterpret_cast<uintptr_t>(pml4t[pml4e]) & PRESENT)){

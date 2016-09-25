@@ -207,7 +207,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     auto flags = switch_endian_16(tcp_header->flags);
 
     auto next_seq = ack;
-    auto next_ack = seq + tcp_payload_len(packet);;
+    auto next_ack = seq + tcp_payload_len(packet);
 
     logging::logf(logging::log_level::TRACE, "tcp: Next Seq Number %u \n", size_t(next_seq));
     logging::logf(logging::log_level::TRACE, "tcp: Next Ack Number %u \n", size_t(next_ack));

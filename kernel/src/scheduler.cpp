@@ -226,7 +226,7 @@ scheduler::process_t& new_process(){
     process.process.ppid = current_pid;
     process.process.priority = scheduler::DEFAULT_PRIORITY;
     process.state = scheduler::process_state::NEW;
-    process.process.tty = pcb[current_pid].process.tty;;
+    process.process.tty = pcb[current_pid].process.tty;
 
     process.process.brk_start = 0;
     process.process.brk_end = 0;
