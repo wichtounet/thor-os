@@ -11,6 +11,7 @@
 #include <circular_buffer.hpp>
 #include <lock_guard.hpp>
 
+#include "conc/wait_list.hpp"
 #include "conc/spinlock.hpp"
 
 #include "process.hpp"
@@ -55,8 +56,8 @@ struct condition_variable {
     bool wait_for(size_t ms);
 
 private:
-    mutable spinlock lock;                       ///< The spin lock used for protecting the queue
-    circular_buffer<scheduler::pid_t, 16> queue; ///< The queue of waiting threads
+    mutable spinlock lock; ///< The spin lock used for protecting the queue
+    wait_list queue;       ///< The queue of waiting threads
 };
 
 #endif
