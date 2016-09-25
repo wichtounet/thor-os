@@ -41,8 +41,8 @@ using flag_syn         = std::bit_field<uint16_t, uint8_t, 1, 1>;
 using flag_fin         = std::bit_field<uint16_t, uint8_t, 0, 1>;
 
 struct tcp_connection {
-    size_t local_port;                   ///< The local source port
-    size_t server_port;                  ///< The server port
+    size_t local_port  = 0;              ///< The local source port
+    size_t server_port = 0;              ///< The server port
     network::ip::address server_address; ///< The server address
 
     std::atomic<bool> listening;                           ///< Indicates if a kernel thread is listening on this connection
@@ -57,8 +57,8 @@ struct tcp_connection {
 
     network::socket* socket = nullptr;
 
-    tcp_connection(){
-        listening = false;
+    tcp_connection() : listening(false) {
+        //Nothing else to init
     }
 
     tcp_connection(const tcp_connection& rhs) = delete;
@@ -574,7 +574,7 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
     return connection.local_port;
 }
 
-std::expected<void> network::tcp::server_start(network::socket& sock, network::interface_descriptor& interface, size_t server_port, network::ip::address server) {
+std::expected<void> network::tcp::server_start(network::socket& sock, size_t server_port, network::ip::address server) {
     // Create the connection
 
     auto& connection = connections.create_connection();

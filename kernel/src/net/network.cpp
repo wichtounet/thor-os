@@ -736,7 +736,7 @@ std::expected<void> network::server_start(socket_fd_t socket_fd, network::ip::ad
 
     switch(stream_protocol(socket.protocol)){
         case socket_protocol::TCP:
-            return network::tcp::server_start(socket, select_interface(server), port, server);
+            return network::tcp::server_start(socket, port, server);
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
