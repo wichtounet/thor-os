@@ -24,7 +24,7 @@ struct connection_handler {
 
         for (auto& connection : connections) {
             if(connection.server){
-                if (connection.server_port == target_port && connection.local_port == source_port) {
+                if (connection.server_port == target_port) {
                     return &connection;
                 }
             } else {
