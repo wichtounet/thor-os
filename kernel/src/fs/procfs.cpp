@@ -165,7 +165,7 @@ size_t procfs::procfs_file_system::read(const path& file_path, char* buffer, siz
     return std::ERROR_NOT_EXISTS;
 }
 
-size_t procfs::procfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read, size_t ms){
+size_t procfs::procfs_file_system::read(const path& /*file_path*/, char* /*buffer*/, size_t /*count*/, size_t /*offset*/, size_t& /*read*/, size_t /*ms*/){
     return std::ERROR_UNSUPPORTED;
 }
 
