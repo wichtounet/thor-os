@@ -10,7 +10,9 @@
 #include <tlib/print.hpp>
 #include <tlib/net.hpp>
 #include <tlib/dns.hpp>
+
 static constexpr const size_t timeout_ms = 5000;
+static constexpr const size_t server_timeout_ms = 10000;
 
 namespace {
 
@@ -191,24 +193,33 @@ int netcat_udp_server(const tlib::ip::address& local, size_t port){
 
     while (true) {
         // Make sure we don't wait for more than the timeout
-        if (after > before + timeout_ms) {
+        if (after > before + server_timeout_ms) {
             break;
         }
 
-        auto remaining = timeout_ms - (after - before);
+        auto remaining = server_timeout_ms - (after - before);
 
-        auto size = sock.receive(message_buffer, 2048, remaining);
+        tlib::inet_address address;
+
+        auto size = sock.receive_from(message_buffer, 2048, remaining, &address);
         if (!sock) {
             if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
                 sock.clear();
                 break;
             }
 
-            tlib::printf("nc: receive error: %s\n", std::error_message(sock.error()));
+            tlib::printf("nc: receive_from error: %s\n", std::error_message(sock.error()));
             return 1;
         } else {
             message_buffer[size] = '\0';
             tlib::print(message_buffer);
+
+            sock.send_to(message_buffer, size, &address);
+
+            if (!sock) {
+                tlib::printf("nc: send_to error: %s\n", std::error_message(sock.error()));
+                return 1;
+            }
         }
 
         after = tlib::ms_time();
