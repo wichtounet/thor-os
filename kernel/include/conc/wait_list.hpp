@@ -27,9 +27,30 @@ struct wait_list {
     bool empty() const;
 
     /*!
+     * \brief Returns the top process of queue
+     * \return The pid of the top process
+     */
+    size_t top() const;
+
+    /*!
+     * \brief Returns true if the process is waiting in this queue, false otherwise
+     */
+    bool waiting() const;
+
+    /*!
+     * \brief Removes the current process from the list
+     */
+    void remove();
+
+    /*!
      * \brief Enque the current process in the wait list
      */
     void enqueue();
+
+    /*!
+     * \brief Enque the current process in the wait list
+     */
+    void enqueue_timeout(size_t ms);
 
     /*!
      * \brief Dequeue the first process from the wait list
@@ -38,10 +59,10 @@ struct wait_list {
     size_t dequeue();
 
     /*!
-     * \brief Returns the top process of queue
-     * \return The pid of the top process
+     * \brief Dequeue the first process from the wait list
+     * \return The pid of the dequeued process
      */
-    size_t top();
+    size_t dequeue_hint();
 
 private:
     wait_node* head = nullptr; ///< The head of the list
