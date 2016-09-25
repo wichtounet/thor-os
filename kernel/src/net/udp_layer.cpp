@@ -143,6 +143,18 @@ void network::udp::decode(network::interface_descriptor& interface, network::eth
     }
 }
 
+std::expected<network::ethernet::packet> network::udp::kernel_prepare_packet(network::interface_descriptor& interface, const kernel_packet_descriptor& descriptor){
+    // Ask the IP layer to craft a packet
+    network::ip::packet_descriptor desc{sizeof(header) + descriptor.payload_size, descriptor.target_ip, 0x11};
+    auto packet = network::ip::kernel_prepare_packet(interface, desc);
+
+    if(packet){
+        ::prepare_packet(*packet, descriptor.source_port, descriptor.target_port, descriptor.payload_size);
+    }
+
+    return packet;
+}
+
 std::expected<network::ethernet::packet> network::udp::user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor){
     auto& connection = sock.get_connection_data<udp_connection>();
 

@@ -26,6 +26,13 @@ struct header {
 } __attribute__((packed));
 
 
+struct kernel_packet_descriptor {
+    size_t payload_size;
+    size_t source_port;
+    size_t target_port;
+    network::ip::address target_ip;
+};
+
 /*!
  * \brief Initialize the layer
  */
@@ -40,6 +47,14 @@ void init_layer();
  * \param packet The packet to decode
  */
 void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+
+/*!
+ * \brief Prepare a packet for the kernel
+ * \param interface The interface on which to prepare the packet for
+ * \param descriptor The packet descriptor
+ * \return the prepared packet or an error
+ */
+std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, const kernel_packet_descriptor& descriptor);
 
 /*!
  * \brief Prepare a packet for the user
