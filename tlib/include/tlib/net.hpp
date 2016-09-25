@@ -131,6 +131,23 @@ std::expected<size_t> client_bind(size_t socket_fd, tlib::ip::address server);
 std::expected<size_t> client_bind(size_t socket_fd, tlib::ip::address server, size_t port);
 
 /*!
+ * \brief Bind a source to the datagram socket
+ * \param socket_fd The socket file descriptor
+ * \param server The server address
+ * \return the local port, or an error
+ */
+std::expected<void> server_bind(size_t socket_fd, tlib::ip::address local);
+
+/*!
+ * \brief Bind a source to the datagram socket
+ * \param socket_fd The socket file descriptor
+ * \param local The local address
+ * \param port The listening port
+ * \return the local port, or an error
+ */
+std::expected<void> server_bind(size_t socket_fd, tlib::ip::address local, size_t port);
+
+/*!
  * \brief Unbind from destination from the datagram socket
  * \param socket_fd The socket file descriptor
  * \return nothing, or an error
@@ -233,6 +250,18 @@ struct socket {
      * \param server The IP address
      */
     void client_bind(tlib::ip::address server, size_t port);
+
+    /*!
+     * \brief Bind the socket as a server
+     * \param local The IP address
+     */
+    void server_bind(tlib::ip::address local);
+
+    /*!
+     * \brief Bind the socket as a server
+     * \param local The IP address
+     */
+    void server_bind(tlib::ip::address local, size_t port);
 
     /*!
      * \brief Unbind the client socket

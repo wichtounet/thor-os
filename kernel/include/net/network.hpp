@@ -173,6 +173,20 @@ std::expected<size_t> client_bind(socket_fd_t socket_fd, network::ip::address ad
 std::expected<size_t> client_bind(socket_fd_t socket_fd, network::ip::address address, size_t port);
 
 /*!
+ * \brief Bind a socket datagram as a server
+ * \param socket_fd The file descriptor of the packet
+ * \return noting or an error code otherwise
+ */
+std::expected<void> server_bind(socket_fd_t socket_fd, network::ip::address address);
+
+/*!
+ * \brief Bind a socket datagram as a server
+ * \param socket_fd The file descriptor of the packet
+ * \return noting or an error code otherwise
+ */
+std::expected<void> server_bind(socket_fd_t socket_fd, network::ip::address address, size_t port);
+
+/*!
  * \brief Unbind a socket datagram as a client
  * \param socket_fd The file descriptor of the packet
  * \return the allocated port on success and a negative error code otherwise

@@ -26,6 +26,7 @@ struct udp_connection {
     network::ip::address server_address; ///< The server address
 
     bool connected = false;
+    bool server = false;
 
     network::socket* socket = nullptr;
 };
@@ -167,6 +168,26 @@ std::expected<size_t> network::udp::client_bind(network::socket& sock, size_t se
     connection.connected = true;
 
     return {connection.local_port};
+}
+
+std::expected<void> network::udp::server_bind(network::socket& sock, size_t server_port, network::ip::address server){
+    // Create the connection
+
+    auto& connection = connections.create_connection();
+
+    connection.server_port    = server_port;
+    connection.server_address = server;
+    connection.server         = true;
+
+    // Link the socket and connection
+    sock.connection_data = &connection;
+    connection.socket = &sock;
+
+    // Mark the connection as connected
+
+    connection.connected = true;
+
+    return {};
 }
 
 std::expected<void> network::udp::client_unbind(network::socket& sock){

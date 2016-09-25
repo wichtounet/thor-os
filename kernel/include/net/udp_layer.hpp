@@ -59,6 +59,8 @@ std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, netwo
 std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
 std::expected<size_t> client_bind(network::socket& socket, size_t server_port, network::ip::address server);
+std::expected<void> server_bind(network::socket& socket, size_t server_port, network::ip::address server);
+
 std::expected<void> client_unbind(network::socket& socket);
 
 std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n);

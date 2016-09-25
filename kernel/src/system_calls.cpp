@@ -436,6 +436,23 @@ void sc_client_bind_port(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(status);
 }
 
+void sc_server_bind(interrupt::syscall_regs* regs) {
+    auto socket_fd = regs->rbx;
+    auto local_ip  = regs->rcx;
+
+    auto status = network::server_bind(socket_fd, local_ip);
+    regs->rax   = expected_to_i64(status);
+}
+
+void sc_server_bind_port(interrupt::syscall_regs* regs) {
+    auto socket_fd = regs->rbx;
+    auto local_ip  = regs->rcx;
+    auto port      = regs->rdx;
+
+    auto status = network::server_bind(socket_fd, local_ip, port);
+    regs->rax   = expected_to_i64(status);
+}
+
 void sc_client_unbind(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
 
@@ -729,6 +746,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x300D:
             sc_client_bind_port(regs);
+            break;
+
+        case 0x300E:
+            sc_server_bind(regs);
+            break;
+
+        case 0x300F:
+            sc_server_bind_port(regs);
             break;
 
         // Special system calls

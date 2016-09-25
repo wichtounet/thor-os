@@ -164,11 +164,63 @@ int netcat_udp_client(const tlib::ip::address& server, size_t port){
     return 0;
 }
 
-int netcat_udp_server(const tlib::ip::address& local, size_t port){
+int netcat_tcp_server(const tlib::ip::address& local, size_t port){
     return 0;
 }
 
-int netcat_tcp_server(const tlib::ip::address& local, size_t port){
+int netcat_udp_server(const tlib::ip::address& local, size_t port){
+    auto ip_str = ip_to_str(local);
+    tlib::printf("netcat UDP server %s:%u\n", ip_str.c_str(), port);
+
+    tlib::socket sock(tlib::socket_domain::AF_INET, tlib::socket_type::DGRAM, tlib::socket_protocol::UDP);
+
+    sock.server_bind(local, port);
+    sock.listen(true);
+
+    if (!sock) {
+        tlib::printf("nc: listen error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
+    // Listen for packets from the server
+
+    char message_buffer[2049];
+
+    auto before = tlib::ms_time();
+    auto after  = before;
+
+    while (true) {
+        // Make sure we don't wait for more than the timeout
+        if (after > before + timeout_ms) {
+            break;
+        }
+
+        auto remaining = timeout_ms - (after - before);
+
+        auto size = sock.receive(message_buffer, 2048, remaining);
+        if (!sock) {
+            if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
+                sock.clear();
+                break;
+            }
+
+            tlib::printf("nc: receive error: %s\n", std::error_message(sock.error()));
+            return 1;
+        } else {
+            message_buffer[size] = '\0';
+            tlib::print(message_buffer);
+        }
+
+        after = tlib::ms_time();
+    }
+
+    sock.listen(false);
+
+    if (!sock) {
+        tlib::printf("nc: listen error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
     return 0;
 }
 

@@ -142,6 +142,16 @@ void sysfs_publish(network::interface_descriptor& interface){
     }
 }
 
+size_t datagram_port(network::socket_protocol protocol){
+    switch(protocol){
+        case network::socket_protocol::DNS:
+            return 53;
+
+        default:
+            return 0;
+    }
+}
+
 network::socket_protocol datagram_protocol(network::socket_protocol protocol){
     switch(protocol){
         case network::socket_protocol::DNS:
@@ -522,9 +532,15 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::a
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE);
     }
 
+    auto port = datagram_port(socket.protocol);
+
+    if(!port){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
+
     switch(datagram_protocol(socket.protocol)){
         case socket_protocol::UDP:
-            return network::udp::client_bind(socket, /* TODO PORT */ 53, address);
+            return network::udp::client_bind(socket, port, address);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -548,6 +564,52 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::a
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
+}
+
+std::expected<void> network::server_bind(socket_fd_t socket_fd, network::ip::address address){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(socket.type != socket_type::DGRAM){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE);
+    }
+
+    auto port = datagram_port(socket.protocol);
+
+    if(!port){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
+
+    switch(datagram_protocol(socket.protocol)){
+        case socket_protocol::UDP:
+            return network::udp::server_bind(socket, port, address);
+
+        default:
+            return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
+}
+
+std::expected<void> network::server_bind(socket_fd_t socket_fd, network::ip::address address, size_t port){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(socket.type != socket_type::DGRAM){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE);
+    }
+
+    switch(datagram_protocol(socket.protocol)){
+        case socket_protocol::UDP:
+            return network::udp::server_bind(socket, port, address);
+
+        default:
+            return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
     }
 }
 
