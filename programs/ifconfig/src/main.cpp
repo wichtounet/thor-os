@@ -67,6 +67,14 @@ int main(int /*argc*/, char* /*argv*/[]){
             }
 
             tlib::printf("%10s driver %s\n", "", driver.c_str());
+
+            auto rx_packets = read_file(base_path + entry_name + "/rx_packets");
+            auto rx_bytes = read_file(base_path + entry_name + "/rx_bytes");
+            auto tx_packets = read_file(base_path + entry_name + "/tx_packets");
+            auto tx_bytes = read_file(base_path + entry_name + "/tx_bytes");
+
+            tlib::printf("%10s rx packets %s bytes %s\n", "", rx_packets.c_str(), rx_bytes.c_str());
+            tlib::printf("%10s tx packets %s bytes %s\n", "", tx_packets.c_str(), tx_bytes.c_str());
         }
     }
 
