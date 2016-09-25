@@ -37,16 +37,21 @@ struct interface_descriptor {
     std::string driver;              ///< The driver of the interface
     size_t pci_device;               ///< The pci information
     size_t mac_address;              ///< The inteface MAC address
-    void* driver_data;               ///<  The driver data
+    void* driver_data = nullptr;     ///<  The driver data
     network::ip::address ip_address; ///< The interface IP address
     network::ip::address gateway;    ///< The interface IP gateway
+
+    size_t rx_thread_pid; ///< The pid of the rx thread
+    size_t tx_thread_pid; ///< The pid of the tx thread
+
+    size_t rx_packets_counter = 0;
+    size_t rx_bytes_counter   = 0;
+    size_t tx_packets_counter = 0;
+    size_t tx_bytes_counter   = 0;
 
     mutable mutex tx_lock;                    ///< Mutex protecting the queues
     mutable semaphore tx_sem;                 ///< Semaphore for transmission
     mutable deferred_unique_semaphore rx_sem; ///< Semaphore for reception
-
-    size_t rx_thread_pid; ///< The pid of the rx thread
-    size_t tx_thread_pid; ///< The pid of the tx thread
 
     circular_buffer<ethernet::packet, 32> rx_queue; ///< The reception queue
     circular_buffer<ethernet::packet, 32> tx_queue; ///< The transmission queue

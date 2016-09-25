@@ -63,6 +63,9 @@ void rx_thread(void* data){
         auto packet = interface.rx_queue.pop();
         network::ethernet::decode(interface, packet);
 
+        ++interface.rx_packets_counter;
+        interface.rx_bytes_counter += packet.payload_size;
+
         // The memory of the packet was allocated by the interface itself, can be safely removed
         delete[] packet.payload;
     }
@@ -83,11 +86,34 @@ void tx_thread(void* data){
 
         thor_assert(!packet.user);
 
+        ++interface.tx_packets_counter;
+        interface.tx_bytes_counter += packet.payload_size;
+
         delete[] packet.payload;
     }
 }
 
-void sysfs_publish(const network::interface_descriptor& interface){
+std::string sysfs_rx_packets(void* data){
+    auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
+    return std::to_string(interface.rx_packets_counter);
+}
+
+std::string sysfs_rx_bytes(void* data){
+    auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
+    return std::to_string(interface.rx_bytes_counter);
+}
+
+std::string sysfs_tx_packets(void* data){
+    auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
+    return std::to_string(interface.tx_packets_counter);
+}
+
+std::string sysfs_tx_bytes(void* data){
+    auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
+    return std::to_string(interface.tx_bytes_counter);
+}
+
+void sysfs_publish(network::interface_descriptor& interface){
     auto p = path("/net") / interface.name;
 
     sysfs::set_constant_value(path("/sys"), p / "name", interface.name);
@@ -108,6 +134,11 @@ void sysfs_publish(const network::interface_descriptor& interface){
 
             sysfs::set_constant_value(path("/sys"), p / "gateway", gateway_addr);
         }
+
+        sysfs::set_dynamic_value_data(path("/sys"), p / "rx_packets", sysfs_rx_packets, &interface);
+        sysfs::set_dynamic_value_data(path("/sys"), p / "rx_bytes", sysfs_rx_bytes, &interface);
+        sysfs::set_dynamic_value_data(path("/sys"), p / "tx_packets", sysfs_tx_packets, &interface);
+        sysfs::set_dynamic_value_data(path("/sys"), p / "tx_bytes", sysfs_tx_bytes, &interface);
     }
 }
 
@@ -144,7 +175,6 @@ void network::init(){
             interface.pci_device = i;
             interface.enabled = false;
             interface.driver = "";
-            interface.driver_data = nullptr;
 
             if(pci_device.vendor_id == 0x10EC && pci_device.device_id == 0x8139){
                 interface.enabled = true;
@@ -162,8 +192,6 @@ void network::init(){
                 interface.tx_sem.init(0);
             }
 
-            sysfs_publish(interface);
-
             ++index;
         }
     }
@@ -177,7 +205,6 @@ void network::init(){
     interface.pci_device  = 0;
     interface.enabled     = true;
     interface.driver      = "loopback";
-    interface.driver_data = nullptr;
     interface.ip_address  = network::ip::make_address(127, 0, 0, 1);
 
     interface.tx_lock.init(1);
@@ -185,9 +212,9 @@ void network::init(){
 
     loopback::init_driver(interface);
 
-    sysfs_publish(interface);
-
     for(auto& interface : interfaces){
+        sysfs_publish(interface);
+
         if(interface.enabled){
             if(interface.is_loopback()){
                 loopback::finalize_driver(interface);
