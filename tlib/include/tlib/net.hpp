@@ -189,6 +189,15 @@ std::expected<void> client_unbind(size_t socket_fd);
 std::expected<size_t> connect(size_t socket_fd, tlib::ip::address server, size_t port);
 
 /*!
+ * \brief Connect to  a destination to the stream socket
+ * \param socket_fd The socket file descriptor
+ * \param server The server address
+ * \param port The server port
+ * \return the local port, or an error
+ */
+std::expected<void> server_start(size_t socket_fd, tlib::ip::address server, size_t port);
+
+/*!
  * \brief Disconnect from destination from the datagram socket
  * \param socket_fd The socket file descriptor
  * \return nothing, or an error
@@ -299,6 +308,13 @@ struct socket {
      * \param port The port of the server
      */
     void connect(tlib::ip::address server, size_t port);
+
+    /*!
+     * \brief Start as a server (stream socket)
+     * \param server The IP of the server
+     * \param port The port of the server
+     */
+    void server_start(tlib::ip::address server, size_t port);
 
     /*!
      * \brief Disconnnect from the server (stream socket)

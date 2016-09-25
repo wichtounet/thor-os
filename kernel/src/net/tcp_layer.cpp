@@ -574,6 +574,26 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
     return connection.local_port;
 }
 
+std::expected<void> network::tcp::server_start(network::socket& sock, network::interface_descriptor& interface, size_t server_port, network::ip::address server) {
+    // Create the connection
+
+    auto& connection = connections.create_connection();
+
+    connection.server         = true;
+    connection.server_port    = server_port;
+    connection.server_address = server;
+
+    // Link the socket and connection
+    sock.connection_data = &connection;
+    connection.socket = &sock;
+
+    // Mark the connection as connected
+
+    connection.connected = true;
+
+    return {};
+}
+
 std::expected<void> network::tcp::disconnect(network::socket& sock) {
     logging::logf(logging::log_level::TRACE, "tcp: Disconnect\n");
 

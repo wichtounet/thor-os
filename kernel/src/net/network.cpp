@@ -723,6 +723,26 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
     }
 }
 
+std::expected<void> network::server_start(socket_fd_t socket_fd, network::ip::address server, size_t port){
+    if(!scheduler::has_socket(socket_fd)){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);
+    }
+
+    auto& socket = scheduler::get_socket(socket_fd);
+
+    if(socket.type != socket_type::STREAM){
+        return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE);
+    }
+
+    switch(stream_protocol(socket.protocol)){
+        case socket_protocol::TCP:
+            return network::tcp::server_start(socket, select_interface(server), port, server);
+
+        default:
+            return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
+    }
+}
+
 std::expected<void> network::disconnect(socket_fd_t socket_fd){
     if(!scheduler::has_socket(socket_fd)){
         return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_FD);

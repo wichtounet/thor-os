@@ -506,6 +506,15 @@ void sc_connect(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(status);
 }
 
+void sc_server_start(interrupt::syscall_regs* regs){
+    auto socket_fd = regs->rbx;
+    auto ip = regs->rcx;
+    auto port = regs->rdx;
+
+    auto status = network::server_start(socket_fd, ip, port);
+    regs->rax = expected_to_i64(status);
+}
+
 void sc_disconnect(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
 
@@ -807,6 +816,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x3013:
             sc_send_to(regs);
+            break;
+
+        case 0x3014:
+            sc_server_start(regs);
             break;
 
         // Special system calls
