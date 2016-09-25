@@ -117,9 +117,6 @@ void kernel_main(){
     //Init the virtual file system
     vfs::init();
 
-    //Starting from here, the logging system can output logs to file
-    //TODO logging::to_file();
-
     //Only install system calls when everything else is ready
     install_system_calls();
 

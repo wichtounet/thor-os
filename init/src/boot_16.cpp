@@ -289,7 +289,7 @@ void setup_idt(){
 gdt::gdt_descriptor_t null_descriptor(){
     gdt::gdt_descriptor_t descriptor;
 
-    //zero-out the descriptor;
+    //zero-out the descriptor
     *(reinterpret_cast<uint64_t*>(&descriptor)) = 0;
 
     return descriptor;

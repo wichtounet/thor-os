@@ -16,7 +16,6 @@ uintptr_t __stack_chk_guard = STACK_CHK_GUARD;
 
 __attribute__((noreturn)) void __stack_chk_fail(){
     tlib::printf("Stack smashing detected \n");
-    //TODO printf("pid=%u\n", scheduler::get_pid());
     tlib::exit(1);
 }
 

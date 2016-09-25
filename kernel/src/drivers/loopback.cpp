@@ -48,7 +48,7 @@ void loopback::init_driver(network::interface_descriptor& interface){
     interface.hw_send = send_packet;
 
     interface.ip_address = network::ip::make_address(127, 0, 0, 1);
-    //TODO interface.mac_address = mac;
+    //TODO maybe set a MAC address
 }
 
 void loopback::finalize_driver(network::interface_descriptor& interface){
