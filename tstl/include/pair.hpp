@@ -13,8 +13,8 @@ namespace std {
 template<typename T1, typename T2>
 class pair {
 public:
-    typedef T1 first_type;
-    typedef T2 second_type;
+    using first_type  = T1;
+    using second_type = T2;
 
     first_type first;
     second_type second;

@@ -41,12 +41,12 @@ struct default_delete<T[]> {
 template <typename T, typename D = default_delete<T>>
 class unique_ptr {
 public:
-    typedef T* pointer_type;
-    typedef T element_type;
-    typedef D deleter_type;
+    using pointer_type = T*;
+    using element_type = T;
+    using deleter_type = D;
 
 private:
-    typedef tuple<pointer_type, deleter_type> data_impl;
+    using data_impl = tuple<pointer_type, deleter_type>;
 
     data_impl _data;
 
@@ -121,12 +121,12 @@ public:
 template <typename T, typename D>
 class unique_ptr<T[], D> {
 public:
-    typedef T* pointer_type;
-    typedef T element_type;
-    typedef D deleter_type;
+    using pointer_type = T*;
+    using element_type = T;
+    using deleter_type = D;
 
 private:
-    typedef tuple<pointer_type, deleter_type> data_impl;
+    using data_impl = tuple<pointer_type, deleter_type>;
 
     data_impl _data;
 

@@ -37,8 +37,8 @@ public:
     size_t rm(const path& file_path);
 };
 
-typedef std::string (*dynamic_fun_t)();
-typedef std::string (*dynamic_fun_data_t)(void* data);
+using dynamic_fun_t = std::string (*)();
+using dynamic_fun_data_t = std::string (*)(void*);
 
 void set_constant_value(const path& mount_point, const path& file_path, const std::string& value);
 void set_dynamic_value(const path& mount_point, const path& file_path, dynamic_fun_t fun);
