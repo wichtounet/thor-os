@@ -36,14 +36,14 @@ network::connection_handler<udp_connection> connections;
 
 void compute_checksum(network::ethernet::packet& packet){
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
-    auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.index);
+    auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.tag(2));
 
     udp_header->checksum = 0;
 
     auto length = switch_endian_16(udp_header->length);
 
     // Accumulate the Payload
-    auto sum = network::checksum_add_bytes(packet.payload + packet.index, length);
+    auto sum = network::checksum_add_bytes(packet.payload + packet.tag(2), length);
 
     // Accumulate the IP addresses
     sum += network::checksum_add_bytes(&ip_header->source_ip, 8);
