@@ -10,6 +10,7 @@
 #include "physical_allocator.hpp"
 #include "paging.hpp"
 #include "e820.hpp"
+#include "logging.hpp"
 
 #include "conc/int_lock.hpp"
 
@@ -431,6 +432,7 @@ void kalloc::k_free(void* block){
         reinterpret_cast<uintptr_t>(block) - sizeof(malloc_header_chunk));
 
     if(free_header->is_free()){
+        logging::logf(logging::log_level::ERROR, "kalloc: free block getting freed\n");
         k_print_line("ERROR: free block getting freed");
     }
 
