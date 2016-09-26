@@ -16,22 +16,45 @@ namespace {
 static constexpr const size_t N          = 4;
 static constexpr const size_t timeout_ms = 2000;
 
+void debug_print(bool debug, const char* message){
+    if(debug){
+        tlib::print_line(message);
+    }
+}
+
 } // end of anonymous namespace
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        tlib::print_line("usage: ping address_ip");
+    bool debug = false;
+
+    size_t i = 1;
+    for(; i < size_t(argc); ++i){
+        std::string param(argv[i]);
+
+        if(param == "-d"){
+            debug = true;
+        } else {
+            break;
+        }
+    }
+
+    if (argc - i != 1) {
+        tlib::print_line("usage: ping [options] address_ip");
         return 1;
     }
 
-    std::string query(argv[1]);
+    std::string query(argv[i]);
 
     std::string ip;
 
     if (tlib::dns::is_ip(query)) {
         ip = query;
     } else {
+        debug_print(debug, "ping: Resolve name...");
+
         auto resolved = tlib::dns::resolve_str(query);
+
+        debug_print(debug, "ping: name resolved");
 
         if(resolved){
             ip = *resolved;
@@ -68,7 +91,9 @@ int main(int argc, char* argv[]) {
     desc.code         = 0;
 
     for (size_t i = 0; i < N; ++i) {
+        debug_print(debug, "ping: prepare packet...");
         auto packet = sock.prepare_packet(&desc);
+        debug_print(debug, "ping: packet prepared");
 
         if (!sock) {
             if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
@@ -85,7 +110,9 @@ int main(int argc, char* argv[]) {
         command_header->identifier = 0x666;
         command_header->sequence   = 0x1 + i;
 
+        debug_print(debug, "ping: finalize packet...");
         sock.finalize_packet(packet);
+        debug_print(debug, "ping: packet finalized");
 
         if (!sock) {
             tlib::printf("ping: finalize_packet error: %s\n", std::error_message(sock.error()));
@@ -105,7 +132,10 @@ int main(int argc, char* argv[]) {
 
             bool handled = false;
 
+            debug_print(debug, "ping: wait for packet...");
             auto p = sock.wait_for_packet(remaining);
+            debug_print(debug, "ping: packet received");
+
             if (!sock) {
                 if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
                     tlib::printf("%s unreachable\n", ip.c_str());
