@@ -165,6 +165,16 @@ std::string vsprintf(const std::string& format, va_list va){
                     s += "B";
                 }
             }
+            // Boolean
+            else if(ch == 'b'){
+                bool value= va_arg(va, int);
+
+                if(value){
+                    s += "true";
+                } else {
+                    s += "false";
+                }
+            }
             //String
             else if(ch == 's'){
                 const char* arg = va_arg(va, const char*);
@@ -374,6 +384,16 @@ void vsprintf_raw(char* out_buffer, size_t /*n*/, const char* format, va_list va
                     std::to_raw_string(memory, buffer, 32);
                     out_i += str_cat(out_buffer + out_i, buffer);
                     out_i += str_cat(out_buffer + out_i, "B");
+                }
+            }
+            // Boolean
+            else if(ch == 'b'){
+                bool value= va_arg(va, int);
+
+                if(value){
+                    out_i += str_cat(out_buffer + out_i, "true");
+                } else {
+                    out_i += str_cat(out_buffer + out_i, "false");
                 }
             }
             //String
