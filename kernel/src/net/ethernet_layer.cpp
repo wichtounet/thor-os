@@ -81,7 +81,7 @@ void network::ethernet::mac64_to_mac6(uint64_t source_mac, char* mac){
     }
 }
 
-void network::ethernet::decode(network::interface_descriptor& interface, packet& packet){
+void network::ethernet::layer::decode(network::interface_descriptor& interface, packet& packet){
     logging::logf(logging::log_level::TRACE, "ethernet: Start decoding new packet\n");
 
     header* ether_header = reinterpret_cast<header*>(packet.payload);
@@ -102,19 +102,23 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
     packet.type = decode_ether_type(ether_header);
     packet.index += sizeof(header);
 
-    switch(packet.type){
+    switch (packet.type) {
         case ether_type::IPV4:
-            network::ip::decode(interface, packet);
+            ip_layer->decode(interface, packet);
             break;
+
+        case ether_type::ARP:
+            arp_layer->decode(interface, packet);
+            break;
+
         case ether_type::IPV6:
             logging::logf(logging::log_level::TRACE, "ethernet: IPV6 Packet (unsupported)\n");
             break;
-        case ether_type::ARP:
-            network::arp::decode(interface, packet);
-            break;
+
         case ether_type::UNKNOWN:
             logging::logf(logging::log_level::TRACE, "ethernet: Unhandled Packet Type: %u\n", uint64_t(switch_endian_16(ether_header->type)));
             break;
+
         default:
             logging::logf(logging::log_level::ERROR, "ethernet: Unhandled Packet Type in switch: %u\n", uint64_t(switch_endian_16(ether_header->type)));
             break;
@@ -123,7 +127,7 @@ void network::ethernet::decode(network::interface_descriptor& interface, packet&
     logging::logf(logging::log_level::TRACE, "ethernet: Finished decoding packet\n");
 }
 
-std::expected<network::ethernet::packet> network::ethernet::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
+std::expected<network::ethernet::packet> network::ethernet::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
     auto total_size = descriptor.size + sizeof(header);
 
     network::ethernet::packet p(new char[total_size], total_size);
@@ -133,7 +137,7 @@ std::expected<network::ethernet::packet> network::ethernet::kernel_prepare_packe
     return p;
 }
 
-std::expected<network::ethernet::packet> network::ethernet::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
+std::expected<network::ethernet::packet> network::ethernet::layer::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
     auto total_size = descriptor->size + sizeof(header);
 
     network::ethernet::packet p(buffer, total_size);
@@ -144,7 +148,7 @@ std::expected<network::ethernet::packet> network::ethernet::user_prepare_packet(
     return p;
 }
 
-std::expected<void> network::ethernet::finalize_packet(network::interface_descriptor& interface, packet& p){
+std::expected<void> network::ethernet::layer::finalize_packet(network::interface_descriptor& interface, packet& p){
     if(p.user){
         // The packet will be handled by a kernel thread, needs to
         // be copied to kernel memory

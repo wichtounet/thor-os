@@ -36,8 +36,24 @@ network::ip::address ip2_to_ip(uint16_t* source_ip);
 void mac64_to_mac3(uint64_t source_mac, uint16_t* mac);
 void ip_to_ip2(network::ip::address source_ip, uint16_t* ip);
 
-void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+struct layer {
+    layer(network::ethernet::layer* parent);
 
+    /*!
+     * \brief Decode a network packet.
+     *
+     * This must only be called from the ethernet layer.
+     *
+     * \param interface The interface on which the packet was received
+     * \param packet The packet to decode
+     */
+    void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+
+private:
+    network::ethernet::layer* parent;
+};
+
+//TODO Move
 void wait_for_reply();
 void wait_for_reply(size_t ms);
 

@@ -60,7 +60,11 @@ void network::arp::ip_to_ip2(network::ip::address source_ip, uint16_t* ip){
     }
 }
 
-void network::arp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+network::arp::layer::layer(network::ethernet::layer* parent) : parent(parent) {
+    parent->register_arp_layer(this);
+}
+
+void network::arp::layer::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.tag(1, packet.index);
 
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -122,7 +126,7 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
 
             // Ask the ethernet layer to craft a packet
             network::ethernet::packet_descriptor desc{sizeof(header), source_hw, ethernet::ether_type::ARP};
-            auto packet = network::ethernet::kernel_prepare_packet(interface, desc);
+            auto packet = parent->kernel_prepare_packet(interface, desc);
 
             if(packet){
                 auto* arp_reply_header = reinterpret_cast<header*>(packet->payload + packet->index);
@@ -140,7 +144,7 @@ void network::arp::decode(network::interface_descriptor& interface, network::eth
                 std::copy_n(arp_header->target_protocol_addr, 2, arp_reply_header->source_protocol_addr);
                 std::copy_n(arp_header->source_protocol_addr, 2, arp_reply_header->target_protocol_addr);
 
-                network::ethernet::finalize_packet(interface, *packet);
+                parent->finalize_packet(interface, *packet);
             } else {
                 logging::logf(logging::log_level::ERROR, "arp: Impossible to reply to ARP Request: %s\n", std::error_message(packet.error()));
 
