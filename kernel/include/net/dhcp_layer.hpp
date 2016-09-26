@@ -19,6 +19,9 @@ namespace network {
 
 namespace dhcp {
 
+/*!
+ * \brief The DHCP packet header
+ */
 struct header {
     uint8_t op;                 ///< Operation code
     uint8_t htype;              ///< Hardware type
@@ -37,6 +40,18 @@ struct header {
 };
 
 /*!
+ * \brief The received DHCP configuration
+ */
+struct dhcp_configuration {
+    network::ip::address ip_address;      ///< The IP address
+    network::ip::address dns_address;     ///< The DNS address
+    network::ip::address gateway_address; ///< The gateway address
+
+    bool dns     = false; ///< Indicates if there is a DNS
+    bool gateway = false; ///< Indicates if there is a gateway
+};
+
+/*!
  * \brief Decode a network packet.
  *
  * This must only be called from the UDP layer.
@@ -51,7 +66,7 @@ void decode(network::interface_descriptor& interface, network::ethernet::packet&
  *
  * \param interface The interface for which we want an IP address
  */
-std::expected<network::ip::address> request_ip(network::interface_descriptor& interface);
+std::expected<dhcp_configuration> request_ip(network::interface_descriptor& interface);
 
 } // end of dns namespace
 

@@ -5,7 +5,9 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+#include <atomic.hpp>
 #include <bit_field.hpp>
+#include <circular_buffer.hpp>
 
 #include "net/dhcp_layer.hpp"
 #include "net/udp_layer.hpp"
@@ -15,6 +17,10 @@
 #include "tlib/errors.hpp"
 
 namespace {
+
+std::atomic<bool> listening;
+circular_buffer<network::ethernet::packet, 16> packets;
+condition_variable listen_queue;
 
 void prepare_packet(network::ethernet::packet& packet, network::interface_descriptor& interface) {
     packet.tag(3, packet.index);
@@ -61,9 +67,20 @@ void network::dhcp::decode(network::interface_descriptor& /*interface*/, network
     logging::logf(logging::log_level::TRACE, "dhcp: Identification: %u\n", size_t(dhcp_header->xid));
 
     // Note: Propagate is handled by UDP connections
+
+    if (listening.load()) {
+        auto copy    = packet;
+        copy.payload = new char[copy.payload_size];
+        std::copy_n(packet.payload, packet.payload_size, copy.payload);
+
+        packets.push(copy);
+        listen_queue.notify_one();
+    }
 }
 
-std::expected<network::ip::address> network::dhcp::request_ip(network::interface_descriptor& interface){
+std::expected<network::dhcp::dhcp_configuration> network::dhcp::request_ip(network::interface_descriptor& interface) {
+    listening = true;
+
     // 1. Send DHCP Discovery
 
     {
@@ -73,8 +90,8 @@ std::expected<network::ip::address> network::dhcp::request_ip(network::interface
 
         auto packet = network::udp::kernel_prepare_packet(interface, udp_desc);
 
-        if(!packet){
-            return std::make_unexpected<network::ip::address>(packet.error());
+        if (!packet) {
+            return std::make_unexpected<dhcp_configuration>(packet.error());
         }
 
         ::prepare_packet(*packet, interface);
@@ -115,26 +132,248 @@ std::expected<network::ip::address> network::dhcp::request_ip(network::interface
 
         // Finalize the UDP packet
         auto status = network::udp::finalize_packet(interface, *packet);
-        if(!status){
-            return std::make_unexpected<network::ip::address>(status.error());
+        if (!status) {
+            return std::make_unexpected<dhcp_configuration>(status.error());
         }
     }
 
     // 2. Receive DHCP Offer
 
-    {
+    network::ip::address offer_address;
+    network::ip::address server_address;
+    network::ip::address gateway_address;
+    network::ip::address dns_address;
 
+    bool gateway = false;
+    bool dns     = false;
+
+    {
+        while (true) {
+            if (packets.empty()) {
+                listen_queue.wait();
+            }
+
+            auto packet = packets.pop();
+
+            auto* dhcp_header = reinterpret_cast<network::dhcp::header*>(packet.payload + packet.tag(3));
+
+            if (dhcp_header->xid == 0x66666666 && dhcp_header->op == 0x2) {
+                logging::logf(logging::log_level::TRACE, "dhcp: Received DHCP answer\n");
+
+                auto* options = packet.payload + packet.tag(3) + sizeof(network::dhcp::header);
+
+                bool dhcp_offer = false;
+
+                auto cookie = (options[0] << 24) + (options[1] << 16) + (options[2] << 8) + options[3];
+                if (cookie != 0x63825363) {
+                    logging::logf(logging::log_level::TRACE, "dhcp: Received wrong magic cookie\n");
+                    continue;
+                }
+
+                size_t i = 4;
+                while (true) {
+                    auto id = options[i++];
+
+                    // End of options
+                    if (id == 255) {
+                        break;
+                    }
+
+                    // Pad
+                    if (id == 0) {
+                        continue;
+                    }
+
+                    auto n = options[i++];
+
+                    if (!n) {
+                        continue;
+                    }
+
+                    if (id == 53) {
+                        if (options[i++] == 2) {
+                            dhcp_offer = true;
+                        }
+
+                        continue;
+                    }
+
+                    if (id == 3) {
+                        gateway_address = network::ip::make_address(options[i], options[i + 1], options[i + 2], options[i + 3]);
+                        i               = +n;
+                        gateway         = true;
+                        continue;
+                    }
+
+                    if (id == 6) {
+                        dns_address = network::ip::make_address(options[i], options[i + 1], options[i + 2], options[i + 3]);
+                        i           = +n;
+                        dns         = true;
+                        continue;
+                    }
+                }
+
+                if (!dhcp_offer) {
+                    logging::logf(logging::log_level::TRACE, "dhcp: Received wrong DHCP message type\n");
+                    continue;
+                }
+
+                offer_address  = switch_endian_32(dhcp_header->your_ip);
+                server_address = switch_endian_32(dhcp_header->server_ip);
+
+                break;
+            }
+        }
     }
+
+    logging::logf(logging::log_level::TRACE, "dhcp: Received DHCP Offer\n");
+    logging::logf(logging::log_level::TRACE, "dhcp:          From %h\n", size_t(server_address.raw_address));
+    logging::logf(logging::log_level::TRACE, "dhcp:            IP %h\n", size_t(offer_address.raw_address));
 
     // 3. Send DHCP Request
 
     {
+        // Ask the UDP layer to craft a packet
+        auto payload_size = sizeof(network::dhcp::header) + 20;
+        network::udp::kernel_packet_descriptor udp_desc{payload_size, 68, 67, server_address};
 
+        auto packet = network::udp::kernel_prepare_packet(interface, udp_desc);
+
+        if (!packet) {
+            return std::make_unexpected<dhcp_configuration>(packet.error());
+        }
+
+        ::prepare_packet(*packet, interface);
+
+        auto* dhcp_header = reinterpret_cast<network::dhcp::header*>(packet->payload + packet->tag(3));
+
+        dhcp_header->op        = 1;                                            // This is a request
+        dhcp_header->xid       = 0x66666666;                                   // Our identification
+        dhcp_header->flags     = switch_endian_16(0x8000);                     // We don't know our IP address for now
+        dhcp_header->server_ip = switch_endian_32(server_address.raw_address); // Address ip of the server
+
+        auto* options = packet->payload + packet->tag(3) + sizeof(network::dhcp::header);
+
+        // Option 0: Magic cookie
+        options[0] = 99;
+        options[1] = 130;
+        options[2] = 83;
+        options[3] = 99;
+
+        // Option 1: DHCP Request
+        options[4] = 53; // DHCP Message Type
+        options[5] = 1;  // Length 1
+        options[6] = 3;  // DHCP Request
+
+        // Option 2: Request IP address
+        options[7]  = 50;
+        options[8]  = 4;
+        options[9]  = offer_address(0);
+        options[10] = offer_address(1);
+        options[11] = offer_address(2);
+        options[12] = offer_address(3);
+
+        // Option 3: DHCP server
+        options[13] = 54;
+        options[14] = 4;
+        options[15] = server_address(0);
+        options[16] = server_address(1);
+        options[17] = server_address(2);
+        options[18] = server_address(3);
+
+        // End of options
+        options[19] = 255;
+
+        // Finalize the UDP packet
+        auto status = network::udp::finalize_packet(interface, *packet);
+        if (!status) {
+            return std::make_unexpected<dhcp_configuration>(status.error());
+        }
     }
 
     // 4. Receive DHCP Acknowledge
 
     {
+        while (true) {
+            if (packets.empty()) {
+                listen_queue.wait();
+            }
 
+            auto packet = packets.pop();
+
+            auto* dhcp_header = reinterpret_cast<network::dhcp::header*>(packet.payload + packet.tag(3));
+
+            if (dhcp_header->xid == 0x66666666 && dhcp_header->op == 0x2) {
+                logging::logf(logging::log_level::TRACE, "dhcp: Received DHCP answer\n");
+
+                auto* options = packet.payload + packet.tag(3) + sizeof(network::dhcp::header);
+
+                auto cookie = (options[0] << 24) + (options[1] << 16) + (options[2] << 8) + options[3];
+                if (cookie != 0x63825363) {
+                    logging::logf(logging::log_level::TRACE, "dhcp: Received wrong magic cookie\n");
+                    continue;
+                }
+
+                bool dhcp_ack = false;
+
+                size_t i = 4;
+                while (true) {
+                    auto id = options[i++];
+
+                    // End of options
+                    if (id == 255) {
+                        break;
+                    }
+
+                    // Pad
+                    if (id == 0) {
+                        continue;
+                    }
+
+                    auto n = options[i++];
+
+                    if (!n) {
+                        continue;
+                    }
+
+                    if (id == 53) {
+                        if (options[i] == 5 || options[i] == 6) {
+                            dhcp_ack = true;
+                        }
+
+                        ++i;
+
+                        continue;
+                    }
+                }
+
+                if (!dhcp_ack) {
+                    logging::logf(logging::log_level::TRACE, "dhcp: Received wrong DHCP message type\n");
+                    continue;
+                }
+
+                logging::logf(logging::log_level::TRACE, "dhcp: Received DHCP Ack\n");
+
+                break;
+            }
+        }
     }
+
+    listening = false;
+
+    dhcp_configuration conf;
+
+    conf.dns        = dns;
+    conf.gateway    = gateway;
+    conf.ip_address = offer_address;
+
+    if (dns) {
+        conf.dns_address = dns_address;
+    }
+
+    if (gateway) {
+        conf.gateway_address = gateway_address;
+    }
+
+    return {conf};
 }

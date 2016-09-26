@@ -78,6 +78,11 @@ std::expected<uint64_t> get_target_mac(network::interface_descriptor& interface,
 
     auto& interface_ip = interface.ip_address;
 
+    // At this point, we have no gateway, neither IP
+    if(interface_ip == network::ip::make_address(0, 0, 0, 0)){
+        return network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
+    }
+
     // If it is the same network, use ARP to get the MAC address
     if(network::ip::same_network(interface_ip, target_ip)){
         return network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);

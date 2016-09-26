@@ -49,6 +49,8 @@ namespace {
 
 std::vector<network::interface_descriptor> interfaces;
 
+network::ip::address dns_address;
+
 void rx_thread(void* data){
     auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
 
@@ -170,11 +172,37 @@ network::socket_protocol stream_protocol(network::socket_protocol protocol){
     }
 }
 
-void network_discovery(){
-    for(auto& interface : interfaces){
-        if(interface.enabled && !interface.is_loopback()){
-            auto ip = network::dhcp::request_ip(interface);
+void network_discovery() {
+    for (auto& interface : interfaces) {
+        if (interface.enabled) {
+            if (!interface.is_loopback()) {
+                auto ip = network::dhcp::request_ip(interface);
+
+                if (ip) {
+                    interface.ip_address = ip->ip_address;
+
+                    if (ip->gateway) {
+                        interface.gateway = ip->ip_address;
+                    } else {
+                        interface.gateway    = network::ip::make_address(10, 0, 2, 2);
+                    }
+
+                    if (ip->dns) {
+                        dns_address = ip->dns_address;
+                    } else {
+                        dns_address = network::ip::make_address(10, 0, 2, 2);
+                    }
+                } else {
+                    // Defaults for Qemu (better than nothing)
+                    interface.ip_address = network::ip::make_address(10, 0, 2, 15);
+                    interface.gateway    = network::ip::make_address(10, 0, 2, 2);
+
+                    dns_address = network::ip::make_address(10, 0, 2, 2);
+                }
+            }
         }
+
+        sysfs_publish(interface);
     }
 }
 
@@ -203,10 +231,6 @@ void network::init(){
             }
 
             if(interface.enabled){
-                //TODO This should be configurable
-                interface.ip_address = network::ip::make_address(10, 0, 2, 15);
-                interface.gateway    = network::ip::make_address(10, 0, 2, 2);
-
                 interface.tx_lock.init(1);
                 interface.tx_sem.init(0);
             }
@@ -232,8 +256,6 @@ void network::init(){
     loopback::init_driver(interface);
 
     for(auto& interface : interfaces){
-        sysfs_publish(interface);
-
         if(interface.enabled){
             if(interface.is_loopback()){
                 loopback::finalize_driver(interface);
@@ -867,4 +889,8 @@ void network::propagate_packet(const ethernet::packet& packet, socket_protocol p
             }
         }
     }
+}
+
+network::ip::address network::dns_server(){
+    return dns_address;
 }

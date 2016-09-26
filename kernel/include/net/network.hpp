@@ -264,6 +264,11 @@ std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd, size_
  */
 void propagate_packet(const ethernet::packet& packet, socket_protocol protocol);
 
+/*!
+ * \brief Return the IP address of the DNS server
+ */
+network::ip::address dns_server();
+
 } // end of network namespace
 
 #endif
