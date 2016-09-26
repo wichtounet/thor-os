@@ -298,6 +298,34 @@ std::expected<void> tlib::server_start(size_t socket_fd, tlib::ip::address serve
     }
 }
 
+std::expected<size_t> tlib::accept(size_t socket_fd) {
+    int64_t code;
+    asm volatile("mov rax, 0x3016; mov rbx, %[socket]; int 50; mov %[code], rax"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd)
+                 : "rax", "rbx");
+
+    if (code < 0) {
+        return std::make_unexpected<size_t, size_t>(-code);
+    } else {
+        return code;
+    }
+}
+
+std::expected<size_t> tlib::accept(size_t socket_fd, size_t ms) {
+    int64_t code;
+    asm volatile("mov rax, 0x3017; mov rbx, %[socket]; mov rcx, %[ms]; int 50; mov %[code], rax"
+                 : [code] "=m"(code)
+                 : [socket] "g"(socket_fd), [ms] "g"(ms)
+                 : "rax", "rbx", "rcx");
+
+    if (code < 0) {
+        return std::make_unexpected<size_t, size_t>(-code);
+    } else {
+        return code;
+    }
+}
+
 std::expected<void> tlib::disconnect(size_t socket_fd) {
     int64_t code;
     asm volatile("mov rax, 0x3009; mov rbx, %[socket]; int 50; mov %[code], rax"
@@ -354,6 +382,10 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd, size_t ms) {
     }
 }
 
+tlib::socket::socket() : fd(0), error_code(0) {
+    // Nothing else to init
+}
+
 tlib::socket::socket(socket_domain domain, socket_type type, socket_protocol protocol)
         : domain(domain), type(type), protocol(protocol), fd(0), error_code(0) {
     auto open_status = tlib::socket_open(domain, type, protocol);
@@ -363,6 +395,27 @@ tlib::socket::socket(socket_domain domain, socket_type type, socket_protocol pro
     } else {
         error_code = open_status.error();
     }
+}
+
+tlib::socket::socket(tlib::socket&& rhs)
+        : domain(rhs.domain), type(rhs.type), protocol(rhs.protocol), fd(rhs.fd), error_code(rhs.error_code), _connected(rhs._connected), _bound(rhs._bound) {
+    rhs.fd = 0;
+}
+
+tlib::socket& tlib::socket::operator=(tlib::socket&& rhs){
+    if(this != &rhs){
+        this->domain     = rhs.domain;
+        this->type       = rhs.type;
+        this->protocol   = rhs.protocol;
+        this->fd         = rhs.fd;
+        this->error_code = rhs.error_code;
+        this->_connected = rhs._connected;
+        this->_bound     = rhs._bound;
+
+        rhs.fd = 0;
+    }
+
+    return *this;
 }
 
 tlib::socket::~socket() {
@@ -518,6 +571,48 @@ void tlib::socket::server_start(tlib::ip::address server, size_t port) {
         error_code = status.error();
         _connected = false;
     }
+}
+
+tlib::socket tlib::socket::accept() {
+    if (!good() || !open()) {
+        return {};
+    }
+
+    auto status = tlib::accept(fd);
+    if (status) {
+        tlib::socket sock;
+
+        sock.fd = *status;
+
+        sock.domain   = domain;
+        sock.type     = type;
+        sock.protocol = protocol;
+
+        sock._connected = true;
+        sock._bound     = false;
+        sock.error_code = 0;
+
+        return std::move(sock);
+    } else {
+        error_code = status.error();
+    }
+
+    return {};
+}
+
+tlib::socket tlib::socket::accept(size_t ms) {
+    if (!good() || !open()) {
+        return {};
+    }
+
+    auto status = tlib::accept(fd, ms);
+    if (status) {
+        //TODO
+    } else {
+        error_code = status.error();
+    }
+
+    return {};
 }
 
 void tlib::socket::disconnect() {

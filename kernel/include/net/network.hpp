@@ -233,6 +233,21 @@ std::expected<size_t> connect(socket_fd_t socket_fd, network::ip::address addres
 std::expected<void> server_start(socket_fd_t socket_fd, network::ip::address address, size_t port);
 
 /*!
+ * \brief Wait for a connection
+ * \param socket_fd The file descriptor of the packet
+ * \return the allocated port on success and a negative error code otherwise
+ */
+std::expected<size_t> accept(socket_fd_t socket_fd);
+
+/*!
+ * \brief Wait for a connection
+ * \param socket_fd The file descriptor of the packet
+ * \param ms The timeout
+ * \return the allocated port on success and a negative error code otherwise
+ */
+std::expected<size_t> accept(socket_fd_t socket_fd, size_t ms);
+
+/*!
  * \brief Disconnect from  a socket stream
  * \param socket_fd The file descriptor of the packet
  * \return the allocated port on success and a negative error code otherwise

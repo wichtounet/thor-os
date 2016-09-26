@@ -198,6 +198,20 @@ std::expected<size_t> connect(size_t socket_fd, tlib::ip::address server, size_t
 std::expected<void> server_start(size_t socket_fd, tlib::ip::address server, size_t port);
 
 /*!
+ * \brief Wait for a incoming connection
+ * \param socket_fd The socket file descriptor
+ * \return a socket of the incoming connection
+ */
+std::expected<size_t> accept(size_t socket_fd);
+
+/*!
+ * \brief Wait for a incoming connection
+ * \param socket_fd The socket file descriptor
+ * \return a socket of the incoming connection
+ */
+std::expected<size_t> accept(size_t socket_fd, size_t ms);
+
+/*!
  * \brief Disconnect from destination from the datagram socket
  * \param socket_fd The socket file descriptor
  * \return nothing, or an error
@@ -225,7 +239,11 @@ std::expected<packet> wait_for_packet(size_t socket_fd, size_t ms);
  * This is easier to use than the free functions for sockets.
  */
 struct socket {
+    socket();
     socket(socket_domain domain, socket_type type, socket_protocol protocol);
+
+    socket(socket&& rhs);
+    socket& operator=(socket&& rhs);
 
     /*!
      * \brief Destruct the socket and release all acquired connections
@@ -315,6 +333,20 @@ struct socket {
      * \param port The port of the server
      */
     void server_start(tlib::ip::address server, size_t port);
+
+    /*!
+     * \brief Wait for a incoming connection
+     * \param socket_fd The socket file descriptor
+     * \return a socket of the incoming connection
+     */
+    socket accept();
+
+    /*!
+     * \brief Wait for a incoming connection
+     * \param socket_fd The socket file descriptor
+     * \return a socket of the incoming connection
+     */
+    socket accept(size_t ms);
 
     /*!
      * \brief Disconnnect from the server (stream socket)

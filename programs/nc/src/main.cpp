@@ -179,6 +179,79 @@ int netcat_tcp_server(const tlib::ip::address& local, size_t port){
         return 1;
     }
 
+    auto child = sock.accept();
+
+    if (!sock) {
+        tlib::printf("nc: accept error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
+    if (!child) {
+        tlib::printf("nc: accept error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
+    child.listen(true);
+
+    tlib::printf("nc: Received connection\n");
+
+    if (!child) {
+        tlib::printf("nc: listen error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
+    // Listen for packets from the client
+
+    char message_buffer[2049];
+
+    auto before = tlib::ms_time();
+    auto after  = before;
+
+    while (true) {
+        // Make sure we don't wait for more than the timeout
+        if (after > before + server_timeout_ms) {
+            break;
+        }
+
+        auto remaining = server_timeout_ms - (after - before);
+
+        tlib::printf("nc: Wait for message\n");
+
+        auto size = child.receive(message_buffer, 2048, remaining);
+        if (!sock) {
+            if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
+                sock.clear();
+                break;
+            }
+
+            tlib::printf("nc: receive error: %s\n", std::error_message(sock.error()));
+            return 1;
+        } else {
+            message_buffer[size] = '\0';
+            tlib::print(message_buffer);
+
+            tlib::printf("nc: Send response\n");
+
+            sock.send(message_buffer, size);
+
+            if (!sock) {
+                tlib::printf("nc: send error: %s\n", std::error_message(sock.error()));
+                return 1;
+            }
+        }
+
+        after = tlib::ms_time();
+    }
+
+    tlib::printf("nc: done... disconnecting\n");
+
+    child.listen(false);
+
+    if (!child) {
+        tlib::printf("nc: listen error: %s\n", std::error_message(sock.error()));
+        return 1;
+    }
+
     return 0;
 }
 
@@ -196,7 +269,7 @@ int netcat_udp_server(const tlib::ip::address& local, size_t port){
         return 1;
     }
 
-    // Listen for packets from the server
+    // Listen for packets from the client
 
     char message_buffer[2049];
 

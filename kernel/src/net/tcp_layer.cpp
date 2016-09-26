@@ -192,31 +192,27 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
     auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet.payload + packet.index);
 
-    logging::logf(logging::log_level::TRACE, "tcp: Start TCP packet handling\n");
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Start TCP packet handling\n");
 
     auto source_port = switch_endian_16(tcp_header->source_port);
     auto target_port = switch_endian_16(tcp_header->target_port);
     auto seq         = switch_endian_32(tcp_header->sequence_number);
     auto ack         = switch_endian_32(tcp_header->ack_number);
 
-    logging::logf(logging::log_level::TRACE, "tcp: Source Port %u \n", size_t(source_port));
-    logging::logf(logging::log_level::TRACE, "tcp: Target Port %u \n", size_t(target_port));
-    logging::logf(logging::log_level::TRACE, "tcp: Seq Number %u \n", size_t(seq));
-    logging::logf(logging::log_level::TRACE, "tcp: Ack Number %u \n", size_t(ack));
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Source Port %u \n", size_t(source_port));
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Target Port %u \n", size_t(target_port));
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Seq Number %u \n", size_t(seq));
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Ack Number %u \n", size_t(ack));
 
     auto flags = switch_endian_16(tcp_header->flags);
 
     auto next_seq = ack;
     auto next_ack = seq + tcp_payload_len(packet);
 
-    logging::logf(logging::log_level::TRACE, "tcp: Next Seq Number %u \n", size_t(next_seq));
-    logging::logf(logging::log_level::TRACE, "tcp: Next Ack Number %u \n", size_t(next_ack));
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Next Seq Number %u \n", size_t(next_seq));
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Next Ack Number %u \n", size_t(next_ack));
 
-    auto connection_ptr = connections.get_connection_for_packet(source_port, target_port);
-
-    if(connection_ptr){
-        auto& connection = *connection_ptr;
-
+    connections.for_each_connection_for_packet(source_port, target_port, [&](tcp_connection& connection) {
         // Update the connection status
 
         connection.seq_number = next_seq;
@@ -249,9 +245,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
                 socket.listen_queue.notify_one();
             }
         }
-    } else {
-        logging::logf(logging::log_level::DEBUG, "tcp: Received packet for which there are no connection\n");
-    }
+    });
 
     // Acknowledge if necessary
 
@@ -259,7 +253,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
         auto p = kernel_prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
 
         if (!p) {
-            logging::logf(logging::log_level::ERROR, "tcp: Impossible to prepare TCP packet for ACK\n");
+            logging::logf(logging::log_level::ERROR, "tcp:decode: Impossible to prepare TCP packet for ACK\n");
             return;
         }
 
@@ -284,7 +278,7 @@ std::expected<void> network::tcp::send(char* target_buffer, network::socket& soc
         return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
     }
 
-    logging::logf(logging::log_level::ERROR, "tcp: Send %s(%u)\n", buffer, n);
+    logging::logf(logging::log_level::TRACE, "tcp:send: Send %s(%u)\n", buffer, n);
 
     network::tcp::packet_descriptor desc{n};
     auto packet = user_prepare_packet(target_buffer, socket, &desc);
@@ -462,9 +456,14 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
                 auto flags       = switch_endian_16(tcp_header->flags);
 
                 bool correct_ack = false;
-                if(*flag_syn(&source_flags)){
+                if(*flag_syn(&source_flags) && *flag_ack(&source_flags)){
+                    // SYN/ACK should be acknowledge with ACK
+                    correct_ack = *flag_ack(&flags);
+                } else if(*flag_syn(&source_flags)){
+                    // SYN should be acknowledge with SYN/ACK
                     correct_ack = *flag_syn(&flags) && *flag_ack(&flags);
                 } else {
+                    // Other packets should be acknowledge with ACK
                     correct_ack = *flag_ack(&flags);
                 }
 
@@ -472,7 +471,7 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
                 //the sent packet
 
                 if (correct_ack) {
-                    logging::logf(logging::log_level::TRACE, "tcp: Received ACK\n");
+                    logging::logf(logging::log_level::TRACE, "tcp:finalize: Received ACK\n");
 
                     delete[] received_packet.payload;
 
@@ -480,7 +479,7 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 
                     break;
                 } else {
-                    logging::logf(logging::log_level::TRACE, "tcp: Received unrelated answer\n");
+                    logging::logf(logging::log_level::TRACE, "tcp:finalize: Received unrelated answer\n");
                 }
 
                 delete[] received_packet.payload;
@@ -512,6 +511,8 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 }
 
 std::expected<size_t> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface, size_t server_port, network::ip::address server) {
+    logging::logf(logging::log_level::TRACE, "tcp:connect: Start\n");
+
     // Create the connection
 
     auto& connection = connections.create_connection();
@@ -538,7 +539,7 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
     (flag_syn(&flags)) = 1;
     tcp_header->flags = switch_endian_16(flags);
 
-    logging::logf(logging::log_level::TRACE, "tcp: Send SYN\n");
+    logging::logf(logging::log_level::TRACE, "tcp:connect: Send SYN\n");
 
     auto status = tcp::finalize_packet(interface, sock, *packet);
 
@@ -547,6 +548,8 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
     }
 
     // The SYN/ACK is ensured by finalize_packet
+
+    logging::logf(logging::log_level::TRACE, "tcp:connect: Received SYN/ACK\n");
 
     // At this point we have received the SYN/ACK, only remains to ACK
 
@@ -563,7 +566,8 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
         (flag_ack(&flags)) = 1;
         tcp_header->flags = switch_endian_16(flags);
 
-        logging::logf(logging::log_level::TRACE, "tcp: Send ACK\n");
+        logging::logf(logging::log_level::TRACE, "tcp:connect: Send ACK\n");
+
         finalize_packet_direct(interface, *packet);
     }
 
@@ -571,7 +575,123 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
 
     connection.connected = true;
 
+    logging::logf(logging::log_level::TRACE, "tcp:connect: Done\n");
+
     return connection.local_port;
+}
+
+std::expected<size_t> network::tcp::accept(network::socket& socket){
+    auto& connection = socket.get_connection_data<tcp_connection>();
+
+    if(!connection.connected){
+        return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
+    }
+
+    // 1. Wait for SYN
+
+    connection.listening = true;
+
+    logging::logf(logging::log_level::TRACE, "tcp:accept: wait for connection\n");
+
+    uint32_t ack = 0;
+    uint32_t seq = 0;
+
+    uint16_t source_port = 0;
+    uint16_t target_port = 0;
+    uint32_t source_address = 0;
+
+    while (true) {
+        if(connection.packets.empty()){
+            connection.queue.wait();
+        }
+
+        auto received_packet = connection.packets.pop();
+
+        auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
+        auto flags       = switch_endian_16(tcp_header->flags);
+
+        if (*flag_syn(&flags)) {
+            seq = switch_endian_32(tcp_header->sequence_number);
+            ack = switch_endian_32(tcp_header->ack_number);
+
+            source_port = switch_endian_16(tcp_header->source_port);
+            target_port = switch_endian_16(tcp_header->target_port);
+
+            auto* ip_header = reinterpret_cast<network::ip::header*>(received_packet.payload + received_packet.tag(1));
+
+            source_address = ip_header->source_ip;
+
+            delete[] received_packet.payload;
+
+            break;
+        }
+
+        delete[] received_packet.payload;
+    }
+
+    logging::logf(logging::log_level::TRACE, "tcp:accept: received SYN\n");
+
+    connection.listening = false;
+
+    // Set the future sequence and acknowledgement numbers
+    connection.seq_number = ack;
+    connection.ack_number = seq + 1;
+
+    // 2. Prepare the child connection
+
+    auto child_fd = scheduler::register_new_socket(socket.domain, socket.type, socket.protocol);
+    auto& child_sock = scheduler::get_socket(child_fd);
+
+    // Create the connection
+
+    auto& child_connection = connections.create_connection();
+
+    child_connection.local_port     = target_port;
+    child_connection.server_port    = source_port;
+    child_connection.server_address = source_address;
+
+    // Link the socket and connection
+    child_sock.connection_data = &child_connection;
+    child_connection.socket = &child_sock;
+
+    child_connection.connected = true;
+
+    auto& interface = network::select_interface(source_address);
+
+    // 3. Send SYN/ACK
+
+    {
+        auto packet = kernel_prepare_packet(interface, child_connection, 0);
+
+        if (!packet) {
+            return std::make_unexpected<size_t>(packet.error());
+        }
+
+        auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
+
+        auto flags = get_default_flags();
+        (flag_syn(&flags)) = 1;
+        (flag_ack(&flags)) = 1;
+        tcp_header->flags = switch_endian_16(flags);
+
+        logging::logf(logging::log_level::TRACE, "tcp:accept: Send SYN/ACK\n");
+
+        auto status = tcp::finalize_packet(interface, child_sock, *packet);
+
+        if(!status){
+            return std::make_unexpected<size_t, size_t>(status.error());
+        }
+    }
+
+    // The ACK is enforced by finalize_packet
+
+    logging::logf(logging::log_level::TRACE, "tcp:accept: Done\n");
+
+    return {child_fd};
+}
+
+std::expected<size_t> network::tcp::accept(network::socket& socket, size_t ms){
+
 }
 
 std::expected<void> network::tcp::server_start(network::socket& sock, size_t server_port, network::ip::address server) {
@@ -595,7 +715,7 @@ std::expected<void> network::tcp::server_start(network::socket& sock, size_t ser
 }
 
 std::expected<void> network::tcp::disconnect(network::socket& sock) {
-    logging::logf(logging::log_level::TRACE, "tcp: Disconnect\n");
+    logging::logf(logging::log_level::TRACE, "tcp:disconnect: Disconnect\n");
 
     auto& connection = sock.get_connection_data<tcp_connection>();
 
@@ -621,7 +741,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
 
     connection.listening = true;
 
-    logging::logf(logging::log_level::TRACE, "tcp: Send FIN/ACK\n");
+    logging::logf(logging::log_level::TRACE, "tcp:disconnect: Send FIN/ACK\n");
 
     bool rec_fin_ack = false;
     bool rec_ack     = false;
@@ -711,7 +831,7 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
 
     // If we received an ACK, we must wait for a FIN/ACK from the server now
     if(rec_ack){
-        logging::logf(logging::log_level::TRACE, "tcp: Received ACK waiting for FIN/ACK\n");
+        logging::logf(logging::log_level::TRACE, "tcp:disconnect: Received ACK waiting for FIN/ACK\n");
 
         received = false;
 
@@ -761,9 +881,9 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
         connection.seq_number = ack;
         connection.ack_number = seq + 1;
 
-        logging::logf(logging::log_level::TRACE, "tcp: Received FIN/ACK waiting for ACK\n");
+        logging::logf(logging::log_level::TRACE, "tcp:disconnect: Received FIN/ACK waiting for ACK\n");
     } else if(rec_fin_ack) {
-        logging::logf(logging::log_level::TRACE, "tcp: Received FIN/ACK directly waiting for ACK\n");
+        logging::logf(logging::log_level::TRACE, "tcp:disconnect: Received FIN/ACK directly waiting for ACK\n");
     }
 
     // Stop listening

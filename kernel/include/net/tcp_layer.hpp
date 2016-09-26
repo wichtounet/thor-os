@@ -56,6 +56,8 @@ std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n);
 std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n, size_t ms);
 
 std::expected<size_t> connect(network::socket& socket, network::interface_descriptor& interface, size_t server_port, network::ip::address server);
+std::expected<size_t> accept(network::socket& socket);
+std::expected<size_t> accept(network::socket& socket, size_t ms);
 std::expected<void> server_start(network::socket& socket, size_t server_port, network::ip::address server);
 std::expected<void> disconnect(network::socket& socket);
 

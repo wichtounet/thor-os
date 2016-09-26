@@ -37,6 +37,24 @@ struct connection_handler {
         return nullptr;
     }
 
+    template<typename Functor>
+    void for_each_connection_for_packet(size_t source_port, size_t target_port, Functor fun){
+        auto lock = connections_lock.reader_lock();
+        std::lock_guard<reader_rw_lock> l(lock);
+
+        for (auto& connection : connections) {
+            if(connection.server){
+                if (connection.server_port == target_port) {
+                    fun(connection);
+                }
+            } else {
+                if (connection.server_port == source_port && connection.local_port == target_port) {
+                    fun(connection);
+                }
+            }
+        }
+    }
+
     connection_type& create_connection() {
         auto lock = connections_lock.writer_lock();
         std::lock_guard<writer_rw_lock> l(lock);

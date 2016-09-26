@@ -506,13 +506,28 @@ void sc_connect(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(status);
 }
 
-void sc_server_start(interrupt::syscall_regs* regs){
+void sc_server_start(interrupt::syscall_regs* regs) {
     auto socket_fd = regs->rbx;
-    auto ip = regs->rcx;
-    auto port = regs->rdx;
+    auto ip        = regs->rcx;
+    auto port      = regs->rdx;
 
     auto status = network::server_start(socket_fd, ip, port);
-    regs->rax = expected_to_i64(status);
+    regs->rax   = expected_to_i64(status);
+}
+
+void sc_accept(interrupt::syscall_regs* regs) {
+    auto socket_fd = regs->rbx;
+
+    auto status = network::accept(socket_fd);
+    regs->rax   = expected_to_i64(status);
+}
+
+void sc_accept_timeout(interrupt::syscall_regs* regs) {
+    auto socket_fd = regs->rbx;
+    auto ms        = regs->rcx;
+
+    auto status = network::accept(socket_fd, ms);
+    regs->rax   = expected_to_i64(status);
 }
 
 void sc_dns_server(interrupt::syscall_regs* regs){
@@ -828,6 +843,14 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x3015:
             sc_dns_server(regs);
+            break;
+
+        case 0x3016:
+            sc_accept(regs);
+            break;
+
+        case 0x3017:
+            sc_accept_timeout(regs);
             break;
 
         // Special system calls
