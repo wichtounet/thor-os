@@ -167,7 +167,7 @@ std::expected<uint64_t> network::arp::get_mac_force(network::interface_descripto
 
     // At this point we need to send a request for the IP
 
-    logging::logf(logging::log_level::TRACE, "arp: IP %u.%u.%u.%u not cached, generate ARP Request\n",
+    logging::logf(logging::log_level::TRACE, "arp: IP %u.%u.%u.%u not cached, generate ARP Request (timeout)\n",
         ip(0), ip(1), ip(2), ip(3));
 
     auto arp_result = arp_request(interface, ip);
