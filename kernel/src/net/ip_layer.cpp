@@ -66,6 +66,11 @@ void prepare_packet(network::ethernet::packet& packet, network::interface_descri
 }
 
 std::expected<uint64_t> get_target_mac(network::interface_descriptor& interface, network::ip::address target_ip){
+    // Handle broadcast
+    if(target_ip == network::ip::make_address(255, 255, 255, 255)){
+        return 0xFFFFFFFFFFFF;
+    }
+
     // For loopback, there is no gateway
     if(interface.is_loopback()){
         return network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
