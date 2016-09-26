@@ -12,6 +12,7 @@
 
 #include "net/network.hpp"
 #include "net/ethernet_layer.hpp"
+#include "net/dhcp_layer.hpp"
 
 #include "drivers/rtl8139.hpp"
 #include "drivers/pci.hpp"
@@ -169,6 +170,14 @@ network::socket_protocol stream_protocol(network::socket_protocol protocol){
     }
 }
 
+void network_discovery(){
+    for(auto& interface : interfaces){
+        if(interface.enabled && !interface.is_loopback()){
+            auto ip = network::dhcp::request_ip(interface);
+        }
+    }
+}
+
 } //end of anonymous namespace
 
 void network::init(){
@@ -269,6 +278,8 @@ void network::finalize(){
             interface.rx_thread_pid = rx_process.pid;
         }
     }
+
+    scheduler::queue_async_init_task(network_discovery);
 }
 
 size_t network::number_of_interfaces(){
