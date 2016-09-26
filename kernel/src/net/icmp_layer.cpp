@@ -54,7 +54,7 @@ void prepare_packet(network::ethernet::packet& packet, network::icmp::type t, si
 
 } // end of anonymous namespace
 
-void network::icmp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+void network::icmp::layer::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.tag(2, packet.index);
 
     logging::logf(logging::log_level::TRACE, "icmp: Start ICMP packet handling\n");
@@ -80,7 +80,7 @@ void network::icmp::decode(network::interface_descriptor& interface, network::et
                     logging::logf(logging::log_level::TRACE, "icmp: Reply to Echo Request for own IP\n");
 
                     network::icmp::packet_descriptor desc{0, source_ip, type::ECHO_REPLY, 0x0};
-                    auto reply_packet = network::icmp::kernel_prepare_packet(interface, desc);
+                    auto reply_packet = kernel_prepare_packet(interface, desc);
 
                     if(reply_packet){
                         auto* command_header = reinterpret_cast<echo_request_header*>(packet.payload + command_index);
@@ -91,7 +91,7 @@ void network::icmp::decode(network::interface_descriptor& interface, network::et
                         logging::logf(logging::log_level::ERROR, "icmp: Failed to reply: %s\n", std::error_message(reply_packet.error()));
                     }
 
-                    network::icmp::finalize_packet(interface, *reply_packet);
+                    finalize_packet(interface, *reply_packet);
                 }
 
                 break;
@@ -113,10 +113,10 @@ void network::icmp::decode(network::interface_descriptor& interface, network::et
     network::propagate_packet(packet, network::socket_protocol::ICMP);
 }
 
-std::expected<network::ethernet::packet> network::icmp::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
+std::expected<network::ethernet::packet> network::icmp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{sizeof(header) + descriptor.payload_size, descriptor.target_ip, 0x01};
-    auto packet = network::ip::kernel_prepare_packet(interface, desc);
+    auto packet = parent->kernel_prepare_packet(interface, desc);
 
     if(packet){
         ::prepare_packet(*packet, descriptor.type, descriptor.code);
@@ -125,12 +125,12 @@ std::expected<network::ethernet::packet> network::icmp::kernel_prepare_packet(ne
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::icmp::user_prepare_packet(char* buffer, network::socket& /*socket*/, const packet_descriptor* descriptor){
+std::expected<network::ethernet::packet> network::icmp::layer::user_prepare_packet(char* buffer, network::socket& /*socket*/, const packet_descriptor* descriptor){
     auto& interface = network::select_interface(descriptor->target_ip);
 
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{sizeof(header) + descriptor->payload_size, descriptor->target_ip, 0x01};
-    auto packet = network::ip::user_prepare_packet(buffer, interface, &desc);
+    auto packet = parent->user_prepare_packet(buffer, interface, &desc);
 
     if(packet){
         ::prepare_packet(*packet, descriptor->type, descriptor->code);
@@ -139,7 +139,7 @@ std::expected<network::ethernet::packet> network::icmp::user_prepare_packet(char
     return packet;
 }
 
-std::expected<void> network::icmp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
+std::expected<void> network::icmp::layer::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.index -= sizeof(header) - sizeof(uint32_t);
 
     auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -148,5 +148,5 @@ std::expected<void> network::icmp::finalize_packet(network::interface_descriptor
     compute_checksum(icmp_header, 0);
 
     // Give the packet to the IP layer for finalization
-    return network::ip::finalize_packet(interface, packet);
+    return parent->finalize_packet(interface, packet);
 }

@@ -12,7 +12,12 @@
 
 #include "net/network.hpp"
 #include "net/ethernet_layer.hpp"
+#include "net/arp_layer.hpp"
 #include "net/dhcp_layer.hpp"
+#include "net/icmp_layer.hpp"
+#include "net/dns_layer.hpp"
+#include "net/udp_layer.hpp"
+#include "net/tcp_layer.hpp"
 
 #include "drivers/rtl8139.hpp"
 #include "drivers/pci.hpp"
@@ -26,11 +31,6 @@
 #include "fs/sysfs.hpp"
 
 #include "tlib/errors.hpp"
-
-#include "net/icmp_layer.hpp"
-#include "net/dns_layer.hpp"
-#include "net/udp_layer.hpp"
-#include "net/tcp_layer.hpp"
 
 /*
  * TODO: Network layers
@@ -51,6 +51,11 @@ std::vector<network::interface_descriptor> interfaces;
 
 network::ip::address dns_address;
 
+network::ethernet::layer* ethernet_layer;
+network::arp::layer* arp_layer;
+network::ip::layer* ip_layer;
+network::icmp::layer* icmp_layer;
+
 void rx_thread(void* data){
     auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
 
@@ -64,7 +69,7 @@ void rx_thread(void* data){
         interface.rx_sem.wait();
 
         auto packet = interface.rx_queue.pop();
-        network::ethernet::decode(interface, packet);
+        ethernet_layer->decode(interface, packet);
 
         ++interface.rx_packets_counter;
         interface.rx_bytes_counter += packet.payload_size;
@@ -274,6 +279,13 @@ void network::init(){
 
     // Initialize the necessary network layers
 
+    ethernet_layer = new network::ethernet::layer();
+
+    arp_layer = new network::arp::layer(ethernet_layer);
+    ip_layer = new network::ip::layer(ethernet_layer);
+
+    icmp_layer = new network::icmp::layer(ip_layer);
+
     network::udp::init_layer();
     network::tcp::init_layer();
 }
@@ -398,7 +410,7 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
     switch (socket.protocol) {
         case network::socket_protocol::ICMP: {
             auto descriptor = static_cast<network::icmp::packet_descriptor*>(desc);
-            auto packet     = network::icmp::user_prepare_packet(buffer, socket, descriptor);
+            auto packet     = icmp_layer->user_prepare_packet(buffer, socket, descriptor);
 
             return return_from_packet(packet);
         }
@@ -600,7 +612,7 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
 
     switch(socket.protocol){
         case network::socket_protocol::ICMP:
-            return check_and_return(network::icmp::finalize_packet(interface, packet));
+            return check_and_return(icmp_layer->finalize_packet(interface, packet));
 
         case network::socket_protocol::TCP:
             return check_and_return(network::tcp::finalize_packet(interface, socket, packet));
