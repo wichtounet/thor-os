@@ -45,9 +45,9 @@ struct tcp_connection {
     size_t server_port = 0;              ///< The server port
     network::ip::address server_address; ///< The server address
 
-    std::atomic<bool> listening;                           ///< Indicates if a kernel thread is listening on this connection
-    condition_variable queue;                              ///< The listening queue
-    circular_buffer<network::ethernet::packet, 8> packets; ///< The packets for the listening queue
+    std::atomic<bool> listening;                            ///< Indicates if a kernel thread is listening on this connection
+    condition_variable queue;                               ///< The listening queue
+    circular_buffer<network::ethernet::packet, 32> packets; ///< The packets for the listening queue
 
     bool connected = false;
     bool server    = false;
@@ -225,6 +225,8 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
             copy.payload = new char[copy.payload_size];
             std::copy_n(packet.payload, packet.payload_size, copy.payload);
 
+            logging::logf(logging::log_level::TRACE, "tcp:decode: Push payload %p \n", copy.payload);
+
             connection.packets.push(copy);
             connection.queue.notify_one();
         }
@@ -241,6 +243,8 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
                 copy.payload = new char[copy.payload_size];
                 std::copy_n(packet.payload, packet.payload_size, copy.payload);
 
+                logging::logf(logging::log_level::TRACE, "tcp:decode: Push payload %p \n", copy.payload);
+
                 socket.listen_packets.push(copy);
                 socket.listen_queue.notify_one();
             }
@@ -250,6 +254,8 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     // Acknowledge if necessary
 
     if (*flag_psh(&flags)) {
+        logging::logf(logging::log_level::TRACE, "tcp:decode: Acknowledge directly\n");
+
         auto p = kernel_prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
 
         if (!p) {
@@ -268,6 +274,8 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
 
         finalize_packet_direct(interface, *p);
     }
+
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Done\n");
 }
 
 std::expected<void> network::tcp::send(char* target_buffer, network::socket& socket, const char* buffer, size_t n){
@@ -290,7 +298,7 @@ std::expected<void> network::tcp::send(char* target_buffer, network::socket& soc
 
         auto target_ip  = connection.server_address;
         auto& interface = network::select_interface(target_ip);
-        return finalize_packet(interface, socket, *packet);
+        return network::tcp::finalize_packet(interface, socket, *packet);
     }
 
     return std::make_unexpected<void>(packet.error());
@@ -412,13 +420,13 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
     bool received = false;
 
     for(size_t t = 0; t < max_tries; ++t){
+        logging::logf(logging::log_level::TRACE, "tcp:finalize(std): Send Packet (%h)\n", size_t(source_flags));
+
         // Give the packet to the IP layer for finalization
         if(p.user){
             auto result = network::ip::finalize_packet(interface, p);
 
             if(!result){
-                delete[] p.payload;
-
                 return result;
             }
         } else {
@@ -433,6 +441,9 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
             if(!result){
                 delete[] copy.payload;
                 delete[] p.payload;
+
+                logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", copy.payload);
+                logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", p.payload);
 
                 return result;
             }
@@ -449,43 +460,50 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 
             auto remaining = timeout_ms - (after - before);
 
-            if(connection.queue.wait_for(remaining)){
-                auto received_packet = connection.packets.pop();
-
-                auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
-                auto flags       = switch_endian_16(tcp_header->flags);
-
-                bool correct_ack = false;
-                if(*flag_syn(&source_flags) && *flag_ack(&source_flags)){
-                    // SYN/ACK should be acknowledge with ACK
-                    correct_ack = *flag_ack(&flags);
-                } else if(*flag_syn(&source_flags)){
-                    // SYN should be acknowledge with SYN/ACK
-                    correct_ack = *flag_syn(&flags) && *flag_ack(&flags);
-                } else {
-                    // Other packets should be acknowledge with ACK
-                    correct_ack = *flag_ack(&flags);
-                }
-
-                //TODO Ideally, we should make sure that the ACK is related to
-                //the sent packet
-
-                if (correct_ack) {
-                    logging::logf(logging::log_level::TRACE, "tcp:finalize: Received ACK\n");
-
-                    delete[] received_packet.payload;
-
-                    received = true;
-
+            // Wait for a packet if necessary
+            if(connection.packets.empty()){
+                if(!connection.queue.wait_for(remaining)){
                     break;
-                } else {
-                    logging::logf(logging::log_level::TRACE, "tcp:finalize: Received unrelated answer\n");
                 }
+            }
+
+            thor_assert(!connection.packets.empty(), "Should not be notified if queue not empty");
+
+            auto received_packet = connection.packets.pop();
+
+            auto* tcp_header = reinterpret_cast<network::tcp::header*>(received_packet.payload + received_packet.tag(2));
+            auto flags       = switch_endian_16(tcp_header->flags);
+
+            bool correct_ack = false;
+            if(*flag_syn(&source_flags) && *flag_ack(&source_flags)){
+                // SYN/ACK should be acknowledge with ACK
+                correct_ack = *flag_ack(&flags);
+            } else if(*flag_syn(&source_flags)){
+                // SYN should be acknowledge with SYN/ACK
+                correct_ack = *flag_syn(&flags) && *flag_ack(&flags);
+            } else {
+                // Other packets should be acknowledge with ACK
+                correct_ack = *flag_ack(&flags);
+            }
+
+            //TODO Ideally, we should make sure that the ACK is related to
+            //the sent packet
+
+            if (correct_ack) {
+                logging::logf(logging::log_level::TRACE, "tcp:finalize: Received ACK\n");
+                logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", received_packet.payload);
 
                 delete[] received_packet.payload;
-            } else {
+
+                received = true;
+
                 break;
             }
+
+            logging::logf(logging::log_level::TRACE, "tcp:finalize: Received unrelated answer\n");
+            logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", received_packet.payload);
+
+            delete[] received_packet.payload;
         }
 
         if(received){
@@ -498,6 +516,8 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
     // Release the memory of the original memory since it was copied
     if(!p.user){
         delete[] p.payload;
+
+        logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", p.payload);
     }
 
     // Stop listening
@@ -541,7 +561,7 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
 
     logging::logf(logging::log_level::TRACE, "tcp:connect: Send SYN\n");
 
-    auto status = tcp::finalize_packet(interface, sock, *packet);
+    auto status = network::tcp::finalize_packet(interface, sock, *packet);
 
     if(!status){
         return std::make_unexpected<size_t, size_t>(status.error());
@@ -619,17 +639,19 @@ std::expected<size_t> network::tcp::accept(network::socket& socket){
 
             auto* ip_header = reinterpret_cast<network::ip::header*>(received_packet.payload + received_packet.tag(1));
 
-            source_address = ip_header->source_ip;
+            source_address = switch_endian_32(ip_header->source_ip);
 
+            logging::logf(logging::log_level::TRACE, "tcp:accept: release payload %p\n", received_packet.payload);
             delete[] received_packet.payload;
 
             break;
         }
 
+        logging::logf(logging::log_level::TRACE, "tcp:accept: release payload %p\n", received_packet.payload);
         delete[] received_packet.payload;
     }
 
-    logging::logf(logging::log_level::TRACE, "tcp:accept: received SYN\n");
+    logging::logf(logging::log_level::TRACE, "tcp:accept: received SYN from %h\n", source_address);
 
     connection.listening = false;
 
@@ -670,13 +692,13 @@ std::expected<size_t> network::tcp::accept(network::socket& socket){
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
         auto flags = get_default_flags();
-        (flag_syn(&flags)) = 1;
         (flag_ack(&flags)) = 1;
+        (flag_syn(&flags)) = 1;
         tcp_header->flags = switch_endian_16(flags);
 
-        logging::logf(logging::log_level::TRACE, "tcp:accept: Send SYN/ACK\n");
+        logging::logf(logging::log_level::TRACE, "tcp:accept: Send SYN/ACK %h\n", size_t(flags));
 
-        auto status = tcp::finalize_packet(interface, child_sock, *packet);
+        auto status = network::tcp::finalize_packet(interface, child_sock, *packet);
 
         if(!status){
             return std::make_unexpected<size_t, size_t>(status.error());
@@ -764,6 +786,9 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
         if(!result){
             delete[] copy.payload;
             delete[] packet->payload;
+
+            logging::logf(logging::log_level::TRACE, "tcp:disconnect: Release payload %p \n", copy.payload);
+            logging::logf(logging::log_level::TRACE, "tcp:disconnect: Release payload %p \n", packet->payload);
 
             return result;
         }
