@@ -50,8 +50,6 @@ struct deferred_unique_semaphore {
             scheduler::block_process_light(pid);
             lock.unlock();
             scheduler::reschedule();
-
-            waiting = false;
         }
     }
 
@@ -59,10 +57,11 @@ struct deferred_unique_semaphore {
      * \brief Release the lock, from an IRQ handler.
      */
     void notify() {
-        if (!waiting) {
-            ++value;
-        } else {
+        if(waiting){
             scheduler::unblock_process_hint(pid);
+            waiting = false;
+        } else {
+            ++value;
         }
     }
 
@@ -70,15 +69,17 @@ struct deferred_unique_semaphore {
      * \brief Release the lock several times, from an IRQ
      */
     void notify(size_t n) {
-        if (!waiting) {
-            value += n;
-        } else {
+        if (waiting) {
             scheduler::unblock_process_hint(pid);
+            waiting = false;
+
             --n;
 
             if (n) {
                 value += n;
             }
+        } else {
+            value += n;
         }
     }
 
