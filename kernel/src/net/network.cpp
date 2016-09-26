@@ -230,6 +230,9 @@ void network::init(){
                 rtl8139::init_driver(interface, pci_device);
             }
 
+            // No IP address by default
+            interface.ip_address = network::ip::make_address(0, 0, 0, 0);
+
             if(interface.enabled){
                 interface.tx_lock.init(1);
                 interface.tx_sem.init(0);
