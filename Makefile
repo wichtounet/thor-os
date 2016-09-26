@@ -53,9 +53,16 @@ qemu: default
 
 qemu_user: default
 	touch virtual.log
-	sudo qemu-system-x86_64 -enable-kvm -cpu host -serial file:virtual.log  -net user,vlan=0 -net nic,model=rtl8139,vlan=0 -net dump,vlan=0,file=thor.pcap -vga std -hda hdd.img &
+	sudo qemu-system-x86_64 -enable-kvm -cpu host -serial file:virtual.log -net user,vlan=0 -net nic,model=rtl8139,vlan=0,macaddr=52:54:00:12:34:56 -net socket,listen=localhost:1234 -net dump,vlan=0,file=thor.pcap -vga std -hda hdd.img &
 	echo "Reading kernel log (Ctrl+C for exit)"
 	tail -f virtual.log
+	kill %1
+
+qemu_user_slave: default
+	touch slave.log
+	sudo qemu-system-x86_64 -enable-kvm -cpu host -serial file:slave.log -net nic,model=rtl8139,vlan=0,macaddr=52:54:00:12:34:57 -net socket,connect=localhost:1234,vlan=0 -vga std -hda hdd.img &
+	echo "Reading kernel log (Ctrl+C for exit)"
+	tail -f slave.log
 	kill %1
 
 bochs: default
