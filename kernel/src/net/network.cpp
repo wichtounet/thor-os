@@ -181,14 +181,18 @@ void network_discovery() {
                 if (ip) {
                     interface.ip_address = ip->ip_address;
 
+                    logging::logf(logging::log_level::TRACE, "network: interface %u acquired IP %h by DHCP\n", interface.id, size_t(interface.ip_address.raw_address));
+
                     if (ip->gateway) {
                         interface.gateway = ip->ip_address;
+                        logging::logf(logging::log_level::TRACE, "network: interface %u acquired gateway %h by DHCP\n", interface.id, size_t(interface.gateway.raw_address));
                     } else {
                         interface.gateway    = network::ip::make_address(10, 0, 2, 2);
                     }
 
                     if (ip->dns) {
                         dns_address = ip->dns_address;
+                        logging::logf(logging::log_level::TRACE, "network: acquired DNS %h by DHCP\n", size_t(interface.gateway.raw_address));
                     } else {
                         dns_address = network::ip::make_address(10, 0, 2, 2);
                     }

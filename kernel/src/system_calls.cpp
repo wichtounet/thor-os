@@ -515,6 +515,10 @@ void sc_server_start(interrupt::syscall_regs* regs){
     regs->rax = expected_to_i64(status);
 }
 
+void sc_dns_server(interrupt::syscall_regs* regs){
+    regs->rax = network::dns_server().raw_address;
+}
+
 void sc_disconnect(interrupt::syscall_regs* regs){
     auto socket_fd = regs->rbx;
 
@@ -820,6 +824,10 @@ void system_call_entry(interrupt::syscall_regs* regs){
 
         case 0x3014:
             sc_server_start(regs);
+            break;
+
+        case 0x3015:
+            sc_dns_server(regs);
             break;
 
         // Special system calls

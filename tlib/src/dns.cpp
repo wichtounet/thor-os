@@ -68,7 +68,13 @@ std::string tlib::dns::decode_domain(char* payload, size_t& offset) {
 }
 
 tlib::ip::address tlib::dns::gateway_address(){
-    return tlib::ip::make_address(10, 0, 2, 3);
+    uint64_t ret;
+    asm volatile("mov rax, 0x3015; int 50; mov %[code], rax"
+                 : [code] "=m"(ret)
+                 :
+                 : "rax");
+
+    return {uint32_t(ret)};
 }
 
 std::expected<void> tlib::dns::send_request(tlib::socket& sock, const std::string& domain, uint16_t rr_type, uint16_t rr_class){

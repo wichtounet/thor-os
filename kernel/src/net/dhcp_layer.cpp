@@ -194,22 +194,16 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::request_ip(netwo
                         if (options[i++] == 2) {
                             dhcp_offer = true;
                         }
-
-                        continue;
-                    }
-
-                    if (id == 3) {
+                    } else if (id == 3) {
                         gateway_address = network::ip::make_address(options[i], options[i + 1], options[i + 2], options[i + 3]);
-                        i               = +n;
-                        gateway         = true;
-                        continue;
-                    }
-
-                    if (id == 6) {
+                        i += n;
+                        gateway = true;
+                    } else if (id == 6) {
                         dns_address = network::ip::make_address(options[i], options[i + 1], options[i + 2], options[i + 3]);
-                        i           = +n;
-                        dns         = true;
-                        continue;
+                        i += n;
+                        dns = true;
+                    } else {
+                        i += n;
                     }
                 }
 
@@ -229,6 +223,8 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::request_ip(netwo
     logging::logf(logging::log_level::TRACE, "dhcp: Received DHCP Offer\n");
     logging::logf(logging::log_level::TRACE, "dhcp:          From %h\n", size_t(server_address.raw_address));
     logging::logf(logging::log_level::TRACE, "dhcp:            IP %h\n", size_t(offer_address.raw_address));
+    logging::logf(logging::log_level::TRACE, "dhcp:           DNS %b\n", dns);
+    logging::logf(logging::log_level::TRACE, "dhcp:       Gateway %b\n", gateway);
 
     // 3. Send DHCP Request
 
