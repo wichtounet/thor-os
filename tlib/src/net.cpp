@@ -399,7 +399,11 @@ tlib::socket::socket(socket_domain domain, socket_type type, socket_protocol pro
 
 tlib::socket::socket(tlib::socket&& rhs)
         : domain(rhs.domain), type(rhs.type), protocol(rhs.protocol), fd(rhs.fd), error_code(rhs.error_code), _connected(rhs._connected), _bound(rhs._bound) {
+    // This needs to be done so that the rhs will not do anything on
+    // destroy
     rhs.fd = 0;
+    rhs._connected = false;
+    rhs._bound = false;
 }
 
 tlib::socket& tlib::socket::operator=(tlib::socket&& rhs){
