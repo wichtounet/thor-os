@@ -416,7 +416,11 @@ tlib::socket& tlib::socket::operator=(tlib::socket&& rhs){
         this->_connected = rhs._connected;
         this->_bound     = rhs._bound;
 
+        // This needs to be done so that the rhs will not do anything on
+        // destroy
         rhs.fd = 0;
+        rhs._connected = false;
+        rhs._bound = false;
     }
 
     return *this;
