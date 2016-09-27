@@ -18,28 +18,40 @@
 
 namespace std {
 
+/*!
+ * \brief A contiguous container of elements, automatically increasing.
+ */
 template<typename T>
 class vector {
 public:
-    typedef T value_type;
-    typedef value_type* pointer_type;
-    typedef size_t size_type;
-    typedef value_type* iterator;
-    typedef const value_type* const_iterator;
+    using value_type = T; ///< The value type contained in the vector
+    using pointer_type = value_type*; ///< The pointer type contained in the vector
+    using size_type = size_t; ///< The size type
+    using iterator = value_type*; ///< The iterator type
+    using const_iterator = const value_type*; ///< The const iterator type
 
-    using reverse_iterator       = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using reverse_iterator       = std::reverse_iterator<iterator>; ///< The reverse iterator type
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>; ///< The const reverse iterator type
 
 private:
-    T* data;
-    uint64_t _size;
-    uint64_t _capacity;
+    T* data; ///< The data storage
+    uint64_t _size; ///< The vector size
+    uint64_t _capacity; ///< The data capacity
 
 public:
+    /*!
+     * \brief Constructs en empty vector
+     */
     vector() : data(nullptr), _size(0), _capacity(0) {}
 
+    /*!
+     * \brief Constructs a vector of the given size
+     */
     explicit vector(uint64_t c) : data(new T[c]), _size(0), _capacity(c) {}
 
+    /*!
+     * \brief Construct a vector containing the given values
+     */
     vector(initializer_list<T> values) : data(new T[values.size()]), _size(values.size()), _capacity(values.size()) {
         std::copy(values.begin(), values.end(), begin());
     }
@@ -105,50 +117,83 @@ public:
 
     //Getters
 
+    /*!
+     * \brief Returns the size of the vector
+     */
     constexpr size_type size() const {
         return _size;
     }
 
+    /*!
+     * \brief Indicates if the vector is empty
+     */
     bool empty() const {
         return _size == 0;
     }
 
+    /*!
+     * \brief Returns the capacity of the vector
+     */
     constexpr size_type capacity() const {
         return _capacity;
     }
 
+    /*!
+     * \brief Returns a const reference to the elemenet at the given position
+     */
     constexpr const value_type& operator[](size_type pos) const {
         return data[pos];
     }
 
+    /*!
+     * \brief Returns a reference to the elemenet at the given position
+     */
     value_type& operator[](size_type pos){
         return data[pos];
     }
 
+    /*!
+     * \brief Returns a reference to the element at the front of the collection
+     */
     value_type& front(){
         return data[0];
     }
 
+    /*!
+     * \brief Returns a const reference to the element at the front of the collection
+     */
     const value_type& front() const  {
         return data[0];
     }
 
+    /*!
+     * \brief Returns a reference to the element at the back of the collection
+     */
     value_type& back(){
         return data[size() - 1];
     }
 
+    /*!
+     * \brief Returns a const reference to the element at the back of the collection
+     */
     const value_type& back() const  {
         return data[size() - 1];
     }
 
     //Modifiers
 
+    /*!
+     * \brief Augments the capacity to at least the given capacity
+     */
     void reserve(size_t new_capacity){
         if(new_capacity > capacity()){
             ensure_capacity(new_capacity);
         }
     }
 
+    /*!
+     * \brief Resize the vector to the given size
+     */
     void resize(size_t new_size){
         if(new_size > size()){
             ensure_capacity(new_size);

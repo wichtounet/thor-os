@@ -15,18 +15,18 @@ namespace std {
 
 template <typename T>
 struct iterator_traits {
-    using value_type      = typename T::value_type;
-    using reference       = typename T::reference;
-    using pointer         = typename T::pointer;
-    using difference_type = typename T::difference_type;
+    using value_type      = typename T::value_type; ///< The value type of the iterator
+    using reference       = typename T::reference; ///< The reference type of the iterator
+    using pointer         = typename T::pointer; ///< The pointer type of the iterator
+    using difference_type = typename T::difference_type; ///< The difference type of the iterator
 };
 
 template <typename T>
 struct iterator_traits <T*> {
-    using value_type      = T;
-    using reference       = T&;
-    using pointer         = T*;
-    using difference_type = size_t;
+    using value_type      = T; ///< The value type of the iterator
+    using reference       = T&; ///< The reference type of the iterator
+    using pointer         = T*; ///< The pointer type of the iterator
+    using difference_type = size_t; ///< The difference type of the iterator
 };
 
 /* remove_reference */
@@ -178,16 +178,25 @@ struct is_pointer<T*>{
 
 /* is_reference */
 
+/*!
+ * \brief Traits to test if given type is a reference type
+ */
 template <typename T>
 struct is_reference {
     static constexpr const bool value = false;
 };
 
+/*!
+ * \copdoc is_reference
+ */
 template <typename T>
 struct is_reference<T&>{
     static constexpr const bool value = true;
 };
 
+/*!
+ * \copdoc is_reference
+ */
 template <typename T>
 struct is_reference<T&&>{
     static constexpr const bool value = true;
@@ -195,16 +204,25 @@ struct is_reference<T&&>{
 
 /* is_array */
 
+/*!
+ * \brief Traits to test if given type is an array type
+ */
 template<typename T>
 struct is_array {
     static constexpr const bool value = false;
 };
 
+/*!
+ * \copdoc is_array
+ */
 template<typename T>
 struct is_array<T[]>{
     static constexpr const bool value = true;
 };
 
+/*!
+ * \copdoc is_array
+ */
 template<typename T, size_t N>
 struct is_array<T[N]>{
     static constexpr const bool value = true;
@@ -268,11 +286,17 @@ struct decay {
 
 /* is_same */
 
+/*!
+ * \brief Traits to test if two types are the same
+ */
 template<typename T1, typename T2>
 struct is_same {
     static constexpr const bool value = false;
 };
 
+/*!
+ * \copydoc is_same
+ */
 template<typename T1>
 struct is_same <T1, T1> {
     static constexpr const bool value = true;
