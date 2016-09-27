@@ -78,21 +78,33 @@ private:
     node_type* current;
 };
 
+/*!
+ * \brief A doubly-linked list implementation.
+ *
+ * This container should almost never be preferred over vector. The only time when list is better than vector
+ * is when the data is very expensive to copy or it is necessary to have stable references.
+ */
 template<typename T>
 struct list {
-    using value_type             = T;
-    using pointer_type           = value_type*;
-    using size_type              = size_t;
-    using node_type              = list_node<T>;
-    using iterator          = list_iterator<T, T>;
-    using const_iterator    = list_iterator<T, std::add_const_t<T>>;
-    using reverse_iterator       = std::reverse_iterator<list_iterator<T, T>>;
-    using const_reverse_iterator = std::reverse_iterator<list_iterator<T, std::add_const_t<T>>>;
+    using value_type             = T; ///7< The value type of the container
+    using pointer_type           = value_type*; ///< The pointer type of the container
+    using size_type              = size_t; ///< The size type of the container
+    using node_type              = list_node<T>; ///< The type of nodes
+    using iterator          = list_iterator<T, T>; ///< The iterator type
+    using const_iterator    = list_iterator<T, std::add_const_t<T>>; ///< The const iterator type
+    using reverse_iterator       = std::reverse_iterator<list_iterator<T, T>>; ///< The reverse iterator type
+    using const_reverse_iterator = std::reverse_iterator<list_iterator<T, std::add_const_t<T>>>; ///< The const reverse iterator type
 
+    /*!
+     * \brief Construct a ne empty list
+     */
     list() : _size(0), head(nullptr), tail(nullptr) {
         //Nothing else to init
     }
 
+    /*!
+     * \brief Destructs a list
+     */
     ~list(){
         clear();
     }
@@ -130,20 +142,32 @@ struct list {
         return *this;
     }
 
+    /*!
+     * \brief Returns the size of the container
+     */
     size_t size() const {
         return _size;
     }
 
+    /*!
+     * \brief Indicates if the list is empty
+     */
     bool empty() const {
         return _size;
     }
 
+    /*!
+     * \brief Empty the list
+     */
     void clear(){
         while(!empty()){
             pop_back();
         }
     }
 
+    /*!
+     * \brief Add a new element at the front of the list
+     */
     void push_front(const value_type& value){
         if(_size == 0){
             head = new node_type(value, nullptr, nullptr);
@@ -157,6 +181,9 @@ struct list {
         ++_size;
     }
 
+    /*!
+     * \brief Add a new element at the back of the list
+     */
     void push_back(const value_type& value){
         if(_size == 0){
             head = new node_type(value, nullptr, nullptr);
@@ -202,6 +229,9 @@ struct list {
         return tail->value;
     }
 
+    /*!
+     * \brief Removes the element at the front of the list
+     */
     void pop_front(){
         auto old = head;
 
@@ -217,6 +247,9 @@ struct list {
         --_size;
     }
 
+    /*!
+     * \brief Removes the element at the back of the list
+     */
     void pop_back(){
         auto old = tail;
 
@@ -290,36 +323,60 @@ public:
 
     // Element access
 
+    /*!
+     * \brief Returns a reference to the element at the front of the list
+     */
     T& front(){
         return head->value;
     }
 
+    /*!
+     * \brief Returns a const reference to the element at the front of the list
+     */
     const T& front() const {
         return head->value;
     }
 
+    /*!
+     * \brief Returns a reference to the element at the back of the list
+     */
     T& back(){
         return tail->value;
     }
 
+    /*!
+     * \brief Returns a const reference to the element at the back of the list
+     */
     const T& back() const {
         return tail->value;
     }
 
     // Iterators
 
+    /*!
+     * \brief Returns an iterator pointing to the first element of the list
+     */
     iterator begin(){
         return iterator(head);
     }
 
+    /*!
+     * \brief Returns a const iterator pointing to the first element of the list
+     */
     const iterator begin() const {
         return const_iterator(head);
     }
 
+    /*!
+     * \brief Returns an iterator pointing to the past-the-end element of the list
+     */
     iterator end(){
         return iterator(nullptr);
     }
 
+    /*!
+     * \brief Returns a const iterator pointing to the past-the-end element of the list
+     */
     const_iterator end() const {
         return const_iterator(nullptr);
     }
@@ -341,17 +398,13 @@ public:
     }
 
 private:
-    size_t _size;
-    node_type* head;
-    node_type* tail;
+    size_t _size; ///< The size of the list
+    node_type* head; ///< The front node of the list
+    node_type* tail; ///< The tail node of the list
 };
 
 template<typename T>
 struct list_node {
-    T value;
-    list_node<T>* next;
-    list_node<T>* prev;
-
     list_node(const T& v, list_node<T>* n, list_node<T>* p) : value(v), next(n), prev(p) {
         //Nothing else to init
     }
@@ -360,6 +413,15 @@ struct list_node {
     list_node(list_node<T>* n, list_node<T>* p, Args&&... args) : value(std::forward<Args>(args)...), next(n), prev(p) {
         //Nothing else to init
     }
+
+    friend struct list<T>;
+    friend struct list_iterator<T, T>;
+    friend struct list_iterator<T, std::add_const_t<T>>;
+
+private:
+    T value;
+    list_node<T>* next;
+    list_node<T>* prev;
 };
 
 } //end of namespace std
