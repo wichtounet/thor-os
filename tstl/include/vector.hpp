@@ -210,7 +210,7 @@ public:
     void push_back(value_type&& element){
         ensure_capacity(_size + 1);
 
-        data[_size++] = std::forward<value_type>(element);
+        data[_size++] = std::move(element);
     }
 
     void push_back(const value_type& element){
@@ -226,7 +226,7 @@ public:
             data[i] = std::move(data[i-1]);
         }
 
-        data[0] = std::forward<value_type>(element);
+        data[0] = std::move(element);
         ++_size;
     }
 
