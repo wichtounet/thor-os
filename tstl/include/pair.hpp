@@ -10,14 +10,17 @@
 
 namespace std {
 
+/*!
+ * \brief Simply container to hold a pair of element
+ */
 template<typename T1, typename T2>
 class pair {
 public:
-    using first_type  = T1;
-    using second_type = T2;
+    using first_type = T1;  ///< The type of the first element
+    using second_type = T2; ///< The type of the second element
 
-    first_type first;
-    second_type second;
+    first_type first;   ///< The first element
+    second_type second; ///< The second element
 
     //Constructor
 
@@ -63,6 +66,9 @@ public:
     }
 };
 
+/*!
+ * \brief Helper to construct a pair
+ */
 template<typename T1, typename T2>
 inline constexpr pair<T1, T2> make_pair(T1&& x, T2&& y){
     return pair<T1, T2>(std::forward<T1>(x), std::forward<T2>(y));

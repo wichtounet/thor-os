@@ -550,14 +550,23 @@ public:
 
     /* Accessors */
 
+    /*!
+     * \brief Indicates if the result is valio
+     */
     constexpr bool valid() const {
         return contained_has_value();
     }
 
+    /*!
+     * \brief Converts to bool, by indicating if the result is valio
+     */
     constexpr explicit operator bool() const {
         return valid();
     }
 
+    /*!
+     * \brief Returns the error, if any
+     */
     constexpr const error_type& error() const {
         return contained_error();
     }
@@ -571,28 +580,43 @@ public:
     }
 };
 
-template <typename T>
-inline expected<T> make_expected(T&& v) {
+/*!
+ * \brief Creates an expected result from a value
+ */
+template<typename T>
+inline expected<T> make_expected(T&& v){
     return expected<T>(std::forward<T>(v));
 }
 
-template <typename T>
-inline expected<T> make_expected(const T& v) {
+/*!
+ * \brief Creates an expected result from a value
+ */
+template<typename T>
+inline expected<T> make_expected(const T& v){
     return expected<T>(v);
 }
 
-template <typename T, typename U, typename E>
-inline expected<T, U> make_expected_from_error(E v) {
+/*!
+ * \brief Creates an unexpected result from an error
+ */
+template<typename T, typename U, typename E>
+inline expected<T, U> make_expected_from_error(E v){
     return expected<T, U>(exceptional<U>(v));
 }
 
-template <typename T, typename E>
-inline expected<T, E> make_expected_from_error(E v) {
+/*!
+ * \brief Creates an unexpected result from an error
+ */
+template<typename T, typename E>
+inline expected<T, E> make_expected_from_error(E v){
     return expected<T, E>(exceptional<E>(v));
 }
 
-template <typename T, typename E>
-inline expected<T, E> make_unexpected(E v) {
+/*!
+ * \brief Creates an unexpected result from an error
+ */
+template<typename T, typename E>
+inline expected<T, E> make_unexpected(E v){
     return expected<T, E>(exceptional<E>(v));
 }
 
@@ -605,7 +629,10 @@ inline expected<void, E> make_expected_zero(E v) {
     }
 }
 
-inline expected<void> make_expected() {
+/*!
+ * \brief Creates an expected result (void)
+ */
+inline expected<void> make_expected(){
     return expected<void>();
 }
 
