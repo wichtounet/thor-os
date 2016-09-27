@@ -158,6 +158,24 @@ struct has_trivial_assign {
     static constexpr const bool value = __has_trivial_assign(T);
 };
 
+/* is_pointer */
+
+/*!
+ * \brief Traits to test if given type is a pointer type
+ */
+template <typename T>
+struct is_pointer {
+    static constexpr const bool value = false;
+};
+
+/*!
+ * \copdoc is_pointer
+ */
+template <typename T>
+struct is_pointer<T*>{
+    static constexpr const bool value = true;
+};
+
 /* is_reference */
 
 template <typename T>
