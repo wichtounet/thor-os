@@ -30,25 +30,28 @@ constexpr const size_t MIN_PRIORITY = 1;
 constexpr const size_t PRIORITY_LEVELS = MAX_PRIORITY - MIN_PRIORITY + 1;
 constexpr const size_t DEFAULT_PRIORITY = 3;
 
-typedef size_t pid_t;
+using pid_t = size_t; ///< A process id
 
 constexpr const pid_t INVALID_PID = 1024 * 1024 * 1024; //I'm pretty sure we won't violate this limit
 
 enum class process_state : char {
-    EMPTY = 0,
-    NEW = 1,
-    READY = 2,
-    RUNNING = 3,
-    BLOCKED = 4,
-    SLEEPING= 5,
-    WAITING = 6,
-    KILLED = 7,
-    BLOCKED_TIMEOUT = 8
+    EMPTY = 0, ///< Not a process
+    NEW = 1,  ///< A newly created process
+    READY = 2, ///< A process ready to run
+    RUNNING = 3, ///< A process currently executing
+    BLOCKED = 4, ///< A blocked process
+    SLEEPING= 5, ///< A sleeping process
+    WAITING = 6, ///< A waiting process (for a child)
+    KILLED = 7, ///< A killed process
+    BLOCKED_TIMEOUT = 8 ///< A blocked, with timeout, process
 };
 
+/*!
+ * \brief A physical segment of memory used by the process
+ */
 struct segment_t {
-    size_t physical;
-    size_t size;
+    size_t physical; ///< The physical start
+    size_t size; ///< The size of allocated memory
 };
 
 struct process_t {
@@ -61,48 +64,51 @@ struct process_t {
 
     size_t tty; ///< The terminal the process is linked to
 
-    size_t physical_cr3;
-    size_t paging_size;
+    size_t physical_cr3; ///< The physical address of the CR3
+    size_t paging_size; ///< The  size of the paging structure
 
-    size_t physical_user_stack;
-    size_t physical_kernel_stack;
-    size_t virtual_kernel_stack;
+    size_t physical_user_stack; ///< The physical address of the user stack
+    size_t physical_kernel_stack; ///< The physical address of the kernel stack
+    size_t virtual_kernel_stack; ///< The virtual address of the kernel stack
 
-    size_t kernel_rsp;
+    size_t kernel_rsp; ///< The kernel stack pointer
 
-    size_t brk_start;
-    size_t brk_end;
+    size_t brk_start; ///< The start of the brk section
+    size_t brk_end; ///< The end of the brk section
 
     // Only for system kernels
-    char* user_stack;
-    char* kernel_stack;
+    char* user_stack; ///< Pointer to the user stack
+    char* kernel_stack; ///< Pointer to the kernel stack
 
-    volatile interrupt::syscall_regs* context;
+    volatile interrupt::syscall_regs* context; ///< A pointer to the context
 
-    wait_node wait;
+    wait_node wait; ///< The process's wait node
 
-    std::vector<segment_t> segments;
+    std::vector<segment_t> segments; ///< The physical segments
 
-    std::string name;
+    std::string name; ///< The name of the process
 };
 
-constexpr const size_t program_base = 0x8000000000;
-constexpr const size_t program_break = 0x9000000000;
+constexpr const size_t program_base = 0x8000000000; ///< The virtual address of a program start
+constexpr const size_t program_break = 0x9000000000; ///< The virtual address of a program break start
 
-constexpr const auto user_stack_size = 2 * paging::PAGE_SIZE;
-constexpr const auto kernel_stack_size = 2 * paging::PAGE_SIZE;
+constexpr const auto user_stack_size = 2 * paging::PAGE_SIZE; ///< The size of the user stack
+constexpr const auto kernel_stack_size = 2 * paging::PAGE_SIZE; ///< The size of the kernel stack
 
-constexpr const auto user_stack_start = program_base + 0x700000;
-constexpr const auto user_rsp = user_stack_start + (user_stack_size - 8);
+constexpr const auto user_stack_start = program_base + 0x700000; ///< The virtual address of a program user stack
+constexpr const auto user_rsp = user_stack_start + (user_stack_size - 8); ///< The initial program stack pointer
 
+/*!
+ * \brief An entry in the Process Control Block
+ */
 struct process_control_t {
-    scheduler::process_t process;
-    scheduler::process_state state;
-    size_t rounds;
-    size_t sleep_timeout;
-    std::vector<path> handles;
-    std::vector<network::socket> sockets;
-    path working_directory;
+    scheduler::process_t process; ///< The process itself
+    scheduler::process_state state; ///< The state of the process
+    size_t rounds; ///< The number of rounds remaining
+    size_t sleep_timeout; ///< The sleep timeout (in ticks)
+    std::vector<path> handles; ///< The file handles
+    std::vector<network::socket> sockets; ///< The socket handles
+    path working_directory; ///< The current working directory
 };
 
 } //end of namespace scheduler
