@@ -79,29 +79,122 @@ constexpr size_t page_align(size_t addr){
     return (addr / paging::PAGE_SIZE) * paging::PAGE_SIZE;
 }
 
+/*!
+ * \brief Early initialization of the paging manager. This is done
+ * before the virtual and physical allocators are initialized.
+ */
 void early_init();
+
+/*!
+ * \brief Initialize the paging manager (after phyiscal and virtual
+ * allocators are initialized.
+ */
 void init();
+
+/*!
+ * \brief Finalize the initialization, after sysfs initialization
+ */
 void finalize();
 
+/*!
+ * \brief Returns the number of pages for a block of the given size
+ */
 size_t pages(size_t size);
 
+/*!
+ * \brief Returns the physical address pointed by the given virtual address
+ * \param virt The virtual address
+ * \return The corresponding physical address if any, 0 otherwise
+ */
 size_t physical_address(size_t virt);
+
+/*!
+ * \brief Indicates if the virtual page is present or not
+ */
 bool page_present(size_t virt);
+
+/*!
+ * \brief Indicates if the virtual page is free or already set to
+ * the given physical address
+ * \param virt The virtual address
+ */
 bool page_free_or_set(size_t virt, size_t physical);
 
+/*!
+ * \brief Identity map the given virtual page
+ * \param flag The flags to set
+ * \return true if paging is possible, false otherwise
+ */
 bool identity_map(size_t virt, uint8_t flags = PRESENT | WRITE);
+
+/*!
+ * \brief Identity map the given virtual pages
+ * \param virt The first virtual page
+ * \param pages The number of pages to identity map
+ * \param flag The flags to set
+ * \return true if paging is possible, false otherwise
+ */
 bool identity_map_pages(size_t virt, size_t pages, uint8_t flags = PRESENT | WRITE);
 
+/*!
+ * \brief Map the given virtual page to the given physical page
+ * \param virt The virtual page
+ * \param physical The physical page
+ * \param flag The flags to set
+ * \return true if paging is possible, false otherwise
+ */
 bool map(size_t virt, size_t physical, uint8_t flags = PRESENT | WRITE);
+
+/*!
+ * \brief Map the given virtual pages to the given physical pages
+ * \param virt The first virtual page
+ * \param physical The first physical page
+ * \param pages The number of pages to map
+ * \param flag The flags to set
+ * \return true if paging is possible, false otherwise
+ */
 bool map_pages(size_t virt, size_t physical, size_t pages, uint8_t flags = PRESENT | WRITE);
 
+/*!
+ * \brief Unmap the virtual page
+ * \return true if unmap is possible, false otherwise
+ */
 bool unmap(size_t virt);
+
+/*!
+ * \brief Unmap the virtual pages
+ * \þaram virt The first virtual page
+ * \þaram pages The number of pages to unmap
+ * \return true if unmap is possible, false otherwise
+ */
 bool unmap_pages(size_t virt, size_t pages);
 
+/*!
+ * \brief Map the entire kernel inside the user process
+ * \param process The proces to manipulate
+ */
 void map_kernel_inside_user(scheduler::process_t& process);
+
+/*!
+ * \brief Map the given virtual page to the given physical page for the given process
+ * \param virt The virtual page
+ * \param physical The physical page
+ * \return true if paging is possible, false otherwise
+ */
 bool user_map(scheduler::process_t& process, size_t virt, size_t physical);
+
+/*!
+ * \brief Map the given virtual pages to the given physical page for the given process
+ * \param virt The first virtual page
+ * \param physical The first physical page
+ * \þaram pages The number of pages to map
+ * \return true if paging is possible, false otherwise
+ */
 bool user_map_pages(scheduler::process_t& process, size_t virt, size_t physical, size_t pages);
 
+/*!
+ * \brief Returns the physical address of the PML4T table
+ */
 size_t get_physical_pml4t();
 
 } //end of namespace paging
