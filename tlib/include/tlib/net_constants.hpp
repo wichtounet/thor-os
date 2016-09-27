@@ -15,6 +15,9 @@ THOR_NAMESPACE(tlib, network) {
 
 namespace ip {
 
+/*!
+ * \brief An IP Addres helper
+ */
 struct address {
     uint32_t raw_address = 0;
 
@@ -43,17 +46,20 @@ inline address make_address(uint8_t a, uint8_t b, uint8_t c, uint8_t d){
     return addr;
 }
 
+/*!
+ * \brief The header of an IP packet
+ */
 struct header {
-    uint8_t version_ihl;
+    uint8_t version_ihl; ///< The version and header length
     uint8_t dscp_ecn;
-    uint16_t total_len;
-    uint16_t identification;
-    uint16_t flags_offset;
-    uint8_t ttl;
-    uint8_t protocol;
-    uint16_t header_checksum;
-    uint32_t source_ip;
-    uint32_t target_ip;
+    uint16_t total_len; ///< The total length of the packet
+    uint16_t identification; ///< The identification of the packet
+    uint16_t flags_offset; ///< The flags and data offset
+    uint8_t ttl; ///< The time to live of the packet
+    uint8_t protocol; ///< The protocol used
+    uint16_t header_checksum; ///< The checksum
+    uint32_t source_ip; ///< The source IP address
+    uint32_t target_ip; ///< The target IP address
 } __attribute__((packed));
 
 struct packet_descriptor {
@@ -75,10 +81,13 @@ struct address {
     char mac[6];
 } __attribute__((packed));
 
+/*!
+ * \brief The header of an ethernet packet
+ */
 struct header {
-    address target;
-    address source;
-    uint16_t type;
+    address target; ///< The target MAC address
+    address source; ///< The source MAC address
+    uint16_t type; ///< The type of packet (the child layer)
 } __attribute__((packed));
 
 enum class ether_type {
@@ -117,16 +126,22 @@ enum class type : uint8_t {
     TRACEROUTE = 30
 };
 
+/*!
+ * \brief The header of an ICMP packet
+ */
 struct header {
-    uint8_t type;
-    uint8_t code;
-    uint16_t checksum;
+    uint8_t type; ///< The type of message
+    uint8_t code; ///< The code of the transmission (sub-type)
+    uint16_t checksum; ///< The checksum
     uint32_t rest; ///< Depends on the type of packet type
 } __attribute__((packed));
 
+/*!
+ * \brief The rest header of an ICMP request packet
+ */
 struct echo_request_header {
-    uint16_t identifier;
-    uint16_t sequence;
+    uint16_t identifier; ///< The identifier
+    uint16_t sequence;   ///< The sequence number
 } __attribute__((packed));
 
 struct packet_descriptor {
@@ -149,13 +164,16 @@ struct packet_descriptor {
 
 namespace dns {
 
+/*!
+ * \brief The header of a DNS packet
+ */
 struct header {
-    uint16_t identification;
-    uint16_t flags;
-    uint16_t questions;
-    uint16_t answers;
-    uint16_t authority_rrs;
-    uint16_t additional_rrs;
+    uint16_t identification; ///< The identification of the query
+    uint16_t flags; ///< The flags
+    uint16_t questions; ///< The number of questions
+    uint16_t answers; ///< The number of answers
+    uint16_t authority_rrs; ///< The number of authorithy Records
+    uint16_t additional_rrs; ///< The number of additional Records
 } __attribute__((packed));
 
 struct packet_descriptor {
@@ -176,15 +194,18 @@ struct packet_descriptor {
 
 namespace tcp {
 
+/*!
+ * \brief The header of a TCP packet
+ */
 struct header {
-    uint16_t source_port;
-    uint16_t target_port;
-    uint32_t sequence_number;
-    uint32_t ack_number;
-    uint16_t flags;
-    uint16_t window_size;
-    uint16_t checksum;
-    uint16_t urgent_pointer;
+    uint16_t source_port; ///< The TCP source port
+    uint16_t target_port; ///< The TCP target port
+    uint32_t sequence_number; ///< The sequence number
+    uint32_t ack_number; ///< The acknowledge number
+    uint16_t flags; ///< The flags
+    uint16_t window_size; ///< The size of the receiving window
+    uint16_t checksum; ///< The checksum
+    uint16_t urgent_pointer; ///< Indicates if the packet is urgent
 } __attribute__((packed));
 
 struct packet_descriptor {
