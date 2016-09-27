@@ -154,13 +154,27 @@ void test_destructor() {
     int counter = 0;
 
     {
-        std::vector<kiss> vec(3);
+        std::vector<kiss> vec;
+        vec.reserve(3);
         vec.emplace_back(&counter);
         vec.emplace_back(&counter);
         vec.emplace_back(&counter);
     }
 
-    check(counter == 3, "Invalid destructors");
+    check(counter == 3, "destruct: Invalid destructors");
+}
+
+void test_clear() {
+    int counter = 0;
+
+    std::vector<kiss> vec;
+    vec.reserve(3);
+    vec.emplace_back(&counter);
+    vec.emplace_back(&counter);
+    vec.emplace_back(&counter);
+    vec.clear();
+
+    check(counter == 3, "clear: Invalid destructors");
 }
 
 } //end of anonymous namespace
@@ -174,4 +188,5 @@ void vector_tests(){
     test_push_front();
     test_reverse_iterator();
     test_destructor();
+    test_clear();
 }

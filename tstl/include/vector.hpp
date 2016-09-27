@@ -263,6 +263,10 @@ public:
     }
 
     void clear(){
+        for(size_t i = 0; i < _size; ++i){
+            data[i].~value_type();
+        }
+
         _size = 0;
     }
 
