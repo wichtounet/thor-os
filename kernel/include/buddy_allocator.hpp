@@ -13,32 +13,51 @@
 #include "bitmap.hpp"
 #include "logging.hpp"
 
+/*!
+ * \brief Returns the nth power of x
+ */
 template <class T>
 inline constexpr T pow(T const& x, size_t n){
     return n > 0 ? x * pow(x, n - 1) : 1;
 }
 
+/*!
+ * \brief Buddy allocator system.
+ *
+ * This is used to allocate physical and virtual memory
+ */
 template<size_t Levels, size_t Unit>
 struct buddy_allocator {
-    static constexpr const size_t levels = Levels;
-    static constexpr const size_t max_block = pow(2, levels - 1);
+    static constexpr const size_t levels = Levels; ///< The number of levels in the allocator
+    static constexpr const size_t max_block = pow(2, levels - 1); ///< The size of the maximum block
 
-    std::array<static_bitmap, levels> bitmaps;
+    std::array<static_bitmap, levels> bitmaps; ///< The bit maps for each level
 
-    size_t first_address;
-    size_t last_address;
+    size_t first_address; ///< The first managed address
+    size_t last_address;  ///< The last managed address
 
 public:
+    /*!
+     * \brief Sets the memory range of the allocator
+     */
     void set_memory_range(size_t first, size_t last){
         first_address = first;
         last_address = last;
     }
 
+    /*!
+     * \brief Initialize the layer I
+     * \param words The number of words
+     * \param data The memory to use
+     */
     template<size_t I>
     void init(size_t words, uint64_t* data){
         bitmaps[I].init(words, data);
     }
 
+    /*!
+     * \brief Initialize the allocator
+     */
     void init(){
         //By default all blocks are free
         for(auto& bitmap : bitmaps){
@@ -46,6 +65,9 @@ public:
         }
     }
 
+    /*!
+     * \brief Allocate memory for the given amount of pages
+     */
     size_t allocate(size_t pages){
         if(pages > max_block){
             if(pages > max_block * static_bitmap::bits_per_word){
@@ -55,7 +77,7 @@ public:
             } else {
                 // Select a level for which a whole word can hold the necessary pages
                 auto l = word_level(pages);
-                auto index = bitmaps[l].free_word();
+                auto index = bitmaps[l].set_word();
                 auto address = block_start(l, index);
 
                 if(address + level_size(l) >= last_address){
@@ -72,7 +94,7 @@ public:
             }
         } else {
             auto l = level(pages);
-            auto index = bitmaps[l].free_bit();
+            auto index = bitmaps[l].set_bit();
             auto address = block_start(l, index);
 
             if(address + level_size(l) >= last_address){
@@ -86,6 +108,11 @@ public:
         }
     }
 
+    /*!
+     * \brief Free allocated memory pages
+     * \param address The allocated memory
+     * \param pages The number of pages to free
+     */
     void free(size_t address, size_t pages){
         if(pages > max_block){
             if(pages > max_block * static_bitmap::bits_per_word){
@@ -108,17 +135,17 @@ public:
         }
     }
 
+    /*!
+     * \brief The size of the given level
+     */
     static size_t level_size(size_t level){
-        size_t size = 1;
-
-        for(size_t i = 0; i < level; ++i){
-            size *= 2;
-        }
-
-        return size;
+        return pow(2, level);
     }
 
 private:
+    /*!
+     * \brief Returns the level to use for the given amount of pages
+     */
     static size_t level(size_t pages){
         if(pages > 64){
             return 7;
@@ -153,6 +180,11 @@ private:
         return levels;
     }
 
+    /*!
+     * \brief Mark the given buddy as used
+     * \param l The used level
+     * \param index The used index
+     */
     void mark_used(size_t l, size_t index){
         //Mark all sub blocks as taken
         taken_down(l, index);
@@ -164,6 +196,11 @@ private:
         taken_up(l, index);
     }
 
+    /*!
+     * \brief Mark the given buddy as free
+     * \param l The freed level
+     * \param index The freeed index
+     */
     void mark_free(size_t l, size_t index){
         //Free all sub blocks
         free_down(l, index);
