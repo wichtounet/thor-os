@@ -87,11 +87,15 @@ static_assert(min_capacity == sizeof(base_short<char>), "base_short must be the 
 static_assert(min_capacity == sizeof(base_long<char>), "base_long must be the correct SSO size");
 static_assert(min_capacity == sizeof(base_raw), "base_raw must be the correct SSO size");
 
+/*!
+ * \brief A string of the given character type.
+ *
+ * This implementation uses SSO to not allocate any dynamic memory on short strings (<16 chars)
+ */
 template<typename CharT>
 struct basic_string {
-public:
-    typedef CharT*             iterator;
-    typedef const CharT*       const_iterator;
+    using iterator = CharT*; ///< The iterator type
+    using const_iterator = const CharT*; ///< The const iterator type
 
     static constexpr const size_t npos = -1;
 
@@ -137,12 +141,18 @@ private:
 public:
     //Constructors
 
+    /*!
+     * \brief Construct an empty string
+     */
     basic_string() : _size(0){
         set_small(true);
 
         (*this)[0] = '\0';
     }
 
+    /*!
+     * \brief Construct a new string from the given raw string
+     */
     basic_string(const CharT* s) : _size(str_len(s)) {
         auto capacity = size() + 1;
 
@@ -155,6 +165,9 @@ public:
         std::copy_n(s, capacity, begin());
     }
 
+    /*!
+     * \brief Construct a new string of the given capacity.
+     */
     explicit basic_string(size_t __capacity) : _size(0) {
         set_small(__capacity <= 16);
 
@@ -165,6 +178,9 @@ public:
         (*this)[0] = '\0';
     }
 
+    /*!
+     * \brief Construct a new string from the given range of characters
+     */
     template <typename It>
     basic_string(It it, It end) {
         _size = std::distance(it, end);
@@ -262,6 +278,9 @@ public:
 
     //Destructors
 
+    /*!
+     * \brief Destructs the string and releases all its associated memory
+     */
     ~basic_string(){
         if(is_long()){
             storage.big.~base_long();
@@ -274,20 +293,32 @@ public:
         set_size(size);
     }
 
+    /*!
+     * \brief Clear the string
+     */
     void clear(){
         set_size(0);
         (*this)[0] = '\0';
     }
 
+    /*!
+     * \brief Pop the last character of the string.
+     */
     void pop_back(){
         set_size(size() - 1);
         (*this)[size()] = '\0';
     }
 
+    /*!
+     * \brief Ensures a capacity of at least new_capacity
+     */
     void reserve(size_t new_capacity){
         ensure_capacity(new_capacity);
     }
 
+    /*!
+     * \brief Creates a string resulting of the concatenation of this string the given char
+     */
     basic_string operator+(CharT c) const {
         basic_string copy(*this);
 
@@ -296,6 +327,9 @@ public:
         return move(copy);
     }
 
+    /*!
+     * \brief Concatenates the given char to the current string
+     */
     basic_string& operator+=(CharT c){
         ensure_capacity(size() + 2);
 
@@ -305,29 +339,6 @@ public:
         set_size(size() + 1);
 
         return *this;
-    }
-
-    void ensure_capacity(size_t new_capacity){
-        if(new_capacity > 0 && (capacity() < new_capacity)){
-            auto new_cap = capacity() * 2;
-
-            if(new_cap < new_capacity){
-                new_cap = new_capacity;
-            }
-
-            auto new_data = new CharT[new_cap];
-
-            std::copy_n(begin(), size() + 1, new_data);
-
-            if(is_small()){
-                new (&storage.big) base_long<CharT>(new_cap, new_data);
-
-                set_small(false);
-            } else {
-                storage.big.data.reset(new_data);
-                storage.big.capacity = new_cap;
-            }
-        }
     }
 
     basic_string& operator+=(const char* rhs){
@@ -358,10 +369,16 @@ public:
 
     //Accessors
 
+    /*!
+     * \brief Returns the size of the string
+     */
     size_t size() const {
         return _size & ~(1UL << 63);
     }
 
+    /*!
+     * \brief Returns the capacity of the string
+     */
     size_t capacity() const {
         if(is_small()){
             return 16;
@@ -370,6 +387,9 @@ public:
         }
     }
 
+    /*
+     * \brief Indicates if the string is empty
+     */
     bool empty() const {
         return size() == 0;
     }
@@ -390,18 +410,30 @@ public:
         }
     }
 
+    /*!
+     * \return the raw string
+     */
     CharT* c_str(){
         return data_ptr();
     }
 
+    /*!
+     * \return the raw string
+     */
     const CharT* c_str() const {
         return data_ptr();
     }
 
+    /*!
+     * \brief Returns a reference to the ith character
+     */
     CharT& operator[](size_t i){
         return *(data_ptr() + i);
     }
 
+    /*!
+     * \brief Returns a const reference to the ith character
+     */
     const CharT& operator[](size_t i) const {
         return *(data_ptr() + i);
     }
@@ -456,20 +488,56 @@ public:
 
     //Iterators
 
+    /*!
+     * \brief Returns an iterator to the first character of the string
+     */
     iterator begin(){
         return iterator(data_ptr());
     }
 
-    iterator end(){
-        return iterator(data_ptr() + size());
-    }
-
+    /*!
+     * \brief Returns a const iterator to the first character of the string
+     */
     const_iterator begin() const {
         return const_iterator(data_ptr());
     }
 
+    /*!
+     * \brief Returns an iterator the past-the-end character of the string
+     */
+    iterator end(){
+        return iterator(data_ptr() + size());
+    }
+
+    /*!
+     * \brief Returns a const iterator the past-the-end character of the string
+     */
     const_iterator end() const {
         return const_iterator(data_ptr() + size());
+    }
+
+private:
+    void ensure_capacity(size_t new_capacity){
+        if(new_capacity > 0 && (capacity() < new_capacity)){
+            auto new_cap = capacity() * 2;
+
+            if(new_cap < new_capacity){
+                new_cap = new_capacity;
+            }
+
+            auto new_data = new CharT[new_cap];
+
+            std::copy_n(begin(), size() + 1, new_data);
+
+            if(is_small()){
+                new (&storage.big) base_long<CharT>(new_cap, new_data);
+
+                set_small(false);
+            } else {
+                storage.big.data.reset(new_data);
+                storage.big.capacity = new_cap;
+            }
+        }
     }
 };
 

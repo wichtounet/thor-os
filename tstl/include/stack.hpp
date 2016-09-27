@@ -14,7 +14,7 @@
 namespace std {
 
 /*!
- * \brief Container adapter to provide a stack
+ * \brief Container adapter to provide a stack (LIFO)
  */
 template<typename T, typename C = std::vector<T>>
 struct stack {
