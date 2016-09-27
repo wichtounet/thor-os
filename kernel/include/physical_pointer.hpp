@@ -8,16 +8,20 @@
 #ifndef PHYSICAL_POINTER_H
 #define PHYSICAL_POINTER_H
 
+#include <type_traits.hpp>
+
 #include "virtual_allocator.hpp"
 #include "paging.hpp"
 
+/*!
+ * \brief A special pointer to physical memory
+ */
 struct physical_pointer {
-private:
-    size_t phys;
-    size_t pages;
-    size_t virt;
-
-public:
+    /*!
+     * \brief Creates a new physical pointer
+     * \param phys_p Physical address
+     * \param pages_p The nubmer of pages
+     */
     physical_pointer(size_t phys_p, size_t pages_p) : phys(phys_p), pages(pages_p) {
         if(pages > 0){
             virt = virtual_allocator::allocate(pages);
@@ -38,6 +42,9 @@ public:
         }
     }
 
+    /*!
+     * \brief Destroys the physical pointer and releases its memory
+     */
     ~physical_pointer(){
         if(virt){
             if(pages == 1){
@@ -50,27 +57,52 @@ public:
         }
     }
 
+    /*!
+     * \brief Reinterprets the virtual memory as the given type.
+     *
+     * This should
+     *
+     */
     template<typename T>
     T as(){
+        static_assert(std::is_pointer<T>::value, "as<T>() should only be used with pointer types");
         return reinterpret_cast<T>(virt);
     }
 
+    /*!
+     * \brief Returns a pointer of a given type to the memory
+     */
     template<typename T>
     T* as_ptr(){
         return reinterpret_cast<T*>(virt);
     }
 
-    uintptr_t get(){
+    /*!
+     * \brief Returns the virtual address
+     */
+    uintptr_t get() const {
         return virt;
     }
 
-    uintptr_t get_phys(){
+    /*!
+     * \brief Returns the physical address
+     */
+    uintptr_t get_phys() const {
         return virt;
     }
 
+    /*!
+     * \brief Convert the pointer to a boolean
+     */
     operator bool() const {
         return virt != 0;
     }
+
+private:
+    const size_t phys; ///< The physical memory address
+    const size_t pages; ///< The number of pages
+    size_t virt; ///< The virtual memory
+
 };
 
 #endif
