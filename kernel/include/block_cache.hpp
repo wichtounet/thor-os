@@ -25,16 +25,6 @@ struct block_t {
  * \brief A cache for I/O blocks
  */
 struct block_cache {
-    uint64_t payload_size; ///< The size of each blocks
-    uint64_t blocks; ///< The number of blocks to cache
-
-    void* blocks_memory; ///< The memory holding the blocks
-
-    block_t** hash_table; ///< Pointer to the hash table
-
-    block_t* front; ///< The head of the free list
-    block_t* rear;  ///< The tail of the free list
-
     /*!
      * \brief Initialize the cache
      * \param payload_size The size of each block
@@ -67,6 +57,17 @@ struct block_cache {
      * \return the block payload address
      */
     char* block(uint64_t key, bool& valid);
+
+private:
+    uint64_t payload_size; ///< The size of each blocks
+    uint64_t blocks; ///< The number of blocks to cache
+
+    void* blocks_memory; ///< The memory holding the blocks
+
+    block_t** hash_table; ///< Pointer to the hash table
+
+    block_t* front; ///< The head of the free list
+    block_t* rear;  ///< The tail of the free list
 };
 
 #endif
