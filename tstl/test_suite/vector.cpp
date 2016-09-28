@@ -177,6 +177,19 @@ void test_clear() {
     check(counter == 3, "clear: Invalid destructors");
 }
 
+void test_pop_back() {
+    int counter = 0;
+
+    std::vector<kiss> vec;
+    vec.reserve(3);
+    vec.emplace_back(&counter);
+    vec.emplace_back(&counter);
+    vec.emplace_back(&counter);
+    vec.pop_back();
+
+    check(counter == 1, "pop_back: Invalid destructors");
+}
+
 } //end of anonymous namespace
 
 void vector_tests(){
@@ -189,4 +202,5 @@ void vector_tests(){
     test_reverse_iterator();
     test_destructor();
     test_clear();
+    test_pop_back();
 }

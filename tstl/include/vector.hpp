@@ -260,6 +260,8 @@ public:
 
     void pop_back(){
         --_size;
+
+        data[_size].~value_type();
     }
 
     void clear(){
