@@ -20,29 +20,29 @@ constexpr const uint16_t USER_DATA_SELECTOR = 0x28;
 constexpr const uint16_t TSS_SELECTOR = 0x30;
 
 //Selector types
-constexpr const uint16_t SEG_DATA_RD         = 0x00; // Read-Only
-constexpr const uint16_t SEG_DATA_RDA        = 0x01; // Read-Only, accessed
-constexpr const uint16_t SEG_DATA_RDWR       = 0x02; // Read/Write
-constexpr const uint16_t SEG_DATA_RDWRA      = 0x03; // Read/Write, accessed
-constexpr const uint16_t SEG_DATA_RDEXPD     = 0x04; // Read-Only, expand-down
-constexpr const uint16_t SEG_DATA_RDEXPDA    = 0x05; // Read-Only, expand-down, accessed
-constexpr const uint16_t SEG_DATA_RDWREXPD   = 0x06; // Read/Write, expand-down
-constexpr const uint16_t SEG_DATA_RDWREXPDA  = 0x07; // Read/Write, expand-down, accessed
-constexpr const uint16_t SEG_CODE_EX         = 0x08; // Execute-Only
-constexpr const uint16_t SEG_CODE_EXA        = 0x09; // Execute-Only, accessed
-constexpr const uint16_t SEG_CODE_EXRD       = 0x0A; // Execute/Read
-constexpr const uint16_t SEG_CODE_EXRDA      = 0x0B; // Execute/Read, accessed
-constexpr const uint16_t SEG_CODE_EXC        = 0x0C; // Execute-Only, conforming
-constexpr const uint16_t SEG_CODE_EXCA       = 0x0D; // Execute-Only, conforming, accessed
-constexpr const uint16_t SEG_CODE_EXRDC      = 0x0E; // Execute/Read, conforming
-constexpr const uint16_t SEG_CODE_EXRDCA     = 0x0F; // Execute/Read, conforming, accessed
+constexpr const uint16_t SEG_DATA_RD         = 0x00; ///< Read-Only
+constexpr const uint16_t SEG_DATA_RDA        = 0x01; ///< Read-Only, accessed
+constexpr const uint16_t SEG_DATA_RDWR       = 0x02; ///< Read/Write
+constexpr const uint16_t SEG_DATA_RDWRA      = 0x03; ///< Read/Write, accessed
+constexpr const uint16_t SEG_DATA_RDEXPD     = 0x04; ///< Read-Only, expand-down
+constexpr const uint16_t SEG_DATA_RDEXPDA    = 0x05; ///< Read-Only, expand-down, accessed
+constexpr const uint16_t SEG_DATA_RDWREXPD   = 0x06; ///< Read/Write, expand-down
+constexpr const uint16_t SEG_DATA_RDWREXPDA  = 0x07; ///< Read/Write, expand-down, accessed
+constexpr const uint16_t SEG_CODE_EX         = 0x08; ///< Execute-Only
+constexpr const uint16_t SEG_CODE_EXA        = 0x09; ///< Execute-Only, accessed
+constexpr const uint16_t SEG_CODE_EXRD       = 0x0A; ///< Execute/Read
+constexpr const uint16_t SEG_CODE_EXRDA      = 0x0B; ///< Execute/Read, accessed
+constexpr const uint16_t SEG_CODE_EXC        = 0x0C; ///< Execute-Only, conforming
+constexpr const uint16_t SEG_CODE_EXCA       = 0x0D; ///< Execute-Only, conforming, accessed
+constexpr const uint16_t SEG_CODE_EXRDC      = 0x0E; ///< Execute/Read, conforming
+constexpr const uint16_t SEG_CODE_EXRDCA     = 0x0F; ///< Execute/Read, conforming, accessed
 
-constexpr const uint16_t SEG_LDT             = 0x2; //LDT
-constexpr const uint16_t SEG_TSS_AVAILABLE   = 0x9; //64 bits TSS (Available)
-constexpr const uint16_t SEG_TSS_BUSY        = 0xB; //64 bits TSS (Busy)
-constexpr const uint16_t SEG_CALL_GATE       = 0xC; //64 bits Call Gate
-constexpr const uint16_t SEG_INTERRUPT_GATE  = 0xE; //64 bits Interrupt Gate
-constexpr const uint16_t SEG_TRAP_GATE       = 0xE; //64 bits Trap  Gate
+constexpr const uint16_t SEG_LDT             = 0x2; ///< LDT
+constexpr const uint16_t SEG_TSS_AVAILABLE   = 0x9; ///< 64 bits TSS (Available)
+constexpr const uint16_t SEG_TSS_BUSY        = 0xB; ///< 64 bits TSS (Busy)
+constexpr const uint16_t SEG_CALL_GATE       = 0xC; ///< 64 bits Call Gate
+constexpr const uint16_t SEG_INTERRUPT_GATE  = 0xE; ///< 64 bits Interrupt Gate
+constexpr const uint16_t SEG_TRAP_GATE       = 0xE; ///< 64 bits Trap  Gate
 
 struct gdt_ptr {
     uint16_t length;
