@@ -19,20 +19,6 @@
 #include "assert.hpp"
 #include "timer.hpp"
 
-namespace {
-
-struct cache_entry {
-    uint64_t mac;
-    network::ip::address ip;
-
-    cache_entry(){}
-    cache_entry(uint64_t mac, network::ip::address ip) : mac(mac), ip(ip) {}
-};
-
-std::vector<cache_entry> mac_cache;
-
-} //end of anonymous namespace
-
 network::arp::cache::cache(network::arp::layer* layer, network::ethernet::layer* parent) : arp_layer(layer), ethernet_layer(parent) {
     // Nothing else to init
 }
@@ -150,7 +136,7 @@ std::expected<uint64_t> network::arp::cache::get_mac_force(network::interface_de
     }
 
     while(!is_ip_cached(ip)){
-        network::arp::wait_for_reply();
+        arp_layer->wait_for_reply();
     }
 
     logging::logf(logging::log_level::TRACE, "arp: received ARP Reply\n");
@@ -182,7 +168,7 @@ std::expected<uint64_t> network::arp::cache::get_mac_force(network::interface_de
     auto start = timer::milliseconds();
 
     while(!is_ip_cached(ip)){
-        network::arp::wait_for_reply(ms);
+        arp_layer->wait_for_reply(ms);
 
         if(!is_ip_cached(ip)){
             auto end = timer::milliseconds();

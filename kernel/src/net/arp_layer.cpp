@@ -19,12 +19,6 @@
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 
-namespace {
-
-condition_variable wait_queue;
-
-} //end of anonymous namespace
-
 uint64_t network::arp::mac3_to_mac64(uint16_t* source_mac){
     size_t mac = 0;
 
@@ -157,11 +151,11 @@ void network::arp::layer::decode(network::interface_descriptor& interface, netwo
     }
 }
 
-void network::arp::wait_for_reply(){
+void network::arp::layer::wait_for_reply(){
     wait_queue.wait();
 }
 
-void network::arp::wait_for_reply(size_t ms){
+void network::arp::layer::wait_for_reply(size_t ms){
     wait_queue.wait_for(ms);
 }
 

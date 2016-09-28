@@ -10,6 +10,8 @@
 
 #include <types.hpp>
 
+#include "conc/condition_variable.hpp"
+
 #include "net/ethernet_layer.hpp"
 #include "net/ip_layer.hpp"
 #include "net/network.hpp"
@@ -52,14 +54,15 @@ struct layer {
 
     network::arp::cache& get_cache();
 
+    void wait_for_reply();
+    void wait_for_reply(size_t ms);
+
 private:
     network::ethernet::layer* parent;
     network::arp::cache _cache;
-};
 
-//TODO Move
-void wait_for_reply();
-void wait_for_reply(size_t ms);
+    condition_variable wait_queue;
+};
 
 } // end of arp namespace
 

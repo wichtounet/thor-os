@@ -20,6 +20,14 @@ namespace arp {
 
 struct layer;
 
+struct cache_entry {
+    uint64_t mac;
+    network::ip::address ip;
+
+    cache_entry(){}
+    cache_entry(uint64_t mac, network::ip::address ip) : mac(mac), ip(ip) {}
+};
+
 struct cache {
     cache(network::arp::layer* layer, network::ethernet::layer* parent);
 
@@ -70,6 +78,8 @@ private:
 
     network::arp::layer* arp_layer;
     network::ethernet::layer* ethernet_layer;
+
+    std::vector<cache_entry> mac_cache;
 };
 
 } // end of arp namespace
