@@ -18,10 +18,10 @@ typedef int int16_t __attribute__ ((__mode__ (__HI__))); ///< A signed 16-bit nu
 typedef int int32_t __attribute__ ((__mode__ (__SI__))); ///< A signed 32-bit number
 typedef int int64_t __attribute__ ((__mode__ (__DI__))); ///< A signed 64-bit number
 
-typedef uint64_t uintptr_t;
-typedef uint64_t size_t;
+typedef uint64_t uintptr_t; ///< Type that can be used to store a pointer value
+typedef uint64_t size_t; ///< Type that can be used to store the size of a collectiotn
 
-typedef double sse_128 __attribute__((vector_size(16)));
+typedef double sse_128 __attribute__((vector_size(16))); ///< SSE 128-bit value
 
 static_assert(sizeof(uint8_t) == 1, "uint8_t must be 1 byte long");
 static_assert(sizeof(uint16_t) == 2, "uint16_t must be 2 bytes long");
