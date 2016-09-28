@@ -20,8 +20,7 @@ namespace std {
  * \brief A contiguous container of elements, automatically increasing.
  */
 template<typename T>
-class vector {
-public:
+struct vector {
     using value_type = T; ///< The value type contained in the vector
     using pointer_type = value_type*; ///< The pointer type contained in the vector
     using size_type = size_t; ///< The size type
@@ -31,12 +30,6 @@ public:
     using reverse_iterator       = std::reverse_iterator<iterator>; ///< The reverse iterator type
     using const_reverse_iterator = std::reverse_iterator<const_iterator>; ///< The const reverse iterator type
 
-private:
-    T* data; ///< The data storage
-    uint64_t _size; ///< The vector size
-    uint64_t _capacity; ///< The data capacity
-
-public:
     /*!
      * \brief Constructs en empty vector
      */
@@ -210,18 +203,27 @@ public:
         }
     }
 
+    /*!
+     * \brief Add an element at the back of the vector
+     */
     void push_back(value_type&& element){
         ensure_capacity(_size + 1);
 
         data[_size++] = std::move(element);
     }
 
+    /*!
+     * \brief Add an element at the back of the vector
+     */
     void push_back(const value_type& element){
         ensure_capacity(_size + 1);
 
         data[_size++] = element;
     }
 
+    /*!
+     * \brief Add an element at the front of the vector
+     */
     void push_front(value_type&& element){
         ensure_capacity(_size + 1);
 
@@ -233,6 +235,9 @@ public:
         ++_size;
     }
 
+    /*!
+     * \brief Add an element at the front of the vector
+     */
     void push_front(const value_type& element){
         ensure_capacity(_size + 1);
 
@@ -261,6 +266,9 @@ public:
         return back();
     }
 
+    /*!
+     * \brief Removes the last element of the vector
+     */
     void pop_back(){
         --_size;
 
@@ -268,6 +276,9 @@ public:
         data[_size].~value_type();
     }
 
+    /*!
+     * \brief Removes all the elements of the vector
+     */
     void clear(){
         for(size_t i = 0; i < _size; ++i){
             data[i].~value_type();
@@ -390,6 +401,11 @@ private:
             data = new_data;
         }
     }
+
+    T* data; ///< The data storage
+    uint64_t _size; ///< The vector size
+    uint64_t _capacity; ///< The data capacity
+
 };
 
 } //end of namespace std
