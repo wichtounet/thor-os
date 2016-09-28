@@ -590,6 +590,8 @@ void system_call_entry(interrupt::syscall_regs* regs){
     logging::logf(logging::log_level::ERROR, "Invalid system call %h from %u\n", code, scheduler::get_pid());
 
     k_print_line("Invalid system call");
+
+    scheduler::kill_current_process();
 }
 
 void install_system_calls(){
