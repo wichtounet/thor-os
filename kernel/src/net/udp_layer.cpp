@@ -7,7 +7,6 @@
 
 #include <atomic.hpp>
 
-#include "net/connection_handler.hpp"
 #include "net/udp_layer.hpp"
 #include "net/dns_layer.hpp"
 #include "net/dhcp_layer.hpp"
@@ -18,21 +17,6 @@
 #include "kernel_utils.hpp"
 
 namespace {
-
-std::atomic<size_t> local_port;
-
-struct udp_connection {
-    size_t local_port;                   ///< The local source port
-    size_t server_port;                  ///< The server port
-    network::ip::address server_address; ///< The server address
-
-    bool connected = false;
-    bool server    = false;
-
-    network::socket* socket = nullptr;
-};
-
-network::connection_handler<udp_connection> connections;
 
 void compute_checksum(network::ethernet::packet& packet){
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));

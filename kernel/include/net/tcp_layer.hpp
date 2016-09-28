@@ -12,6 +12,7 @@
 #include <atomic.hpp>
 
 #include "net/ethernet_layer.hpp"
+#include "net/connection_handler.hpp"
 #include "net/ip_layer.hpp"
 #include "net/network.hpp"
 #include "net/socket.hpp"
@@ -96,6 +97,10 @@ private:
     std::expected<void> finalize_packet_direct(network::interface_descriptor& interface, network::ethernet::packet& p);
 
     network::ip::layer* parent;
+
+    std::atomic<size_t> local_port;
+
+    network::connection_handler<network::tcp::tcp_connection> connections;
 };
 
 } // end of tcp namespace

@@ -6,11 +6,9 @@
 //=======================================================================
 
 #include <bit_field.hpp>
-#include <atomic.hpp>
 
 #include "conc/condition_variable.hpp"
 
-#include "net/connection_handler.hpp"
 #include "net/tcp_layer.hpp"
 #include "net/dns_layer.hpp"
 #include "net/checksum.hpp"
@@ -23,10 +21,9 @@
 
 namespace {
 
-std::atomic<size_t> local_port;
-
 static constexpr size_t timeout_ms = 1000;
 static constexpr size_t max_tries  = 5;
+constexpr size_t default_tcp_header_length = 20;
 
 using flag_data_offset = std::bit_field<uint16_t, uint8_t, 12, 4>;
 using flag_reserved    = std::bit_field<uint16_t, uint8_t, 9, 3>;
@@ -39,8 +36,6 @@ using flag_psh         = std::bit_field<uint16_t, uint8_t, 3, 1>;
 using flag_rst         = std::bit_field<uint16_t, uint8_t, 2, 1>;
 using flag_syn         = std::bit_field<uint16_t, uint8_t, 1, 1>;
 using flag_fin         = std::bit_field<uint16_t, uint8_t, 0, 1>;
-
-network::connection_handler<network::tcp::tcp_connection> connections;
 
 void compute_checksum(network::ethernet::packet& packet) {
     auto* ip_header  = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
@@ -65,8 +60,6 @@ void compute_checksum(network::ethernet::packet& packet) {
     // Complete the 1-complement sum
     tcp_header->checksum = switch_endian_16(network::checksum_finalize_nz(sum));
 }
-
-constexpr size_t default_tcp_header_length = 20;
 
 uint16_t get_default_flags() {
     uint16_t flags = 0; // By default

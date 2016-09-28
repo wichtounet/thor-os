@@ -9,10 +9,12 @@
 #define NET_UDP_LAYER_H
 
 #include <types.hpp>
+#include <atomic.hpp>
 
 #include "net/ethernet_layer.hpp"
 #include "net/ip_layer.hpp"
 #include "net/network.hpp"
+#include "net/connection_handler.hpp"
 
 namespace network {
 
@@ -39,6 +41,17 @@ struct kernel_packet_descriptor {
     size_t source_port;
     size_t target_port;
     network::ip::address target_ip;
+};
+
+struct udp_connection {
+    size_t local_port;                   ///< The local source port
+    size_t server_port;                  ///< The server port
+    network::ip::address server_address; ///< The server address
+
+    bool connected = false;
+    bool server    = false;
+
+    network::socket* socket = nullptr;
 };
 
 struct layer {
@@ -109,6 +122,10 @@ private:
 
     network::dns::layer* dns_layer;
     network::dhcp::layer* dhcp_layer;
+
+    std::atomic<size_t> local_port;
+
+    network::connection_handler<udp_connection> connections;
 };
 
 } // end of upd namespace
