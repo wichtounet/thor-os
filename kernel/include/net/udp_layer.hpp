@@ -58,11 +58,6 @@ struct layer {
     layer(network::ip::layer* parent);
 
     /*!
-     * \brief Initialize the layer
-     */
-    void init_layer();
-
-    /*!
      * \brief Decode a network packet.
      *
      * This must only be called from the IP layer.

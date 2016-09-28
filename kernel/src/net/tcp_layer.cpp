@@ -102,9 +102,8 @@ size_t tcp_payload_len(const network::ethernet::packet& packet){
 
 network::tcp::layer::layer(network::ip::layer* parent) : parent(parent) {
     parent->register_tcp_layer(this);
-}
 
-void network::tcp::layer::init_layer(){
+    // The first port will be 1024
     local_port = 1023;
 }
 

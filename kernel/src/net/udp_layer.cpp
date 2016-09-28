@@ -60,9 +60,8 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
 
 network::udp::layer::layer(network::ip::layer* parent) : parent(parent) {
     parent->register_udp_layer(this);
-}
 
-void network::udp::layer::init_layer(){
+    // The first port will be 1024
     local_port = 1023;
 }
 

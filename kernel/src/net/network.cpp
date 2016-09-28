@@ -291,13 +291,10 @@ void network::init(){
     icmp_layer = new network::icmp::layer(ip_layer);
 
     udp_layer = new network::udp::layer(ip_layer);
-    udp_layer->init_layer();
-
     dns_layer = new network::dns::layer(udp_layer);
     dhcp_layer = new network::dhcp::layer(udp_layer);
 
     tcp_layer = new network::tcp::layer(ip_layer);
-    tcp_layer->init_layer();
 }
 
 void network::finalize(){
