@@ -577,8 +577,6 @@ void sc_kill(interrupt::syscall_regs* /*regs*/){
 
 } //End of anonymous namespace
 
-
-
 void system_call_entry(interrupt::syscall_regs* regs){
     auto code = regs->rax;
 
