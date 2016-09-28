@@ -21,6 +21,7 @@
 namespace {
 
 constexpr const size_t ARP_TIMEOUT = 5000;
+constexpr size_t default_ip_header_len = 20;
 
 void compute_checksum(network::ip::header* header){
     auto ihl = header->version_ihl & 0xF;
@@ -41,8 +42,6 @@ void compute_checksum(network::ip::header* header){
 
     header->header_checksum = ~uint16_t(value);
 }
-
-constexpr size_t default_ip_header_len = 20;
 
 void prepare_packet(network::ethernet::packet& packet, network::interface_descriptor& interface, size_t size, network::ip::address target_ip, size_t protocol){
     packet.tag(1, packet.index);
