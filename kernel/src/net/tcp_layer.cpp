@@ -107,6 +107,10 @@ size_t tcp_payload_len(const network::ethernet::packet& packet){
 
 } //end of anonymous namespace
 
+network::tcp::layer::layer(network::ip::layer* parent) : parent(parent) {
+    parent->register_tcp_layer(this);
+}
+
 void network::tcp::layer::init_layer(){
     local_port = 1023;
 }

@@ -164,3 +164,7 @@ void network::arp::wait_for_reply(){
 void network::arp::wait_for_reply(size_t ms){
     wait_queue.wait_for(ms);
 }
+
+network::arp::cache& network::arp::layer::get_cache(){
+    return _cache;
+}

@@ -74,6 +74,10 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
 
 } //end of anonymous namespace
 
+network::udp::layer::layer(network::ip::layer* parent) : parent(parent) {
+    parent->register_udp_layer(this);
+}
+
 void network::udp::layer::init_layer(){
     local_port = 1023;
 }
@@ -433,4 +437,12 @@ std::expected<size_t> network::udp::layer::receive_from(char* buffer, network::s
     delete[] packet.payload;
 
     return payload_len;
+}
+
+void network::udp::layer::register_dns_layer(network::dns::layer* layer){
+    this->dns_layer = layer;
+}
+
+void network::udp::layer::register_dhcp_layer(network::dhcp::layer* layer){
+    this->dhcp_layer = layer;
 }

@@ -208,3 +208,18 @@ std::expected<uint64_t> network::ip::layer::get_target_mac(network::interface_de
 
     return arp_layer->get_cache().get_mac_force(interface, interface.gateway, ARP_TIMEOUT);
 }
+void network::ip::layer::register_icmp_layer(network::icmp::layer* layer){
+    this->icmp_layer = layer;
+}
+
+void network::ip::layer::register_arp_layer(network::arp::layer* layer){
+    this->arp_layer = layer;
+}
+
+void network::ip::layer::register_udp_layer(network::udp::layer* layer){
+    this->udp_layer = layer;
+}
+
+void network::ip::layer::register_tcp_layer(network::tcp::layer* layer){
+    this->tcp_layer = layer;
+}

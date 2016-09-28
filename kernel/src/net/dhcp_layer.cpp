@@ -57,6 +57,10 @@ void prepare_packet(network::ethernet::packet& packet, network::interface_descri
 
 } //end of anonymous namespace
 
+network::dhcp::layer::layer(network::udp::layer* parent) : parent(parent) {
+    parent->register_dhcp_layer(this);
+}
+
 void network::dhcp::layer::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
     packet.tag(3, packet.index);
 

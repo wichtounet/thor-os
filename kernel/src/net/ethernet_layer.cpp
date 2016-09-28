@@ -167,3 +167,11 @@ std::expected<void> network::ethernet::layer::finalize_packet(network::interface
 
     return {};
 }
+
+void network::ethernet::layer::register_arp_layer(network::arp::layer* layer){
+    this->arp_layer = layer;
+}
+
+void network::ethernet::layer::layer::register_ip_layer(network::ip::layer* layer){
+    this->ip_layer = layer;
+}

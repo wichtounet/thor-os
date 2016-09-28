@@ -54,6 +54,10 @@ void prepare_packet(network::ethernet::packet& packet, network::icmp::type t, si
 
 } // end of anonymous namespace
 
+network::icmp::layer::layer(network::ip::layer* parent) : parent(parent) {
+    parent->register_icmp_layer(this);
+}
+
 void network::icmp::layer::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.tag(2, packet.index);
 

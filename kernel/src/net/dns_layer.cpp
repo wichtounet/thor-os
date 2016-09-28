@@ -86,6 +86,10 @@ std::string decode_domain(char* payload, size_t& offset) {
 
 } //end of anonymous namespace
 
+network::dns::layer::layer(network::udp::layer* parent) : parent(parent) {
+    parent->register_dns_layer(this);
+}
+
 void network::dns::layer::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
     packet.tag(3, packet.index);
 

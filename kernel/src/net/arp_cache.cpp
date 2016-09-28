@@ -33,6 +33,10 @@ std::vector<cache_entry> mac_cache;
 
 } //end of anonymous namespace
 
+network::arp::cache::cache(network::arp::layer* layer, network::ethernet::layer* parent) : arp_layer(layer), ethernet_layer(parent) {
+    // Nothing else to init
+}
+
 void network::arp::cache::update_cache(uint64_t mac, network::ip::address ip){
     for(auto& entry : mac_cache){
         if(entry.mac == mac && entry.ip == ip){
