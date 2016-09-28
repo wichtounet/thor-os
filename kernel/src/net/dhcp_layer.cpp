@@ -18,10 +18,6 @@
 
 namespace {
 
-std::atomic<bool> listening;
-circular_buffer<network::ethernet::packet, 16> packets;
-condition_variable listen_queue;
-
 void prepare_packet(network::ethernet::packet& packet, network::interface_descriptor& interface) {
     packet.tag(3, packet.index);
 

@@ -73,6 +73,10 @@ struct layer {
 
 private:
     network::udp::layer* parent;
+
+    std::atomic<bool> listening;
+    circular_buffer<network::ethernet::packet, 16> packets;
+    condition_variable listen_queue;
 };
 
 } // end of dns namespace
