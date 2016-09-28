@@ -156,6 +156,11 @@ struct unique_ptr {
 
         std::get<0>(_data) = p;
     }
+
+private:
+    using data_impl = tuple<pointer_type, deleter_type>; ///< The type of internal data
+
+    data_impl _data;  ///< The internal data storage
 };
 
 /*!
