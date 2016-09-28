@@ -69,7 +69,7 @@ std::string tlib::dns::decode_domain(char* payload, size_t& offset) {
 
 tlib::ip::address tlib::dns::gateway_address(){
     uint64_t ret;
-    asm volatile("mov rax, 0x3015; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB15; int 50; mov %[code], rax"
                  : [code] "=m"(ret)
                  :
                  : "rax");

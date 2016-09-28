@@ -5,6 +5,8 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
+#include <array.hpp>
+
 #include "system_calls.hpp"
 #include "print.hpp"
 #include "scheduler.hpp"
@@ -23,7 +25,13 @@
 
 //TODO Split this file
 
+#define likely(x)    __builtin_expect (!!(x), 1)
+
 namespace {
+
+using system_call = void(*)(interrupt::syscall_regs*);
+
+std::array<system_call, 0x1000> system_calls;
 
 int64_t expected_to_i64(const std::expected<void>& status){
     if(status){
@@ -562,311 +570,106 @@ void sc_wait_for_packet_ms(interrupt::syscall_regs* regs){
     regs->rbx = reinterpret_cast<size_t>(user_buffer);
 }
 
+void sc_kill(interrupt::syscall_regs* /*regs*/){
+    //TODO Do something with return code
+    scheduler::kill_current_process();
+}
+
 } //End of anonymous namespace
+
+
 
 void system_call_entry(interrupt::syscall_regs* regs){
     auto code = regs->rax;
 
-    switch(code){
-        case 2:
-            sc_log_string(regs);
-            break;
-
-        case 4:
-            sc_sleep_ms(regs);
-            break;
-
-        case 5:
-            sc_exec(regs);
-            break;
-
-        case 6:
-            sc_await_termination(regs);
-            break;
-
-        case 7:
-            sc_brk_start(regs);
-            break;
-
-        case 8:
-            sc_brk_end(regs);
-            break;
-
-        case 9:
-            sc_sbrk(regs);
-            break;
-
-        case 0x20:
-            sc_set_canonical(regs);
-            break;
-
-        case 0x21:
-            sc_set_mouse(regs);
-            break;
-
-        case 100:
-            sc_clear_screen(regs);
-            break;
-
-        case 101:
-            sc_get_columns(regs);
-            break;
-
-        case 102:
-            sc_get_rows(regs);
-            break;
-
-        case 201:
-            sc_reboot(regs);
-            break;
-
-        case 202:
-            sc_shutdown(regs);
-            break;
-
-        case 300:
-            sc_open(regs);
-            break;
-
-        case 301:
-            sc_stat(regs);
-            break;
-
-        case 302:
-            sc_close(regs);
-            break;
-
-        case 303:
-            sc_read(regs);
-            break;
-
-        case 304:
-            sc_pwd(regs);
-            break;
-
-        case 305:
-            sc_cwd(regs);
-            break;
-
-        case 306:
-            sc_mkdir(regs);
-            break;
-
-        case 307:
-            sc_rm(regs);
-            break;
-
-        case 308:
-            sc_entries(regs);
-            break;
-
-        case 309:
-            sc_mounts(regs);
-            break;
-
-        case 310:
-            sc_statfs(regs);
-            break;
-
-        case 311:
-            sc_write(regs);
-            break;
-
-        case 312:
-            sc_truncate(regs);
-            break;
-
-        case 313:
-            sc_clear(regs);
-            break;
-
-        case 314:
-            sc_mount(regs);
-            break;
-
-        case 315:
-            sc_read_timeout(regs);
-            break;
-
-        case 0x400:
-            sc_datetime(regs);
-            break;
-
-        case 0x401:
-            sc_time_seconds(regs);
-            break;
-
-        case 0x402:
-            sc_time_milliseconds(regs);
-            break;
-
-        case 0x666:
-            //TODO Do something with return code
-            scheduler::kill_current_process();
-            break;
-
-        case 0x1000:
-            sc_vesa_width(regs);
-            break;
-
-        case 0x1001:
-            sc_vesa_height(regs);
-            break;
-
-        case 0x1002:
-            sc_vesa_shift_x(regs);
-            break;
-
-        case 0x1003:
-            sc_vesa_shift_y(regs);
-            break;
-
-        case 0x1004:
-            sc_vesa_bpsl(regs);
-            break;
-
-        case 0x1005:
-            sc_vesa_red_shift(regs);
-            break;
-
-        case 0x1006:
-            sc_vesa_green_shift(regs);
-            break;
-
-        case 0x1007:
-            sc_vesa_blue_shift(regs);
-            break;
-
-        case 0x1008:
-            sc_vesa_redraw(regs);
-            break;
-
-        case 0x1100:
-            sc_mouse_x(regs);
-            break;
-
-        case 0x1101:
-            sc_mouse_y(regs);
-            break;
-
-        // I/O system calls
-
-        case 0x2000:
-            sc_ioctl(regs);
-            break;
-
-        // Network system calls
-
-        case 0x3000:
-            sc_socket_open(regs);
-            break;
-
-        case 0x3001:
-            sc_socket_close(regs);
-            break;
-
-        case 0x3002:
-            sc_prepare_packet(regs);
-            break;
-
-        case 0x3003:
-            sc_finalize_packet(regs);
-            break;
-
-        case 0x3004:
-            sc_listen(regs);
-            break;
-
-        case 0x3005:
-            sc_wait_for_packet(regs);
-            break;
-
-        case 0x3006:
-            sc_wait_for_packet_ms(regs);
-            break;
-
-        case 0x3007:
-            sc_client_bind(regs);
-            break;
-
-        case 0x3008:
-            sc_connect(regs);
-            break;
-
-        case 0x3009:
-            sc_disconnect(regs);
-            break;
-
-        case 0x300A:
-            sc_client_unbind(regs);
-            break;
-
-        case 0x300B:
-            sc_send(regs);
-            break;
-
-        case 0x300C:
-            sc_receive_timeout(regs);
-            break;
-
-        case 0x300D:
-            sc_client_bind_port(regs);
-            break;
-
-        case 0x300E:
-            sc_server_bind(regs);
-            break;
-
-        case 0x300F:
-            sc_server_bind_port(regs);
-            break;
-
-        case 0x3010:
-            sc_receive(regs);
-            break;
-
-        case 0x3011:
-            sc_receive_from(regs);
-            break;
-
-        case 0x3012:
-            sc_receive_from_timeout(regs);
-            break;
-
-        case 0x3013:
-            sc_send_to(regs);
-            break;
-
-        case 0x3014:
-            sc_server_start(regs);
-            break;
-
-        case 0x3015:
-            sc_dns_server(regs);
-            break;
-
-        case 0x3016:
-            sc_accept(regs);
-            break;
-
-        case 0x3017:
-            sc_accept_timeout(regs);
-            break;
-
-        // Special system calls
-
-        case 0x6666:
-            sc_alpha(regs);
-            break;
-
-        default:
-            k_print_line("Invalid system call");
-            break;
+    if(likely(system_calls[code])){
+        system_calls[code](regs);
+        return;
     }
+
+    logging::logf(logging::log_level::ERROR, "Invalid system call %h from %u\n", code, scheduler::get_pid());
+
+    k_print_line("Invalid system call");
 }
 
 void install_system_calls(){
     if(!interrupt::register_syscall_handler(0, &system_call_entry)){
         logging::logf(logging::log_level::ERROR, "Unable to register syscall handler 0\n");
+        return;
     }
+
+    std::fill(system_calls.begin(), system_calls.end(), nullptr);
+
+    system_calls[0x2] = sc_log_string;
+    system_calls[0x4] = sc_sleep_ms;
+    system_calls[0x5] = sc_exec;
+    system_calls[0x6] = sc_await_termination;
+    system_calls[0x7] = sc_brk_start;
+    system_calls[0x8] = sc_brk_end;
+    system_calls[0x9] = sc_sbrk;
+    system_calls[0x20] = sc_set_canonical;
+    system_calls[0x21] = sc_set_mouse;
+    system_calls[0x22] = sc_clear_screen;
+    system_calls[0x23] = sc_get_columns;
+    system_calls[0x24] = sc_get_rows;
+    system_calls[0x50] = sc_reboot;
+    system_calls[0x51] = sc_shutdown;
+    system_calls[0x300] = sc_open;
+    system_calls[0x301] = sc_stat;
+    system_calls[0x302] = sc_close;
+    system_calls[0x303] = sc_read;
+    system_calls[0x304] = sc_pwd;
+    system_calls[0x305] = sc_cwd;
+    system_calls[0x306] = sc_mkdir;
+    system_calls[0x307] = sc_rm;
+    system_calls[0x308] = sc_entries;
+    system_calls[0x309] = sc_mounts;
+    system_calls[0x310] = sc_statfs;
+    system_calls[0x311] = sc_write;
+    system_calls[0x312] = sc_truncate;
+    system_calls[0x313] = sc_clear;
+    system_calls[0x314] = sc_mount;
+    system_calls[0x315] = sc_read_timeout;
+    system_calls[0x400] = sc_datetime;
+    system_calls[0x401] = sc_time_seconds;
+    system_calls[0x402] = sc_time_milliseconds;
+    system_calls[0x666] = sc_kill;
+    system_calls[0xC00] = sc_vesa_width;
+    system_calls[0xC01] = sc_vesa_height;
+    system_calls[0xC02] = sc_vesa_shift_x;
+    system_calls[0xC03] = sc_vesa_shift_y;
+    system_calls[0xC04] = sc_vesa_bpsl;
+    system_calls[0xC05] = sc_vesa_red_shift;
+    system_calls[0xC06] = sc_vesa_green_shift;
+    system_calls[0xC07] = sc_vesa_blue_shift;
+    system_calls[0xC08] = sc_vesa_redraw;
+    system_calls[0xCA0] = sc_mouse_x;
+    system_calls[0xCA1] = sc_mouse_y;
+    system_calls[0xA00] = sc_ioctl;
+    system_calls[0xB00] = sc_socket_open;
+    system_calls[0xB01] = sc_socket_close;
+    system_calls[0xB02] = sc_prepare_packet;
+    system_calls[0xB03] = sc_finalize_packet;
+    system_calls[0xB04] = sc_listen;
+    system_calls[0xB05] = sc_wait_for_packet;
+    system_calls[0xB06] = sc_wait_for_packet_ms;
+    system_calls[0xB07] = sc_client_bind;
+    system_calls[0xB08] = sc_connect;
+    system_calls[0xB09] = sc_disconnect;
+    system_calls[0xB0A] = sc_client_unbind;
+    system_calls[0xB0B] = sc_send;
+    system_calls[0xB0C] = sc_receive_timeout;
+    system_calls[0xB0D] = sc_client_bind_port;
+    system_calls[0xB0E] = sc_server_bind;
+    system_calls[0xB0F] = sc_server_bind_port;
+    system_calls[0xB10] = sc_receive;
+    system_calls[0xB11] = sc_receive_from;
+    system_calls[0xB12] = sc_receive_from_timeout;
+    system_calls[0xB12] = sc_receive_from_timeout;
+    system_calls[0xB13] = sc_send_to;
+    system_calls[0xB14] = sc_server_start;
+    system_calls[0xB15] = sc_dns_server;
+    system_calls[0xB16] = sc_accept;
+    system_calls[0xB17] = sc_accept_timeout;
+    system_calls[0x66] = sc_alpha;
 }

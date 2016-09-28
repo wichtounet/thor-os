@@ -138,7 +138,7 @@ std::keycode tlib::read_input_raw(size_t ms){
 }
 
 void  tlib::clear(){
-    asm volatile("mov rax, 100; int 50;"
+    asm volatile("mov rax, 0x22; int 50;"
         : //No outputs
         : //No inputs
         : "rax");
@@ -146,7 +146,7 @@ void  tlib::clear(){
 
 size_t tlib::get_columns(){
     size_t value;
-    asm volatile("mov rax, 101; int 50; mov %[columns], rax"
+    asm volatile("mov rax, 0x23; int 50; mov %[columns], rax"
         : [columns] "=m" (value)
         : //No inputs
         : "rax");
@@ -155,7 +155,7 @@ size_t tlib::get_columns(){
 
 size_t tlib::get_rows(){
     size_t value;
-    asm volatile("mov rax, 102; int 50; mov %[rows], rax"
+    asm volatile("mov rax, 0x24; int 50; mov %[rows], rax"
         : [rows] "=m" (value)
         : //No inputs
         : "rax");

@@ -37,7 +37,7 @@ tlib::packet::~packet() {
 
 std::expected<size_t> tlib::socket_open(socket_domain domain, socket_type type, socket_protocol protocol) {
     int64_t fd;
-    asm volatile("mov rax, 0x3000; mov rbx, %[domain]; mov rcx, %[type]; mov rdx, %[protocol]; int 50; mov %[fd], rax"
+    asm volatile("mov rax, 0xB00; mov rbx, %[domain]; mov rcx, %[type]; mov rdx, %[protocol]; int 50; mov %[fd], rax"
                  : [fd] "=m"(fd)
                  : [domain] "g"(static_cast<size_t>(domain)), [type] "g"(static_cast<size_t>(type)), [protocol] "g"(static_cast<size_t>(protocol))
                  : "rax", "rbx", "rcx", "rdx");
@@ -50,7 +50,7 @@ std::expected<size_t> tlib::socket_open(socket_domain domain, socket_type type, 
 }
 
 void tlib::socket_close(size_t fd) {
-    asm volatile("mov rax, 0x3001; mov rbx, %[fd]; int 50;"
+    asm volatile("mov rax, 0xB01; mov rbx, %[fd]; int 50;"
                  : /* No outputs */
                  : [fd] "g"(fd)
                  : "rax", "rbx");
@@ -61,7 +61,7 @@ std::expected<tlib::packet> tlib::prepare_packet(size_t socket_fd, void* desc) {
 
     int64_t fd;
     uint64_t index;
-    asm volatile("mov rax, 0x3002; mov rbx, %[socket]; mov rcx, %[desc]; mov rdx, %[buffer]; int 50; mov %[fd], rax; mov %[index], rbx;"
+    asm volatile("mov rax, 0xB02; mov rbx, %[socket]; mov rcx, %[desc]; mov rdx, %[buffer]; int 50; mov %[fd], rax; mov %[index], rbx;"
                  : [fd] "=m"(fd), [index] "=m"(index)
                  : [socket] "g"(socket_fd), [desc] "g"(reinterpret_cast<size_t>(desc)), [buffer] "g"(reinterpret_cast<size_t>(buffer))
                  : "rax", "rbx", "rcx", "rdx");
@@ -82,7 +82,7 @@ std::expected<void> tlib::finalize_packet(size_t socket_fd, const tlib::packet& 
     auto packet_fd = p.fd;
 
     int64_t code;
-    asm volatile("mov rax, 0x3003; mov rbx, %[socket]; mov rcx, %[packet]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB03; mov rbx, %[socket]; mov rcx, %[packet]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [packet] "g"(packet_fd)
                  : "rax", "rbx", "rcx");
@@ -98,7 +98,7 @@ std::expected<void> tlib::send(size_t socket_fd, const char* buffer, size_t n) {
     auto* target_buffer = new char[2048];
 
     int64_t code;
-    asm volatile("mov rax, 0x300B; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[target_buffer]; int 50; mov %[code], rax;"
+    asm volatile("mov rax, 0xB0B; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[target_buffer]; int 50; mov %[code], rax;"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [target_buffer] "g"(reinterpret_cast<size_t>(target_buffer))
                  : "rax", "rbx", "rcx", "rdx", "rsi");
@@ -116,7 +116,7 @@ std::expected<void> tlib::send_to(size_t socket_fd, const char* buffer, size_t n
     auto* target_buffer = new char[2048];
 
     int64_t code;
-    asm volatile("mov rax, 0x3013; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[target_buffer]; mov rdi, %[address]; int 50; mov %[code], rax;"
+    asm volatile("mov rax, 0xB13; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[target_buffer]; mov rdi, %[address]; int 50; mov %[code], rax;"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [target_buffer] "g"(reinterpret_cast<size_t>(target_buffer)), [address] "g"(reinterpret_cast<size_t>(address))
                  : "rax", "rbx", "rcx", "rdx", "rsi", "rdi");
@@ -132,7 +132,7 @@ std::expected<void> tlib::send_to(size_t socket_fd, const char* buffer, size_t n
 
 std::expected<size_t> tlib::receive(size_t socket_fd, char* buffer, size_t n) {
     int64_t code;
-    asm volatile("mov rax, 0x3010; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; int 50; mov %[code], rax;"
+    asm volatile("mov rax, 0xB10; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; int 50; mov %[code], rax;"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n)
                  : "rax", "rbx", "rcx", "rdx");
@@ -146,7 +146,7 @@ std::expected<size_t> tlib::receive(size_t socket_fd, char* buffer, size_t n) {
 
 std::expected<size_t> tlib::receive(size_t socket_fd, char* buffer, size_t n, size_t ms) {
     int64_t code;
-    asm volatile("mov rax, 0x300C; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[ms]; int 50; mov %[code], rax;"
+    asm volatile("mov rax, 0xB0C; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[ms]; int 50; mov %[code], rax;"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [ms] "g" (ms)
                  : "rax", "rbx", "rcx", "rdx", "rsi");
@@ -160,7 +160,7 @@ std::expected<size_t> tlib::receive(size_t socket_fd, char* buffer, size_t n, si
 
 std::expected<size_t> tlib::receive_from(size_t socket_fd, char* buffer, size_t n, void* address) {
     int64_t code;
-    asm volatile("mov rax, 0x3011; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[address]; int 50; mov %[code], rax;"
+    asm volatile("mov rax, 0xB11; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[address]; int 50; mov %[code], rax;"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [address] "g" (reinterpret_cast<size_t>(address))
                  : "rax", "rbx", "rcx", "rdx", "rsi");
@@ -174,7 +174,7 @@ std::expected<size_t> tlib::receive_from(size_t socket_fd, char* buffer, size_t 
 
 std::expected<size_t> tlib::receive_from(size_t socket_fd, char* buffer, size_t n, size_t ms, void* address) {
     int64_t code;
-    asm volatile("mov rax, 0x3012; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[ms]; mov rdi, %[address]; int 50; mov %[code], rax;"
+    asm volatile("mov rax, 0xB12; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[n]; mov rsi, %[ms]; mov rdi, %[address]; int 50; mov %[code], rax;"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [n] "g" (n), [ms] "g" (ms), [address] "g" (reinterpret_cast<size_t>(address))
                  : "rax", "rbx", "rcx", "rdx", "rsi", "rdi");
@@ -188,7 +188,7 @@ std::expected<size_t> tlib::receive_from(size_t socket_fd, char* buffer, size_t 
 
 std::expected<void> tlib::listen(size_t socket_fd, bool l) {
     int64_t code;
-    asm volatile("mov rax, 0x3004; mov rbx, %[socket]; mov rcx, %[listen]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB04; mov rbx, %[socket]; mov rcx, %[listen]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [listen] "g"(size_t(l))
                  : "rax", "rbx", "rcx");
@@ -202,7 +202,7 @@ std::expected<void> tlib::listen(size_t socket_fd, bool l) {
 
 std::expected<size_t> tlib::client_bind(size_t socket_fd, tlib::ip::address server) {
     int64_t code;
-    asm volatile("mov rax, 0x3007; mov rbx, %[socket]; mov rcx, %[ip]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB07; mov rbx, %[socket]; mov rcx, %[ip]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [ip] "g" (size_t(server.raw_address))
                  : "rax", "rbx", "rcx");
@@ -216,7 +216,7 @@ std::expected<size_t> tlib::client_bind(size_t socket_fd, tlib::ip::address serv
 
 std::expected<size_t> tlib::client_bind(size_t socket_fd, tlib::ip::address server, size_t port) {
     int64_t code;
-    asm volatile("mov rax, 0x300D; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB0D; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [ip] "g" (size_t(server.raw_address)), [port] "g" (port)
                  : "rax", "rbx", "rcx");
@@ -230,7 +230,7 @@ std::expected<size_t> tlib::client_bind(size_t socket_fd, tlib::ip::address serv
 
 std::expected<void> tlib::server_bind(size_t socket_fd, tlib::ip::address server) {
     int64_t code;
-    asm volatile("mov rax, 0x300E; mov rbx, %[socket]; mov rcx, %[ip]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB0E; mov rbx, %[socket]; mov rcx, %[ip]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [ip] "g" (size_t(server.raw_address))
                  : "rax", "rbx", "rcx");
@@ -244,7 +244,7 @@ std::expected<void> tlib::server_bind(size_t socket_fd, tlib::ip::address server
 
 std::expected<void> tlib::server_bind(size_t socket_fd, tlib::ip::address server, size_t port) {
     int64_t code;
-    asm volatile("mov rax, 0x300F; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB0F; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [ip] "g" (size_t(server.raw_address)), [port] "g" (port)
                  : "rax", "rbx", "rcx");
@@ -258,7 +258,7 @@ std::expected<void> tlib::server_bind(size_t socket_fd, tlib::ip::address server
 
 std::expected<void> tlib::client_unbind(size_t socket_fd) {
     int64_t code;
-    asm volatile("mov rax, 0x300A; mov rbx, %[socket]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB0A; mov rbx, %[socket]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd)
                  : "rax", "rbx");
@@ -272,7 +272,7 @@ std::expected<void> tlib::client_unbind(size_t socket_fd) {
 
 std::expected<size_t> tlib::connect(size_t socket_fd, tlib::ip::address server, size_t port) {
     int64_t code;
-    asm volatile("mov rax, 0x3008; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB08; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [ip] "g"(size_t(server.raw_address)), [port] "g"(port)
                  : "rax", "rbx", "rcx", "rdx");
@@ -286,7 +286,7 @@ std::expected<size_t> tlib::connect(size_t socket_fd, tlib::ip::address server, 
 
 std::expected<void> tlib::server_start(size_t socket_fd, tlib::ip::address server, size_t port) {
     int64_t code;
-    asm volatile("mov rax, 0x3014; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB14; mov rbx, %[socket]; mov rcx, %[ip]; mov rdx, %[port]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [ip] "g"(size_t(server.raw_address)), [port] "g"(port)
                  : "rax", "rbx", "rcx", "rdx");
@@ -300,7 +300,7 @@ std::expected<void> tlib::server_start(size_t socket_fd, tlib::ip::address serve
 
 std::expected<size_t> tlib::accept(size_t socket_fd) {
     int64_t code;
-    asm volatile("mov rax, 0x3016; mov rbx, %[socket]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB16; mov rbx, %[socket]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd)
                  : "rax", "rbx");
@@ -314,7 +314,7 @@ std::expected<size_t> tlib::accept(size_t socket_fd) {
 
 std::expected<size_t> tlib::accept(size_t socket_fd, size_t ms) {
     int64_t code;
-    asm volatile("mov rax, 0x3017; mov rbx, %[socket]; mov rcx, %[ms]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB17; mov rbx, %[socket]; mov rcx, %[ms]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd), [ms] "g"(ms)
                  : "rax", "rbx", "rcx");
@@ -328,7 +328,7 @@ std::expected<size_t> tlib::accept(size_t socket_fd, size_t ms) {
 
 std::expected<void> tlib::disconnect(size_t socket_fd) {
     int64_t code;
-    asm volatile("mov rax, 0x3009; mov rbx, %[socket]; int 50; mov %[code], rax"
+    asm volatile("mov rax, 0xB09; mov rbx, %[socket]; int 50; mov %[code], rax"
                  : [code] "=m"(code)
                  : [socket] "g"(socket_fd)
                  : "rax", "rbx");
@@ -345,7 +345,7 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd) {
 
     int64_t code;
     uint64_t payload;
-    asm volatile("mov rax, 0x3005; mov rbx, %[socket]; mov rcx, %[buffer]; int 50; mov %[code], rax; mov %[payload], rbx;"
+    asm volatile("mov rax, 0xB05; mov rbx, %[socket]; mov rcx, %[buffer]; int 50; mov %[code], rax; mov %[payload], rbx;"
                  : [payload] "=m"(payload), [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer))
                  : "rax", "rbx", "rcx");
@@ -366,7 +366,7 @@ std::expected<tlib::packet> tlib::wait_for_packet(size_t socket_fd, size_t ms) {
 
     int64_t code;
     uint64_t payload;
-    asm volatile("mov rax, 0x3006; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[ms]; int 50; mov %[code], rax; mov %[payload], rbx;"
+    asm volatile("mov rax, 0xB06; mov rbx, %[socket]; mov rcx, %[buffer]; mov rdx, %[ms]; int 50; mov %[code], rax; mov %[payload], rbx;"
                  : [payload] "=m"(payload), [code] "=m"(code)
                  : [socket] "g"(socket_fd), [buffer] "g"(reinterpret_cast<size_t>(buffer)), [ms] "g"(ms)
                  : "rax", "rbx", "rcx");

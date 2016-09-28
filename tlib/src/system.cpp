@@ -100,7 +100,7 @@ std::expected<size_t> tlib::exec_and_wait(const char* executable, const std::vec
 }
 
 void tlib::reboot(){
-    asm volatile("mov rax, 201; int 50"
+    asm volatile("mov rax, 0x50; int 50"
         : //No outputs
         : //No inputs
         : "rax");
@@ -109,7 +109,7 @@ void tlib::reboot(){
 }
 
 void tlib::shutdown(){
-    asm volatile("mov rax, 202; int 50"
+    asm volatile("mov rax, 0x51; int 50"
         : //No outputs
         : //No inputs
         : "rax");
@@ -118,7 +118,7 @@ void tlib::shutdown(){
 }
 
 void tlib::alpha(){
-    asm volatile("mov rax, 0x6666; int 50"
+    asm volatile("mov rax, 0x66; int 50"
         : //No outputs
         : //No inputs
         : "rax");
