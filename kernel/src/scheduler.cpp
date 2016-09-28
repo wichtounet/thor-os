@@ -29,6 +29,7 @@
 #include "kernel_utils.hpp"
 #include "logging.hpp"
 #include "timer.hpp"
+#include "kernel.hpp"
 
 #include "fs/procfs.hpp"
 
@@ -50,7 +51,9 @@ constexpr const size_t STACK_ALIGNMENT = 16;     ///< In bytes
 constexpr const size_t ROUND_ROBIN_QUANTUM = 25; ///< In milliseconds
 
 //The Process Control Block
-std::array<scheduler::process_control_t, scheduler::MAX_PROCESS> pcb;
+using pcb_t = std::array<scheduler::process_control_t, scheduler::MAX_PROCESS>;
+
+pcb_t pcb;
 
 //Define one run queue for each priority level
 std::array<std::vector<scheduler::pid_t>, scheduler::PRIORITY_LEVELS> run_queues;
@@ -62,7 +65,7 @@ volatile bool started = false;
 volatile size_t rr_quantum = 0;
 
 volatile size_t current_pid;
-size_t next_pid = 0;
+size_t last_pid = 0;
 
 size_t gc_pid = 0;
 size_t idle_pid = 0;
@@ -215,9 +218,28 @@ void init_task(){
     }
 }
 
+scheduler::pid_t get_free_pid(){
+    auto pid = last_pid;
+    size_t i = 0;
+
+    while(pcb[pid].state != scheduler::process_state::EMPTY && i < scheduler::MAX_PROCESS){
+        pid = (pid + 1) % scheduler::MAX_PROCESS;
+        ++i;
+    }
+
+    if(i == scheduler::MAX_PROCESS){
+        logging::logf(logging::log_level::ERROR, "scheduler: Ran out of process\n");
+        k_print_line("Ran out of processes");
+        suspend_kernel();
+    }
+
+    last_pid = pid;
+
+    return pid;
+}
+
 scheduler::process_t& new_process(){
-    //TODO use get_free_pid() that searchs through the PCB
-    auto pid = next_pid++;
+    auto pid = get_free_pid();
 
     auto& process = pcb[pid];
 
@@ -617,6 +639,8 @@ void scheduler::init(){
     create_post_init_task();
 
     procfs::set_pcb(pcb.data());
+
+    logging::logf(logging::log_level::TRACE, "scheduler: initialized (PCB size is %m)\n", sizeof(pcb_t));
 }
 
 void scheduler::start(){
