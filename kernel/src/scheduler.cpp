@@ -640,7 +640,7 @@ void scheduler::init(){
 
     procfs::set_pcb(pcb.data());
 
-    logging::logf(logging::log_level::TRACE, "scheduler: initialized (PCB size is %m)\n", sizeof(pcb_t));
+    logging::logf(logging::log_level::TRACE, "scheduler: initialized (PCB size:%m pcb_entry:%m process: %m)\n", sizeof(pcb_t), sizeof(process_control_t), sizeof(process_t));
 }
 
 void scheduler::start(){
