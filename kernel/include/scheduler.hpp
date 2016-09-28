@@ -93,7 +93,12 @@ void sbrk(size_t inc);
 void tick();
 
 /*!
- * \brief Rescedule another process
+ * \brief Let another process run.
+ */
+void yield();
+
+/*!
+ * \brief Rescedule another process, if this one is not running
  */
 void reschedule();
 

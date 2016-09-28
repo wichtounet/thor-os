@@ -78,6 +78,10 @@ std::vector<scheduler::pid_t>& run_queue(size_t priority){
 void idle_task(){
     while(true){
         asm volatile("hlt");
+
+        //If we go out of 'hlt', there have been an IRQ
+        //There is probably someone ready, let's yield
+        scheduler::yield();
     }
 }
 
@@ -857,6 +861,21 @@ void scheduler::tick(){
     }
 
     //At this point we just have to return to the current process
+}
+
+void scheduler::yield(){
+    thor_assert(started, "No interest in yielding before start");
+
+    pcb[current_pid].state = process_state::READY;
+
+    auto pid = select_next_process();
+
+    if(pid != current_pid){
+        verbose_logf(logging::log_level::DEBUG, "scheduler: Yields %u to %u\n", current_pid, pid);
+        switch_to_process(pid);
+    } else {
+        pcb[current_pid].state = process_state::RUNNING;
+    }
 }
 
 void scheduler::reschedule(){
