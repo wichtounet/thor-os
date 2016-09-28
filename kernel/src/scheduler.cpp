@@ -65,7 +65,7 @@ volatile bool started = false;
 volatile size_t rr_quantum = 0;
 
 volatile size_t current_pid;
-size_t last_pid = 0;
+volatile size_t next_pid = 0;
 
 size_t gc_pid = 0;
 size_t idle_pid = 0;
@@ -218,8 +218,20 @@ void init_task(){
     }
 }
 
+#define likely(x)    __builtin_expect (!!(x), 1)
+#define unlikely(x)  __builtin_expect (!!(x), 0)
+
 scheduler::pid_t get_free_pid(){
-    auto pid = last_pid;
+    // Normally, the next pid should be empty
+    if(likely(pcb[next_pid].state == scheduler::process_state::EMPTY)){
+        auto pid = next_pid;
+        next_pid = (next_pid + 1) % scheduler::MAX_PROCESS;
+        return pid;
+    }
+
+    // If the next pid is not available, iterate until one is empty
+
+    auto pid = (next_pid + 1) % scheduler::MAX_PROCESS;
     size_t i = 0;
 
     while(pcb[pid].state != scheduler::process_state::EMPTY && i < scheduler::MAX_PROCESS){
@@ -227,13 +239,15 @@ scheduler::pid_t get_free_pid(){
         ++i;
     }
 
-    if(i == scheduler::MAX_PROCESS){
+    // Make sure there was one free
+    if(unlikely(i == scheduler::MAX_PROCESS)){
         logging::logf(logging::log_level::ERROR, "scheduler: Ran out of process\n");
         k_print_line("Ran out of processes");
         suspend_kernel();
     }
 
-    last_pid = pid;
+    // Set the next pid
+    next_pid = (pid + 1) % scheduler::MAX_PROCESS;
 
     return pid;
 }
