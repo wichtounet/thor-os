@@ -70,7 +70,7 @@ std::expected<void> network::arp::cache::arp_request(network::interface_descript
     }
 }
 
-bool network::arp::cache::is_mac_cached(uint64_t mac){
+bool network::arp::cache::is_mac_cached(uint64_t mac) const {
     for(auto& entry : mac_cache){
         if(entry.mac == mac){
             return true;
@@ -80,7 +80,7 @@ bool network::arp::cache::is_mac_cached(uint64_t mac){
     return false;
 }
 
-bool network::arp::cache::is_ip_cached(network::ip::address ip){
+bool network::arp::cache::is_ip_cached(network::ip::address ip) const {
     for(auto& entry : mac_cache){
         if(entry.ip == ip){
             return true;
@@ -90,7 +90,7 @@ bool network::arp::cache::is_ip_cached(network::ip::address ip){
     return false;
 }
 
-network::ip::address network::arp::cache::get_ip(uint64_t mac){
+network::ip::address network::arp::cache::get_ip(uint64_t mac) const {
     thor_assert(is_mac_cached(mac), "The MAC is not cached in the ARP table");
 
     for(auto& entry : mac_cache){
@@ -102,7 +102,7 @@ network::ip::address network::arp::cache::get_ip(uint64_t mac){
     thor_unreachable("The MAC is not cached in the ARP table");
 }
 
-uint64_t network::arp::cache::get_mac(network::ip::address ip){
+uint64_t network::arp::cache::get_mac(network::ip::address ip) const {
     thor_assert(is_ip_cached(ip), "The IP is not cached in the ARP table");
 
     for(auto& entry : mac_cache){

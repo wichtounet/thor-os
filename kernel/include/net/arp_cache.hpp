@@ -33,8 +33,8 @@ struct cache {
 
     void update_cache(uint64_t mac, network::ip::address ip);
 
-    bool is_mac_cached(uint64_t mac);
-    bool is_ip_cached(network::ip::address ip);
+    bool is_mac_cached(uint64_t mac) const ;
+    bool is_ip_cached(network::ip::address ip) const ;
 
     /*!
      * \brief Returns the IP address of the given MAC address.
@@ -42,7 +42,7 @@ struct cache {
      * \param ip The MAC address to look for in the cache
      * \return The IP address of the MAC address
      */
-    network::ip::address get_ip(uint64_t mac);
+    network::ip::address get_ip(uint64_t mac) const ;
 
     /*!
      * \brief Returns the MAC address of the given IP address.
@@ -50,7 +50,7 @@ struct cache {
      * \param ip The IP address to look for in the cache
      * \return The MAC address of the IP address
      */
-    uint64_t get_mac(network::ip::address ip);
+    uint64_t get_mac(network::ip::address ip) const ;
 
     /*!
      * \brief Returns the MAC address of the given IP address. If the
