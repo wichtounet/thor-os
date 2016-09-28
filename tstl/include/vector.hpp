@@ -14,8 +14,6 @@
 #include <new.hpp>
 #include <iterator.hpp>
 
-//TODO The vector does not call any destructor
-
 namespace std {
 
 /*!
@@ -202,6 +200,11 @@ public:
             //the array gets resized in ensure_capacity
             _size = new_size;
         } else if(new_size < _size){
+            // Call the necessary destructors
+            for(size_t i = new_size; i < _size; ++i){
+                data[i].~value_type();
+            }
+
             //By diminishing the size, the last elements become unreachable
             _size = new_size;
         }
@@ -261,6 +264,7 @@ public:
     void pop_back(){
         --_size;
 
+        // Call the destructor of the erased value
         data[_size].~value_type();
     }
 
@@ -278,6 +282,9 @@ public:
         }
 
         --_size;
+
+        // Call the destructor of the last value
+        data[_size].~value_type();
     }
 
     void erase(iterator position){
@@ -286,6 +293,9 @@ public:
         }
 
         --_size;
+
+        // Call the destructor of the last value
+        data[_size].~value_type();
     }
 
     void erase(iterator first, iterator last){
@@ -293,6 +303,11 @@ public:
 
         for(size_t i = first - begin(); i < _size - n; ++i){
             data[i] = std::move(data[i+n]);
+        }
+
+        // Call the destructors on the erase elements
+        for(size_t i = _size - n; i < _size; ++i){
+            data[i].~value_type();
         }
 
         _size -= n;
@@ -360,7 +375,10 @@ private:
             _capacity = new_capacity;
             data = new T[_capacity];
         } else if(_capacity < new_capacity){
+            // Double the current capacity
             _capacity= _capacity * 2;
+
+            // If not enough, use the given new_capacity
             if(new_capacity > _capacity){
                 _capacity = new_capacity;
             }
