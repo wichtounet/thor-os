@@ -9,6 +9,7 @@
 #define NET_TCP_LAYER_H
 
 #include <types.hpp>
+#include <atomic.hpp>
 
 #include "net/ethernet_layer.hpp"
 #include "net/ip_layer.hpp"
@@ -19,47 +20,83 @@ namespace network {
 
 namespace tcp {
 
-/*!
- * \brief Initialize the layer
- */
-void init_layer();
+struct tcp_connection {
+    size_t local_port  = 0;              ///< The local source port
+    size_t server_port = 0;              ///< The server port
+    network::ip::address server_address; ///< The server address
 
-/*!
- * \brief Decode a network packet.
- *
- * This must only be called from the IP layer.
- *
- * \param interface The interface on which the packet was received
- * \param packet The packet to decode
- */
-void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+    std::atomic<bool> listening;                            ///< Indicates if a kernel thread is listening on this connection
+    condition_variable queue;                               ///< The listening queue
+    circular_buffer<network::ethernet::packet, 32> packets; ///< The packets for the listening queue
 
-/*!
- * \brief Prepare a packet for the user
- * \param buffer The buffer to write the packet to
- * \param interface The interface on which to prepare the packet for
- * \param descriptor The packet descriptor
- * \return the prepared packet or an error
- */
-std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor);
+    bool connected = false;
+    bool server    = false;
 
-/*!
- * \brief Finalize a prepared packet
- * \param interface The interface on which to finalize the packet
- * \param p The packet to finalize
- * \return nothing or an error
- */
-std::expected<void> finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p);
+    uint32_t ack_number = 0; ///< The next ack number
+    uint32_t seq_number = 0; ///< The next sequence number
 
-std::expected<void> send(char* target_buffer, network::socket& socket, const char* buffer, size_t n);
-std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n);
-std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n, size_t ms);
+    network::socket* socket = nullptr;
 
-std::expected<size_t> connect(network::socket& socket, network::interface_descriptor& interface, size_t server_port, network::ip::address server);
-std::expected<size_t> accept(network::socket& socket);
-std::expected<size_t> accept(network::socket& socket, size_t ms);
-std::expected<void> server_start(network::socket& socket, size_t server_port, network::ip::address server);
-std::expected<void> disconnect(network::socket& socket);
+    tcp_connection() : listening(false) {
+        //Nothing else to init
+    }
+
+    tcp_connection(const tcp_connection& rhs) = delete;
+    tcp_connection& operator=(const tcp_connection& rhs) = delete;
+};
+
+struct layer {
+    layer(network::ip::layer* parent);
+
+    /*!
+     * \brief Initialize the layer
+     */
+    void init_layer();
+
+    /*!
+     * \brief Decode a network packet.
+     *
+     * This must only be called from the IP layer.
+     *
+     * \param interface The interface on which the packet was received
+     * \param packet The packet to decode
+     */
+    void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+
+    /*!
+     * \brief Prepare a packet for the user
+     * \param buffer The buffer to write the packet to
+     * \param interface The interface on which to prepare the packet for
+     * \param descriptor The packet descriptor
+     * \return the prepared packet or an error
+     */
+    std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor);
+
+    /*!
+     * \brief Finalize a prepared packet
+     * \param interface The interface on which to finalize the packet
+     * \param p The packet to finalize
+     * \return nothing or an error
+     */
+    std::expected<void> finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p);
+
+    std::expected<void> send(char* target_buffer, network::socket& socket, const char* buffer, size_t n);
+    std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n);
+    std::expected<size_t> receive(char* buffer, network::socket& socket, size_t n, size_t ms);
+
+    std::expected<size_t> connect(network::socket& socket, network::interface_descriptor& interface, size_t server_port, network::ip::address server);
+    std::expected<size_t> accept(network::socket& socket);
+    std::expected<size_t> accept(network::socket& socket, size_t ms);
+    std::expected<void> server_start(network::socket& socket, size_t server_port, network::ip::address server);
+    std::expected<void> disconnect(network::socket& socket);
+
+private:
+    std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
+    std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, tcp_connection& connection, size_t payload_size);
+    std::expected<void> finalize_packet_direct(network::interface_descriptor& interface, network::ethernet::packet& p);
+
+    network::ip::layer* parent;
+};
 
 } // end of tcp namespace
 

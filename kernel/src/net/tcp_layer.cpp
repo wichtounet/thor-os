@@ -40,32 +40,7 @@ using flag_rst         = std::bit_field<uint16_t, uint8_t, 2, 1>;
 using flag_syn         = std::bit_field<uint16_t, uint8_t, 1, 1>;
 using flag_fin         = std::bit_field<uint16_t, uint8_t, 0, 1>;
 
-struct tcp_connection {
-    size_t local_port  = 0;              ///< The local source port
-    size_t server_port = 0;              ///< The server port
-    network::ip::address server_address; ///< The server address
-
-    std::atomic<bool> listening;                            ///< Indicates if a kernel thread is listening on this connection
-    condition_variable queue;                               ///< The listening queue
-    circular_buffer<network::ethernet::packet, 32> packets; ///< The packets for the listening queue
-
-    bool connected = false;
-    bool server    = false;
-
-    uint32_t ack_number = 0; ///< The next ack number
-    uint32_t seq_number = 0; ///< The next sequence number
-
-    network::socket* socket = nullptr;
-
-    tcp_connection() : listening(false) {
-        //Nothing else to init
-    }
-
-    tcp_connection(const tcp_connection& rhs) = delete;
-    tcp_connection& operator=(const tcp_connection& rhs) = delete;
-};
-
-network::connection_handler<tcp_connection> connections;
+network::connection_handler<network::tcp::tcp_connection> connections;
 
 void compute_checksum(network::ethernet::packet& packet) {
     auto* ip_header  = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
@@ -130,63 +105,13 @@ size_t tcp_payload_len(const network::ethernet::packet& packet){
     return payload_len;
 }
 
-// This is used for raw answer
-std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
-    // Ask the IP layer to craft a packet
-    network::ip::packet_descriptor desc{payload_size + default_tcp_header_length, target_ip, 0x06};
-    auto packet = network::ip::kernel_prepare_packet(interface, desc);
-
-    if (packet) {
-        ::prepare_packet(*packet, source, target);
-    }
-
-    return packet;
-}
-
-// This is used for TCP connection answers
-std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, tcp_connection& connection, size_t payload_size) {
-    auto target_ip   = connection.server_address;
-    auto local_port  = connection.local_port;
-    auto server_port = connection.server_port;
-
-    // Ask the IP layer to craft a packet
-    network::ip::packet_descriptor desc{payload_size + default_tcp_header_length, target_ip, 0x06};
-    auto packet = network::ip::kernel_prepare_packet(interface, desc);
-
-    if (packet) {
-        ::prepare_packet(*packet, local_port, server_port);
-
-        auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet->payload + packet->tag(2));
-
-        tcp_header->sequence_number = switch_endian_32(connection.seq_number);
-        tcp_header->ack_number      = switch_endian_32(connection.ack_number);
-    }
-
-    return packet;
-}
-
-// finalize without waiting for ACK
-std::expected<void> finalize_packet_direct(network::interface_descriptor& interface, network::ethernet::packet& p) {
-    auto* tcp_header = reinterpret_cast<network::tcp::header*>(p.payload + p.tag(2));
-
-    auto flags = switch_endian_16(tcp_header->flags);
-
-    p.index -= *flag_data_offset(&flags) * 4;
-
-    // Compute the checksum
-    compute_checksum(p);
-
-    // Give the packet to the IP layer for finalization
-    return network::ip::finalize_packet(interface, p);
-}
-
 } //end of anonymous namespace
 
-void network::tcp::init_layer(){
+void network::tcp::layer::init_layer(){
     local_port = 1023;
 }
 
-void network::tcp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet) {
+void network::tcp::layer::decode(network::interface_descriptor& interface, network::ethernet::packet& packet) {
     packet.tag(2, packet.index);
 
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
@@ -278,7 +203,7 @@ void network::tcp::decode(network::interface_descriptor& interface, network::eth
     logging::logf(logging::log_level::TRACE, "tcp:decode: Done\n");
 }
 
-std::expected<void> network::tcp::send(char* target_buffer, network::socket& socket, const char* buffer, size_t n){
+std::expected<void> network::tcp::layer::send(char* target_buffer, network::socket& socket, const char* buffer, size_t n){
     auto& connection = socket.get_connection_data<tcp_connection>();
 
     // Make sure stream sockets are connected
@@ -298,13 +223,13 @@ std::expected<void> network::tcp::send(char* target_buffer, network::socket& soc
 
         auto target_ip  = connection.server_address;
         auto& interface = network::select_interface(target_ip);
-        return network::tcp::finalize_packet(interface, socket, *packet);
+        return finalize_packet(interface, socket, *packet);
     }
 
     return std::make_unexpected<void>(packet.error());
 }
 
-std::expected<size_t> network::tcp::receive(char* buffer, network::socket& socket, size_t n){
+std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket& socket, size_t n){
     auto& connection = socket.get_connection_data<tcp_connection>();
 
     // Make sure stream sockets are connected
@@ -333,7 +258,7 @@ std::expected<size_t> network::tcp::receive(char* buffer, network::socket& socke
     return payload_len;
 }
 
-std::expected<size_t> network::tcp::receive(char* buffer, network::socket& socket, size_t n, size_t ms){
+std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket& socket, size_t n, size_t ms){
     auto& connection = socket.get_connection_data<tcp_connection>();
 
     // Make sure stream sockets are connected
@@ -368,7 +293,7 @@ std::expected<size_t> network::tcp::receive(char* buffer, network::socket& socke
     return payload_len;
 }
 
-std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
+std::expected<network::ethernet::packet> network::tcp::layer::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
     auto& connection = socket.get_connection_data<tcp_connection>();
 
     // Make sure stream sockets are connected
@@ -381,7 +306,7 @@ std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char*
 
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{descriptor->payload_size + default_tcp_header_length, target_ip, 0x06};
-    auto packet = network::ip::user_prepare_packet(buffer, interface, &desc);
+    auto packet = parent->user_prepare_packet(buffer, interface, &desc);
 
     if (packet) {
         auto source = connection.local_port;
@@ -403,7 +328,7 @@ std::expected<network::ethernet::packet> network::tcp::user_prepare_packet(char*
     return packet;
 }
 
-std::expected<void> network::tcp::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p) {
+std::expected<void> network::tcp::layer::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::ethernet::packet& p) {
     auto* tcp_header = reinterpret_cast<network::tcp::header*>(p.payload + p.tag(2));
 
     auto source_flags = switch_endian_16(tcp_header->flags);
@@ -424,7 +349,7 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 
         // Give the packet to the IP layer for finalization
         if(p.user){
-            auto result = network::ip::finalize_packet(interface, p);
+            auto result = parent->finalize_packet(interface, p);
 
             if(!result){
                 return result;
@@ -436,7 +361,7 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
 
             std::copy_n(p.payload, copy.payload_size, copy.payload);
 
-            auto result = network::ip::finalize_packet(interface, copy);
+            auto result = parent->finalize_packet(interface, copy);
 
             if(!result){
                 delete[] copy.payload;
@@ -530,7 +455,7 @@ std::expected<void> network::tcp::finalize_packet(network::interface_descriptor&
     }
 }
 
-std::expected<size_t> network::tcp::connect(network::socket& sock, network::interface_descriptor& interface, size_t server_port, network::ip::address server) {
+std::expected<size_t> network::tcp::layer::connect(network::socket& sock, network::interface_descriptor& interface, size_t server_port, network::ip::address server) {
     logging::logf(logging::log_level::TRACE, "tcp:connect: Start\n");
 
     // Create the connection
@@ -561,7 +486,7 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
 
     logging::logf(logging::log_level::TRACE, "tcp:connect: Send SYN\n");
 
-    auto status = network::tcp::finalize_packet(interface, sock, *packet);
+    auto status = finalize_packet(interface, sock, *packet);
 
     if(!status){
         return std::make_unexpected<size_t, size_t>(status.error());
@@ -600,7 +525,7 @@ std::expected<size_t> network::tcp::connect(network::socket& sock, network::inte
     return connection.local_port;
 }
 
-std::expected<size_t> network::tcp::accept(network::socket& socket){
+std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
     auto& connection = socket.get_connection_data<tcp_connection>();
 
     if(!connection.connected){
@@ -698,7 +623,7 @@ std::expected<size_t> network::tcp::accept(network::socket& socket){
 
         logging::logf(logging::log_level::TRACE, "tcp:accept: Send SYN/ACK %h\n", size_t(flags));
 
-        auto status = network::tcp::finalize_packet(interface, child_sock, *packet);
+        auto status = finalize_packet(interface, child_sock, *packet);
 
         if(!status){
             return std::make_unexpected<size_t, size_t>(status.error());
@@ -712,11 +637,11 @@ std::expected<size_t> network::tcp::accept(network::socket& socket){
     return {child_fd};
 }
 
-std::expected<size_t> network::tcp::accept(network::socket& socket, size_t ms){
+std::expected<size_t> network::tcp::layer::accept(network::socket& socket, size_t ms){
 
 }
 
-std::expected<void> network::tcp::server_start(network::socket& sock, size_t server_port, network::ip::address server) {
+std::expected<void> network::tcp::layer::server_start(network::socket& sock, size_t server_port, network::ip::address server) {
     // Create the connection
 
     auto& connection = connections.create_connection();
@@ -736,7 +661,7 @@ std::expected<void> network::tcp::server_start(network::socket& sock, size_t ser
     return {};
 }
 
-std::expected<void> network::tcp::disconnect(network::socket& sock) {
+std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
     logging::logf(logging::log_level::TRACE, "tcp:disconnect: Disconnect\n");
 
     auto& connection = sock.get_connection_data<tcp_connection>();
@@ -941,3 +866,54 @@ std::expected<void> network::tcp::disconnect(network::socket& sock) {
 
     return {};
 }
+
+// This is used for raw answer
+std::expected<network::ethernet::packet> network::tcp::layer::kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
+    // Ask the IP layer to craft a packet
+    network::ip::packet_descriptor desc{payload_size + default_tcp_header_length, target_ip, 0x06};
+    auto packet = parent->kernel_prepare_packet(interface, desc);
+
+    if (packet) {
+        ::prepare_packet(*packet, source, target);
+    }
+
+    return packet;
+}
+
+// This is used for TCP connection answers
+std::expected<network::ethernet::packet> network::tcp::layer::kernel_prepare_packet(network::interface_descriptor& interface, tcp_connection& connection, size_t payload_size) {
+    auto target_ip   = connection.server_address;
+    auto local_port  = connection.local_port;
+    auto server_port = connection.server_port;
+
+    // Ask the IP layer to craft a packet
+    network::ip::packet_descriptor desc{payload_size + default_tcp_header_length, target_ip, 0x06};
+    auto packet = parent->kernel_prepare_packet(interface, desc);
+
+    if (packet) {
+        ::prepare_packet(*packet, local_port, server_port);
+
+        auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet->payload + packet->tag(2));
+
+        tcp_header->sequence_number = switch_endian_32(connection.seq_number);
+        tcp_header->ack_number      = switch_endian_32(connection.ack_number);
+    }
+
+    return packet;
+}
+
+// finalize without waiting for ACK
+std::expected<void> network::tcp::layer::finalize_packet_direct(network::interface_descriptor& interface, network::ethernet::packet& p) {
+    auto* tcp_header = reinterpret_cast<network::tcp::header*>(p.payload + p.tag(2));
+
+    auto flags = switch_endian_16(tcp_header->flags);
+
+    p.index -= *flag_data_offset(&flags) * 4;
+
+    // Compute the checksum
+    compute_checksum(p);
+
+    // Give the packet to the IP layer for finalization
+    return parent->finalize_packet(interface, p);
+}
+

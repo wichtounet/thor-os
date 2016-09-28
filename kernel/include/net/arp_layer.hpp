@@ -13,6 +13,7 @@
 #include "net/ethernet_layer.hpp"
 #include "net/ip_layer.hpp"
 #include "net/network.hpp"
+#include "net/arp_cache.hpp"
 
 namespace network {
 
@@ -49,8 +50,11 @@ struct layer {
      */
     void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
 
+    network::arp::cache& get_cache();
+
 private:
     network::ethernet::layer* parent;
+    network::arp::cache _cache;
 };
 
 //TODO Move

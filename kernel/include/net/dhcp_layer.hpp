@@ -51,22 +51,29 @@ struct dhcp_configuration {
     bool gateway = false; ///< Indicates if there is a gateway
 };
 
-/*!
- * \brief Decode a network packet.
- *
- * This must only be called from the UDP layer.
- *
- * \param interface The interface on which the packet was received
- * \param packet The packet to decode
- */
-void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+struct layer {
+    layer(network::udp::layer* parent);
 
-/*!
- * \brief Request an IP address on the network
- *
- * \param interface The interface for which we want an IP address
- */
-std::expected<dhcp_configuration> request_ip(network::interface_descriptor& interface);
+    /*!
+     * \brief Decode a network packet.
+     *
+     * This must only be called from the UDP layer.
+     *
+     * \param interface The interface on which the packet was received
+     * \param packet The packet to decode
+     */
+    void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+
+    /*!
+     * \brief Request an IP address on the network
+     *
+     * \param interface The interface for which we want an IP address
+     */
+    std::expected<dhcp_configuration> request_ip(network::interface_descriptor& interface);
+
+private:
+    network::udp::layer* parent;
+};
 
 } // end of dns namespace
 

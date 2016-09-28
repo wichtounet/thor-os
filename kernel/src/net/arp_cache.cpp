@@ -29,12 +29,33 @@ struct cache_entry {
     cache_entry(uint64_t mac, network::ip::address ip) : mac(mac), ip(ip) {}
 };
 
-std::vector<cache_entry> cache;
+std::vector<cache_entry> mac_cache;
 
-std::expected<void> arp_request(network::interface_descriptor& interface, network::ip::address ip){
+} //end of anonymous namespace
+
+void network::arp::cache::update_cache(uint64_t mac, network::ip::address ip){
+    for(auto& entry : mac_cache){
+        if(entry.mac == mac && entry.ip == ip){
+            return;
+        } else if(entry.mac == mac || entry.ip == ip){
+            logging::logf(logging::log_level::TRACE, "arp: Update cache %h->%u.%u.%u.%u \n",
+                mac, ip(0), ip(1), ip(2), ip(3));
+
+            entry.mac = mac;
+            entry.ip = ip;
+            return;
+        }
+    }
+
+    logging::logf(logging::log_level::TRACE, "arp: Insert new entry into cache %h->%u.%u.%u.%u \n", mac, ip(0), ip(1), ip(2), ip(3));
+
+    mac_cache.emplace_back(mac, ip);
+}
+
+std::expected<void> network::arp::cache::arp_request(network::interface_descriptor& interface, network::ip::address ip){
     // Ask the ethernet layer to craft a packet
     network::ethernet::packet_descriptor desc{sizeof(network::arp::header), 0xFFFFFFFFFFFF, network::ethernet::ether_type::ARP};
-    auto packet = network::ethernet::kernel_prepare_packet(interface, desc);
+    auto packet = ethernet_layer->kernel_prepare_packet(interface, desc);
 
     if(packet){
         auto* arp_request_header = reinterpret_cast<network::arp::header*>(packet->payload + packet->index);
@@ -51,7 +72,7 @@ std::expected<void> arp_request(network::interface_descriptor& interface, networ
         network::arp::ip_to_ip2(interface.ip_address, arp_request_header->source_protocol_addr);
         network::arp::ip_to_ip2(ip, arp_request_header->target_protocol_addr);
 
-        network::ethernet::finalize_packet(interface, *packet);
+        ethernet_layer->finalize_packet(interface, *packet);
 
         return {};
     } else {
@@ -59,29 +80,8 @@ std::expected<void> arp_request(network::interface_descriptor& interface, networ
     }
 }
 
-} //end of anonymous namespace
-
-void network::arp::update_cache(uint64_t mac, network::ip::address ip){
-    for(auto& entry : cache){
-        if(entry.mac == mac && entry.ip == ip){
-            return;
-        } else if(entry.mac == mac || entry.ip == ip){
-            logging::logf(logging::log_level::TRACE, "arp: Update cache %h->%u.%u.%u.%u \n",
-                mac, ip(0), ip(1), ip(2), ip(3));
-
-            entry.mac = mac;
-            entry.ip = ip;
-            return;
-        }
-    }
-
-    logging::logf(logging::log_level::TRACE, "arp: Insert new entry into cache %h->%u.%u.%u.%u \n", mac, ip(0), ip(1), ip(2), ip(3));
-
-    cache.emplace_back(mac, ip);
-}
-
-bool network::arp::is_mac_cached(uint64_t mac){
-    for(auto& entry : cache){
+bool network::arp::cache::is_mac_cached(uint64_t mac){
+    for(auto& entry : mac_cache){
         if(entry.mac == mac){
             return true;
         }
@@ -90,8 +90,8 @@ bool network::arp::is_mac_cached(uint64_t mac){
     return false;
 }
 
-bool network::arp::is_ip_cached(network::ip::address ip){
-    for(auto& entry : cache){
+bool network::arp::cache::is_ip_cached(network::ip::address ip){
+    for(auto& entry : mac_cache){
         if(entry.ip == ip){
             return true;
         }
@@ -100,10 +100,10 @@ bool network::arp::is_ip_cached(network::ip::address ip){
     return false;
 }
 
-network::ip::address network::arp::get_ip(uint64_t mac){
+network::ip::address network::arp::cache::get_ip(uint64_t mac){
     thor_assert(is_mac_cached(mac), "The MAC is not cached in the ARP table");
 
-    for(auto& entry : cache){
+    for(auto& entry : mac_cache){
         if(entry.mac == mac){
             return entry.ip;
         }
@@ -112,10 +112,10 @@ network::ip::address network::arp::get_ip(uint64_t mac){
     thor_unreachable("The MAC is not cached in the ARP table");
 }
 
-uint64_t network::arp::get_mac(network::ip::address ip){
+uint64_t network::arp::cache::get_mac(network::ip::address ip){
     thor_assert(is_ip_cached(ip), "The IP is not cached in the ARP table");
 
-    for(auto& entry : cache){
+    for(auto& entry : mac_cache){
         if(entry.ip == ip){
             return entry.mac;
         }
@@ -124,7 +124,7 @@ uint64_t network::arp::get_mac(network::ip::address ip){
     thor_unreachable("The IP is not cached in the ARP table");
 }
 
-std::expected<uint64_t> network::arp::get_mac_force(network::interface_descriptor& interface, network::ip::address ip){
+std::expected<uint64_t> network::arp::cache::get_mac_force(network::interface_descriptor& interface, network::ip::address ip){
     // Check cache first
     if(is_ip_cached(ip)){
         return get_mac(ip);
@@ -154,7 +154,7 @@ std::expected<uint64_t> network::arp::get_mac_force(network::interface_descripto
     return get_mac(ip);
 }
 
-std::expected<uint64_t> network::arp::get_mac_force(network::interface_descriptor& interface, network::ip::address ip, size_t ms){
+std::expected<uint64_t> network::arp::cache::get_mac_force(network::interface_descriptor& interface, network::ip::address ip, size_t ms){
     // Check cache first
     if(is_ip_cached(ip)){
         return std::make_expected<uint64_t>(get_mac(ip));

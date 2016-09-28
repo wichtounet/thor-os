@@ -55,6 +55,10 @@ network::ethernet::layer* ethernet_layer;
 network::arp::layer* arp_layer;
 network::ip::layer* ip_layer;
 network::icmp::layer* icmp_layer;
+network::udp::layer* udp_layer;
+network::dns::layer* dns_layer;
+network::dhcp::layer* dhcp_layer;
+network::tcp::layer* tcp_layer;
 
 void rx_thread(void* data){
     auto& interface = *reinterpret_cast<network::interface_descriptor*>(data);
@@ -181,7 +185,7 @@ void network_discovery() {
     for (auto& interface : interfaces) {
         if (interface.enabled) {
             if (!interface.is_loopback()) {
-                auto ip = network::dhcp::request_ip(interface);
+                auto ip = dhcp_layer->request_ip(interface);
 
                 if (ip) {
                     interface.ip_address = ip->ip_address;
@@ -286,8 +290,14 @@ void network::init(){
 
     icmp_layer = new network::icmp::layer(ip_layer);
 
-    network::udp::init_layer();
-    network::tcp::init_layer();
+    udp_layer = new network::udp::layer(ip_layer);
+    udp_layer->init_layer();
+
+    dns_layer = new network::dns::layer(udp_layer);
+    dhcp_layer = new network::dhcp::layer(udp_layer);
+
+    tcp_layer = new network::tcp::layer(ip_layer);
+    tcp_layer->init_layer();
 }
 
 void network::finalize(){
@@ -417,21 +427,21 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
         case network::socket_protocol::UDP: {
             auto descriptor = static_cast<network::udp::packet_descriptor*>(desc);
-            auto packet     = network::udp::user_prepare_packet(buffer, socket, descriptor);
+            auto packet     = udp_layer->user_prepare_packet(buffer, socket, descriptor);
 
             return return_from_packet(packet);
         }
 
         case network::socket_protocol::TCP: {
             auto descriptor = static_cast<network::tcp::packet_descriptor*>(desc);
-            auto packet     = network::tcp::user_prepare_packet(buffer, socket, descriptor);
+            auto packet     = tcp_layer->user_prepare_packet(buffer, socket, descriptor);
 
             return return_from_packet(packet);
         }
 
         case network::socket_protocol::DNS: {
             auto descriptor = static_cast<network::dns::packet_descriptor*>(desc);
-            auto packet     = network::dns::user_prepare_packet(buffer, socket, descriptor);
+            auto packet     = dns_layer->user_prepare_packet(buffer, socket, descriptor);
 
             return return_from_packet(packet);
         }
@@ -454,10 +464,10 @@ std::expected<void> network::send(socket_fd_t socket_fd, const char* buffer, siz
 
     switch (socket.protocol) {
         case network::socket_protocol::TCP:
-            return network::tcp::send(target_buffer, socket, buffer, n);
+            return tcp_layer->send(target_buffer, socket, buffer, n);
 
         case network::socket_protocol::UDP:
-            return network::udp::send(target_buffer, socket, buffer, n);
+            return udp_layer->send(target_buffer, socket, buffer, n);
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
@@ -477,7 +487,7 @@ std::expected<void> network::send_to(socket_fd_t socket_fd, const char* buffer, 
 
     switch (socket.protocol) {
         case network::socket_protocol::UDP:
-            return network::udp::send_to(target_buffer, socket, buffer, n, address);
+            return udp_layer->send_to(target_buffer, socket, buffer, n, address);
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
@@ -501,10 +511,10 @@ std::expected<size_t> network::receive(socket_fd_t socket_fd, char* buffer, size
 
     switch (socket.protocol) {
         case network::socket_protocol::UDP:
-            return network::udp::receive(buffer, socket, n);
+            return udp_layer->receive(buffer, socket, n);
 
         case network::socket_protocol::TCP:
-            return network::tcp::receive(buffer, socket, n);
+            return tcp_layer->receive(buffer, socket, n);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_UNIMPLEMENTED);
@@ -528,10 +538,10 @@ std::expected<size_t> network::receive(socket_fd_t socket_fd, char* buffer, size
 
     switch (socket.protocol) {
         case network::socket_protocol::UDP:
-            return network::udp::receive(buffer, socket, n, ms);
+            return udp_layer->receive(buffer, socket, n, ms);
 
         case network::socket_protocol::TCP:
-            return network::tcp::receive(buffer, socket, n, ms);
+            return tcp_layer->receive(buffer, socket, n, ms);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_UNIMPLEMENTED);
@@ -555,7 +565,7 @@ std::expected<size_t> network::receive_from(socket_fd_t socket_fd, char* buffer,
 
     switch (socket.protocol) {
         case network::socket_protocol::UDP:
-            return network::udp::receive_from(buffer, socket, n, address);
+            return udp_layer->receive_from(buffer, socket, n, address);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_UNIMPLEMENTED);
@@ -579,7 +589,7 @@ std::expected<size_t> network::receive_from(socket_fd_t socket_fd, char* buffer,
 
     switch (socket.protocol) {
         case network::socket_protocol::UDP:
-            return network::udp::receive_from(buffer, socket, n, ms, address);
+            return udp_layer->receive_from(buffer, socket, n, ms, address);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_UNIMPLEMENTED);
@@ -615,13 +625,13 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
             return check_and_return(icmp_layer->finalize_packet(interface, packet));
 
         case network::socket_protocol::TCP:
-            return check_and_return(network::tcp::finalize_packet(interface, socket, packet));
+            return check_and_return(tcp_layer->finalize_packet(interface, socket, packet));
 
         case network::socket_protocol::UDP:
-            return check_and_return(network::udp::finalize_packet(interface, packet));
+            return check_and_return(udp_layer->finalize_packet(interface, packet));
 
         case network::socket_protocol::DNS:
-            return check_and_return(network::dns::finalize_packet(interface, packet));
+            return check_and_return(dns_layer->finalize_packet(interface, packet));
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
@@ -660,7 +670,7 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::a
 
     switch(datagram_protocol(socket.protocol)){
         case socket_protocol::UDP:
-            return network::udp::client_bind(socket, port, address);
+            return udp_layer->client_bind(socket, port, address);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -680,7 +690,7 @@ std::expected<size_t> network::client_bind(socket_fd_t socket_fd, network::ip::a
 
     switch(datagram_protocol(socket.protocol)){
         case socket_protocol::UDP:
-            return network::udp::client_bind(socket, port, address);
+            return udp_layer->client_bind(socket, port, address);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -706,7 +716,7 @@ std::expected<void> network::server_bind(socket_fd_t socket_fd, network::ip::add
 
     switch(datagram_protocol(socket.protocol)){
         case socket_protocol::UDP:
-            return network::udp::server_bind(socket, port, address);
+            return udp_layer->server_bind(socket, port, address);
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -726,7 +736,7 @@ std::expected<void> network::server_bind(socket_fd_t socket_fd, network::ip::add
 
     switch(datagram_protocol(socket.protocol)){
         case socket_protocol::UDP:
-            return network::udp::server_bind(socket, port, address);
+            return udp_layer->server_bind(socket, port, address);
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -748,7 +758,7 @@ std::expected<void> network::client_unbind(socket_fd_t socket_fd){
 
     switch(datagram_protocol(socket.protocol)){
         case network::socket_protocol::UDP:
-            return network::udp::client_unbind(socket);
+            return udp_layer->client_unbind(socket);
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -768,7 +778,7 @@ std::expected<size_t> network::connect(socket_fd_t socket_fd, network::ip::addre
 
     switch(stream_protocol(socket.protocol)){
         case socket_protocol::TCP:
-            return network::tcp::connect(socket, select_interface(server), port, server);
+            return tcp_layer->connect(socket, select_interface(server), port, server);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -788,7 +798,7 @@ std::expected<void> network::server_start(socket_fd_t socket_fd, network::ip::ad
 
     switch(stream_protocol(socket.protocol)){
         case socket_protocol::TCP:
-            return network::tcp::server_start(socket, port, server);
+            return tcp_layer->server_start(socket, port, server);
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -808,7 +818,7 @@ std::expected<size_t> network::accept(socket_fd_t socket_fd){
 
     switch(stream_protocol(socket.protocol)){
         case socket_protocol::TCP:
-            return network::tcp::accept(socket);
+            return tcp_layer->accept(socket);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -828,7 +838,7 @@ std::expected<size_t> network::accept(socket_fd_t socket_fd, size_t ms){
 
     switch(stream_protocol(socket.protocol)){
         case socket_protocol::TCP:
-            return network::tcp::accept(socket, ms);
+            return tcp_layer->accept(socket, ms);
 
         default:
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);
@@ -850,7 +860,7 @@ std::expected<void> network::disconnect(socket_fd_t socket_fd){
 
     switch(datagram_protocol(socket.protocol)){
         case network::socket_protocol::TCP:
-            return network::tcp::disconnect(socket);
+            return tcp_layer->disconnect(socket);
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_INVALID_TYPE_PROTOCOL);

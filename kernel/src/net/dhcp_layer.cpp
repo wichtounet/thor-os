@@ -57,7 +57,7 @@ void prepare_packet(network::ethernet::packet& packet, network::interface_descri
 
 } //end of anonymous namespace
 
-void network::dhcp::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
+void network::dhcp::layer::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
     packet.tag(3, packet.index);
 
     logging::logf(logging::log_level::TRACE, "dhcp: Start DHCP packet handling\n");
@@ -78,7 +78,7 @@ void network::dhcp::decode(network::interface_descriptor& /*interface*/, network
     }
 }
 
-std::expected<network::dhcp::dhcp_configuration> network::dhcp::request_ip(network::interface_descriptor& interface) {
+std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_ip(network::interface_descriptor& interface) {
     listening = true;
 
     // 1. Send DHCP Discovery
@@ -88,7 +88,7 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::request_ip(netwo
         auto payload_size = sizeof(network::dhcp::header) + 4 + 3 + 5 + 4;
         network::udp::kernel_packet_descriptor udp_desc{payload_size, 68, 67, network::ip::make_address(255, 255, 255, 255)};
 
-        auto packet = network::udp::kernel_prepare_packet(interface, udp_desc);
+        auto packet = parent->kernel_prepare_packet(interface, udp_desc);
 
         if (!packet) {
             return std::make_unexpected<dhcp_configuration>(packet.error());
@@ -131,7 +131,7 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::request_ip(netwo
         options[15] = 255;
 
         // Finalize the UDP packet
-        auto status = network::udp::finalize_packet(interface, *packet);
+        auto status = parent->finalize_packet(interface, *packet);
         if (!status) {
             return std::make_unexpected<dhcp_configuration>(status.error());
         }
@@ -233,7 +233,7 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::request_ip(netwo
         auto payload_size = sizeof(network::dhcp::header) + 20;
         network::udp::kernel_packet_descriptor udp_desc{payload_size, 68, 67, server_address};
 
-        auto packet = network::udp::kernel_prepare_packet(interface, udp_desc);
+        auto packet = parent->kernel_prepare_packet(interface, udp_desc);
 
         if (!packet) {
             return std::make_unexpected<dhcp_configuration>(packet.error());
@@ -281,7 +281,7 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::request_ip(netwo
         options[19] = 255;
 
         // Finalize the UDP packet
-        auto status = network::udp::finalize_packet(interface, *packet);
+        auto status = parent->finalize_packet(interface, *packet);
         if (!status) {
             return std::make_unexpected<dhcp_configuration>(status.error());
         }

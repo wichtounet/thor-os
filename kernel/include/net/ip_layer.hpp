@@ -12,11 +12,20 @@
 #include <expected.hpp>
 
 #include "net/network.hpp"
-#include "tlib/net_constants.hpp"
+#include "net/ethernet_layer.hpp"
 
+#include "tlib/net_constants.hpp"
 namespace network {
 
 namespace icmp {
+struct layer;
+}
+
+namespace udp {
+struct layer;
+}
+
+namespace tcp {
 struct layer;
 }
 
@@ -69,11 +78,19 @@ struct layer {
     std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
 
     void register_icmp_layer(network::icmp::layer* layer);
+    void register_arp_layer(network::arp::layer* layer);
+    void register_udp_layer(network::udp::layer* layer);
+    void register_tcp_layer(network::tcp::layer* layer);
 
 private:
+    std::expected<uint64_t> get_target_mac(network::interface_descriptor& interface, network::ip::address target_ip);
+
     network::ethernet::layer* parent;
 
     network::icmp::layer* icmp_layer;
+    network::arp::layer* arp_layer;
+    network::udp::layer* udp_layer;
+    network::tcp::layer* tcp_layer;
 };
 
 } // end of ip namespace

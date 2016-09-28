@@ -86,7 +86,7 @@ std::string decode_domain(char* payload, size_t& offset) {
 
 } //end of anonymous namespace
 
-void network::dns::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
+void network::dns::layer::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
     packet.tag(3, packet.index);
 
     auto* dns_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -194,7 +194,7 @@ void network::dns::decode(network::interface_descriptor& /*interface*/, network:
     // Note: Propagate is handled by UDP connections
 }
 
-std::expected<network::ethernet::packet> network::dns::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
+std::expected<network::ethernet::packet> network::dns::layer::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
     // Check the packet descriptor
     if(!descriptor->query){
         return std::make_unexpected<network::ethernet::packet>(std::ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR);
@@ -202,7 +202,7 @@ std::expected<network::ethernet::packet> network::dns::user_prepare_packet(char*
 
     // Ask the UDP layer to craft a packet
     network::udp::packet_descriptor desc{sizeof(header) + descriptor->payload_size};
-    auto packet = network::udp::user_prepare_packet(buffer, socket, &desc);
+    auto packet = parent->user_prepare_packet(buffer, socket, &desc);
 
     if (packet) {
         ::prepare_packet_query(*packet, descriptor->identification);
@@ -211,9 +211,9 @@ std::expected<network::ethernet::packet> network::dns::user_prepare_packet(char*
     return packet;
 }
 
-std::expected<void> network::dns::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
+std::expected<void> network::dns::layer::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
     p.index -= sizeof(header);
 
     // Give the packet to the UDP layer for finalization
-    return network::udp::finalize_packet(interface, p);
+    return parent->finalize_packet(interface, p);
 }

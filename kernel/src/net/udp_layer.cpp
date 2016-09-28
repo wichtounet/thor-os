@@ -72,31 +72,13 @@ void prepare_packet(network::ethernet::packet& packet, size_t source, size_t tar
     packet.index += sizeof(network::udp::header);
 }
 
-std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& sock, const network::udp::packet_descriptor* descriptor, network::inet_address* address){
-    auto& connection = sock.get_connection_data<udp_connection>();
-
-    auto ip = connection.server_address;
-    auto ip_str = network::ip::ip_to_str(ip);
-    logging::logf(logging::log_level::ERROR, "udp: Craft destination=%s\n", ip_str.c_str());
-
-    // Ask the IP layer to craft a packet
-    network::ip::packet_descriptor desc{sizeof(network::udp::header) + descriptor->payload_size, address->address, 0x11};
-    auto packet = network::ip::user_prepare_packet(buffer, network::select_interface(connection.server_address), &desc);
-
-    if(packet){
-        ::prepare_packet(*packet, connection.server_port, address->port, descriptor->payload_size);
-    }
-
-    return packet;
-}
-
 } //end of anonymous namespace
 
-void network::udp::init_layer(){
+void network::udp::layer::init_layer(){
     local_port = 1023;
 }
 
-void network::udp::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+void network::udp::layer::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
     packet.tag(2, packet.index);
 
     auto* udp_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -114,9 +96,9 @@ void network::udp::decode(network::interface_descriptor& interface, network::eth
     packet.index += sizeof(header);
 
     if (source_port == 53) {
-        network::dns::decode(interface, packet);
+        dns_layer->decode(interface, packet);
     } else if (source_port == 67) {
-        network::dhcp::decode(interface, packet);
+        dhcp_layer->decode(interface, packet);
     }
 
     auto connection_ptr = connections.get_connection_for_packet(source_port, target_port);
@@ -143,10 +125,10 @@ void network::udp::decode(network::interface_descriptor& interface, network::eth
     }
 }
 
-std::expected<network::ethernet::packet> network::udp::kernel_prepare_packet(network::interface_descriptor& interface, const kernel_packet_descriptor& descriptor){
+std::expected<network::ethernet::packet> network::udp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const kernel_packet_descriptor& descriptor){
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{sizeof(header) + descriptor.payload_size, descriptor.target_ip, 0x11};
-    auto packet = network::ip::kernel_prepare_packet(interface, desc);
+    auto packet = parent->kernel_prepare_packet(interface, desc);
 
     if(packet){
         ::prepare_packet(*packet, descriptor.source_port, descriptor.target_port, descriptor.payload_size);
@@ -155,7 +137,7 @@ std::expected<network::ethernet::packet> network::udp::kernel_prepare_packet(net
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::udp::user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor){
+std::expected<network::ethernet::packet> network::udp::layer::user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor){
     auto& connection = sock.get_connection_data<udp_connection>();
 
     auto ip = connection.server_address;
@@ -164,7 +146,7 @@ std::expected<network::ethernet::packet> network::udp::user_prepare_packet(char*
 
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{sizeof(header) + descriptor->payload_size, connection.server_address, 0x11};
-    auto packet = network::ip::user_prepare_packet(buffer, network::select_interface(connection.server_address), &desc);
+    auto packet = parent->user_prepare_packet(buffer, network::select_interface(connection.server_address), &desc);
 
     if(packet){
         ::prepare_packet(*packet, connection.local_port, connection.server_port, descriptor->payload_size);
@@ -173,17 +155,35 @@ std::expected<network::ethernet::packet> network::udp::user_prepare_packet(char*
     return packet;
 }
 
-std::expected<void> network::udp::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
+std::expected<network::ethernet::packet> network::udp::layer::user_prepare_packet(char* buffer, network::socket& sock, const network::udp::packet_descriptor* descriptor, network::inet_address* address){
+    auto& connection = sock.get_connection_data<udp_connection>();
+
+    auto ip = connection.server_address;
+    auto ip_str = network::ip::ip_to_str(ip);
+    logging::logf(logging::log_level::ERROR, "udp: Craft destination=%s\n", ip_str.c_str());
+
+    // Ask the IP layer to craft a packet
+    network::ip::packet_descriptor desc{sizeof(network::udp::header) + descriptor->payload_size, address->address, 0x11};
+    auto packet = parent->user_prepare_packet(buffer, network::select_interface(connection.server_address), &desc);
+
+    if(packet){
+        ::prepare_packet(*packet, connection.server_port, address->port, descriptor->payload_size);
+    }
+
+    return packet;
+}
+
+std::expected<void> network::udp::layer::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
     p.index -= sizeof(header);
 
     // Compute the checksum
     compute_checksum(p);
 
     // Give the packet to the IP layer for finalization
-    return network::ip::finalize_packet(interface, p);
+    return parent->finalize_packet(interface, p);
 }
 
-std::expected<size_t> network::udp::client_bind(network::socket& sock, size_t server_port, network::ip::address server){
+std::expected<size_t> network::udp::layer::client_bind(network::socket& sock, size_t server_port, network::ip::address server){
     // Create the connection
 
     auto& connection = connections.create_connection();
@@ -203,7 +203,7 @@ std::expected<size_t> network::udp::client_bind(network::socket& sock, size_t se
     return {connection.local_port};
 }
 
-std::expected<void> network::udp::server_bind(network::socket& sock, size_t server_port, network::ip::address server){
+std::expected<void> network::udp::layer::server_bind(network::socket& sock, size_t server_port, network::ip::address server){
     // Create the connection
 
     auto& connection = connections.create_connection();
@@ -223,7 +223,7 @@ std::expected<void> network::udp::server_bind(network::socket& sock, size_t serv
     return {};
 }
 
-std::expected<void> network::udp::client_unbind(network::socket& sock){
+std::expected<void> network::udp::layer::client_unbind(network::socket& sock){
     auto& connection = sock.get_connection_data<udp_connection>();
 
     if(!connection.connected){
@@ -239,7 +239,7 @@ std::expected<void> network::udp::client_unbind(network::socket& sock){
     return {};
 }
 
-std::expected<void> network::udp::send(char* target_buffer, network::socket& socket, const char* buffer, size_t n){
+std::expected<void> network::udp::layer::send(char* target_buffer, network::socket& socket, const char* buffer, size_t n){
     auto& connection = socket.get_connection_data<udp_connection>();
 
     // Make sure stream sockets are connected
@@ -257,13 +257,13 @@ std::expected<void> network::udp::send(char* target_buffer, network::socket& soc
 
         auto target_ip  = connection.server_address;
         auto& interface = network::select_interface(target_ip);
-        return network::udp::finalize_packet(interface, *packet);
+        return finalize_packet(interface, *packet);
     }
 
     return std::make_unexpected<void>(packet.error());
 }
 
-std::expected<void> network::udp::send_to(char* target_buffer, network::socket& socket, const char* buffer, size_t n, void* addr){
+std::expected<void> network::udp::layer::send_to(char* target_buffer, network::socket& socket, const char* buffer, size_t n, void* addr){
     auto& connection = socket.get_connection_data<udp_connection>();
 
     // Make sure stream sockets are connected
@@ -274,7 +274,7 @@ std::expected<void> network::udp::send_to(char* target_buffer, network::socket& 
     auto* address = static_cast<network::inet_address*>(addr);
 
     network::udp::packet_descriptor desc{n};
-    auto packet = ::user_prepare_packet(target_buffer, socket, &desc, address);
+    auto packet = user_prepare_packet(target_buffer, socket, &desc, address);
 
     if (packet) {
         for(size_t i = 0; i < n; ++i){
@@ -283,13 +283,13 @@ std::expected<void> network::udp::send_to(char* target_buffer, network::socket& 
 
         auto target_ip  = connection.server_address;
         auto& interface = network::select_interface(target_ip);
-        return network::udp::finalize_packet(interface, *packet);
+        return finalize_packet(interface, *packet);
     }
 
     return std::make_unexpected<void>(packet.error());
 }
 
-std::expected<size_t> network::udp::receive(char* buffer, network::socket& socket, size_t n){
+std::expected<size_t> network::udp::layer::receive(char* buffer, network::socket& socket, size_t n){
     auto& connection = socket.get_connection_data<udp_connection>();
 
     // Make sure stream sockets are connected
@@ -319,7 +319,7 @@ std::expected<size_t> network::udp::receive(char* buffer, network::socket& socke
     return payload_len;
 }
 
-std::expected<size_t> network::udp::receive(char* buffer, network::socket& socket, size_t n, size_t ms){
+std::expected<size_t> network::udp::layer::receive(char* buffer, network::socket& socket, size_t n, size_t ms){
     auto& connection = socket.get_connection_data<udp_connection>();
 
     // Make sure stream sockets are connected
@@ -355,7 +355,7 @@ std::expected<size_t> network::udp::receive(char* buffer, network::socket& socke
     return payload_len;
 }
 
-std::expected<size_t> network::udp::receive_from(char* buffer, network::socket& socket, size_t n, void* addr){
+std::expected<size_t> network::udp::layer::receive_from(char* buffer, network::socket& socket, size_t n, void* addr){
     auto& connection = socket.get_connection_data<udp_connection>();
 
     // Make sure stream sockets are connected
@@ -392,7 +392,7 @@ std::expected<size_t> network::udp::receive_from(char* buffer, network::socket& 
     return payload_len;
 }
 
-std::expected<size_t> network::udp::receive_from(char* buffer, network::socket& socket, size_t n, size_t ms, void* addr){
+std::expected<size_t> network::udp::layer::receive_from(char* buffer, network::socket& socket, size_t n, size_t ms, void* addr){
     auto& connection = socket.get_connection_data<udp_connection>();
 
     // Make sure stream sockets are connected

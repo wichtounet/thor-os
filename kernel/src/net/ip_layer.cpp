@@ -13,7 +13,7 @@
 #include "net/icmp_layer.hpp"
 #include "net/udp_layer.hpp"
 #include "net/tcp_layer.hpp"
-#include "net/arp_cache.hpp"
+#include "net/arp_layer.hpp"
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"
@@ -63,34 +63,6 @@ void prepare_packet(network::ethernet::packet& packet, network::interface_descri
     compute_checksum(ip_header);
 
     packet.index += default_ip_header_len;
-}
-
-std::expected<uint64_t> get_target_mac(network::interface_descriptor& interface, network::ip::address target_ip){
-    // Handle broadcast
-    if(target_ip == network::ip::make_address(255, 255, 255, 255)){
-        return 0xFFFFFFFFFFFF;
-    }
-
-    // For loopback, there is no gateway
-    if(interface.is_loopback()){
-        return network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
-    }
-
-    auto& interface_ip = interface.ip_address;
-
-    // At this point, we have no gateway, neither IP
-    if(interface_ip == network::ip::make_address(0, 0, 0, 0)){
-        return network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
-    }
-
-    // If it is the same network, use ARP to get the MAC address
-    if(network::ip::same_network(interface_ip, target_ip)){
-        return network::arp::get_mac_force(interface, target_ip, ARP_TIMEOUT);
-    }
-
-    // If it is another network, use the gateway
-
-    return network::arp::get_mac_force(interface, interface.gateway, ARP_TIMEOUT);
 }
 
 } // end of anonymous namespace
@@ -160,9 +132,9 @@ void network::ip::layer::decode(network::interface_descriptor& interface, networ
     if (protocol == 0x01) {
         icmp_layer->decode(interface, packet);
     } else if (protocol == 0x06) {
-        network::tcp::decode(interface, packet);
+        tcp_layer->decode(interface, packet);
     } else if (protocol == 0x11) {
-        network::udp::decode(interface, packet);
+        udp_layer->decode(interface, packet);
     } else {
         logging::logf(logging::log_level::ERROR, "ip: Packet of unknown protocol detected (%h)\n", size_t(protocol));
     }
@@ -207,4 +179,32 @@ std::expected<network::ethernet::packet> network::ip::layer::user_prepare_packet
 std::expected<void> network::ip::layer::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
     // Send the packet to the ethernet layer
     return parent->finalize_packet(interface, p);
+}
+
+std::expected<uint64_t> network::ip::layer::get_target_mac(network::interface_descriptor& interface, network::ip::address target_ip){
+    // Handle broadcast
+    if(target_ip == network::ip::make_address(255, 255, 255, 255)){
+        return 0xFFFFFFFFFFFF;
+    }
+
+    // For loopback, there is no gateway
+    if(interface.is_loopback()){
+        return arp_layer->get_cache().get_mac_force(interface, target_ip, ARP_TIMEOUT);
+    }
+
+    auto& interface_ip = interface.ip_address;
+
+    // At this point, we have no gateway, neither IP
+    if(interface_ip == network::ip::make_address(0, 0, 0, 0)){
+        return arp_layer->get_cache().get_mac_force(interface, target_ip, ARP_TIMEOUT);
+    }
+
+    // If it is the same network, use ARP to get the MAC address
+    if(network::ip::same_network(interface_ip, target_ip)){
+        return arp_layer->get_cache().get_mac_force(interface, target_ip, ARP_TIMEOUT);
+    }
+
+    // If it is another network, use the gateway
+
+    return arp_layer->get_cache().get_mac_force(interface, interface.gateway, ARP_TIMEOUT);
 }

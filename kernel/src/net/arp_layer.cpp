@@ -60,7 +60,7 @@ void network::arp::ip_to_ip2(network::ip::address source_ip, uint16_t* ip){
     }
 }
 
-network::arp::layer::layer(network::ethernet::layer* parent) : parent(parent) {
+network::arp::layer::layer(network::ethernet::layer* parent) : parent(parent), _cache(this, parent) {
     parent->register_arp_layer(this);
 }
 
@@ -117,7 +117,7 @@ void network::arp::layer::decode(network::interface_descriptor& interface, netwo
 
     // If not an ARP Probe, update the ARP cache
     if(source_prot.raw_address != 0x0){
-        network::arp::update_cache(source_hw, source_prot);
+        _cache.update_cache(source_hw, source_prot);
     }
 
     if(operation == 0x1){
