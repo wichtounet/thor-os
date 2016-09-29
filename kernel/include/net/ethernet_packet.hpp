@@ -16,21 +16,24 @@ namespace network {
 
 namespace ethernet {
 
+/*!
+ * \brief A packet on the ethernet layer
+ */
 struct packet {
     // Set from the beginning
-    char* payload;
-    size_t payload_size;
+    char* payload;          ///< Pointer to the packet payload
+    size_t payload_size;    ///< The size, in bytes, of the payload
 
     // Set by ethernet
-    ether_type type;
-    size_t index;
+    ether_type type;    ///< The type of ethernet
+    size_t index;       ///< The current index inside the packet
 
     // Set for user mode
-    size_t fd;
-    bool user;
+    size_t fd; ///< The file descriptor (in user mode)
+    bool user; ///< Flag indicating if the packet is a user packet or kernel packet
 
-    uint64_t tags; // This allows for 4 tags (4 layer)
-    uint64_t interface; ///< Id of the interface
+    uint64_t tags;          ///< Tags of the layer indices
+    uint64_t interface;     ///< Id of the interface
 
     packet() : fd(0), user(false), tags(0) {}
     packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0), user(false), tags(0) {}
