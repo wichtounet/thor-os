@@ -9,6 +9,7 @@
 
 #include "net/dns_layer.hpp"
 #include "net/udp_layer.hpp"
+#include "net/ip_layer.hpp"
 
 #include "kernel_utils.hpp"
 

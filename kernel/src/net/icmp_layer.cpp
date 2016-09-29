@@ -5,16 +5,15 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#include "net/ethernet_layer.hpp"
+#include "tlib/errors.hpp"
+
 #include "net/icmp_layer.hpp"
-#include "net/arp_cache.hpp"
 #include "net/ip_layer.hpp"
+#include "net/network.hpp"
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"
 #include "scheduler.hpp"
-
-#include "tlib/errors.hpp"
 
 namespace {
 

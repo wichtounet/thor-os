@@ -9,6 +9,7 @@
 
 #include "net/arp_cache.hpp"
 #include "net/arp_layer.hpp"
+#include "net/ethernet_layer.hpp"
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"

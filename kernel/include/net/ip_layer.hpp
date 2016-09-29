@@ -11,11 +11,20 @@
 #include <types.hpp>
 #include <expected.hpp>
 
-#include "net/network.hpp"
-#include "net/ethernet_layer.hpp"
-
 #include "tlib/net_constants.hpp"
+
+#include "net/interface.hpp"
+#include "net/ethernet_packet.hpp"
+
 namespace network {
+
+namespace ethernet {
+struct layer;
+}
+
+namespace arp {
+struct layer;
+}
 
 namespace icmp {
 struct layer;

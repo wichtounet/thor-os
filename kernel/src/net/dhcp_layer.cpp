@@ -5,12 +5,9 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#include <atomic.hpp>
-#include <bit_field.hpp>
-#include <circular_buffer.hpp>
-
 #include "net/dhcp_layer.hpp"
 #include "net/udp_layer.hpp"
+#include "net/ethernet_layer.hpp"
 
 #include "kernel_utils.hpp"
 

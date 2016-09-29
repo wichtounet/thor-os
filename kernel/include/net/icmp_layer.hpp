@@ -13,8 +13,8 @@
 
 #include "tlib/net_constants.hpp"
 
-#include "net/network.hpp"
-#include "net/ip_layer.hpp"
+#include "net/interface.hpp"
+#include "net/ethernet_packet.hpp"
 
 namespace network {
 

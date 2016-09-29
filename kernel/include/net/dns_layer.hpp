@@ -10,11 +10,16 @@
 
 #include <types.hpp>
 
-#include "net/ethernet_layer.hpp"
-#include "net/ip_layer.hpp"
-#include "net/network.hpp"
+#include "tlib/net_constants.hpp"
+
+#include "net/ethernet_packet.hpp"
+#include "net/interface.hpp"
 
 namespace network {
+
+namespace udp {
+struct layer;
+}
 
 namespace dns {
 

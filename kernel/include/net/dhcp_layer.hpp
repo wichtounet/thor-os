@@ -10,12 +10,16 @@
 
 #include <types.hpp>
 #include <expected.hpp>
+#include <atomic.hpp>
 
-#include "net/ethernet_layer.hpp"
-#include "net/ip_layer.hpp"
-#include "net/network.hpp"
+#include "net/interface.hpp"
+#include "net/ethernet_packet.hpp"
 
 namespace network {
+
+namespace udp {
+struct layer;
+}
 
 namespace dhcp {
 
@@ -70,7 +74,6 @@ struct layer {
      * \param interface The interface for which we want an IP address
      */
     std::expected<dhcp_configuration> request_ip(network::interface_descriptor& interface);
-
 private:
     network::udp::layer* parent;
 

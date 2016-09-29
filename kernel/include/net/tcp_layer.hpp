@@ -10,14 +10,20 @@
 
 #include <types.hpp>
 #include <atomic.hpp>
+#include <circular_buffer.hpp>
 
-#include "net/ethernet_layer.hpp"
+#include "conc/condition_variable.hpp"
+
+#include "net/ethernet_packet.hpp"
 #include "net/connection_handler.hpp"
-#include "net/ip_layer.hpp"
-#include "net/network.hpp"
+#include "net/interface.hpp"
 #include "net/socket.hpp"
 
 namespace network {
+
+namespace ip {
+struct layer;
+}
 
 namespace tcp {
 
@@ -30,13 +36,13 @@ struct tcp_connection {
     condition_variable queue;                               ///< The listening queue
     circular_buffer<network::ethernet::packet, 32> packets; ///< The packets for the listening queue
 
-    bool connected = false;
-    bool server    = false;
+    bool connected = false; ///< Indicate if the connection is connnected
+    bool server    = false; ///< Indicate if the connection is a server (true) or a client (false)
 
     uint32_t ack_number = 0; ///< The next ack number
     uint32_t seq_number = 0; ///< The next sequence number
 
-    network::socket* socket = nullptr;
+    network::socket* socket = nullptr; ///< Pointer to the user socket
 
     tcp_connection() : listening(false) {
         //Nothing else to init

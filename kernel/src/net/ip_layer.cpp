@@ -5,7 +5,6 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#include <vector.hpp>
 #include <string.hpp>
 
 #include "net/ip_layer.hpp"

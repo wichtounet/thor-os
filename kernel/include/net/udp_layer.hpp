@@ -11,12 +11,18 @@
 #include <types.hpp>
 #include <atomic.hpp>
 
-#include "net/ethernet_layer.hpp"
-#include "net/ip_layer.hpp"
-#include "net/network.hpp"
+#include "tlib/net_constants.hpp"
+
+#include "net/interface.hpp"
+#include "net/ethernet_packet.hpp"
 #include "net/connection_handler.hpp"
+#include "net/socket.hpp"
 
 namespace network {
+
+namespace ip {
+struct layer;
+}
 
 namespace dns {
 struct layer;
