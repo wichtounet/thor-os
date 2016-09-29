@@ -14,7 +14,7 @@
 #include "tlib/net_constants.hpp"
 
 #include "net/interface.hpp"
-#include "net/ethernet_packet.hpp"
+#include "net/packet.hpp"
 #include "net/connection_handler.hpp"
 #include "net/socket.hpp"
 
@@ -71,7 +71,7 @@ struct layer {
      * \param interface The interface on which the packet was received
      * \param packet The packet to decode
      */
-    void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+    void decode(network::interface_descriptor& interface, network::packet& packet);
 
     /*!
      * \brief Prepare a packet for the kernel
@@ -79,7 +79,7 @@ struct layer {
      * \param descriptor The packet descriptor
      * \return the prepared packet or an error
      */
-    std::expected<network::ethernet::packet> kernel_prepare_packet(network::interface_descriptor& interface, const kernel_packet_descriptor& descriptor);
+    std::expected<network::packet> kernel_prepare_packet(network::interface_descriptor& interface, const kernel_packet_descriptor& descriptor);
 
     /*!
      * \brief Prepare a packet for the user
@@ -88,9 +88,9 @@ struct layer {
      * \param descriptor The packet descriptor
      * \return the prepared packet or an error
      */
-    std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor);
+    std::expected<network::packet> user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor);
 
-    std::expected<network::ethernet::packet> user_prepare_packet(char* buffer, network::socket& sock, const network::udp::packet_descriptor* descriptor, network::inet_address* address);
+    std::expected<network::packet> user_prepare_packet(char* buffer, network::socket& sock, const network::udp::packet_descriptor* descriptor, network::inet_address* address);
 
     /*!
      * \brief Finalize a prepared packet
@@ -98,7 +98,7 @@ struct layer {
      * \param p The packet to finalize
      * \return nothing or an error
      */
-    std::expected<void> finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p);
+    std::expected<void> finalize_packet(network::interface_descriptor& interface, network::packet& p);
 
     std::expected<size_t> client_bind(network::socket& socket, size_t server_port, network::ip::address server);
     std::expected<void> server_bind(network::socket& socket, size_t server_port, network::ip::address server);

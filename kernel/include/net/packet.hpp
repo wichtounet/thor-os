@@ -5,8 +5,8 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#ifndef NET_ETHERNET_PACKET_H
-#define NET_ETHERNET_PACKET_H
+#ifndef NET_PACKET_H
+#define NET_PACKET_H
 
 #include <types.hpp>
 
@@ -14,10 +14,8 @@
 
 namespace network {
 
-namespace ethernet {
-
 /*!
- * \brief A packet on the ethernet layer
+ * \brief A network packet.
  */
 struct packet {
     // Set from the beginning
@@ -44,8 +42,6 @@ struct packet {
         return (tags >> (layer * 16)) & 0xFFFF;
     }
 };
-
-} // end of ethernet namespace
 
 } // end of network namespace
 

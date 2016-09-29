@@ -404,7 +404,7 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
     auto& socket = scheduler::get_socket(socket_fd);
 
-    auto return_from_packet = [&socket](std::expected<network::ethernet::packet>& packet) -> std::tuple<size_t, size_t> {
+    auto return_from_packet = [&socket](std::expected<network::packet>& packet) -> std::tuple<size_t, size_t> {
         if (packet) {
             auto fd = socket.register_packet(*packet);
 
@@ -926,7 +926,7 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
     return {packet.index};
 }
 
-void network::propagate_packet(const ethernet::packet& packet, socket_protocol protocol){
+void network::propagate_packet(const packet& packet, socket_protocol protocol){
     // TODO Need something better for this
 
     for(size_t pid = 0; pid < scheduler::MAX_PROCESS; ++pid){

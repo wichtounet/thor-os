@@ -22,7 +22,7 @@ struct loopback_t {
     network::interface_descriptor* interface;
 };
 
-void send_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
+void send_packet(network::interface_descriptor& interface, network::packet& packet){
     logging::logf(logging::log_level::TRACE, "loopback: Transmit packet\n");
 
     auto packet_buffer = new char[packet.payload_size];

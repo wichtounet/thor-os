@@ -14,7 +14,7 @@
 
 #include "tlib/net_constants.hpp"
 
-#include "net/ethernet_packet.hpp"
+#include "net/packet.hpp"
 #include "net/interface.hpp"
 #include "net/arp_cache.hpp"
 
@@ -55,7 +55,7 @@ struct layer {
      * \param interface The interface on which the packet was received
      * \param packet The packet to decode
      */
-    void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+    void decode(network::interface_descriptor& interface, network::packet& packet);
 
     network::arp::cache& get_cache();
 

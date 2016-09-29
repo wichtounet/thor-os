@@ -131,7 +131,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
 
                 std::copy_n(packet_payload, packet_only_length, packet_buffer);
 
-                network::ethernet::packet packet(packet_buffer, packet_only_length);
+                network::packet packet(packet_buffer, packet_only_length);
 
                 interface.rx_queue.push(packet);
                 interface.rx_sem.notify();
@@ -186,7 +186,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
     }
 }
 
-void send_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
+void send_packet(network::interface_descriptor& interface, network::packet& packet){
     logging::logf(logging::log_level::TRACE, "rtl8139: Start transmitting packet\n");
 
     auto* ether_header = reinterpret_cast<network::ethernet::header*>(packet.payload);

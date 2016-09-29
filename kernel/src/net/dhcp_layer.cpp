@@ -15,7 +15,7 @@
 
 namespace {
 
-void prepare_packet(network::ethernet::packet& packet, network::interface_descriptor& interface) {
+void prepare_packet(network::packet& packet, network::interface_descriptor& interface) {
     packet.tag(3, packet.index);
 
     // Set the DHCP header
@@ -54,7 +54,7 @@ network::dhcp::layer::layer(network::udp::layer* parent) : parent(parent) {
     parent->register_dhcp_layer(this);
 }
 
-void network::dhcp::layer::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
+void network::dhcp::layer::decode(network::interface_descriptor& /*interface*/, network::packet& packet) {
     packet.tag(3, packet.index);
 
     logging::logf(logging::log_level::TRACE, "dhcp: Start DHCP packet handling\n");

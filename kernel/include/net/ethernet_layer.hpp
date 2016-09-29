@@ -14,7 +14,7 @@
 #include "tlib/net_constants.hpp"
 
 #include "net/interface.hpp"
-#include "net/ethernet_packet.hpp"
+#include "net/packet.hpp"
 
 namespace network {
 

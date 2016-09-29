@@ -18,7 +18,7 @@
 
 namespace {
 
-void compute_checksum(network::ethernet::packet& packet){
+void compute_checksum(network::packet& packet){
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
     auto* udp_header = reinterpret_cast<network::udp::header*>(packet.payload + packet.tag(2));
 
@@ -42,7 +42,7 @@ void compute_checksum(network::ethernet::packet& packet){
     udp_header->checksum = switch_endian_16(network::checksum_finalize_nz(sum));
 }
 
-void prepare_packet(network::ethernet::packet& packet, size_t source, size_t target, size_t payload_size){
+void prepare_packet(network::packet& packet, size_t source, size_t target, size_t payload_size){
     packet.tag(2, packet.index);
 
     // Set the UDP header
@@ -65,7 +65,7 @@ network::udp::layer::layer(network::ip::layer* parent) : parent(parent) {
     local_port = 1023;
 }
 
-void network::udp::layer::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+void network::udp::layer::decode(network::interface_descriptor& interface, network::packet& packet){
     packet.tag(2, packet.index);
 
     auto* udp_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -112,7 +112,7 @@ void network::udp::layer::decode(network::interface_descriptor& interface, netwo
     }
 }
 
-std::expected<network::ethernet::packet> network::udp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const kernel_packet_descriptor& descriptor){
+std::expected<network::packet> network::udp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const kernel_packet_descriptor& descriptor){
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{sizeof(header) + descriptor.payload_size, descriptor.target_ip, 0x11};
     auto packet = parent->kernel_prepare_packet(interface, desc);
@@ -124,7 +124,7 @@ std::expected<network::ethernet::packet> network::udp::layer::kernel_prepare_pac
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::udp::layer::user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor){
+std::expected<network::packet> network::udp::layer::user_prepare_packet(char* buffer, network::socket& sock, const packet_descriptor* descriptor){
     auto& connection = sock.get_connection_data<udp_connection>();
 
     auto ip = connection.server_address;
@@ -142,7 +142,7 @@ std::expected<network::ethernet::packet> network::udp::layer::user_prepare_packe
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::udp::layer::user_prepare_packet(char* buffer, network::socket& sock, const network::udp::packet_descriptor* descriptor, network::inet_address* address){
+std::expected<network::packet> network::udp::layer::user_prepare_packet(char* buffer, network::socket& sock, const network::udp::packet_descriptor* descriptor, network::inet_address* address){
     auto& connection = sock.get_connection_data<udp_connection>();
 
     auto ip = connection.server_address;
@@ -160,7 +160,7 @@ std::expected<network::ethernet::packet> network::udp::layer::user_prepare_packe
     return packet;
 }
 
-std::expected<void> network::udp::layer::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p){
+std::expected<void> network::udp::layer::finalize_packet(network::interface_descriptor& interface, network::packet& p){
     p.index -= sizeof(header);
 
     // Compute the checksum

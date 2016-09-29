@@ -26,7 +26,7 @@ using flag_ra     = std::bit_field<uint16_t, uint8_t, 7, 1>;
 using flag_zeroes = std::bit_field<uint16_t, uint8_t, 4, 3>;
 using flag_rcode  = std::bit_field<uint16_t, uint8_t, 0, 4>;
 
-void prepare_packet_query(network::ethernet::packet& packet, uint16_t identification) {
+void prepare_packet_query(network::packet& packet, uint16_t identification) {
     packet.tag(3, packet.index);
 
     // Set the DNS header
@@ -91,7 +91,7 @@ network::dns::layer::layer(network::udp::layer* parent) : parent(parent) {
     parent->register_dns_layer(this);
 }
 
-void network::dns::layer::decode(network::interface_descriptor& /*interface*/, network::ethernet::packet& packet) {
+void network::dns::layer::decode(network::interface_descriptor& /*interface*/, network::packet& packet) {
     packet.tag(3, packet.index);
 
     auto* dns_header = reinterpret_cast<header*>(packet.payload + packet.index);
@@ -199,10 +199,10 @@ void network::dns::layer::decode(network::interface_descriptor& /*interface*/, n
     // Note: Propagate is handled by UDP connections
 }
 
-std::expected<network::ethernet::packet> network::dns::layer::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
+std::expected<network::packet> network::dns::layer::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
     // Check the packet descriptor
     if(!descriptor->query){
-        return std::make_unexpected<network::ethernet::packet>(std::ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR);
+        return std::make_unexpected<network::packet>(std::ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR);
     }
 
     // Ask the UDP layer to craft a packet
@@ -216,7 +216,7 @@ std::expected<network::ethernet::packet> network::dns::layer::user_prepare_packe
     return packet;
 }
 
-std::expected<void> network::dns::layer::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& p) {
+std::expected<void> network::dns::layer::finalize_packet(network::interface_descriptor& interface, network::packet& p) {
     p.index -= sizeof(header);
 
     // Give the packet to the UDP layer for finalization

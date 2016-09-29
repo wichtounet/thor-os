@@ -38,7 +38,7 @@ void compute_checksum(network::icmp::header* icmp_header, size_t payload_size){
     icmp_header->checksum = ~value;
 }
 
-void prepare_packet(network::ethernet::packet& packet, network::icmp::type t, size_t code){
+void prepare_packet(network::packet& packet, network::icmp::type t, size_t code){
     packet.tag(2, packet.index);
 
     // Set the ICMP header
@@ -57,7 +57,7 @@ network::icmp::layer::layer(network::ip::layer* parent) : parent(parent) {
     parent->register_icmp_layer(this);
 }
 
-void network::icmp::layer::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+void network::icmp::layer::decode(network::interface_descriptor& interface, network::packet& packet){
     packet.tag(2, packet.index);
 
     logging::logf(logging::log_level::TRACE, "icmp: Start ICMP packet handling\n");
@@ -116,7 +116,7 @@ void network::icmp::layer::decode(network::interface_descriptor& interface, netw
     network::propagate_packet(packet, network::socket_protocol::ICMP);
 }
 
-std::expected<network::ethernet::packet> network::icmp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
+std::expected<network::packet> network::icmp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{sizeof(header) + descriptor.payload_size, descriptor.target_ip, 0x01};
     auto packet = parent->kernel_prepare_packet(interface, desc);
@@ -128,7 +128,7 @@ std::expected<network::ethernet::packet> network::icmp::layer::kernel_prepare_pa
     return packet;
 }
 
-std::expected<network::ethernet::packet> network::icmp::layer::user_prepare_packet(char* buffer, network::socket& /*socket*/, const packet_descriptor* descriptor){
+std::expected<network::packet> network::icmp::layer::user_prepare_packet(char* buffer, network::socket& /*socket*/, const packet_descriptor* descriptor){
     auto& interface = network::select_interface(descriptor->target_ip);
 
     // Ask the IP layer to craft a packet
@@ -142,7 +142,7 @@ std::expected<network::ethernet::packet> network::icmp::layer::user_prepare_pack
     return packet;
 }
 
-std::expected<void> network::icmp::layer::finalize_packet(network::interface_descriptor& interface, network::ethernet::packet& packet){
+std::expected<void> network::icmp::layer::finalize_packet(network::interface_descriptor& interface, network::packet& packet){
     packet.index -= sizeof(header) - sizeof(uint32_t);
 
     auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);

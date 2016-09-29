@@ -17,7 +17,7 @@
 #include "conc/semaphore.hpp"
 #include "conc/deferred_unique_semaphore.hpp"
 
-#include "net/ethernet_packet.hpp"
+#include "net/packet.hpp"
 
 #include "tlib/net_constants.hpp"
 
@@ -49,15 +49,15 @@ struct interface_descriptor {
     mutable semaphore tx_sem;                 ///< Semaphore for transmission
     mutable deferred_unique_semaphore rx_sem; ///< Semaphore for reception
 
-    circular_buffer<ethernet::packet, 32> rx_queue; ///< The reception queue
-    circular_buffer<ethernet::packet, 32> tx_queue; ///< The transmission queue
+    circular_buffer<packet, 32> rx_queue; ///< The reception queue
+    circular_buffer<packet, 32> tx_queue; ///< The transmission queue
 
-    void (*hw_send)(interface_descriptor&, ethernet::packet& p); ///< Driver hardware send function
+    void (*hw_send)(interface_descriptor&, packet& p); ///< Driver hardware send function
 
     /*!
      * \brief Send a packet through this interface
      */
-    void send(ethernet::packet& p){
+    void send(packet& p){
         std::lock_guard<mutex> l(tx_lock);
         tx_queue.push(p);
         tx_sem.unlock();

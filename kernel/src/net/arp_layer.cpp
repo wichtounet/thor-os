@@ -52,7 +52,7 @@ network::arp::layer::layer(network::ethernet::layer* parent) : parent(parent), _
     parent->register_arp_layer(this);
 }
 
-void network::arp::layer::decode(network::interface_descriptor& interface, network::ethernet::packet& packet){
+void network::arp::layer::decode(network::interface_descriptor& interface, network::packet& packet){
     packet.tag(1, packet.index);
 
     header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);

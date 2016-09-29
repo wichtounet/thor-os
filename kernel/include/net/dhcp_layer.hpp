@@ -13,7 +13,7 @@
 #include <atomic.hpp>
 
 #include "net/interface.hpp"
-#include "net/ethernet_packet.hpp"
+#include "net/packet.hpp"
 
 namespace network {
 
@@ -66,7 +66,7 @@ struct layer {
      * \param interface The interface on which the packet was received
      * \param packet The packet to decode
      */
-    void decode(network::interface_descriptor& interface, network::ethernet::packet& packet);
+    void decode(network::interface_descriptor& interface, network::packet& packet);
 
     /*!
      * \brief Request an IP address on the network
@@ -78,7 +78,7 @@ private:
     network::udp::layer* parent;
 
     std::atomic<bool> listening;
-    circular_buffer<network::ethernet::packet, 16> packets;
+    circular_buffer<network::packet, 16> packets;
     condition_variable listen_queue;
 };
 

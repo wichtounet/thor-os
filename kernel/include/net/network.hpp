@@ -15,7 +15,7 @@
 #include "tlib/net_constants.hpp"
 
 #include "net/interface.hpp"
-#include "net/ethernet_packet.hpp"
+#include "net/packet.hpp"
 
 namespace network {
 
@@ -229,7 +229,7 @@ std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd, size_
  * \param packet The packet to propagate
  * \param protocol The destination protocol
  */
-void propagate_packet(const ethernet::packet& packet, socket_protocol protocol);
+void propagate_packet(const packet& packet, socket_protocol protocol);
 
 /*!
  * \brief Return the IP address of the DNS server

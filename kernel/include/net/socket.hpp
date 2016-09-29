@@ -18,7 +18,7 @@
 
 #include "conc/condition_variable.hpp"
 
-#include "net/ethernet_packet.hpp"
+#include "net/packet.hpp"
 
 #include "assert.hpp"
 
@@ -36,9 +36,9 @@ struct socket {
     bool listen;                     ///< Indicates if the socket is listening to packets
     void* connection_data = nullptr; ///< Optional pointer to the connection data (TCP/UDP)
 
-    std::vector<network::ethernet::packet> packets; ///< Packets that are prepared with their fd
+    std::vector<network::packet> packets; ///< Packets that are prepared with their fd
 
-    circular_buffer<network::ethernet::packet, 32> listen_packets; ///< The packets that wait to be read in listen mode
+    circular_buffer<network::packet, 32> listen_packets; ///< The packets that wait to be read in listen mode
     condition_variable listen_queue;                               ///< Condition variable to wait for packets
 
     socket() {}
@@ -63,7 +63,7 @@ struct socket {
      * \brief Register a new packet into the socket
      * \return The file descriptor of the packet
      */
-    size_t register_packet(network::ethernet::packet packet) {
+    size_t register_packet(network::packet packet) {
         auto fd = next_fd++;
 
         packet.fd = fd;
@@ -89,7 +89,7 @@ struct socket {
     /*!
      * \brief Returns the packet with the given file descriptor
      */
-    network::ethernet::packet& get_packet(size_t fd) {
+    network::packet& get_packet(size_t fd) {
         for (auto& packet : packets) {
             if (packet.fd == fd) {
                 return packet;
@@ -103,7 +103,7 @@ struct socket {
      * \brief Removes the packet with the given file descriptor
      */
     void erase_packet(size_t fd) {
-        packets.erase(std::remove_if(packets.begin(), packets.end(), [fd](network::ethernet::packet& packet) {
+        packets.erase(std::remove_if(packets.begin(), packets.end(), [fd](network::packet& packet) {
                           return packet.fd == fd;
                       }), packets.end());
     }
