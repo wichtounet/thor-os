@@ -5,9 +5,6 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#include <vector.hpp>
-#include <string.hpp>
-
 #include "net/ethernet_layer.hpp"
 #include "net/arp_layer.hpp"
 #include "net/ip_layer.hpp"
@@ -50,7 +47,6 @@ uint16_t type_to_code(network::ethernet::ether_type type){
 
 void prepare_packet(network::ethernet::packet& p, network::interface_descriptor& interface, const network::ethernet::packet_descriptor& descriptor){
     p.tag(0, 0);
-    p.type = descriptor.type;
     p.index = sizeof(network::ethernet::header);
     p.interface = interface.id;
 
@@ -99,10 +95,11 @@ void network::ethernet::layer::decode(network::interface_descriptor& interface, 
     logging::logf(logging::log_level::TRACE, "ethernet: Destination MAC Address %h \n", target_mac);
 
     packet.tag(0, 0);
-    packet.type = decode_ether_type(ether_header);
     packet.index += sizeof(header);
 
-    switch (packet.type) {
+    auto type = decode_ether_type(ether_header);
+
+    switch (type) {
         case ether_type::IPV4:
             ip_layer->decode(interface, packet);
             break;
@@ -153,12 +150,11 @@ std::expected<void> network::ethernet::layer::finalize_packet(network::interface
         // The packet will be handled by a kernel thread, needs to
         // be copied to kernel memory
 
-        network::ethernet::packet kernel_packet(new char[p.payload_size], p.payload_size);
+        auto kernel_packet = p;
+
+        kernel_packet.payload = new char[p.payload_size];
 
         std::copy_n(p.payload, p.payload_size, kernel_packet.payload);
-
-        kernel_packet.type = p.type;
-        kernel_packet.index = p.index;
 
         interface.send(kernel_packet);
     } else {

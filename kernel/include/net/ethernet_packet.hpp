@@ -23,10 +23,7 @@ struct packet {
     // Set from the beginning
     char* payload;          ///< Pointer to the packet payload
     size_t payload_size;    ///< The size, in bytes, of the payload
-
-    // Set by ethernet
-    ether_type type;    ///< The type of ethernet
-    size_t index;       ///< The current index inside the packet
+    size_t index;           ///< The current index inside the payload
 
     // Set for user mode
     size_t fd; ///< The file descriptor (in user mode)
