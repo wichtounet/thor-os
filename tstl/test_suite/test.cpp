@@ -17,6 +17,7 @@ void list_tests();
 void traits_tests();
 void algorithms_tests();
 void circular_buffer_tests();
+void shared_ptr_tests();
 
 int main(){
     string_tests();
@@ -25,6 +26,7 @@ int main(){
     circular_buffer_tests();
     tuple_tests();
     vector_tests();
+    shared_ptr_tests();
     list_tests();
 
     printf("All tests finished\n");
