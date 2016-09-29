@@ -5,10 +5,6 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#include <vector.hpp>
-#include <string.hpp>
-#include <expected.hpp>
-
 #include "tlib/errors.hpp"
 
 #include "net/arp_cache.hpp"

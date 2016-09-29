@@ -5,16 +5,10 @@
 //  http://www.opensource.org/licenses/MIT)
 //=======================================================================
 
-#include <vector.hpp>
-#include <string.hpp>
-
 #include "tlib/errors.hpp"
 
 #include "net/arp_layer.hpp"
-#include "net/arp_cache.hpp"
-#include "net/ip_layer.hpp"
-
-#include "conc/condition_variable.hpp"
+#include "net/ethernet_layer.hpp"
 
 #include "logging.hpp"
 #include "kernel_utils.hpp"

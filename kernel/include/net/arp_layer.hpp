@@ -12,12 +12,17 @@
 
 #include "conc/condition_variable.hpp"
 
-#include "net/ethernet_layer.hpp"
-#include "net/ip_layer.hpp"
-#include "net/network.hpp"
+#include "tlib/net_constants.hpp"
+
+#include "net/ethernet_packet.hpp"
+#include "net/interface.hpp"
 #include "net/arp_cache.hpp"
 
 namespace network {
+
+namespace ethernet {
+struct layer;
+}
 
 namespace arp {
 

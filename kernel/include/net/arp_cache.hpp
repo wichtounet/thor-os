@@ -9,12 +9,19 @@
 #define NET_ARP_CACHE_H
 
 #include <types.hpp>
+#include <vector.hpp>
 #include <expected.hpp>
 
+#include "tlib/net_constants.hpp"
+
 #include "net/ip_layer.hpp"
-#include "net/network.hpp"
+#include "net/interface.hpp"
 
 namespace network {
+
+namespace ethernet {
+struct layer;
+}
 
 namespace arp {
 
