@@ -57,16 +57,19 @@ struct layer {
      */
     void decode(network::interface_descriptor& interface, network::packet& packet);
 
+    /*!
+     * \brief Returns a reference to the ARP cache
+     */
     network::arp::cache& get_cache();
 
     void wait_for_reply();
     void wait_for_reply(size_t ms);
 
 private:
-    network::ethernet::layer* parent;
-    network::arp::cache _cache;
+    network::ethernet::layer* parent; ///< The parent layer (ethernet)
+    network::arp::cache _cache; ///< The ARP cache
 
-    condition_variable wait_queue;
+    condition_variable wait_queue; ///< Wait queue for ARP packets
 };
 
 } // end of arp namespace

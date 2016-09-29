@@ -27,20 +27,52 @@ namespace arp {
 
 struct layer;
 
+/*!
+ * \brief An entry in the ARP cache
+ */
 struct cache_entry {
-    uint64_t mac;
-    network::ip::address ip;
+    uint64_t mac;            ///< The MAC address
+    network::ip::address ip; ///< The IP address
 
+    /*!
+     * \brief Construct a new empty cache entry
+     */
     cache_entry(){}
+
+    /*!
+     * \brief Construct a new cache entry
+     * \param mac The MAC address
+     * \param ip The IP address
+     */
     cache_entry(uint64_t mac, network::ip::address ip) : mac(mac), ip(ip) {}
 };
 
+/*!
+ * \brief An ARP cache
+ */
 struct cache {
+    /*!
+     * \brief Construct a new cache.
+     * \param layer The ARP layer
+     * \param parent The parent layer (ethernet layer)
+     */
     cache(network::arp::layer* layer, network::ethernet::layer* parent);
 
+    /*!
+     * \brief Update the cache entry for the given MAC address
+     * \param mac The MAC address
+     * \param ip The IP address
+     */
     void update_cache(uint64_t mac, network::ip::address ip);
 
+    /*!
+     * \brief Indicates if the given MAC address is cached or not
+     */
     bool is_mac_cached(uint64_t mac) const ;
+
+    /*!
+     * \brief Indicates if the given IP address is cached or not
+     */
     bool is_ip_cached(network::ip::address ip) const ;
 
     /*!
@@ -83,10 +115,10 @@ struct cache {
 private:
     std::expected<void> arp_request(network::interface_descriptor& interface, network::ip::address ip);
 
-    network::arp::layer* arp_layer;
-    network::ethernet::layer* ethernet_layer;
+    network::arp::layer* arp_layer; ///< The ARP layer
+    network::ethernet::layer* ethernet_layer; ///< The ethernet layer
 
-    std::vector<cache_entry> mac_cache;
+    std::vector<cache_entry> mac_cache; ///< The cache of MAC addresses
 };
 
 } // end of arp namespace
