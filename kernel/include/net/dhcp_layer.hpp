@@ -55,7 +55,14 @@ struct dhcp_configuration {
     bool gateway = false; ///< Indicates if there is a gateway
 };
 
+/*!
+ * \brief The DHCP layer implementation
+ */
 struct layer {
+    /*!
+     * \brief Constructs the layer
+     * \param parent The parent layer
+     */
     layer(network::udp::layer* parent);
 
     /*!
@@ -74,12 +81,13 @@ struct layer {
      * \param interface The interface for which we want an IP address
      */
     std::expected<dhcp_configuration> request_ip(network::interface_descriptor& interface);
-private:
-    network::udp::layer* parent;
 
-    std::atomic<bool> listening;
-    circular_buffer<network::packet, 16> packets;
-    condition_variable listen_queue;
+private:
+    network::udp::layer* parent; ///< The parent layer
+
+    std::atomic<bool> listening;                    ///< Flag indicating if the kernel is listening for packets
+    circular_buffer<network::packet, 16> packets;   ///< The queue of packets
+    condition_variable listen_queue;                ///< Condition variable to listen to the queue
 };
 
 } // end of dns namespace

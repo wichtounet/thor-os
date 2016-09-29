@@ -31,9 +31,21 @@ namespace ethernet {
 static_assert(sizeof(address) == 6, "The size of a MAC address is 6 bytes");
 static_assert(sizeof(header) == 14, "The size of the Ethernet header is 14 bytes");
 
+/*!
+ * \brief Convert a 6 sequential byte MAC address to its single 64bit representation
+ */
 uint64_t mac6_to_mac64(const char* mac);
+
+/*!
+ * \brief Convert a 64bit MAC to its 6 sequential byte MAC address
+ * \param input The 64bit MAC input
+ * \param mac The output 6 sequential byte MAC address representation
+ */
 void mac64_to_mac6(uint64_t input, char* mac);
 
+/*!
+ * \brief Ethernet layer implementation
+ */
 struct layer {
     /*!
      * \brief Decode a network packet.
@@ -70,12 +82,21 @@ struct layer {
      */
     std::expected<void> finalize_packet(network::interface_descriptor& interface, packet& p);
 
+    /*!
+     * \brief Register the ARP layer
+     * \param layer The ARP layer
+     */
     void register_arp_layer(network::arp::layer* layer);
+
+    /*!
+     * \brief Register the IP layer
+     * \param layer The IP layer
+     */
     void register_ip_layer(network::ip::layer* layer);
 
 private:
-    network::arp::layer* arp_layer;
-    network::ip::layer* ip_layer;
+    network::arp::layer* arp_layer; ///< The ARP layer
+    network::ip::layer* ip_layer;   ///< The IP layer
 };
 
 } // end of ethernet namespace

@@ -26,7 +26,14 @@ namespace icmp {
 
 static_assert(sizeof(echo_request_header) == sizeof(header::rest), "Invalid size for echo request header");
 
+/*!
+ * \brief The ICMP layer implementation
+ */
 struct layer {
+    /*!
+     * \brief Constructs the layer
+     * \param parent The parent layer
+     */
     layer(network::ip::layer* parent);
 
     /*!
@@ -65,7 +72,7 @@ struct layer {
     std::expected<void> finalize_packet(network::interface_descriptor& interface, network::packet& p);
 
 private:
-    network::ip::layer* parent;
+    network::ip::layer* parent; ///< The parent layer
 };
 
 } // end of icmp namespace

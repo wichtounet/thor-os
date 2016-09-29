@@ -14,10 +14,16 @@
 
 namespace network {
 
+/*!
+ * \brief A thread-safe collection of network connection (UDP/TCP)
+ */
 template <typename C>
 struct connection_handler {
-    using connection_type = C;
+    using connection_type = C; ///< The type of connnection
 
+    /*!
+     * \brief Get the first connection matching the packet ports
+     */
     connection_type* get_connection_for_packet(size_t source_port, size_t target_port) {
         auto lock = connections_lock.reader_lock();
         std::lock_guard<reader_rw_lock> l(lock);
@@ -37,6 +43,9 @@ struct connection_handler {
         return nullptr;
     }
 
+    /*!
+     * \brief Execute a functor for each connection matcing the packet ports
+     */
     template<typename Functor>
     void for_each_connection_for_packet(size_t source_port, size_t target_port, Functor fun){
         auto lock = connections_lock.reader_lock();
@@ -55,6 +64,9 @@ struct connection_handler {
         }
     }
 
+    /*!
+     * \brief Create a new connection
+     */
     connection_type& create_connection() {
         auto lock = connections_lock.writer_lock();
         std::lock_guard<writer_rw_lock> l(lock);
@@ -62,6 +74,9 @@ struct connection_handler {
         return connections.emplace_back();
     }
 
+    /*!
+     * \brief Remove the connection from the collection
+     */
     void remove_connection(connection_type& connection) {
         auto lock = connections_lock.writer_lock();
         std::lock_guard<writer_rw_lock> l(lock);
@@ -80,9 +95,9 @@ struct connection_handler {
     }
 
 private:
-    rw_lock connections_lock;
+    rw_lock connections_lock; ///< The Readers/Writer lock
 
-    std::list<connection_type> connections;
+    std::list<connection_type> connections; ///< The list of connections
 };
 
 } // end of network namespace

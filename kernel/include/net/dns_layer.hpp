@@ -25,7 +25,14 @@ namespace dns {
 
 static_assert(sizeof(header) == 12, "DNS flags must be 96 bits");
 
+/*!
+ * \brief The DNS layer implementation
+ */
 struct layer {
+    /*!
+     * \brief Constructs the layer
+     * \param parent The parent layer
+     */
     layer(network::udp::layer* parent);
 
     /*!
@@ -56,7 +63,7 @@ struct layer {
     std::expected<void> finalize_packet(network::interface_descriptor& interface, network::packet& p);
 
 private:
-    network::udp::layer* parent;
+    network::udp::layer* parent; ///< The parent layer
 };
 
 } // end of dns namespace
