@@ -11,6 +11,7 @@
 #include "test.hpp"
 
 void string_tests();
+void function_tests();
 void tuple_tests();
 void vector_tests();
 void list_tests();
@@ -28,6 +29,7 @@ int main(){
     vector_tests();
     shared_ptr_tests();
     list_tests();
+    function_tests();
 
     printf("All tests finished\n");
 
