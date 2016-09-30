@@ -287,6 +287,7 @@ void network::init(){
 
     arp_layer = new network::arp::layer(ethernet_layer);
     ip_layer = new network::ip::layer(ethernet_layer);
+    ip_layer->register_arp_layer(arp_layer);
 
     icmp_layer = new network::icmp::layer(ip_layer);
 
