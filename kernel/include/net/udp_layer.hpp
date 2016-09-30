@@ -124,6 +124,14 @@ struct layer {
     std::expected<void> finalize_packet(network::interface_descriptor& interface, network::packet& p);
 
     /*!
+     * \brief Finalize a prepared packet
+     * \param interface The interface on which to finalize the packet
+     * \param p The packet to finalize
+     * \return nothing or an error
+     */
+    std::expected<void> finalize_packet(network::interface_descriptor& interface, network::socket& sock, network::packet& p);
+
+    /*!
      * \brief Bind to the socket as a client
      * \param socket the User socket
      * \param server_port The server port

@@ -616,25 +616,22 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
         return ret;
     };
 
-    // TODO Unify these function calls!
-
     switch(socket.protocol){
         case network::socket_protocol::ICMP:
-            return check_and_return(icmp_layer->finalize_packet(interface, packet));
+            return check_and_return(icmp_layer->finalize_packet(interface, socket, packet));
 
         case network::socket_protocol::TCP:
             return check_and_return(tcp_layer->finalize_packet(interface, socket, packet));
 
         case network::socket_protocol::UDP:
-            return check_and_return(udp_layer->finalize_packet(interface, packet));
+            return check_and_return(udp_layer->finalize_packet(interface, socket, packet));
 
         case network::socket_protocol::DNS:
-            return check_and_return(dns_layer->finalize_packet(interface, packet));
+            return check_and_return(dns_layer->finalize_packet(interface, socket, packet));
 
         default:
             return std::make_unexpected<void>(std::ERROR_SOCKET_UNIMPLEMENTED);
     }
-
 }
 
 std::expected<void> network::listen(socket_fd_t socket_fd, bool listen){

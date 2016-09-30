@@ -170,6 +170,10 @@ std::expected<void> network::udp::layer::finalize_packet(network::interface_desc
     return parent->finalize_packet(interface, p);
 }
 
+std::expected<void> network::udp::layer::finalize_packet(network::interface_descriptor& interface, network::socket& /*sock*/, network::packet& p){
+    return this->finalize_packet(interface, p);
+}
+
 std::expected<size_t> network::udp::layer::client_bind(network::socket& sock, size_t server_port, network::ip::address server){
     // Create the connection
 

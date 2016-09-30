@@ -222,3 +222,7 @@ std::expected<void> network::dns::layer::finalize_packet(network::interface_desc
     // Give the packet to the UDP layer for finalization
     return parent->finalize_packet(interface, p);
 }
+
+std::expected<void> network::dns::layer::finalize_packet(network::interface_descriptor& interface, network::socket& /*sock*/, network::packet& p) {
+    return this->finalize_packet(interface, p);
+}

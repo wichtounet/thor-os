@@ -153,3 +153,7 @@ std::expected<void> network::icmp::layer::finalize_packet(network::interface_des
     // Give the packet to the IP layer for finalization
     return parent->finalize_packet(interface, packet);
 }
+
+std::expected<void> network::icmp::layer::finalize_packet(network::interface_descriptor& interface, network::socket& /*sock*/, network::packet& packet){
+    return this->finalize_packet(interface, packet);
+}
