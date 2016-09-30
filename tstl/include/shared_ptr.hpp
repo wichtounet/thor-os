@@ -73,8 +73,13 @@ struct shared_ptr {
         __sync_fetch_and_add(&control_block->counter, 1);
     }
 
+    /*!
+     * \brief Copy assign a shared_ptr, effectively incrementing the reference counter
+     */
     shared_ptr& operator=(const shared_ptr& rhs){
         if(this != &rhs){
+            decrement();
+
             this->ptr = rhs.ptr;
             this->control_block = rhs.control_block;
 
@@ -94,8 +99,15 @@ struct shared_ptr {
         rhs.control_block = nullptr;
     }
 
+    /*!
+     * \brief Move assign a shared_ptr
+     *
+     * This does not change the reference counter since the shared pointer moved from does not point to the object anymore
+     */
     shared_ptr& operator=(shared_ptr&& rhs){
         if(this != &rhs){
+            decrement();
+
             this->ptr = rhs.ptr;
             this->control_block = rhs.control_block;
 
@@ -107,14 +119,36 @@ struct shared_ptr {
     }
 
     /*!
+     * \brief Assign a new pointer to the shared pointer.
+     *
+     * The pointer will be deleted using the 'delete-expression'
+     */
+    template<typename U>
+    shared_ptr& operator=(U* ptr){
+        decrement();
+
+        this->ptr = ptr;
+
+        control_block = new control_block_impl<U, default_delete<U>>(ptr);
+        control_block->counter = 1;
+    }
+
+    /*!
+     * \brief Resets the shared_ptr value
+     */
+    shared_ptr& operator=(decltype(nullptr)) {
+        decrement();
+
+        this->ptr = nullptr;
+        this->control_block = nullptr;
+    }
+
+    /*!
      * \brief Destroy the shared_ptr. This effectively decrement the counter. If the counter reaches 0,
      * the object is deleted.
      */
     ~shared_ptr(){
-        if(__sync_fetch_and_sub(&control_block->counter, 1) == 1){
-            control_block->destroy();
-            delete control_block;
-        }
+        decrement();
     }
 
     /*!
@@ -180,6 +214,21 @@ struct shared_ptr {
     };
 
 private:
+    /*!
+     * \brief Helper function to decrement the reference counter if the pointer points to a
+     * managed object.
+     *
+     * If the counter goes to zero, this also deallocates the managed object and the control block
+     */
+    void decrement(){
+        if(ptr){
+            if(__sync_fetch_and_sub(&control_block->counter, 1) == 1){
+                control_block->destroy();
+                delete control_block;
+            }
+        }
+    }
+
     pointer_type ptr;               ///< The managed pointer
     control_block_t* control_block; ///< Pointer to the control block
 };
