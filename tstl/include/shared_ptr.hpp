@@ -19,11 +19,13 @@ namespace std {
  *
  * TODO
  */
-template <typename T, typename D = default_delete<T>>
+template <typename T>
 struct shared_ptr {
     using pointer_type = T*; ///< The pointer type
     using reference_type = T&; ///< The reference type
     using element_type = T;  ///< The element type
+
+    struct control_block_t;
 
     constexpr shared_ptr() : ptr(), control_block() {}
 
@@ -38,6 +40,10 @@ struct shared_ptr {
     template<typename U, typename Deleter>
     shared_ptr(U* ptr, Deleter deleter) : ptr(ptr) {
         control_block = new control_block_impl<U, Deleter>(ptr, deleter);
+        control_block->counter = 1;
+    }
+
+    shared_ptr(T* ptr, control_block_t* control_block, int) : ptr(ptr), control_block(control_block) {
         control_block->counter = 1;
     }
 
@@ -99,7 +105,6 @@ struct shared_ptr {
         return get();
     }
 
-private:
     struct control_block_t {
         volatile size_t counter;
 
@@ -122,9 +127,29 @@ private:
         }
     };
 
+    template <typename U>
+    struct inplace_control_block_impl : control_block_t {
+        U ptr;
+
+        template<typename... Args>
+        inplace_control_block_impl(Args&&... args) : ptr(std::forward<Args>(args)...){}
+
+        virtual void destroy(){
+            // Nothing to do
+        }
+    };
+
+private:
     pointer_type ptr;
     control_block_t* control_block;
 };
+
+template <typename T, typename... Args>
+std::shared_ptr<T> make_shared(Args&&... args){
+    auto cb = new typename std::shared_ptr<T>::template inplace_control_block_impl<T>(std::forward<Args>(args)...);
+
+    return std::shared_ptr<T>{&cb->ptr, cb, 0};
+}
 
 } //end of namespace std
 
