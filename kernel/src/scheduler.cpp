@@ -819,6 +819,8 @@ void scheduler::kill_current_process(){
 
     //Run another process
     reschedule();
+
+    thor_unreachable("A killed process has been run!");
 }
 
 void scheduler::tick(){
