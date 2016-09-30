@@ -27,26 +27,48 @@ struct shared_ptr {
 
     struct control_block_t;
 
+    /*!
+     * \brief Construct an empty shared_ptr
+     */
     constexpr shared_ptr() : ptr(), control_block() {}
 
+    /*!
+     * \brief Construct an empty shared_ptr
+     */
     constexpr explicit shared_ptr(decltype(nullptr)) : ptr(), control_block() {}
 
+    /*!
+     * \brief Construct a new shared_ptr around the given pointer.
+     *
+     * The pointer will be deleted using the 'delete-expression'
+     */
     template<typename U>
     explicit shared_ptr(U* ptr) : ptr(ptr) {
         control_block = new control_block_impl<U, default_delete<U>>(ptr);
         control_block->counter = 1;
     }
 
+    /*!
+     * \brief Construct a new shared_ptr around the given pointer.
+     *
+     * The pointer will be deleted using 'deleter(ptr)'
+     */
     template<typename U, typename Deleter>
     shared_ptr(U* ptr, Deleter deleter) : ptr(ptr) {
         control_block = new control_block_impl<U, Deleter>(ptr, deleter);
         control_block->counter = 1;
     }
 
+    /*!
+     * \brief Construct a new shared_ptr directly with a control block
+     */
     shared_ptr(T* ptr, control_block_t* control_block, int) : ptr(ptr), control_block(control_block) {
         control_block->counter = 1;
     }
 
+    /*!
+     * \brief Copy construct a shared_ptr, effectively incrementing the reference counter
+     */
     shared_ptr(const shared_ptr& rhs) : ptr(rhs.ptr), control_block(rhs.control_block) {
         __sync_fetch_and_add(&control_block->counter, 1);
     }
@@ -62,6 +84,11 @@ struct shared_ptr {
         return *this;
     }
 
+    /*!
+     * \brief Move construct a shared_ptr.
+     *
+     * This does not change the reference counter since the shared pointer moved from does not point to the object anymore
+     */
     shared_ptr(shared_ptr&& rhs) : ptr(rhs.ptr), control_block(rhs.control_block) {
         rhs.ptr = nullptr;
         rhs.control_block = nullptr;
@@ -79,6 +106,10 @@ struct shared_ptr {
         return *this;
     }
 
+    /*!
+     * \brief Destroy the shared_ptr. This effectively decrement the counter. If the counter reaches 0,
+     * the object is deleted.
+     */
     ~shared_ptr(){
         if(__sync_fetch_and_sub(&control_block->counter, 1) == 1){
             control_block->destroy();
@@ -86,14 +117,23 @@ struct shared_ptr {
         }
     }
 
+    /*!
+     * \brief Returns the managed pointer
+     */
     pointer_type get() const {
         return ptr;
     }
 
+    /*!
+     * \brief Returns the managed pointer
+     */
     pointer_type operator->() const {
         return get();
     }
 
+    /*!
+     * \brief Returns a reference to the managed object
+     */
     reference_type operator*() const {
         return *get();
     }
@@ -140,10 +180,16 @@ struct shared_ptr {
     };
 
 private:
-    pointer_type ptr;
-    control_block_t* control_block;
+    pointer_type ptr;               ///< The managed pointer
+    control_block_t* control_block; ///< Pointer to the control block
 };
 
+/*!
+ * \brief Creates a new shared_ptr.
+ *
+ * This is effectively more efficient than shared_ptr<T>(new T) since it allocates the object directly in the control
+ * block, saving one allocation.
+ */
 template <typename T, typename... Args>
 std::shared_ptr<T> make_shared(Args&&... args){
     auto cb = new typename std::shared_ptr<T>::template inplace_control_block_impl<T>(std::forward<Args>(args)...);
