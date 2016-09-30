@@ -248,8 +248,6 @@ void paging::init(){
 
     //8. Perform some basic tests
 
-    //TODO Some basic tests here
-
     logging::logf(logging::log_level::TRACE, "paging: basic tests\n");
 
     if(!page_present(virtual_pml4t_start)){
@@ -259,6 +257,12 @@ void paging::init(){
 
     if(physical_address(virtual_pml4t_start) != physical_pml4t_start){
         logging::logf(logging::log_level::ERROR, "paging: PML4T is not correctly mapped\n");
+        suspend_boot();
+    }
+
+    // The first MiB must be identity mapped
+    if(physical_address(0x6666) != 0x6666){
+        logging::logf(logging::log_level::ERROR, "paging: Invalid identity mapping\n");
         suspend_boot();
     }
 
