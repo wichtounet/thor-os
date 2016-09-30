@@ -570,8 +570,8 @@ void sc_wait_for_packet_ms(interrupt::syscall_regs* regs){
     regs->rbx = reinterpret_cast<size_t>(user_buffer);
 }
 
+void sc_kill(interrupt::syscall_regs* /*regs*/) __attribute((noreturn));
 void sc_kill(interrupt::syscall_regs* /*regs*/){
-    //TODO Do something with return code
     scheduler::kill_current_process();
 }
 

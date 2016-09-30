@@ -74,7 +74,7 @@ std::expected<pid_t> exec(const std::string& path, const std::vector<std::string
 /*!
  * \brief Kill the current process
  */
-void kill_current_process();
+void kill_current_process() __attribute__((noreturn));
 
 /*!
  * \brief Wait for the given process to terminate
