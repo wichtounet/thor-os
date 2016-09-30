@@ -17,7 +17,9 @@ namespace std {
 /*!
  * \brief A shared_ptr ptr of type T.
  *
- * TODO
+ * A shared pointer is a reference-counted pointer, with several pointers being
+ * able to point to the same managed object.  When the reference counter goes
+ * down to zero, the object is automatically deleted.
  */
 template <typename T>
 struct shared_ptr {
