@@ -22,6 +22,28 @@ void test_base(){
     check(*a.get() == 99);
 }
 
+struct foo {
+    int bar = 0;
+
+    int test(){
+        return bar;
+    }
+
+    void set(int bar){
+        this->bar = bar;
+    }
+};
+
+void test_struct(){
+    std::shared_ptr<foo> a(new foo);
+
+    check(a->test() == 0);
+
+    a->set(666);
+
+    check(a->test() == 666);
+}
+
 struct kiss {
     int* ref;
     kiss(int* ref) : ref(ref) {}
@@ -42,9 +64,23 @@ void test_destructor() {
     check(counter == 1, "destruct: Invalid destructors");
 }
 
+void test_make_shared() {
+    int counter = 0;
+
+    {
+        auto a = std::make_shared<kiss>(&counter);
+        auto b = a;
+        auto c = a;
+    }
+
+    check(counter == 1, "make_shared: Invalid destructors");
+}
+
 } //end of anonymous namespace
 
 void shared_ptr_tests(){
     test_base();
+    test_struct();
     test_destructor();
+    test_make_shared();
 }
