@@ -229,7 +229,7 @@ std::expected<size_t> wait_for_packet(char* buffer, socket_fd_t socket_fd, size_
  * \param packet The packet to propagate
  * \param protocol The destination protocol
  */
-void propagate_packet(const packet& packet, socket_protocol protocol);
+void propagate_packet(const packet_p& packet, socket_protocol protocol);
 
 /*!
  * \brief Return the IP address of the DNS server

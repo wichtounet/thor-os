@@ -82,9 +82,9 @@ void prepare_packet(network::packet& packet, size_t source, size_t target) {
     packet.index += default_tcp_header_length;
 }
 
-size_t tcp_payload_len(const network::packet& packet){
-    auto* ip_header  = reinterpret_cast<const network::ip::header*>(packet.payload + packet.tag(1));
-    auto* tcp_header = reinterpret_cast<const network::tcp::header*>(packet.payload + packet.tag(2));
+size_t tcp_payload_len(const network::packet_p& packet){
+    auto* ip_header  = reinterpret_cast<const network::ip::header*>(packet->payload + packet->tag(1));
+    auto* tcp_header = reinterpret_cast<const network::tcp::header*>(packet->payload + packet->tag(2));
 
     auto tcp_flags = switch_endian_16(tcp_header->flags);
 
@@ -105,11 +105,11 @@ network::tcp::layer::layer(network::ip::layer* parent) : parent(parent) {
     local_port = 1023;
 }
 
-void network::tcp::layer::decode(network::interface_descriptor& interface, network::packet& packet) {
-    packet.tag(2, packet.index);
+void network::tcp::layer::decode(network::interface_descriptor& interface, network::packet_p& packet) {
+    packet->tag(2, packet->index);
 
-    auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + packet.tag(1));
-    auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet.payload + packet.index);
+    auto* ip_header = reinterpret_cast<network::ip::header*>(packet->payload + packet->tag(1));
+    auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet->payload + packet->index);
 
     logging::logf(logging::log_level::TRACE, "tcp:decode: Start TCP packet handling\n");
 
@@ -140,13 +140,7 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
         // Propagate to kernel connections
 
         if (connection.listening.load()) {
-            auto copy    = packet;
-            copy.payload = new char[copy.payload_size];
-            std::copy_n(packet.payload, packet.payload_size, copy.payload);
-
-            logging::logf(logging::log_level::TRACE, "tcp:decode: Push payload %p \n", copy.payload);
-
-            connection.packets.push(copy);
+            connection.packets.push_back(packet);
             connection.queue.notify_one();
         }
 
@@ -155,16 +149,10 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
         if (*flag_psh(&flags) && connection.socket) {
             auto& socket = *connection.socket;
 
-            packet.index += *flag_data_offset(&flags) * 4;
+            packet->index += *flag_data_offset(&flags) * 4;
 
             if (socket.listen) {
-                auto copy    = packet;
-                copy.payload = new char[copy.payload_size];
-                std::copy_n(packet.payload, packet.payload_size, copy.payload);
-
-                logging::logf(logging::log_level::TRACE, "tcp:decode: Push payload %p \n", copy.payload);
-
-                socket.listen_packets.push(copy);
+                socket.listen_packets.push_back(packet);
                 socket.listen_queue.notify_one();
             }
         }
@@ -182,7 +170,9 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
             return;
         }
 
-        auto* ack_tcp_header = reinterpret_cast<header*>(p->payload + p->tag(2));
+        auto& packet = *p;
+
+        auto* ack_tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
         ack_tcp_header->sequence_number = switch_endian_32(next_seq);
         ack_tcp_header->ack_number      = switch_endian_32(next_ack);
@@ -191,7 +181,7 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
         (flag_ack(&ack_flags)) = 1;
         ack_tcp_header->flags = switch_endian_16(ack_flags);
 
-        finalize_packet_direct(interface, *p);
+        finalize_packet_direct(interface, packet);
     }
 
     logging::logf(logging::log_level::TRACE, "tcp:decode: Done\n");
@@ -208,19 +198,21 @@ std::expected<void> network::tcp::layer::send(char* target_buffer, network::sock
     logging::logf(logging::log_level::TRACE, "tcp:send: Send %s(%u)\n", buffer, n);
 
     network::tcp::packet_descriptor desc{n};
-    auto packet = user_prepare_packet(target_buffer, socket, &desc);
+    auto p = user_prepare_packet(target_buffer, socket, &desc);
 
-    if (packet) {
+    if (p) {
+        auto& packet = *p;
+
         for(size_t i = 0; i < n; ++i){
             packet->payload[packet->index + i] = buffer[i];
         }
 
         auto target_ip  = connection.server_address;
         auto& interface = network::select_interface(target_ip);
-        return finalize_packet(interface, socket, *packet);
+        return finalize_packet(interface, socket, packet);
     }
 
-    return std::make_unexpected<void>(packet.error());
+    return std::make_unexpected<void>(p.error());
 }
 
 std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket& socket, size_t n){
@@ -235,19 +227,16 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
         socket.listen_queue.wait();
     }
 
-    auto packet = socket.listen_packets.pop();
+    auto packet = socket.listen_packets.back();
+    socket.listen_packets.pop_back();
 
     auto payload_len = tcp_payload_len(packet);
 
     if(payload_len > n){
-        delete[] packet.payload;
-
         return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
     }
 
-    std::copy_n(packet.payload + packet.index, payload_len, buffer);
-
-    delete[] packet.payload;
+    std::copy_n(packet->payload + packet->index, payload_len, buffer);
 
     return payload_len;
 }
@@ -270,29 +259,26 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
         }
     }
 
-    auto packet = socket.listen_packets.pop();
+    auto packet = socket.listen_packets.back();
+    socket.listen_packets.pop_back();
 
     auto payload_len = tcp_payload_len(packet);
 
     if(payload_len > n){
-        delete[] packet.payload;
-
         return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
     }
 
-    std::copy_n(packet.payload + packet.index, payload_len, buffer);
-
-    delete[] packet.payload;
+    std::copy_n(packet->payload + packet->index, payload_len, buffer);
 
     return payload_len;
 }
 
-std::expected<network::packet> network::tcp::layer::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
+std::expected<network::packet_p> network::tcp::layer::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
     auto& connection = socket.get_connection_data<tcp_connection>();
 
     // Make sure stream sockets are connected
     if(!connection.connected){
-        return std::make_unexpected<network::packet>(std::ERROR_SOCKET_NOT_CONNECTED);
+        return std::make_unexpected<network::packet_p>(std::ERROR_SOCKET_NOT_CONNECTED);
     }
 
     auto target_ip  = connection.server_address;
@@ -300,9 +286,11 @@ std::expected<network::packet> network::tcp::layer::user_prepare_packet(char* bu
 
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{descriptor->payload_size + default_tcp_header_length, target_ip, 0x06};
-    auto packet = parent->user_prepare_packet(buffer, interface, &desc);
+    auto p = parent->user_prepare_packet(buffer, interface, &desc);
 
-    if (packet) {
+    if (p) {
+        auto& packet = *p;
+
         auto source = connection.local_port;
         auto target = connection.server_port;
 
@@ -319,18 +307,18 @@ std::expected<network::packet> network::tcp::layer::user_prepare_packet(char* bu
         tcp_header->ack_number      = switch_endian_32(connection.ack_number);
     }
 
-    return packet;
+    return p;
 }
 
-std::expected<void> network::tcp::layer::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::packet& p) {
-    auto* tcp_header = reinterpret_cast<network::tcp::header*>(p.payload + p.tag(2));
+std::expected<void> network::tcp::layer::finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::packet_p& p) {
+    auto* tcp_header = reinterpret_cast<network::tcp::header*>(p->payload + p->tag(2));
 
     auto source_flags = switch_endian_16(tcp_header->flags);
 
-    p.index -= *flag_data_offset(&source_flags) * 4;
+    p->index -= *flag_data_offset(&source_flags) * 4;
 
     // Compute the checksum
-    compute_checksum(p);
+    compute_checksum(*p);
 
     auto& connection = socket.get_connection_data<tcp_connection>();
 
@@ -342,30 +330,10 @@ std::expected<void> network::tcp::layer::finalize_packet(network::interface_desc
         logging::logf(logging::log_level::TRACE, "tcp:finalize(std): Send Packet (%h)\n", size_t(source_flags));
 
         // Give the packet to the IP layer for finalization
-        if(p.user){
-            auto result = parent->finalize_packet(interface, p);
+        auto result = parent->finalize_packet(interface, p);
 
-            if(!result){
-                return result;
-            }
-        } else {
-            auto copy = p;
-
-            copy.payload = new char[copy.payload_size];
-
-            std::copy_n(p.payload, copy.payload_size, copy.payload);
-
-            auto result = parent->finalize_packet(interface, copy);
-
-            if(!result){
-                delete[] copy.payload;
-                delete[] p.payload;
-
-                logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", copy.payload);
-                logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", p.payload);
-
-                return result;
-            }
+        if(!result){
+            return result;
         }
 
         auto before = timer::milliseconds();
@@ -388,9 +356,10 @@ std::expected<void> network::tcp::layer::finalize_packet(network::interface_desc
 
             thor_assert(!connection.packets.empty(), "Should not be notified if queue not empty");
 
-            auto received_packet = connection.packets.pop();
+            auto received_packet = connection.packets.back();
+            connection.packets.pop_back();
 
-            auto* tcp_header = reinterpret_cast<network::tcp::header*>(received_packet.payload + received_packet.tag(2));
+            auto* tcp_header = reinterpret_cast<network::tcp::header*>(received_packet->payload + received_packet->tag(2));
             auto flags       = switch_endian_16(tcp_header->flags);
 
             bool correct_ack = false;
@@ -410,9 +379,6 @@ std::expected<void> network::tcp::layer::finalize_packet(network::interface_desc
 
             if (correct_ack) {
                 logging::logf(logging::log_level::TRACE, "tcp:finalize: Received ACK\n");
-                logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", received_packet.payload);
-
-                delete[] received_packet.payload;
 
                 received = true;
 
@@ -420,9 +386,6 @@ std::expected<void> network::tcp::layer::finalize_packet(network::interface_desc
             }
 
             logging::logf(logging::log_level::TRACE, "tcp:finalize: Received unrelated answer\n");
-            logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", received_packet.payload);
-
-            delete[] received_packet.payload;
         }
 
         if(received){
@@ -430,13 +393,6 @@ std::expected<void> network::tcp::layer::finalize_packet(network::interface_desc
         }
 
         after = timer::milliseconds();
-    }
-
-    // Release the memory of the original memory since it was copied
-    if(!p.user){
-        delete[] p.payload;
-
-        logging::logf(logging::log_level::TRACE, "tcp:finalize: Release payload %p \n", p.payload);
     }
 
     // Stop listening
@@ -466,11 +422,13 @@ std::expected<size_t> network::tcp::layer::connect(network::socket& sock, networ
 
     // Prepare the SYN packet
 
-    auto packet = kernel_prepare_packet(interface, connection, 0);
+    auto p = kernel_prepare_packet(interface, connection, 0);
 
-    if (!packet) {
-        return std::make_unexpected<size_t>(packet.error());
+    if (!p) {
+        return std::make_unexpected<size_t>(p.error());
     }
+
+    auto& packet = *p;
 
     auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
@@ -480,7 +438,7 @@ std::expected<size_t> network::tcp::layer::connect(network::socket& sock, networ
 
     logging::logf(logging::log_level::TRACE, "tcp:connect: Send SYN\n");
 
-    auto status = finalize_packet(interface, sock, *packet);
+    auto status = finalize_packet(interface, sock, packet);
 
     if(!status){
         return std::make_unexpected<size_t, size_t>(status.error());
@@ -493,11 +451,13 @@ std::expected<size_t> network::tcp::layer::connect(network::socket& sock, networ
     // At this point we have received the SYN/ACK, only remains to ACK
 
     {
-        auto packet = kernel_prepare_packet(interface, connection, 0);
+        auto p = kernel_prepare_packet(interface, connection, 0);
 
-        if (!packet) {
-            return std::make_unexpected<size_t>(packet.error());
+        if (!p) {
+            return std::make_unexpected<size_t>(p.error());
         }
+
+        auto& packet = *p;
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
@@ -507,7 +467,7 @@ std::expected<size_t> network::tcp::layer::connect(network::socket& sock, networ
 
         logging::logf(logging::log_level::TRACE, "tcp:connect: Send ACK\n");
 
-        finalize_packet_direct(interface, *packet);
+        finalize_packet_direct(interface, packet);
     }
 
     // Mark the connection as connected
@@ -544,9 +504,10 @@ std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
             connection.queue.wait();
         }
 
-        auto received_packet = connection.packets.pop();
+        auto received_packet = connection.packets.back();
+        connection.packets.pop_back();
 
-        auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
+        auto* tcp_header = reinterpret_cast<header*>(received_packet->payload + received_packet->index);
         auto flags       = switch_endian_16(tcp_header->flags);
 
         if (*flag_syn(&flags)) {
@@ -556,18 +517,12 @@ std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
             source_port = switch_endian_16(tcp_header->source_port);
             target_port = switch_endian_16(tcp_header->target_port);
 
-            auto* ip_header = reinterpret_cast<network::ip::header*>(received_packet.payload + received_packet.tag(1));
+            auto* ip_header = reinterpret_cast<network::ip::header*>(received_packet->payload + received_packet->tag(1));
 
             source_address = switch_endian_32(ip_header->source_ip);
 
-            logging::logf(logging::log_level::TRACE, "tcp:accept: release payload %p\n", received_packet.payload);
-            delete[] received_packet.payload;
-
             break;
         }
-
-        logging::logf(logging::log_level::TRACE, "tcp:accept: release payload %p\n", received_packet.payload);
-        delete[] received_packet.payload;
     }
 
     logging::logf(logging::log_level::TRACE, "tcp:accept: received SYN from %h\n", source_address);
@@ -602,11 +557,13 @@ std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
     // 3. Send SYN/ACK
 
     {
-        auto packet = kernel_prepare_packet(interface, child_connection, 0);
+        auto p = kernel_prepare_packet(interface, child_connection, 0);
 
-        if (!packet) {
-            return std::make_unexpected<size_t>(packet.error());
+        if (!p) {
+            return std::make_unexpected<size_t>(p.error());
         }
+
+        auto& packet = *p;
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
@@ -617,7 +574,7 @@ std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
 
         logging::logf(logging::log_level::TRACE, "tcp:accept: Send SYN/ACK %h\n", size_t(flags));
 
-        auto status = finalize_packet(interface, child_sock, *packet);
+        auto status = finalize_packet(interface, child_sock, packet);
 
         if(!status){
             return std::make_unexpected<size_t, size_t>(status.error());
@@ -667,11 +624,13 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
     auto target_ip  = connection.server_address;
     auto& interface = network::select_interface(target_ip);
 
-    auto packet = kernel_prepare_packet(interface, connection, 0);
+    auto p = kernel_prepare_packet(interface, connection, 0);
 
-    if (!packet) {
-        return std::make_unexpected<void>(packet.error());
+    if (!p) {
+        return std::make_unexpected<void>(p.error());
     }
+
+    auto& packet = *p;
 
     auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
@@ -694,21 +653,9 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
 
     for(size_t t = 0; t < max_tries; ++t){
         // Give the packet to the IP layer for finalization
-        auto copy = *packet;
-
-        copy.payload = new char[packet->payload_size];
-
-        std::copy_n(packet->payload, packet->payload_size, copy.payload);
-
-        auto result = finalize_packet_direct(interface, copy);
+        auto result = finalize_packet_direct(interface, packet);
 
         if(!result){
-            delete[] copy.payload;
-            delete[] packet->payload;
-
-            logging::logf(logging::log_level::TRACE, "tcp:disconnect: Release payload %p \n", copy.payload);
-            logging::logf(logging::log_level::TRACE, "tcp:disconnect: Release payload %p \n", packet->payload);
-
             return result;
         }
 
@@ -724,9 +671,10 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
             auto remaining = timeout_ms - (after - before);
 
             if(connection.queue.wait_for(remaining)){
-                auto received_packet = connection.packets.pop();
+                auto received_packet = connection.packets.back();
+                connection.packets.pop_back();
 
-                auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
+                auto* tcp_header = reinterpret_cast<header*>(received_packet->payload + received_packet->index);
                 auto flags       = switch_endian_16(tcp_header->flags);
 
                 bool correct_ack = false;
@@ -742,14 +690,10 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
                     seq = switch_endian_32(tcp_header->sequence_number);
                     ack = switch_endian_32(tcp_header->ack_number);
 
-                    delete[] received_packet.payload;
-
                     received = true;
 
                     break;
                 }
-
-                delete[] received_packet.payload;
             } else {
                 break;
             }
@@ -761,9 +705,6 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
 
         after = timer::milliseconds();
     }
-
-    // Release the memory of the original memory since it was copied
-    delete[] packet->payload;
 
     if(!received){
         return std::make_unexpected<void>(std::ERROR_SOCKET_TCP_ERROR);
@@ -796,9 +737,10 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
                 }
             }
 
-            auto received_packet = connection.packets.pop();
+            auto received_packet = connection.packets.back();
+            connection.packets.pop_back();
 
-            auto* tcp_header = reinterpret_cast<header*>(received_packet.payload + received_packet.index);
+            auto* tcp_header = reinterpret_cast<header*>(received_packet->payload + received_packet->index);
             auto flags       = switch_endian_16(tcp_header->flags);
 
             bool correct_ack = *flag_fin(&flags) && *flag_ack(&flags);
@@ -807,14 +749,10 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
                 seq = switch_endian_32(tcp_header->sequence_number);
                 ack = switch_endian_32(tcp_header->ack_number);
 
-                delete[] received_packet.payload;
-
                 received = true;
 
                 break;
             }
-
-            delete[] received_packet.payload;
         }
 
         if(!received){
@@ -836,11 +774,13 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
     // Finally we send the ACK for the FIN/ACK
 
     {
-        auto packet = kernel_prepare_packet(interface, connection, 0);
+        auto p = kernel_prepare_packet(interface, connection, 0);
 
-        if (!packet) {
-            return std::make_unexpected<void>(packet.error());
+        if (!p) {
+            return std::make_unexpected<void>(p.error());
         }
+
+        auto& packet = *p;
 
         auto* tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
 
@@ -849,7 +789,7 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
         tcp_header->flags = switch_endian_16(flags);
 
         logging::logf(logging::log_level::TRACE, "tcp: Send ACK\n");
-        finalize_packet_direct(interface, *packet);
+        finalize_packet_direct(interface, packet);
     }
 
     // Mark the connection as connected
@@ -862,29 +802,31 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
 }
 
 // This is used for raw answer
-std::expected<network::packet> network::tcp::layer::kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
+std::expected<network::packet_p> network::tcp::layer::kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size) {
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{payload_size + default_tcp_header_length, target_ip, 0x06};
     auto packet = parent->kernel_prepare_packet(interface, desc);
 
     if (packet) {
-        ::prepare_packet(*packet, source, target);
+        ::prepare_packet(**packet, source, target);
     }
 
     return packet;
 }
 
 // This is used for TCP connection answers
-std::expected<network::packet> network::tcp::layer::kernel_prepare_packet(network::interface_descriptor& interface, tcp_connection& connection, size_t payload_size) {
+std::expected<network::packet_p> network::tcp::layer::kernel_prepare_packet(network::interface_descriptor& interface, tcp_connection& connection, size_t payload_size) {
     auto target_ip   = connection.server_address;
     auto local_port  = connection.local_port;
     auto server_port = connection.server_port;
 
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{payload_size + default_tcp_header_length, target_ip, 0x06};
-    auto packet = parent->kernel_prepare_packet(interface, desc);
+    auto p = parent->kernel_prepare_packet(interface, desc);
 
-    if (packet) {
+    if (p) {
+        auto& packet = *p;
+
         ::prepare_packet(*packet, local_port, server_port);
 
         auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet->payload + packet->tag(2));
@@ -893,21 +835,20 @@ std::expected<network::packet> network::tcp::layer::kernel_prepare_packet(networ
         tcp_header->ack_number      = switch_endian_32(connection.ack_number);
     }
 
-    return packet;
+    return p;
 }
 
 // finalize without waiting for ACK
-std::expected<void> network::tcp::layer::finalize_packet_direct(network::interface_descriptor& interface, network::packet& p) {
-    auto* tcp_header = reinterpret_cast<network::tcp::header*>(p.payload + p.tag(2));
+std::expected<void> network::tcp::layer::finalize_packet_direct(network::interface_descriptor& interface, network::packet_p& p) {
+    auto* tcp_header = reinterpret_cast<network::tcp::header*>(p->payload + p->tag(2));
 
     auto flags = switch_endian_16(tcp_header->flags);
 
-    p.index -= *flag_data_offset(&flags) * 4;
+    p->index -= *flag_data_offset(&flags) * 4;
 
     // Compute the checksum
-    compute_checksum(p);
+    compute_checksum(*p);
 
     // Give the packet to the IP layer for finalization
     return parent->finalize_packet(interface, p);
 }
-

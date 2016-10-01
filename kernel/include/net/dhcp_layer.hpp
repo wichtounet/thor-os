@@ -73,7 +73,7 @@ struct layer {
      * \param interface The interface on which the packet was received
      * \param packet The packet to decode
      */
-    void decode(network::interface_descriptor& interface, network::packet& packet);
+    void decode(network::interface_descriptor& interface, network::packet_p& packet);
 
     /*!
      * \brief Request an IP address on the network
@@ -86,7 +86,7 @@ private:
     network::udp::layer* parent; ///< The parent layer
 
     std::atomic<bool> listening;                    ///< Flag indicating if the kernel is listening for packets
-    circular_buffer<network::packet, 16> packets;   ///< The queue of packets
+    std::vector<network::packet_p> packets;   ///< The queue of packets
     condition_variable listen_queue;                ///< Condition variable to listen to the queue
 };
 

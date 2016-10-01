@@ -35,9 +35,9 @@ struct tcp_connection {
     size_t server_port = 0;              ///< The server port
     network::ip::address server_address; ///< The server address
 
-    std::atomic<bool> listening;                            ///< Indicates if a kernel thread is listening on this connection
-    condition_variable queue;                               ///< The listening queue
-    circular_buffer<network::packet, 32> packets; ///< The packets for the listening queue
+    std::atomic<bool> listening;            ///< Indicates if a kernel thread is listening on this connection
+    condition_variable queue;               ///< The listening queue
+    std::vector<network::packet_p> packets; ///< The packets for the listening queue
 
     bool connected = false; ///< Indicate if the connection is connnected
     bool server    = false; ///< Indicate if the connection is a server (true) or a client (false)
@@ -73,7 +73,7 @@ struct layer {
      * \param interface The interface on which the packet was received
      * \param packet The packet to decode
      */
-    void decode(network::interface_descriptor& interface, network::packet& packet);
+    void decode(network::interface_descriptor& interface, network::packet_p& packet);
 
     /*!
      * \brief Prepare a packet for the user
@@ -82,7 +82,7 @@ struct layer {
      * \param descriptor The packet descriptor
      * \return the prepared packet or an error
      */
-    std::expected<network::packet> user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor);
+    std::expected<network::packet_p> user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor);
 
     /*!
      * \brief Finalize a prepared packet
@@ -90,7 +90,7 @@ struct layer {
      * \param p The packet to finalize
      * \return nothing or an error
      */
-    std::expected<void> finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::packet& p);
+    std::expected<void> finalize_packet(network::interface_descriptor& interface, network::socket& socket, network::packet_p& p);
 
     /*!
      * \brief Send a message directly
@@ -163,9 +163,9 @@ struct layer {
     std::expected<size_t> accept(network::socket& socket, size_t ms);
 
 private:
-    std::expected<network::packet> kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
-    std::expected<network::packet> kernel_prepare_packet(network::interface_descriptor& interface, tcp_connection& connection, size_t payload_size);
-    std::expected<void> finalize_packet_direct(network::interface_descriptor& interface, network::packet& p);
+    std::expected<network::packet_p> kernel_prepare_packet(network::interface_descriptor& interface, network::ip::address target_ip, size_t source, size_t target, size_t payload_size);
+    std::expected<network::packet_p> kernel_prepare_packet(network::interface_descriptor& interface, tcp_connection& connection, size_t payload_size);
+    std::expected<void> finalize_packet_direct(network::interface_descriptor& interface, network::packet_p& p);
 
     network::ip::layer* parent; ///< The parent layer
 

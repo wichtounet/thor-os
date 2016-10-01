@@ -42,9 +42,11 @@ void network::arp::cache::update_cache(uint64_t mac, network::ip::address ip){
 std::expected<void> network::arp::cache::arp_request(network::interface_descriptor& interface, network::ip::address ip){
     // Ask the ethernet layer to craft a packet
     network::ethernet::packet_descriptor desc{sizeof(network::arp::header), 0xFFFFFFFFFFFF, network::ethernet::ether_type::ARP};
-    auto packet = ethernet_layer->kernel_prepare_packet(interface, desc);
+    auto packet_e = ethernet_layer->kernel_prepare_packet(interface, desc);
 
-    if(packet){
+    if(packet_e){
+        auto& packet = *packet_e;
+
         auto* arp_request_header = reinterpret_cast<network::arp::header*>(packet->payload + packet->index);
 
         arp_request_header->hw_type = switch_endian_16(0x1); // ethernet
@@ -59,11 +61,11 @@ std::expected<void> network::arp::cache::arp_request(network::interface_descript
         network::arp::ip_to_ip2(interface.ip_address, arp_request_header->source_protocol_addr);
         network::arp::ip_to_ip2(ip, arp_request_header->target_protocol_addr);
 
-        ethernet_layer->finalize_packet(interface, *packet);
+        ethernet_layer->finalize_packet(interface, packet);
 
         return {};
     } else {
-        return std::make_expected_from_error<void>(packet.error());
+        return std::make_expected_from_error<void>(packet_e.error());
     }
 }
 

@@ -131,9 +131,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
 
                 std::copy_n(packet_payload, packet_only_length, packet_buffer);
 
-                network::packet packet(packet_buffer, packet_only_length);
-
-                interface.rx_queue.push(packet);
+                interface.rx_queue.emplace_back(std::make_shared<network::packet>(packet_buffer, packet_only_length));
                 interface.rx_sem.notify();
             }
 
@@ -186,21 +184,17 @@ void packet_handler(interrupt::syscall_regs*, void* data){
     }
 }
 
-void send_packet(network::interface_descriptor& interface, network::packet& packet){
+void send_packet(network::interface_descriptor& interface, network::packet_p& packet){
     logging::logf(logging::log_level::TRACE, "rtl8139: Start transmitting packet\n");
 
-    auto* ether_header = reinterpret_cast<network::ethernet::header*>(packet.payload);
+    auto* ether_header = reinterpret_cast<network::ethernet::header*>(packet->payload);
 
     // Shortcut packet to self directly to the rx queue
     if(network::ethernet::mac6_to_mac64(ether_header->target.mac) == interface.mac_address){
-        auto packet_buffer = new char[packet.payload_size];
-
-        std::copy_n(packet.payload, packet.payload_size, packet_buffer);
-
         {
             direct_int_lock lock;
 
-            interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
+            interface.rx_queue.push_back(packet);
             interface.rx_sem.notify();
         }
 
@@ -225,10 +219,10 @@ void send_packet(network::interface_descriptor& interface, network::packet& pack
 
     auto& tx_desc = desc.tx_desc[entry];
 
-    std::copy_n(packet.payload, packet.payload_size, reinterpret_cast<char*>(tx_desc.buffer_virt));
+    std::copy_n(packet->payload, packet->payload_size, reinterpret_cast<char*>(tx_desc.buffer_virt));
 
     out_dword(iobase + TX_ADDR + entry * 4, tx_desc.buffer_phys);
-    out_dword(iobase + TX_STATUS + entry * 4, uint32_t(256) << 16 | packet.payload_size);
+    out_dword(iobase + TX_STATUS + entry * 4, uint32_t(256) << 16 | packet->payload_size);
 }
 
 } //end of anonymous namespace

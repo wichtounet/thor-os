@@ -52,10 +52,10 @@ network::arp::layer::layer(network::ethernet::layer* parent) : parent(parent), _
     parent->register_arp_layer(this);
 }
 
-void network::arp::layer::decode(network::interface_descriptor& interface, network::packet& packet){
-    packet.tag(1, packet.index);
+void network::arp::layer::decode(network::interface_descriptor& interface, network::packet_p& packet){
+    packet->tag(1, packet->index);
 
-    header* arp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    auto* arp_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
     logging::logf(logging::log_level::TRACE, "arp: Start ARP packet handling\n");
 
@@ -114,9 +114,11 @@ void network::arp::layer::decode(network::interface_descriptor& interface, netwo
 
             // Ask the ethernet layer to craft a packet
             network::ethernet::packet_descriptor desc{sizeof(header), source_hw, ethernet::ether_type::ARP};
-            auto packet = parent->kernel_prepare_packet(interface, desc);
+            auto packet_e = parent->kernel_prepare_packet(interface, desc);
 
-            if(packet){
+            if(packet_e){
+                auto& packet = *packet_e;
+
                 auto* arp_reply_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
                 arp_reply_header->hw_type = switch_endian_16(0x1); // ethernet
@@ -132,9 +134,9 @@ void network::arp::layer::decode(network::interface_descriptor& interface, netwo
                 std::copy_n(arp_header->target_protocol_addr, 2, arp_reply_header->source_protocol_addr);
                 std::copy_n(arp_header->source_protocol_addr, 2, arp_reply_header->target_protocol_addr);
 
-                parent->finalize_packet(interface, *packet);
+                parent->finalize_packet(interface, packet);
             } else {
-                logging::logf(logging::log_level::ERROR, "arp: Impossible to reply to ARP Request: %s\n", std::error_message(packet.error()));
+                logging::logf(logging::log_level::ERROR, "arp: Impossible to reply to ARP Request: %s\n", std::error_message(packet_e.error()));
 
             }
         }

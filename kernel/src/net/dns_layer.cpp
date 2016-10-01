@@ -91,10 +91,10 @@ network::dns::layer::layer(network::udp::layer* parent) : parent(parent) {
     parent->register_dns_layer(this);
 }
 
-void network::dns::layer::decode(network::interface_descriptor& /*interface*/, network::packet& packet) {
-    packet.tag(3, packet.index);
+void network::dns::layer::decode(network::interface_descriptor& /*interface*/, network::packet_p& packet) {
+    packet->tag(3, packet->index);
 
-    auto* dns_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    auto* dns_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
     logging::logf(logging::log_level::TRACE, "dns: Start DNS packet handling\n");
 
@@ -110,8 +110,6 @@ void network::dns::layer::decode(network::interface_descriptor& /*interface*/, n
     logging::logf(logging::log_level::TRACE, "dns: Authorithy RRs %u \n", size_t(authority_rrs));
     logging::logf(logging::log_level::TRACE, "dns: Additional RRs %u \n", size_t(additional_rrs));
 
-        logging::logf(logging::log_level::TRACE, "dns: fucking flags %u\n", size_t(dns_header->flags));
-
     auto flags = switch_endian_16(dns_header->flags);
 
     if (*flag_qr(&flags) == 0) {
@@ -122,7 +120,7 @@ void network::dns::layer::decode(network::interface_descriptor& /*interface*/, n
         if (response_code == 0x0) {
             logging::logf(logging::log_level::TRACE, "dns: Response OK\n");
 
-            auto* payload = packet.payload + packet.index + sizeof(header);
+            auto* payload = packet->payload + packet->index + sizeof(header);
 
             // Decode the questions (simply wrap around it)
 
@@ -153,7 +151,7 @@ void network::dns::layer::decode(network::interface_descriptor& /*interface*/, n
                     payload += 2;
 
                     size_t ignored;
-                    domain = decode_domain(packet.payload + packet.index + offset, ignored);
+                    domain = decode_domain(packet->payload + packet->index + offset, ignored);
                 } else {
                     logging::logf(logging::log_level::TRACE, "dns: Unable to handle non-compressed data\n");
                     return;
@@ -199,10 +197,10 @@ void network::dns::layer::decode(network::interface_descriptor& /*interface*/, n
     // Note: Propagate is handled by UDP connections
 }
 
-std::expected<network::packet> network::dns::layer::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
+std::expected<network::packet_p> network::dns::layer::user_prepare_packet(char* buffer, network::socket& socket, const packet_descriptor* descriptor) {
     // Check the packet descriptor
     if(!descriptor->query){
-        return std::make_unexpected<network::packet>(std::ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR);
+        return std::make_unexpected<network::packet_p>(std::ERROR_SOCKET_INVALID_PACKET_DESCRIPTOR);
     }
 
     // Ask the UDP layer to craft a packet
@@ -210,19 +208,19 @@ std::expected<network::packet> network::dns::layer::user_prepare_packet(char* bu
     auto packet = parent->user_prepare_packet(buffer, socket, &desc);
 
     if (packet) {
-        ::prepare_packet_query(*packet, descriptor->identification);
+        ::prepare_packet_query(**packet, descriptor->identification);
     }
 
     return packet;
 }
 
-std::expected<void> network::dns::layer::finalize_packet(network::interface_descriptor& interface, network::packet& p) {
-    p.index -= sizeof(header);
+std::expected<void> network::dns::layer::finalize_packet(network::interface_descriptor& interface, network::packet_p& p) {
+    p->index -= sizeof(header);
 
     // Give the packet to the UDP layer for finalization
     return parent->finalize_packet(interface, p);
 }
 
-std::expected<void> network::dns::layer::finalize_packet(network::interface_descriptor& interface, network::socket& /*sock*/, network::packet& p) {
+std::expected<void> network::dns::layer::finalize_packet(network::interface_descriptor& interface, network::socket& /*sock*/, network::packet_p& p) {
     return this->finalize_packet(interface, p);
 }

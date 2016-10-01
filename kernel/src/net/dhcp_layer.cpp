@@ -54,23 +54,19 @@ network::dhcp::layer::layer(network::udp::layer* parent) : parent(parent) {
     parent->register_dhcp_layer(this);
 }
 
-void network::dhcp::layer::decode(network::interface_descriptor& /*interface*/, network::packet& packet) {
-    packet.tag(3, packet.index);
+void network::dhcp::layer::decode(network::interface_descriptor& /*interface*/, network::packet_p& packet) {
+    packet->tag(3, packet->index);
 
     logging::logf(logging::log_level::TRACE, "dhcp: Start DHCP packet handling\n");
 
-    auto* dhcp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    auto* dhcp_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
     logging::logf(logging::log_level::TRACE, "dhcp: Identification: %u\n", size_t(dhcp_header->xid));
 
     // Note: Propagate is handled by UDP connections
 
     if (listening.load()) {
-        auto copy    = packet;
-        copy.payload = new char[copy.payload_size];
-        std::copy_n(packet.payload, packet.payload_size, copy.payload);
-
-        packets.push(copy);
+        packets.push_back(packet);
         listen_queue.notify_one();
     }
 }
@@ -85,11 +81,13 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
         auto payload_size = sizeof(network::dhcp::header) + 4 + 3 + 5 + 4;
         network::udp::kernel_packet_descriptor udp_desc{payload_size, 68, 67, network::ip::make_address(255, 255, 255, 255)};
 
-        auto packet = parent->kernel_prepare_packet(interface, udp_desc);
+        auto packet_e = parent->kernel_prepare_packet(interface, udp_desc);
 
-        if (!packet) {
-            return std::make_unexpected<dhcp_configuration>(packet.error());
+        if (!packet_e) {
+            return std::make_unexpected<dhcp_configuration>(packet_e.error());
         }
+
+        auto& packet = *packet_e;
 
         ::prepare_packet(*packet, interface);
 
@@ -128,7 +126,7 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
         options[15] = 255;
 
         // Finalize the UDP packet
-        auto status = parent->finalize_packet(interface, *packet);
+        auto status = parent->finalize_packet(interface, packet);
         if (!status) {
             return std::make_unexpected<dhcp_configuration>(status.error());
         }
@@ -150,14 +148,15 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
                 listen_queue.wait();
             }
 
-            auto packet = packets.pop();
+            auto packet = packets.back();
+            packets.pop_back();
 
-            auto* dhcp_header = reinterpret_cast<network::dhcp::header*>(packet.payload + packet.tag(3));
+            auto* dhcp_header = reinterpret_cast<network::dhcp::header*>(packet->payload + packet->tag(3));
 
             if (dhcp_header->xid == 0x66666666 && dhcp_header->op == 0x2) {
                 logging::logf(logging::log_level::TRACE, "dhcp: Received DHCP answer\n");
 
-                auto* options = packet.payload + packet.tag(3) + sizeof(network::dhcp::header);
+                auto* options = packet->payload + packet->tag(3) + sizeof(network::dhcp::header);
 
                 bool dhcp_offer = false;
 
@@ -230,11 +229,13 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
         auto payload_size = sizeof(network::dhcp::header) + 20;
         network::udp::kernel_packet_descriptor udp_desc{payload_size, 68, 67, server_address};
 
-        auto packet = parent->kernel_prepare_packet(interface, udp_desc);
+        auto packet_e = parent->kernel_prepare_packet(interface, udp_desc);
 
-        if (!packet) {
-            return std::make_unexpected<dhcp_configuration>(packet.error());
+        if (!packet_e) {
+            return std::make_unexpected<dhcp_configuration>(packet_e.error());
         }
+
+        auto& packet = *packet_e;
 
         ::prepare_packet(*packet, interface);
 
@@ -278,7 +279,7 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
         options[19] = 255;
 
         // Finalize the UDP packet
-        auto status = parent->finalize_packet(interface, *packet);
+        auto status = parent->finalize_packet(interface, packet);
         if (!status) {
             return std::make_unexpected<dhcp_configuration>(status.error());
         }
@@ -292,14 +293,15 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
                 listen_queue.wait();
             }
 
-            auto packet = packets.pop();
+            auto packet = packets.back();
+            packets.pop_back();
 
-            auto* dhcp_header = reinterpret_cast<network::dhcp::header*>(packet.payload + packet.tag(3));
+            auto* dhcp_header = reinterpret_cast<network::dhcp::header*>(packet->payload + packet->tag(3));
 
             if (dhcp_header->xid == 0x66666666 && dhcp_header->op == 0x2) {
                 logging::logf(logging::log_level::TRACE, "dhcp: Received DHCP answer\n");
 
-                auto* options = packet.payload + packet.tag(3) + sizeof(network::dhcp::header);
+                auto* options = packet->payload + packet->tag(3) + sizeof(network::dhcp::header);
 
                 auto cookie = (options[0] << 24) + (options[1] << 16) + (options[2] << 8) + options[3];
                 if (cookie != 0x63825363) {

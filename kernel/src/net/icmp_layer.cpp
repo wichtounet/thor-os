@@ -57,24 +57,24 @@ network::icmp::layer::layer(network::ip::layer* parent) : parent(parent) {
     parent->register_icmp_layer(this);
 }
 
-void network::icmp::layer::decode(network::interface_descriptor& interface, network::packet& packet){
-    packet.tag(2, packet.index);
+void network::icmp::layer::decode(network::interface_descriptor& interface, network::packet_p& packet){
+    packet->tag(2, packet->index);
 
     logging::logf(logging::log_level::TRACE, "icmp: Start ICMP packet handling\n");
 
-    auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    auto* icmp_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
     auto command_type = static_cast<type>(icmp_header->type);
 
-    auto command_index = packet.index + sizeof(network::icmp::header) - sizeof(uint32_t);
+    auto command_index = packet->index + sizeof(network::icmp::header) - sizeof(uint32_t);
 
     switch(command_type){
         case type::ECHO_REQUEST:
             {
                 logging::logf(logging::log_level::TRACE, "icmp: received Echo Request\n");
 
-                auto ip_index = packet.tag(1);
-                auto* ip_header = reinterpret_cast<network::ip::header*>(packet.payload + ip_index);
+                auto ip_index = packet->tag(1);
+                auto* ip_header = reinterpret_cast<network::ip::header*>(packet->payload + ip_index);
 
                 auto target_ip = network::ip::ip32_to_ip(ip_header->target_ip);
                 auto source_ip = network::ip::ip32_to_ip(ip_header->source_ip);
@@ -83,18 +83,20 @@ void network::icmp::layer::decode(network::interface_descriptor& interface, netw
                     logging::logf(logging::log_level::TRACE, "icmp: Reply to Echo Request for own IP\n");
 
                     network::icmp::packet_descriptor desc{0, source_ip, type::ECHO_REPLY, 0x0};
-                    auto reply_packet = kernel_prepare_packet(interface, desc);
+                    auto reply_packet_e = kernel_prepare_packet(interface, desc);
 
-                    if(reply_packet){
-                        auto* command_header = reinterpret_cast<echo_request_header*>(packet.payload + command_index);
+                    if(reply_packet_e){
+                        auto& reply_packet = *reply_packet_e;
+
+                        auto* command_header = reinterpret_cast<echo_request_header*>(packet->payload + command_index);
                         auto* reply_command_header = reinterpret_cast<echo_request_header*>(reply_packet->payload + reply_packet->index);
 
                         *reply_command_header = *command_header;
-                    } else {
-                        logging::logf(logging::log_level::ERROR, "icmp: Failed to reply: %s\n", std::error_message(reply_packet.error()));
-                    }
 
-                    finalize_packet(interface, *reply_packet);
+                        finalize_packet(interface, reply_packet);
+                    } else {
+                        logging::logf(logging::log_level::ERROR, "icmp: Failed to reply: %s\n", std::error_message(reply_packet_e.error()));
+                    }
                 }
 
                 break;
@@ -116,19 +118,19 @@ void network::icmp::layer::decode(network::interface_descriptor& interface, netw
     network::propagate_packet(packet, network::socket_protocol::ICMP);
 }
 
-std::expected<network::packet> network::icmp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
+std::expected<network::packet_p> network::icmp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
     // Ask the IP layer to craft a packet
     network::ip::packet_descriptor desc{sizeof(header) + descriptor.payload_size, descriptor.target_ip, 0x01};
     auto packet = parent->kernel_prepare_packet(interface, desc);
 
     if(packet){
-        ::prepare_packet(*packet, descriptor.type, descriptor.code);
+        ::prepare_packet(**packet, descriptor.type, descriptor.code);
     }
 
     return packet;
 }
 
-std::expected<network::packet> network::icmp::layer::user_prepare_packet(char* buffer, network::socket& /*socket*/, const packet_descriptor* descriptor){
+std::expected<network::packet_p> network::icmp::layer::user_prepare_packet(char* buffer, network::socket& /*socket*/, const packet_descriptor* descriptor){
     auto& interface = network::select_interface(descriptor->target_ip);
 
     // Ask the IP layer to craft a packet
@@ -136,16 +138,16 @@ std::expected<network::packet> network::icmp::layer::user_prepare_packet(char* b
     auto packet = parent->user_prepare_packet(buffer, interface, &desc);
 
     if(packet){
-        ::prepare_packet(*packet, descriptor->type, descriptor->code);
+        ::prepare_packet(**packet, descriptor->type, descriptor->code);
     }
 
     return packet;
 }
 
-std::expected<void> network::icmp::layer::finalize_packet(network::interface_descriptor& interface, network::packet& packet){
-    packet.index -= sizeof(header) - sizeof(uint32_t);
+std::expected<void> network::icmp::layer::finalize_packet(network::interface_descriptor& interface, network::packet_p& packet){
+    packet->index -= sizeof(header) - sizeof(uint32_t);
 
-    auto* icmp_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    auto* icmp_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
     // Compute the checksum
     compute_checksum(icmp_header, 0);
@@ -154,6 +156,6 @@ std::expected<void> network::icmp::layer::finalize_packet(network::interface_des
     return parent->finalize_packet(interface, packet);
 }
 
-std::expected<void> network::icmp::layer::finalize_packet(network::interface_descriptor& interface, network::socket& /*sock*/, network::packet& packet){
+std::expected<void> network::icmp::layer::finalize_packet(network::interface_descriptor& interface, network::socket& /*sock*/, network::packet_p& packet){
     return this->finalize_packet(interface, packet);
 }

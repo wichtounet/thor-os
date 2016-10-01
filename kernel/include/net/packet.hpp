@@ -9,6 +9,7 @@
 #define NET_PACKET_H
 
 #include <types.hpp>
+#include <shared_ptr.hpp>
 
 #include "assert.hpp"
 
@@ -33,6 +34,12 @@ struct packet {
     packet() : fd(0), user(false), tags(0) {}
     packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0), user(false), tags(0) {}
 
+    ~packet(){
+        if(!user && payload){
+            delete[] payload;
+        }
+    }
+
     void tag(size_t layer, size_t index){
         tags |= (index << (layer * 16));
     }
@@ -42,6 +49,8 @@ struct packet {
         return (tags >> (layer * 16)) & 0xFFFF;
     }
 };
+
+using packet_p = std::shared_ptr<packet>;
 
 } // end of network namespace
 

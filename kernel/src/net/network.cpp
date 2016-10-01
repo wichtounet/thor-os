@@ -72,14 +72,15 @@ void rx_thread(void* data){
     while(true){
         interface.rx_sem.wait();
 
-        auto packet = interface.rx_queue.pop();
+        //TODO This is highly unsafe since back() and pop_back() can suffer interleaving
+
+        auto packet = interface.rx_queue.back();
+        interface.rx_queue.pop_back();
+
         ethernet_layer->decode(interface, packet);
 
         ++interface.rx_packets_counter;
-        interface.rx_bytes_counter += packet.payload_size;
-
-        // The memory of the packet was allocated by the interface itself, can be safely removed
-        delete[] packet.payload;
+        interface.rx_bytes_counter += packet->payload_size;
     }
 }
 
@@ -93,15 +94,14 @@ void tx_thread(void* data){
     while(true){
         interface.tx_sem.lock();
 
-        auto packet = interface.tx_queue.pop();
+        auto packet = interface.tx_queue.back();
+        interface.tx_queue.pop_back();
         interface.hw_send(interface, packet);
 
-        thor_assert(!packet.user);
+        thor_assert(!packet->user);
 
         ++interface.tx_packets_counter;
-        interface.tx_bytes_counter += packet.payload_size;
-
-        delete[] packet.payload;
+        interface.tx_bytes_counter += packet->payload_size;
     }
 }
 
@@ -405,11 +405,11 @@ std::tuple<size_t, size_t> network::prepare_packet(socket_fd_t socket_fd, void* 
 
     auto& socket = scheduler::get_socket(socket_fd);
 
-    auto return_from_packet = [&socket](std::expected<network::packet>& packet) -> std::tuple<size_t, size_t> {
+    auto return_from_packet = [&socket](std::expected<network::packet_p>& packet) -> std::tuple<size_t, size_t> {
         if (packet) {
             auto fd = socket.register_packet(*packet);
 
-            return {fd, packet->index};
+            return {fd, (*packet)->index};
         } else {
             return {-packet.error(), 0};
         }
@@ -606,7 +606,7 @@ std::expected<void> network::finalize_packet(socket_fd_t socket_fd, size_t packe
     }
 
     auto& packet = socket.get_packet(packet_fd);
-    auto& interface = network::interface(packet.interface);
+    auto& interface = network::interface(packet->interface);
 
     auto check_and_return = [&socket, &packet_fd](const std::expected<void>& ret){
         if(ret){
@@ -879,15 +879,14 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
         socket.listen_queue.wait();
     }
 
-    auto packet = socket.listen_packets.pop();
-    std::copy_n(packet.payload, packet.payload_size, buffer);
+    auto packet = socket.listen_packets.back();
+    socket.listen_packets.pop_back();
 
-    // The memory was allocated as a copy by the decoding process, it is safe to remove it here
-    delete[] packet.payload;
+    std::copy_n(packet->payload, packet->payload_size, buffer);
 
     logging::logf(logging::log_level::TRACE, "network: %u received packet on socket %u\n", scheduler::get_pid(), socket_fd);
 
-    return {packet.index};
+    return {packet->index};
 }
 
 std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_fd, size_t ms){
@@ -913,18 +912,17 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
         }
     }
 
-    auto packet = socket.listen_packets.pop();
-    std::copy_n(packet.payload, packet.payload_size, buffer);
+    auto packet = socket.listen_packets.back();
+    socket.listen_packets.pop_back();
 
-    // The memory was allocated as a copy by the decoding process, it is safe to remove it here
-    delete[] packet.payload;
+    std::copy_n(packet->payload, packet->payload_size, buffer);
 
     logging::logf(logging::log_level::TRACE, "network: %u received packet on socket %u\n", scheduler::get_pid(), socket_fd);
 
-    return {packet.index};
+    return {packet->index};
 }
 
-void network::propagate_packet(const packet& packet, socket_protocol protocol){
+void network::propagate_packet(const packet_p& packet, socket_protocol protocol){
     // TODO Need something better for this
 
     for(size_t pid = 0; pid < scheduler::MAX_PROCESS; ++pid){
@@ -942,11 +940,7 @@ void network::propagate_packet(const packet& packet, socket_protocol protocol){
                     // Note: Stream and datagram sockets are responsible for propagation
 
                     if (propagate) {
-                        auto copy    = packet;
-                        copy.payload = new char[copy.payload_size];
-                        std::copy_n(packet.payload, packet.payload_size, copy.payload);
-
-                        socket.listen_packets.push(copy);
+                        socket.listen_packets.push_back(packet);
                         socket.listen_queue.notify_one();
                     }
                 }

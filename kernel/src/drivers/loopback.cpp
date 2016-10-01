@@ -22,17 +22,13 @@ struct loopback_t {
     network::interface_descriptor* interface;
 };
 
-void send_packet(network::interface_descriptor& interface, network::packet& packet){
+void send_packet(network::interface_descriptor& interface, network::packet_p& packet){
     logging::logf(logging::log_level::TRACE, "loopback: Transmit packet\n");
-
-    auto packet_buffer = new char[packet.payload_size];
-
-    std::copy_n(packet.payload, packet.payload_size, packet_buffer);
 
     {
         direct_int_lock lock;
 
-        interface.rx_queue.emplace_push(packet_buffer, packet.payload_size);
+        interface.rx_queue.push_back(packet);
         interface.rx_sem.notify();
     }
 

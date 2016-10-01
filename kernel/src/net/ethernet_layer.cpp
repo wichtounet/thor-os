@@ -77,10 +77,10 @@ void network::ethernet::mac64_to_mac6(uint64_t source_mac, char* mac){
     }
 }
 
-void network::ethernet::layer::decode(network::interface_descriptor& interface, packet& packet){
+void network::ethernet::layer::decode(network::interface_descriptor& interface, packet_p& packet){
     logging::logf(logging::log_level::TRACE, "ethernet: Start decoding new packet\n");
 
-    header* ether_header = reinterpret_cast<header*>(packet.payload);
+    auto* ether_header = reinterpret_cast<header*>(packet->payload);
 
     // Filter out non-ethernet II frames
     if(switch_endian_16(ether_header->type) < 1536){
@@ -94,8 +94,8 @@ void network::ethernet::layer::decode(network::interface_descriptor& interface, 
     logging::logf(logging::log_level::TRACE, "ethernet: Source MAC Address %h \n", source_mac);
     logging::logf(logging::log_level::TRACE, "ethernet: Destination MAC Address %h \n", target_mac);
 
-    packet.tag(0, 0);
-    packet.index += sizeof(header);
+    packet->tag(0, 0);
+    packet->index += sizeof(header);
 
     auto type = decode_ether_type(ether_header);
 
@@ -124,37 +124,38 @@ void network::ethernet::layer::decode(network::interface_descriptor& interface, 
     logging::logf(logging::log_level::TRACE, "ethernet: Finished decoding packet\n");
 }
 
-std::expected<network::packet> network::ethernet::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
+std::expected<network::packet_p> network::ethernet::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
     auto total_size = descriptor.size + sizeof(header);
 
-    network::packet p(new char[total_size], total_size);
+    auto p = std::make_shared<network::packet>(new char[total_size], total_size);
 
-    ::prepare_packet(p, interface, descriptor);
+    ::prepare_packet(*p, interface, descriptor);
 
     return p;
 }
 
-std::expected<network::packet> network::ethernet::layer::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
+std::expected<network::packet_p> network::ethernet::layer::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
     auto total_size = descriptor->size + sizeof(header);
 
-    network::packet p(buffer, total_size);
-    p.user = true;
+    auto p = std::make_shared<network::packet>(buffer, total_size);
+    p->user = true;
 
-    ::prepare_packet(p, interface, *descriptor);
+    ::prepare_packet(*p, interface, *descriptor);
 
     return p;
 }
 
-std::expected<void> network::ethernet::layer::finalize_packet(network::interface_descriptor& interface, packet& p){
-    if(p.user){
+std::expected<void> network::ethernet::layer::finalize_packet(network::interface_descriptor& interface, packet_p& p){
+    if(p->user){
         // The packet will be handled by a kernel thread, needs to
         // be copied to kernel memory
 
-        auto kernel_packet = p;
+        auto kernel_packet = std::make_shared<network::packet>(*p);
+        kernel_packet->user = false;
 
-        kernel_packet.payload = new char[p.payload_size];
+        kernel_packet->payload = new char[p->payload_size];
 
-        std::copy_n(p.payload, p.payload_size, kernel_packet.payload);
+        std::copy_n(p->payload, p->payload_size, kernel_packet->payload);
 
         interface.send(kernel_packet);
     } else {

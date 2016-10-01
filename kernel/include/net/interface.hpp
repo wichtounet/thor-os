@@ -12,6 +12,8 @@
 #include <string.hpp>
 #include <circular_buffer.hpp>
 #include <lock_guard.hpp>
+#include <shared_ptr.hpp>
+#include <vector.hpp>
 
 #include "conc/mutex.hpp"
 #include "conc/semaphore.hpp"
@@ -49,17 +51,22 @@ struct interface_descriptor {
     mutable semaphore tx_sem;                 ///< Semaphore for transmission
     mutable deferred_unique_semaphore rx_sem; ///< Semaphore for reception
 
-    circular_buffer<packet, 32> rx_queue; ///< The reception queue
-    circular_buffer<packet, 32> tx_queue; ///< The transmission queue
+    //TODO We need a queue to handle the packets in order
+    // (need a deque to be efficient)
+    std::vector<network::packet_p> rx_queue;
+    std::vector<network::packet_p> tx_queue;
 
-    void (*hw_send)(interface_descriptor&, packet& p); ///< Driver hardware send function
+    //circular_buffer<packet, 32> rx_queue; ///< The reception queue
+    //circular_buffer<packet, 32> tx_queue; ///< The transmission queue
+
+    void (*hw_send)(interface_descriptor&, packet_p& p); ///< Driver hardware send function
 
     /*!
      * \brief Send a packet through this interface
      */
-    void send(packet& p){
+    void send(packet_p& p){
         std::lock_guard<mutex> l(tx_lock);
-        tx_queue.push(p);
+        tx_queue.push_back(p);
         tx_sem.unlock();
     }
 

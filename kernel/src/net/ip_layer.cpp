@@ -93,10 +93,10 @@ network::ip::layer::layer(network::ethernet::layer* parent) : parent(parent) {
     parent->register_ip_layer(this);
 }
 
-void network::ip::layer::decode(network::interface_descriptor& interface, network::packet& packet){
-    packet.tag(1, packet.index);
+void network::ip::layer::decode(network::interface_descriptor& interface, network::packet_p& packet){
+    packet->tag(1, packet->index);
 
-    header* ip_header = reinterpret_cast<header*>(packet.payload + packet.index);
+    header* ip_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
     logging::logf(logging::log_level::TRACE, "ip: Start IPv4 packet handling\n");
 
@@ -125,7 +125,7 @@ void network::ip::layer::decode(network::interface_descriptor& interface, networ
 
     auto protocol = ip_header->protocol;
 
-    packet.index += header_length;
+    packet->index += header_length;
 
     if (protocol == 0x01) {
         icmp_layer->decode(interface, packet);
@@ -138,11 +138,11 @@ void network::ip::layer::decode(network::interface_descriptor& interface, networ
     }
 }
 
-std::expected<network::packet> network::ip::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
+std::expected<network::packet_p> network::ip::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){
     auto target_mac = get_target_mac(interface, descriptor.destination);
 
     if(!target_mac){
-        return std::make_expected_from_error<network::packet>(target_mac.error());
+        return std::make_expected_from_error<network::packet_p>(target_mac.error());
     }
 
     // Ask the ethernet layer to craft a packet
@@ -150,17 +150,17 @@ std::expected<network::packet> network::ip::layer::kernel_prepare_packet(network
     auto packet = parent->kernel_prepare_packet(interface, desc);
 
     if(packet){
-        ::prepare_packet(*packet, interface, descriptor.size, descriptor.destination, descriptor.protocol);
+        ::prepare_packet(**packet, interface, descriptor.size, descriptor.destination, descriptor.protocol);
     }
 
     return packet;
 }
 
-std::expected<network::packet> network::ip::layer::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
+std::expected<network::packet_p> network::ip::layer::user_prepare_packet(char* buffer, network::interface_descriptor& interface, const packet_descriptor* descriptor){
     auto target_mac = get_target_mac(interface, descriptor->destination);
 
     if(!target_mac){
-        return std::make_expected_from_error<network::packet>(target_mac.error());
+        return std::make_expected_from_error<network::packet_p>(target_mac.error());
     }
 
     // Ask the ethernet layer to craft a packet
@@ -168,13 +168,13 @@ std::expected<network::packet> network::ip::layer::user_prepare_packet(char* buf
     auto packet = parent->user_prepare_packet(buffer, interface, &desc);
 
     if(packet){
-        ::prepare_packet(*packet, interface, descriptor->size, descriptor->destination, descriptor->protocol);
+        ::prepare_packet(**packet, interface, descriptor->size, descriptor->destination, descriptor->protocol);
     }
 
     return packet;
 }
 
-std::expected<void> network::ip::layer::finalize_packet(network::interface_descriptor& interface, network::packet& p){
+std::expected<void> network::ip::layer::finalize_packet(network::interface_descriptor& interface, network::packet_p& p){
     // Send the packet to the ethernet layer
     return parent->finalize_packet(interface, p);
 }

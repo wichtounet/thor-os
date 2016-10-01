@@ -83,7 +83,7 @@ struct layer {
      * \param interface The interface on which the packet was received
      * \param packet The packet to decode
      */
-    void decode(network::interface_descriptor& interface, network::packet& packet);
+    void decode(network::interface_descriptor& interface, network::packet_p& packet);
 
     /*!
      * \brief Returns a reference to the ARP cache

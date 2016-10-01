@@ -36,10 +36,10 @@ struct socket {
     bool listen;                     ///< Indicates if the socket is listening to packets
     void* connection_data = nullptr; ///< Optional pointer to the connection data (TCP/UDP)
 
-    std::vector<network::packet> packets; ///< Packets that are prepared with their fd
+    std::vector<network::packet_p> packets; ///< Packets that are prepared with their fd
 
-    circular_buffer<network::packet, 32> listen_packets; ///< The packets that wait to be read in listen mode
-    condition_variable listen_queue;                               ///< Condition variable to wait for packets
+    std::vector<network::packet_p> listen_packets; ///< The packets that wait to be read in listen mode
+    condition_variable listen_queue;               ///< Condition variable to wait for packets
 
     socket() {}
     socket(size_t id, socket_domain domain, socket_type type, socket_protocol protocol, size_t next_fd, bool listen)
@@ -63,10 +63,10 @@ struct socket {
      * \brief Register a new packet into the socket
      * \return The file descriptor of the packet
      */
-    size_t register_packet(network::packet packet) {
+    size_t register_packet(network::packet_p& packet) {
         auto fd = next_fd++;
 
-        packet.fd = fd;
+        packet->fd = fd;
 
         packets.push_back(packet);
 
@@ -78,7 +78,7 @@ struct socket {
      */
     bool has_packet(size_t packet_fd) {
         for (auto& packet : packets) {
-            if (packet.fd == packet_fd) {
+            if (packet->fd == packet_fd) {
                 return true;
             }
         }
@@ -89,9 +89,9 @@ struct socket {
     /*!
      * \brief Returns the packet with the given file descriptor
      */
-    network::packet& get_packet(size_t fd) {
+    network::packet_p& get_packet(size_t fd) {
         for (auto& packet : packets) {
-            if (packet.fd == fd) {
+            if (packet->fd == fd) {
                 return packet;
             }
         }
@@ -103,9 +103,9 @@ struct socket {
      * \brief Removes the packet with the given file descriptor
      */
     void erase_packet(size_t fd) {
-        packets.erase(std::remove_if(packets.begin(), packets.end(), [fd](network::packet& packet) {
-                          return packet.fd == fd;
-                      }), packets.end());
+        packets.erase(std::remove_if(packets.begin(), packets.end(), [fd](network::packet_p& packet) {
+            return packet->fd == fd;
+        }), packets.end());
     }
 
     /*!
