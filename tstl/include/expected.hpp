@@ -399,38 +399,65 @@ public:
 
     /* Accessors */
 
+    /*!
+     * \brief Indicates if the result is valid
+     */
     constexpr bool valid() const {
         return contained_has_value();
     }
 
+    /*!
+     * \brief Indicates if the result is valid
+     */
     constexpr explicit operator bool() const {
         return valid();
     }
 
+    /*!
+     * \brief Returns the contained value
+     */
     constexpr const value_type& value() const {
         return contained_value();
     }
 
+    /*!
+     * \brief Returns the contained value
+     */
     constexpr const value_type& operator*() const {
         return contained_value();
     }
 
+    /*!
+     * \brief Returns the contained value
+     */
     value_type& operator*() {
         return contained_value();
     }
 
+    /*!
+     * \brief Returns a pointer to the value
+     */
     constexpr const value_type* operator->() const {
         return value_ptr();
     }
 
+    /*!
+     * \brief Returns a pointer to the value
+     */
     value_type* operator->() {
         return value_ptr();
     }
 
+    /*!
+     * \brief Returns the error
+     */
     constexpr const error_type& error() const {
         return contained_error();
     }
 
+    /*!
+     * \brief Test if the expected has the given error
+     */
     constexpr bool has_error(const error_type& e) const {
         return contained_error() == e;
     }
@@ -445,8 +472,8 @@ struct expected<void, E> : expected_base<void, E> {
     using value_type = void; ///< The value type
     using error_type = E;    ///< The error type
 
-    typedef expected<void, E> this_type;
-    typedef expected_base<void, E> base_type;
+    using this_type = expected<void, E>;      ///< The type of this type
+    using base_type = expected_base<void, E>; ///< The base type
 
 private:
     error_type* error_ptr() {

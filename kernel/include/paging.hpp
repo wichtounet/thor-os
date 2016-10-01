@@ -20,20 +20,12 @@ struct process_t;
 
 namespace paging {
 
-//The size of page in memory
-constexpr const size_t PAGE_SIZE = 4096;
+constexpr const size_t PAGE_SIZE = 4096; ///< The size of a page (4K)
 
-//The physical memory that a PML4T Entry can map
-constexpr const size_t pml4e_allocations = 512_GiB;
-
-//The physical memory that a PDPT Entry can map
-constexpr const size_t pdpte_allocations = 1_GiB;
-
-//The physical memory that a PD Entry can map
-constexpr const size_t pde_allocations = 2_MiB;
-
-//The physical memory that a PD Entry can map
-constexpr const size_t pte_allocations = 4_KiB;
+constexpr const size_t pml4e_allocations = 512_GiB; ///< The physical memory that a PML4T Entry can map
+constexpr const size_t pdpte_allocations = 1_GiB;   ///< The physical memory that a PDPT Entry can map
+constexpr const size_t pde_allocations   = 2_MiB;   ///< The physical memory that a PD Entry can map
+constexpr const size_t pte_allocations   = 4_KiB;   ///< The physical memory that a PD Entry can map
 
 //Help function to compute the number of necessary entries to map the kernel
 constexpr size_t entries(size_t entry_size){
@@ -43,10 +35,11 @@ constexpr size_t entries(size_t entry_size){
 }
 
 //Compute the number of entries necessary to map the entire kernel virtual size
-constexpr const auto pml4_entries = entries(pml4e_allocations);
-constexpr const auto pdpt_entries = entries(pdpte_allocations);
-constexpr const auto pd_entries = entries(pde_allocations);
-constexpr const auto pt_entries = entries(pte_allocations);
+
+constexpr const auto pml4_entries = entries(pml4e_allocations); ///< Number of PML4T entries necessary to map the kernel
+constexpr const auto pdpt_entries = entries(pdpte_allocations); ///< Number of PDPT entries necessary to map the kernel
+constexpr const auto pd_entries   = entries(pde_allocations);   ///< Number of PD entries necessary to map the kernel
+constexpr const auto pt_entries   = entries(pte_allocations);   ///< Number of PT entries necessary to map the kernel
 
 //Compute the amount of physical memory pages needed for the paging tables
 constexpr const size_t  physical_memory_pages = 1 + pml4_entries + pdpt_entries + pd_entries;
@@ -63,14 +56,16 @@ extern size_t virtual_pdpt_start;
 extern size_t virtual_pd_start;
 extern size_t virtual_pt_start;
 
-//Flags
-constexpr const uint8_t PRESENT = 0x1;
-constexpr const uint8_t WRITE = 0x2;
-constexpr const uint8_t USER = 0x4;
-constexpr const uint8_t WRITE_THROUGH = 0x8;
-constexpr const uint8_t CACHE_DISABLED = 0x10;
-constexpr const uint8_t ACCESSED= 0x20;
+constexpr const uint8_t PRESENT        = 0x1;  ///< Paging flag for present page
+constexpr const uint8_t WRITE          = 0x2;  ///< Paging flag for writable page
+constexpr const uint8_t USER           = 0x4;  ///< Paging flag for user page
+constexpr const uint8_t WRITE_THROUGH  = 0x8;  ///< Paging flag for write-through page
+constexpr const uint8_t CACHE_DISABLED = 0x10; ///< Paging flag for cache disabled page
+constexpr const uint8_t ACCESSED       = 0x20; ///< Paging flag for assessed page
 
+/*!
+ * \brief Test if an address is aligned on a page boundary
+ */
 constexpr bool page_aligned(size_t addr){
     return !(addr & (paging::PAGE_SIZE - 1));
 }

@@ -450,6 +450,9 @@ public:
 
     //Operators
 
+    /*!
+     * \brief Test if this string is equal to the given raw string
+     */
     bool operator==(const CharT* s) const {
         if(size() != str_len(s)){
             return false;
@@ -464,10 +467,16 @@ public:
         return true;
     }
 
+    /*!
+     * \brief Test if this string is not equal to the given raw string
+     */
     bool operator!=(const CharT* s) const {
         return !(*this == s);
     }
 
+    /*!
+     * \brief Test if this string is equal to the given string
+     */
     bool operator==(const basic_string& rhs) const {
         if(size() != rhs.size()){
             return false;
@@ -482,6 +491,9 @@ public:
         return true;
     }
 
+    /*!
+     * \brief Test if this string is not equal to the given string
+     */
     bool operator!=(const basic_string& rhs) const {
         return !(*this == rhs);
     }

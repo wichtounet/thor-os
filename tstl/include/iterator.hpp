@@ -21,19 +21,25 @@ size_t distance(Iterator it, Iterator end) {
     return end - it;
 }
 
+/*!
+ * \brief Reverse iterator adapter
+ */
 template <typename Iterator>
 struct reverse_iterator {
-    using iterator_type   = Iterator;
-    using value_type      = typename std::iterator_traits<Iterator>::value_type;
-    using difference_type = typename std::iterator_traits<Iterator>::difference_type;
-    using pointer         = typename std::iterator_traits<Iterator>::pointer;
-    using reference       = typename std::iterator_traits<Iterator>::reference;
+    using iterator_type   = Iterator;                                                 ///< The iterator type
+    using value_type      = typename std::iterator_traits<Iterator>::value_type;      ///< The value type
+    using difference_type = typename std::iterator_traits<Iterator>::difference_type; ///< The difference type
+    using pointer         = typename std::iterator_traits<Iterator>::pointer;         ///< The pointer type
+    using reference       = typename std::iterator_traits<Iterator>::reference;       ///< The reference type
 
     reverse_iterator(Iterator it)
             : it(it) {
         //Nothing else
     }
 
+    /*!
+     * \brief Returns a reference to the pointed element
+     */
     reference operator*() {
         return *it;
     }
@@ -62,11 +68,11 @@ private:
 
 template <typename Container>
 struct back_insert_iterator {
-    using container_type  = Container;
-    using value_type      = void;
-    using difference_type = void;
-    using reference       = void;
-    using const_reference = void;
+    using container_type  = Container; ///< The container type
+    using value_type      = void;      ///< The value type
+    using difference_type = void;      ///< The difference type
+    using reference       = void;      ///< The reference type
+    using const_reference = void;      ///< The const reference type
 
     container_type& container;
 
@@ -100,11 +106,11 @@ struct back_insert_iterator {
 
 template <typename Container>
 struct front_insert_iterator {
-    using container_type  = Container;
-    using value_type      = void;
-    using difference_type = void;
-    using reference       = void;
-    using const_reference = void;
+    using container_type  = Container; ///< The container type
+    using value_type      = void;      ///< The value type
+    using difference_type = void;      ///< The difference type
+    using reference       = void;      ///< The reference type
+    using const_reference = void;      ///< The const reference type
 
     container_type& container;
 
