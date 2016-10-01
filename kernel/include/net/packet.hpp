@@ -34,6 +34,12 @@ struct packet {
     packet() : fd(0), user(false), tags(0) {}
     packet(char* payload, size_t payload_size) : payload(payload), payload_size(payload_size), index(0), fd(0), user(false), tags(0) {}
 
+    packet(const packet& rhs) = delete;
+    packet& operator=(const packet& rhs) = delete;
+
+    packet(const packet&& rhs) = delete;
+    packet& operator=(const packet&& rhs) = delete;
+
     ~packet(){
         if(!user && payload){
             delete[] payload;

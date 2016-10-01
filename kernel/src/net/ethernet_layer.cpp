@@ -150,11 +150,7 @@ std::expected<void> network::ethernet::layer::finalize_packet(network::interface
         // The packet will be handled by a kernel thread, needs to
         // be copied to kernel memory
 
-        auto kernel_packet = std::make_shared<network::packet>(*p);
-        kernel_packet->user = false;
-
-        kernel_packet->payload = new char[p->payload_size];
-
+        auto kernel_packet = std::make_shared<network::packet>(new char[p->payload_size], p->payload_size);
         std::copy_n(p->payload, p->payload_size, kernel_packet->payload);
 
         interface.send(kernel_packet);
