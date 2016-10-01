@@ -12,9 +12,19 @@
 
 namespace mouse {
 
+/*!
+ * \brief Install the mouse driver
+ */
 void install();
 
+/*!
+ * \brief Returns the x position of the mouse
+ */
 uint64_t x();
+
+/*!
+ * \brief Returns the y position of the mouse
+ */
 uint64_t y();
 
 } //end of namespace mouse

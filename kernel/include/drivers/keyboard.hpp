@@ -26,7 +26,11 @@ const char KEY_F1          = 59;
 const char KEY_F2          = 60;
 const char KEY_F3          = 61;
 
+/*!
+ * \brief Install the keyboard driver
+ */
 void install_driver();
+
 char get_char();
 char key_to_ascii(uint8_t key);
 char shift_key_to_ascii(uint8_t key);
