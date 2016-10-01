@@ -196,7 +196,7 @@ struct shared_ptr {
         control_block_impl(U* ptr) : ptr(ptr) {}
         control_block_impl(U* ptr, Deleter d) : ptr(ptr), deleter(d){}
 
-        virtual void destroy(){
+        virtual void destroy() override {
             if(ptr){
                 deleter(ptr);
             }
@@ -210,7 +210,7 @@ struct shared_ptr {
         template<typename... Args>
         inplace_control_block_impl(Args&&... args) : ptr(std::forward<Args>(args)...){}
 
-        virtual void destroy(){
+        virtual void destroy() override {
             // Nothing to do
         }
     };
