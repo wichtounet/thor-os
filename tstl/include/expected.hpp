@@ -222,14 +222,6 @@ struct non_trivial_expected_base {
             : has_value(false), storage(e) {
         //Nothing else to init
     }
-
-    ~non_trivial_expected_base() {
-        if (has_value) {
-            storage.value.~value_type();
-        } else {
-            storage.error.~error_type();
-        }
-    }
 };
 
 template <typename E>
@@ -252,12 +244,6 @@ struct non_trivial_expected_base<void, E> {
     non_trivial_expected_base(const exceptional<error_type>& e)
             : has_value(false), storage(e) {
         //Nothing else to init
-    }
-
-    ~non_trivial_expected_base() {
-        if (!has_value) {
-            storage.error.~error_type();
-        }
     }
 };
 
