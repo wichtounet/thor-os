@@ -72,6 +72,8 @@ void network::dhcp::layer::decode(network::interface_descriptor& /*interface*/, 
 }
 
 std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_ip(network::interface_descriptor& interface) {
+    logging::logf(logging::log_level::TRACE, "dhcp: Start discovery\n");
+
     listening = true;
 
     // 1. Send DHCP Discovery
