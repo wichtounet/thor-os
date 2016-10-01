@@ -32,12 +32,12 @@ struct shared_ptr {
     /*!
      * \brief Construct an empty shared_ptr
      */
-    constexpr shared_ptr() : ptr(), control_block() {}
+    constexpr shared_ptr() : ptr(nullptr), control_block(nullptr) {}
 
     /*!
      * \brief Construct an empty shared_ptr
      */
-    constexpr explicit shared_ptr(decltype(nullptr)) : ptr(), control_block() {}
+    constexpr explicit shared_ptr(decltype(nullptr)) : ptr(nullptr), control_block(nullptr) {}
 
     /*!
      * \brief Construct a new shared_ptr around the given pointer.
@@ -47,7 +47,6 @@ struct shared_ptr {
     template<typename U>
     explicit shared_ptr(U* ptr) : ptr(ptr) {
         control_block = new control_block_impl<U, default_delete<U>>(ptr);
-        control_block->counter = 1;
     }
 
     /*!
@@ -58,21 +57,20 @@ struct shared_ptr {
     template<typename U, typename Deleter>
     shared_ptr(U* ptr, Deleter deleter) : ptr(ptr) {
         control_block = new control_block_impl<U, Deleter>(ptr, deleter);
-        control_block->counter = 1;
     }
 
     /*!
      * \brief Construct a new shared_ptr directly with a control block
      */
     shared_ptr(T* ptr, control_block_t* control_block, int) : ptr(ptr), control_block(control_block) {
-        control_block->counter = 1;
+        //Nothing else to init
     }
 
     /*!
      * \brief Copy construct a shared_ptr, effectively incrementing the reference counter
      */
     shared_ptr(const shared_ptr& rhs) : ptr(rhs.ptr), control_block(rhs.control_block) {
-        __sync_fetch_and_add(&control_block->counter, 1);
+        increment();
     }
 
     /*!
@@ -85,7 +83,7 @@ struct shared_ptr {
             this->ptr = rhs.ptr;
             this->control_block = rhs.control_block;
 
-            __sync_fetch_and_add(&control_block->counter, 1);
+            increment();
         }
 
         return *this;
@@ -132,7 +130,6 @@ struct shared_ptr {
         this->ptr = ptr;
 
         control_block = new control_block_impl<U, default_delete<U>>(ptr);
-        control_block->counter = 1;
     }
 
     /*!
@@ -184,6 +181,14 @@ struct shared_ptr {
     struct control_block_t {
         volatile size_t counter;
 
+        control_block_t() : counter(1) {}
+
+        control_block_t(const control_block_t& rhs) = delete;
+        control_block_t& operator=(const control_block_t& rhs) = delete;
+
+        control_block_t(control_block_t&& rhs) = delete;
+        control_block_t& operator=(control_block_t&& rhs) = delete;
+
         virtual void destroy() = 0;
         virtual ~control_block_t(){}
     };
@@ -223,11 +228,21 @@ private:
      * If the counter goes to zero, this also deallocates the managed object and the control block
      */
     void decrement(){
-        if(ptr){
-            if(__sync_fetch_and_sub(&control_block->counter, 1) == 1){
+        if(control_block){
+            if(!__sync_sub_and_fetch(&control_block->counter, 1)){
                 control_block->destroy();
                 delete control_block;
             }
+        }
+    }
+
+    /*!
+     * \brief Helper function to increment the reference counter if the pointer points to a
+     * managed object.
+     */
+    void increment(){
+        if(control_block){
+            __sync_fetch_and_add(&control_block->counter, 1);
         }
     }
 
