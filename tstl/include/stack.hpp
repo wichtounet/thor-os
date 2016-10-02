@@ -41,6 +41,14 @@ struct stack {
     }
 
     /*!
+     * \brief Create a new element inplace onto the stack
+     */
+    template<typename... Args>
+    void emplace(Args&&... args){
+        container.emplace_back(std::forward<Args>(args)...);
+    }
+
+    /*!
      * \brief Removes the element at the top of the stack
      */
     void pop(){

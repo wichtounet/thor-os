@@ -40,6 +40,14 @@ struct queue {
     }
 
     /*!
+     * \brief Create a new element inplace onto the queue
+     */
+    template<typename... Args>
+    void emplace(Args&&... args){
+        container.emplace_back(std::forward<Args>(args)...);
+    }
+
+    /*!
      * \brief Pop the top element from the queue
      */
     void pop(){
