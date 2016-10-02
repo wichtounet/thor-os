@@ -14,6 +14,7 @@ void string_tests();
 void function_tests();
 void tuple_tests();
 void vector_tests();
+void deque_tests();
 void expected_tests();
 void list_tests();
 void traits_tests();
@@ -28,6 +29,7 @@ int main(){
     circular_buffer_tests();
     tuple_tests();
     vector_tests();
+    deque_tests();
     expected_tests();
     shared_ptr_tests();
     list_tests();
