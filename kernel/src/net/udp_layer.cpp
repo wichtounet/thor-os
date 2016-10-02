@@ -26,8 +26,10 @@ void compute_checksum(network::packet& packet){
 
     auto length = switch_endian_16(udp_header->length);
 
+    uint32_t sum = 0;
+
     // Accumulate the Payload
-    auto sum = network::checksum_add_bytes(packet.payload + packet.tag(2), length);
+    sum += network::checksum_add_bytes(packet.payload + packet.tag(2), length);
 
     // Accumulate the IP addresses
     sum += network::checksum_add_bytes(&ip_header->source_ip, 8);
