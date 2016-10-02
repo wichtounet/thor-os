@@ -28,7 +28,7 @@ void send_packet(network::interface_descriptor& interface, network::packet_p& pa
     {
         direct_int_lock lock;
 
-        interface.rx_queue.push_back(packet);
+        interface.rx_queue.push(packet);
         interface.rx_sem.notify();
     }
 

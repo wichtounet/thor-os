@@ -74,8 +74,8 @@ void rx_thread(void* data){
 
         //TODO This is highly unsafe since back() and pop_back() can suffer interleaving
 
-        auto packet = interface.rx_queue.back();
-        interface.rx_queue.pop_back();
+        auto packet = interface.rx_queue.top();
+        interface.rx_queue.pop();
 
         ethernet_layer->decode(interface, packet);
 
@@ -94,8 +94,8 @@ void tx_thread(void* data){
     while(true){
         interface.tx_sem.lock();
 
-        auto packet = interface.tx_queue.back();
-        interface.tx_queue.pop_back();
+        auto packet = interface.tx_queue.top();
+        interface.tx_queue.pop();
         interface.hw_send(interface, packet);
 
         thor_assert(!packet->user);

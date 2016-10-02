@@ -131,7 +131,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
 
                 std::copy_n(packet_payload, packet_only_length, packet_buffer);
 
-                interface.rx_queue.emplace_back(std::make_shared<network::packet>(packet_buffer, packet_only_length));
+                interface.rx_queue.emplace(std::make_shared<network::packet>(packet_buffer, packet_only_length));
                 interface.rx_sem.notify();
             }
 
@@ -194,7 +194,7 @@ void send_packet(network::interface_descriptor& interface, network::packet_p& pa
         {
             direct_int_lock lock;
 
-            interface.rx_queue.push_back(packet);
+            interface.rx_queue.push(packet);
             interface.rx_sem.notify();
         }
 
