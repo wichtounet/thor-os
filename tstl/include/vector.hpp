@@ -21,13 +21,15 @@ namespace std {
  */
 template<typename T>
 struct vector {
-    using value_type = T; ///< The value type contained in the vector
-    using pointer_type = value_type*; ///< The pointer type contained in the vector
-    using size_type = size_t; ///< The size type
-    using iterator = value_type*; ///< The iterator type
-    using const_iterator = const value_type*; ///< The const iterator type
+    using value_type           = T;                 ///< The value type contained in the vector
+    using pointer_type         = value_type*;       ///< The pointer type contained in the vector
+    using reference_type       = value_type&;       ///< The pointer type contained in the vector
+    using const_reference_type = const value_type&; ///< The pointer type contained in the vector
+    using size_type            = size_t;            ///< The size type
+    using iterator             = value_type*;       ///< The iterator type
+    using const_iterator       = const value_type*; ///< The const iterator type
 
-    using reverse_iterator       = std::reverse_iterator<iterator>; ///< The reverse iterator type
+    using reverse_iterator       = std::reverse_iterator<iterator>;       ///< The reverse iterator type
     using const_reverse_iterator = std::reverse_iterator<const_iterator>; ///< The const reverse iterator type
 
     /*!

@@ -86,13 +86,15 @@ private:
  */
 template<typename T>
 struct list {
-    using value_type             = T; ///7< The value type of the container
-    using pointer_type           = value_type*; ///< The pointer type of the container
-    using size_type              = size_t; ///< The size type of the container
-    using node_type              = list_node<T>; ///< The type of nodes
-    using iterator          = list_iterator<T, T>; ///< The iterator type
-    using const_iterator    = list_iterator<T, std::add_const_t<T>>; ///< The const iterator type
-    using reverse_iterator       = std::reverse_iterator<list_iterator<T, T>>; ///< The reverse iterator type
+    using value_type             = T;                                                            ///7< The value type of the container
+    using pointer_type           = value_type*;                                                  ///< The pointer type of the container
+    using reference_type         = value_type&;                                                  ///< The pointer type of the container
+    using const_reference_type   = const value_type&;                                            ///< The pointer type of the container
+    using size_type              = size_t;                                                       ///< The size type of the container
+    using node_type              = list_node<T>;                                                 ///< The type of nodes
+    using iterator               = list_iterator<T, T>;                                          ///< The iterator type
+    using const_iterator         = list_iterator<T, std::add_const_t<T>>;                        ///< The const iterator type
+    using reverse_iterator       = std::reverse_iterator<list_iterator<T, T>>;                   ///< The reverse iterator type
     using const_reverse_iterator = std::reverse_iterator<list_iterator<T, std::add_const_t<T>>>; ///< The const reverse iterator type
 
     /*!
