@@ -18,6 +18,9 @@ namespace std {
  */
 template<typename T, typename C = std::deque<T>>
 struct queue {
+    using reference_type = typename C::reference_type;
+    using const_reference_type = typename C::const_reference_type;
+
     /*!
      * \brief Indicates if the queue is empty
      */
@@ -35,6 +38,13 @@ struct queue {
     /*!
      * \brief Push a new element onto the queue
      */
+    void push(T&& value){
+        container.push_back(std::move(value));
+    }
+
+    /*!
+     * \brief Push a new element onto the queue
+     */
     void push(const T& value){
         container.push_back(value);
     }
@@ -43,8 +53,8 @@ struct queue {
      * \brief Create a new element inplace onto the queue
      */
     template<typename... Args>
-    void emplace(Args&&... args){
-        container.emplace_back(std::forward<Args>(args)...);
+    reference_type emplace(Args&&... args){
+        return container.emplace_back(std::forward<Args>(args)...);
     }
 
     /*!
@@ -57,14 +67,14 @@ struct queue {
     /*!
      * \brief Returns a reference to the top element
      */
-    T& top(){
+    reference_type top(){
         return container.front();
     }
 
     /*!
      * \brief Returns a const reference to the top element
      */
-    const T& top() const {
+    const_reference_type top() const {
         return container.front();
     }
 

@@ -8,8 +8,8 @@
 #ifndef STL_STACK_H
 #define STL_STACK_H
 
-#include "stl/vector.hpp"
-#include "stl/types.hpp"
+#include <vector.hpp>
+#include <types.hpp>
 
 namespace std {
 
@@ -18,6 +18,9 @@ namespace std {
  */
 template<typename T, typename C = std::vector<T>>
 struct stack {
+    using reference_type = typename C::reference_type;
+    using const_reference_type = typename C::const_reference_type;
+
     /*!
      * \brief Indicates if the stack is empty
      */
@@ -36,6 +39,14 @@ struct stack {
      * \brief Adds the element at the top of the stack
      * \param value The element to add on the stack
      */
+    void push(T&& value){
+        container.push_back(std::move(value));
+    }
+
+    /*!
+     * \brief Adds the element at the top of the stack
+     * \param value The element to add on the stack
+     */
     void push(const T& value){
         container.push_back(value);
     }
@@ -44,8 +55,8 @@ struct stack {
      * \brief Create a new element inplace onto the stack
      */
     template<typename... Args>
-    void emplace(Args&&... args){
-        container.emplace_back(std::forward<Args>(args)...);
+    reference_type emplace(Args&&... args){
+        return container.emplace_back(std::forward<Args>(args)...);
     }
 
     /*!
@@ -58,14 +69,14 @@ struct stack {
     /*!
      * \brief Returns a reference to the element at the top of the stack
      */
-    T& top(){
+    reference_type top(){
         return container.back();
     }
 
     /*!
      * \brief Returns a const reference to the element at the top of the stack
      */
-    const T& top() const {
+    const_reference_type top() const {
         return container.back();
     }
 
