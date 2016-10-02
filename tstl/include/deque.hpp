@@ -158,6 +158,36 @@ struct deque {
         }
     }
 
+    //TODO
+    deque(const deque& rhs) = delete;
+    deque& operator=(const deque& rhs) = delete;
+
+    deque(deque&& rhs) : data(rhs.data), first_element(rhs.first_element), last_element(rhs.last_element), blocks(rhs.blocks), _size(rhs._size){
+        rhs.data          = nullptr;
+        rhs.first_element = 0;
+        rhs.last_element  = 0;
+        rhs.blocks        = 0;
+        rhs._size         = 0;
+    }
+
+    deque& operator=(deque&& rhs){
+        if(this != &rhs){
+            this->data          = rhs.data;
+            this->first_element = rhs.first_element;
+            this->last_element  = rhs.last_element;
+            this->blocks        = rhs.blocks;
+            this->_size         = rhs._size;
+
+            rhs.data          = nullptr;
+            rhs.first_element = 0;
+            rhs.last_element  = 0;
+            rhs.blocks        = 0;
+            rhs._size         = 0;
+        }
+
+        return *this;
+    }
+
     ~deque() {
         for (size_t i = 0; i < _size; ++i) {
             (*this)[i].~value_type();
