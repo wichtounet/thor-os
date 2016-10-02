@@ -8,7 +8,7 @@
 #ifndef STL_QUEUE_H
 #define STL_QUEUE_H
 
-#include <list.hpp>
+#include <deque.hpp>
 #include <types.hpp>
 
 namespace std {
@@ -16,7 +16,7 @@ namespace std {
 /*!
  * \brief Container adapter to provide a queue (FIFO)
  */
-template<typename T, typename C = std::list<T>>
+template<typename T, typename C = std::deque<T>>
 struct queue {
     /*!
      * \brief Indicates if the queue is empty
