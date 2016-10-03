@@ -185,7 +185,7 @@ void packet_handler(interrupt::syscall_regs*, void* data){
 }
 
 void send_packet(network::interface_descriptor& interface, network::packet_p& packet){
-    logging::logf(logging::log_level::TRACE, "rtl8139: Start transmitting packet\n");
+    logging::logf(logging::log_level::TRACE, "rtl8139: Start transmitting packet (%p)\n", packet.get());
 
     auto* ether_header = reinterpret_cast<network::ethernet::header*>(packet->payload);
 

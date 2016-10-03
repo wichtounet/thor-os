@@ -58,9 +58,9 @@ network::icmp::layer::layer(network::ip::layer* parent) : parent(parent) {
 }
 
 void network::icmp::layer::decode(network::interface_descriptor& interface, network::packet_p& packet){
-    packet->tag(2, packet->index);
+    logging::logf(logging::log_level::TRACE, "icmp: Start ICMP packet handling (%p)\n", packet.get());
 
-    logging::logf(logging::log_level::TRACE, "icmp: Start ICMP packet handling\n");
+    packet->tag(2, packet->index);
 
     auto* icmp_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
@@ -115,7 +115,11 @@ void network::icmp::layer::decode(network::interface_descriptor& interface, netw
             break;
     }
 
+    logging::logf(logging::log_level::TRACE, "icmp: Propagate (%p)\n", packet.get());
+
     network::propagate_packet(packet, network::socket_protocol::ICMP);
+
+    logging::logf(logging::log_level::TRACE, "icmp: Finished packet handling (%p)\n", packet.get());
 }
 
 std::expected<network::packet_p> network::icmp::layer::kernel_prepare_packet(network::interface_descriptor& interface, const packet_descriptor& descriptor){

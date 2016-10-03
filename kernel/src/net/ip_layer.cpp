@@ -94,11 +94,11 @@ network::ip::layer::layer(network::ethernet::layer* parent) : parent(parent) {
 }
 
 void network::ip::layer::decode(network::interface_descriptor& interface, network::packet_p& packet){
+    logging::logf(logging::log_level::TRACE, "ip: Start IPv4 packet handling (%p)\n", packet.get());
+
     packet->tag(1, packet->index);
 
-    header* ip_header = reinterpret_cast<header*>(packet->payload + packet->index);
-
-    logging::logf(logging::log_level::TRACE, "ip: Start IPv4 packet handling\n");
+    auto* ip_header = reinterpret_cast<header*>(packet->payload + packet->index);
 
     auto version = ip_header->version_ihl >> 4;
 
