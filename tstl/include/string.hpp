@@ -198,7 +198,7 @@ public:
             *oit++ = *it++;
         }
 
-        (*this)[_size] = '\0';
+        (*this)[size()] = '\0';
     }
 
     //Copy
@@ -243,7 +243,7 @@ public:
             new (&storage.big) base_long<CharT>(std::move(rhs.storage.big));
         }
 
-        rhs._size = 0;
+        rhs.set_size(0);
         rhs.zero();
     }
 
@@ -270,7 +270,7 @@ public:
             std::copy_n(rhs.begin(), size() + 1, begin());
         }
 
-        rhs._size = 0;
+        rhs.set_size(0);
         rhs.zero();
 
         return *this;
