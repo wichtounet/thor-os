@@ -14,6 +14,8 @@
 #include "print.hpp"
 #include "virtual_debug.hpp"
 #include "early_memory.hpp"
+#include "scheduler.hpp"
+
 #include "vfs/vfs.hpp"
 
 namespace {
@@ -95,10 +97,12 @@ void logging::to_file(){
 
 void logging::log(log_level level, const char* s){
     if(!is_early()){
+        // Get a nice message
+        char buffer[1024];
+        sprintf_raw(buffer, 1024, "%s:%u: %s", level_to_string(level), scheduler::get_pid(), s);
+
         // Print to the virtual debugger
-        virtual_debug(level_to_string(level));
-        virtual_debug(": ");
-        virtual_debug(s);
+        virtual_debug(buffer);
     }
 
     if(is_file()){
