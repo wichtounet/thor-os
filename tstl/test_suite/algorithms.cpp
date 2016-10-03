@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 
 #include <type_traits.hpp>
 #include <string.hpp>
