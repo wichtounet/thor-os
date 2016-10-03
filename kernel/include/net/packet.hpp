@@ -12,7 +12,6 @@
 #include <shared_ptr.hpp>
 
 #include "assert.hpp"
-#include "logging.hpp"
 
 namespace network {
 
@@ -42,9 +41,7 @@ struct packet {
     packet& operator=(const packet&& rhs) = delete;
 
     ~packet(){
-        logging::logf(logging::log_level::TRACE, "~packet(this=%p)\n", this);
         if(!user && payload){
-            logging::logf(logging::log_level::TRACE, "~packet(this=%p){in}\n", this);
             delete[] payload;
         }
     }
