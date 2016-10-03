@@ -237,11 +237,21 @@ void _fault_handler(interrupt::fault_regs regs){
     fault_printf("rip=%h\n", regs.rip);
     fault_printf("rflags=%h\n", regs.rflags);
     fault_printf("cs=%h\n", regs.cs);
+    fault_printf("rbp=%h\n", regs.rbp);
     fault_printf("rsp=%h\n", regs.rsp);
     fault_printf("ss=%h\n", regs.ss);
     fault_printf("pid=%u\n", scheduler::get_pid());
     fault_printf("cr2=%h\n", get_cr2());
     fault_printf("cr3=%h\n", get_cr3());
+
+    fault_printf("Call stack\n");
+    size_t i = 0;
+    auto rbp = regs.rbp;
+    while(rbp){
+        auto ip = *reinterpret_cast<size_t*>(rbp + 8);
+        fault_printf("%u: %h\n", i++, ip);
+        rbp = *reinterpret_cast<size_t*>(rbp);
+    }
 
     // TODO Should also print the message to the terminal of the process
     // (cannot use printf because of string manipulation)
