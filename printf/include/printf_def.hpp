@@ -420,13 +420,11 @@ void vsprintf_raw(char* out_buffer, size_t /*n*/, const char* format, va_list va
     out_buffer[out_i++] = '\0';
 }
 
-void sprintf_raw(const char* format, ...){
+void sprintf_raw(char* buffer, size_t n, const char* format, ...){
     va_list va;
     va_start(va, format);
 
-    char buffer[1024];
-    vsprintf_raw(buffer, 1024, format, va);
-    __printf_raw(buffer);
+    vsprintf_raw(buffer, n, format, va);
 
     va_end(va);
 }
