@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
 
 #include <deque.hpp>
 
