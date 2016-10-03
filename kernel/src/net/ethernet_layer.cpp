@@ -78,7 +78,7 @@ void network::ethernet::mac64_to_mac6(uint64_t source_mac, char* mac){
 }
 
 void network::ethernet::layer::decode(network::interface_descriptor& interface, packet_p& packet){
-    logging::logf(logging::log_level::TRACE, "ethernet: Start decoding new packet\n");
+    logging::logf(logging::log_level::TRACE, "ethernet: Start decoding new packet (%p)\n", packet.get());
 
     auto* ether_header = reinterpret_cast<header*>(packet->payload);
 
@@ -95,7 +95,7 @@ void network::ethernet::layer::decode(network::interface_descriptor& interface, 
     logging::logf(logging::log_level::TRACE, "ethernet: Destination MAC Address %h \n", target_mac);
 
     packet->tag(0, 0);
-    packet->index += sizeof(header);
+    packet->index = sizeof(header);
 
     auto type = decode_ether_type(ether_header);
 
