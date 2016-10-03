@@ -658,6 +658,26 @@ std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s, cha
     return std::move(parts);
 }
 
+template<typename Char>
+void split_append(const std::basic_string<Char>& s, std::vector<std::basic_string<Char>>& container, char sep = ' '){
+    std::basic_string<Char> current(s.size());
+
+    for(char c : s){
+        if(c == sep && !current.empty()){
+            container.push_back(current);
+            current.clear();
+        } else if(c == sep){
+            continue;
+        } else {
+            current += c;
+        }
+    }
+
+    if(!current.empty()){
+        container.push_back(current);
+    }
+}
+
 template<typename T>
 std::string to_string(const T& value);
 

@@ -18,10 +18,7 @@ path::path(const std::string& path){
         names.push_back("/");
     }
 
-    auto parts = std::split(path, '/');
-    names.reserve(names.size() + parts.size());
-
-    std::copy(parts.begin(), parts.end(), std::back_inserter(names));
+    std::split_append(path, names, '/');
 }
 
 path::path(const path& base_path, const std::string& p){
