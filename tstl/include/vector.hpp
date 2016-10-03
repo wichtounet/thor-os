@@ -46,7 +46,10 @@ struct vector {
      * \brief Construct a vector containing the given values
      */
     vector(initializer_list<T> values) : data(allocate(values.size())), _size(values.size()), _capacity(values.size()) {
-        std::copy(values.begin(), values.end(), begin());
+        size_t i = 0;
+        for(auto& v : values){
+            new (&data[i++]) value_type(v);
+        }
     }
 
     vector(const vector& rhs) : data(nullptr), _size(rhs._size), _capacity(rhs._capacity) {
@@ -60,21 +63,23 @@ struct vector {
     }
 
     vector& operator=(const vector& rhs){
-        if(_capacity < rhs._capacity){
-            if(data){
-                release();
+        if (this != &rhs) {
+            if (_capacity < rhs._capacity) {
+                if (data) {
+                    release();
+                }
+
+                _capacity = rhs._capacity;
+                data      = allocate(_capacity);
+            } else {
+                destruct_all();
             }
 
-            _capacity = rhs._capacity;
-            data = allocate(_capacity);
-        } else {
-            destruct_all();
-        }
+            _size = rhs._size;
 
-        _size = rhs._size;
-
-        for(size_t i = 0; i < _size; ++i){
-            new (&data[i]) value_type(rhs.data[i]);
+            for (size_t i = 0; i < _size; ++i) {
+                new (&data[i]) value_type(rhs.data[i]);
+            }
         }
 
         return *this;
@@ -89,16 +94,19 @@ struct vector {
     };
 
     vector& operator=(vector&& rhs){
-        if(data){
-            release();
-        }
+        if (this != &rhs) {
+            if (data) {
+                release();
+            }
 
-        data = rhs.data;
-        _size = rhs._size;
-        _capacity = rhs._capacity;
-        rhs.data = nullptr;
-        rhs._size = 0;
-        rhs._capacity = 0;
+            data          = rhs.data;
+            _size         = rhs._size;
+            _capacity     = rhs._capacity;
+
+            rhs.data      = nullptr;
+            rhs._size     = 0;
+            rhs._capacity = 0;
+        }
 
         return *this;
     }
@@ -230,7 +238,7 @@ struct vector {
     value_type& emplace_back(){
         ensure_capacity(_size + 1);
 
-        new (&data[_size++]) T();
+        new (&data[_size++]) value_type();
 
         return back();
     }
@@ -239,7 +247,7 @@ struct vector {
     value_type& emplace_back(Args... args){
         ensure_capacity(_size + 1);
 
-        new (&data[_size++]) T{std::forward<Args>(args)...};
+        new (&data[_size++]) value_type{std::forward<Args>(args)...};
 
         return back();
     }
@@ -398,11 +406,11 @@ struct vector {
 
 private:
     static value_type* allocate(size_t n){
-        return reinterpret_cast<value_type*>(new char[n * sizeof(value_type)]);
+        return reinterpret_cast<value_type*>(new uint8_t[n * sizeof(value_type)]);
     }
 
     static void deallocate(value_type* ptr){
-        delete[] reinterpret_cast<char*>(ptr);
+        delete[] reinterpret_cast<uint8_t*>(ptr);
     }
 
     void destruct_all(){
@@ -434,7 +442,11 @@ private:
             }
 
             auto new_data = allocate(_capacity);
-            std::move_n(data, _size, new_data);
+
+            // Move the old data into the new one
+            for(size_t i = 0; i < _size; ++i){
+                new (&new_data[i]) value_type(std::move(data[i]));
+            }
 
             release();
 
