@@ -13,6 +13,7 @@
 .global _isr\number
 _isr\number:
     push \number
+    push rbp
 
     jmp isr_common_handler
 .endm
@@ -24,6 +25,7 @@ _isr\number:
 
     push 0 // Dummy error code
     push \number
+    push rbp
 
     jmp isr_common_handler
 .endm
@@ -69,6 +71,6 @@ isr_common_handler:
     // TODO At this point, it is absolutely not safe to return since most
     // registers will get trashed the fault handler must hang
 
-    add rsp, 8 // Cleans the pushed error number
+    add rsp, 16 // Cleans the pushed base pointer and error number
 
     iretq // iret will clean the other automatically pushed stuff

@@ -16,6 +16,7 @@ constexpr const size_t SYSCALL_FIRST = 50;
 constexpr const size_t SYSCALL_MAX = 10;
 
 struct fault_regs {
+    uint64_t rbp;
     uint64_t error_no;
     uint64_t error_code;
     uint64_t rip;
