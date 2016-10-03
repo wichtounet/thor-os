@@ -900,7 +900,7 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_LISTEN);
     }
 
-    logging::logf(logging::log_level::TRACE, "network: %u wait for packet on socket %u\n", scheduler::get_pid(), socket_fd);
+    logging::logf(logging::log_level::TRACE, "network: %u wait for packet on socket (with timeout) %u\n", scheduler::get_pid(), socket_fd);
 
     if(socket.listen_packets.empty()){
         if(!ms){
