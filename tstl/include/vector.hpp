@@ -227,6 +227,14 @@ struct vector {
         new (&data[_size++]) value_type(element);
     }
 
+    value_type& emplace_back(){
+        ensure_capacity(_size + 1);
+
+        new (&data[_size++]) T();
+
+        return back();
+    }
+
     template<typename... Args>
     value_type& emplace_back(Args... args){
         ensure_capacity(_size + 1);
@@ -390,11 +398,11 @@ struct vector {
 
 private:
     static value_type* allocate(size_t n){
-        return static_cast<value_type*>(malloc(n * sizeof(value_type)));
+        return reinterpret_cast<value_type*>(new char[n * sizeof(value_type)]);
     }
 
     static void deallocate(value_type* ptr){
-        free(ptr);
+        delete[] reinterpret_cast<char*>(ptr);
     }
 
     void destruct_all(){
@@ -408,7 +416,7 @@ private:
         destruct_all();
 
         // Deallocate the memory
-        free(data);
+        deallocate(data);
         data = nullptr;
     }
 

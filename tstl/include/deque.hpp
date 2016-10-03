@@ -244,6 +244,28 @@ struct deque {
         ++_size;
     }
 
+    reference_type emplace_back() {
+        ensure_capacity_back(1);
+
+        if (_size) {
+            auto block = (last_element + 1) / block_elements;
+            auto index = (last_element + 1) % block_elements;
+
+            new (&data[block][index]) T();
+
+            ++last_element;
+        } else {
+            auto block = last_element / block_elements;
+            auto index = last_element % block_elements;
+
+            new (&data[block][index]) T();
+        }
+
+        ++_size;
+
+        return back();
+    }
+
     template <typename... Args>
     reference_type emplace_back(Args&&... args) {
         ensure_capacity_back(1);
@@ -302,6 +324,26 @@ struct deque {
             auto index = first_element % block_elements;
 
             new (&data[block][index]) T(element);
+        }
+
+        ++_size;
+    }
+
+    reference_type emplace_front() {
+        ensure_capacity_front(1);
+
+        if (_size) {
+            auto block = (first_element - 1) / block_elements;
+            auto index = (first_element - 1) % block_elements;
+
+            new (&data[block][index]) T();
+
+            --first_element;
+        } else {
+            auto block = first_element / block_elements;
+            auto index = first_element % block_elements;
+
+            new (&data[block][index]) T();
         }
 
         ++_size;
@@ -476,11 +518,11 @@ struct deque {
 
 private:
     static value_type* allocate(size_t n){
-        return static_cast<value_type*>(malloc(n * sizeof(value_type)));
+        return reinterpret_cast<value_type*>(new char[n * sizeof(value_type)]);
     }
 
     static void deallocate(value_type* ptr){
-        free(ptr);
+        delete[] reinterpret_cast<char*>(ptr);
     }
 
     void ensure_capacity_front(size_t n) {
