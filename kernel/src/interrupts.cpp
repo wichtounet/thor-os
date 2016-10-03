@@ -228,25 +228,26 @@ const char* exceptions_title[32] {
 
 extern "C" {
 
-#define double_printf(...) \
-    logging::logf(logging::log_level::ERROR, __VA_ARGS__); \
-    printf(__VA_ARGS__);
-
-
+#define fault_printf(...) \
+    logging::logf(logging::log_level::ERROR, __VA_ARGS__);
 
 void _fault_handler(interrupt::fault_regs regs){
-    double_printf("Exception %u (%s) occured\n", regs.error_no, exceptions_title[regs.error_no]);
-    double_printf("error_code=%u\n", regs.error_code);
-    double_printf("rip=%h\n", regs.rip);
-    double_printf("rflags=%h\n", regs.rflags);
-    double_printf("cs=%h\n", regs.cs);
-    double_printf("rsp=%h\n", regs.rsp);
-    double_printf("ss=%h\n", regs.ss);
-    double_printf("pid=%u\n", scheduler::get_pid());
-    double_printf("cr2=%h\n", get_cr2());
-    double_printf("cr3=%h\n", get_cr3());
+    fault_printf("Exception %u (%s) occured\n", regs.error_no, exceptions_title[regs.error_no]);
+    fault_printf("error_code=%u\n", regs.error_code);
+    fault_printf("rip=%h\n", regs.rip);
+    fault_printf("rflags=%h\n", regs.rflags);
+    fault_printf("cs=%h\n", regs.cs);
+    fault_printf("rsp=%h\n", regs.rsp);
+    fault_printf("ss=%h\n", regs.ss);
+    fault_printf("pid=%u\n", scheduler::get_pid());
+    fault_printf("cr2=%h\n", get_cr2());
+    fault_printf("cr3=%h\n", get_cr3());
+
+    // TODO Should also print the message to the terminal of the process
+    // (cannot use printf because of string manipulation)
 
     if(scheduler::is_started()){
+        // TODO Should also send a signal to the process (if user)
         scheduler::fault();
     } else {
         asm volatile ("cli; hlt;");
