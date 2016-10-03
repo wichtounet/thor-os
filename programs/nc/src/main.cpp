@@ -227,6 +227,8 @@ int netcat_tcp_server(const tlib::ip::address& local, size_t port){
             tlib::printf("nc: receive error: %s\n", std::error_message(sock.error()));
             return 1;
         } else {
+            tlib::printf("nc: received message of size %u\n", size);
+
             message_buffer[size] = '\0';
             tlib::print(message_buffer);
 
