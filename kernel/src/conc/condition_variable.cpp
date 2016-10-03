@@ -10,7 +10,6 @@
 #include "conc/condition_variable.hpp"
 
 #include "scheduler.hpp"
-#include "logging.hpp"
 #include "assert.hpp"
 
 bool condition_variable::empty() const {
@@ -82,6 +81,9 @@ bool condition_variable::wait_for(size_t ms) {
 
     if(queue.waiting()){
         queue.remove();
+
+        // Final release of the lock
+        lock.unlock();
 
         return false;
     }
