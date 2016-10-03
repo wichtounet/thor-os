@@ -188,10 +188,20 @@ struct deque {
         return *this;
     }
 
-    ~deque() {
+    void destruct_all(){
         for (size_t i = 0; i < _size; ++i) {
             (*this)[i].~value_type();
         }
+    }
+
+    ~deque() {
+        destruct_all();
+
+        for(size_t i = 0; i < blocks; ++i){
+            deallocate(data[i]);
+        }
+
+        delete[] data;
     }
 
     void push_back(T&& element) {
@@ -201,14 +211,14 @@ struct deque {
             auto block = (last_element + 1) / block_elements;
             auto index = (last_element + 1) % block_elements;
 
-            data[block][index] = std::move(element);
+            new (&data[block][index]) T(std::move(element));
 
             ++last_element;
         } else {
             auto block = last_element / block_elements;
             auto index = last_element % block_elements;
 
-            data[block][index] = std::move(element);
+            new (&data[block][index]) T(std::move(element));
         }
 
         ++_size;
@@ -221,39 +231,17 @@ struct deque {
             auto block = (last_element + 1) / block_elements;
             auto index = (last_element + 1) % block_elements;
 
-            data[block][index] = element;
+            new (&data[block][index]) T(element);
 
             ++last_element;
         } else {
             auto block = last_element / block_elements;
             auto index = last_element % block_elements;
 
-            data[block][index] = element;
+            new (&data[block][index]) T(element);
         }
 
         ++_size;
-    }
-
-    reference_type emplace_back() {
-        ensure_capacity_back(1);
-
-        if (_size) {
-            auto block = (last_element + 1) / block_elements;
-            auto index = (last_element + 1) % block_elements;
-
-            new (&data[block][index]) T();
-
-            ++last_element;
-        } else {
-            auto block = last_element / block_elements;
-            auto index = last_element % block_elements;
-
-            new (&data[block][index]) T();
-        }
-
-        ++_size;
-
-        return back();
     }
 
     template <typename... Args>
@@ -286,14 +274,14 @@ struct deque {
             auto block = (first_element - 1) / block_elements;
             auto index = (first_element - 1) % block_elements;
 
-            data[block][index] = std::move(element);
+            new (&data[block][index]) T(std::move(element));
 
             --first_element;
         } else {
             auto block = first_element / block_elements;
             auto index = first_element % block_elements;
 
-            data[block][index] = std::move(element);
+            new (&data[block][index]) T(std::move(element));
         }
 
         ++_size;
@@ -306,34 +294,14 @@ struct deque {
             auto block = (first_element - 1) / block_elements;
             auto index = (first_element - 1) % block_elements;
 
-            data[block][index] = element;
+            new (&data[block][index]) T(element);
 
             --first_element;
         } else {
             auto block = first_element / block_elements;
             auto index = first_element % block_elements;
 
-            data[block][index] = element;
-        }
-
-        ++_size;
-    }
-
-    reference_type emplace_front() {
-        ensure_capacity_front(1);
-
-        if (_size) {
-            auto block = (first_element - 1) / block_elements;
-            auto index = (first_element - 1) % block_elements;
-
-            new (&data[block][index]) T();
-
-            --first_element;
-        } else {
-            auto block = first_element / block_elements;
-            auto index = first_element % block_elements;
-
-            new (&data[block][index]) T();
+            new (&data[block][index]) T(element);
         }
 
         ++_size;
@@ -424,9 +392,7 @@ struct deque {
      * \brief Removes all the elements of the deque
      */
     void clear() {
-        for (size_t i = 0; i < _size; ++i) {
-            (*this)[i].~value_type();
-        }
+        destruct_all();
 
         first_element = 0;
         last_element  = 0;
@@ -509,6 +475,14 @@ struct deque {
     }
 
 private:
+    static value_type* allocate(size_t n){
+        return static_cast<value_type*>(malloc(n * sizeof(value_type)));
+    }
+
+    static void deallocate(value_type* ptr){
+        free(ptr);
+    }
+
     void ensure_capacity_front(size_t n) {
         auto capacity_front = first_element;
 
@@ -519,7 +493,7 @@ private:
                 data = new T*[blocks];
 
                 for (size_t i = 0; i < blocks; ++i) {
-                    data[i] = new T[block_elements];
+                    data[i] = allocate(block_elements);
                 }
 
                 first_element = blocks * block_elements - 1;
@@ -535,7 +509,7 @@ private:
                 }
 
                 for (size_t i = 0; i < new_blocks; ++i) {
-                    new_data[i] = new T[block_elements];
+                    new_data[i] = allocate(block_elements);
                 }
 
                 first_element += new_blocks * block_elements;
@@ -559,7 +533,7 @@ private:
                 data = new T*[blocks];
 
                 for (size_t i = 0; i < blocks; ++i) {
-                    data[i] = new T[block_elements];
+                    data[i] = allocate(block_elements);
                 }
 
                 first_element = 0;
@@ -575,7 +549,7 @@ private:
                 }
 
                 for (size_t i = blocks; i < blocks + new_blocks; ++i) {
-                    new_data[i] = new T[block_elements];
+                    new_data[i] = allocate(block_elements);
                 }
 
                 delete[] data;

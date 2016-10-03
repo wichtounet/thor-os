@@ -40,40 +40,41 @@ struct vector {
     /*!
      * \brief Constructs a vector of the given size
      */
-    explicit vector(uint64_t c) : data(new T[c]), _size(0), _capacity(c) {}
+    explicit vector(uint64_t c) : data(allocate(c)), _size(0), _capacity(c) {}
 
     /*!
      * \brief Construct a vector containing the given values
      */
-    vector(initializer_list<T> values) : data(new T[values.size()]), _size(values.size()), _capacity(values.size()) {
+    vector(initializer_list<T> values) : data(allocate(values.size())), _size(values.size()), _capacity(values.size()) {
         std::copy(values.begin(), values.end(), begin());
     }
 
     vector(const vector& rhs) : data(nullptr), _size(rhs._size), _capacity(rhs._capacity) {
         if(!rhs.empty()){
-            data = new T[_capacity];
+            data = allocate(_capacity);
 
             for(size_t i = 0; i < _size; ++i){
-                data[i] = rhs.data[i];
+                new (&data[i]) value_type(rhs.data[i]);
             }
         }
     }
 
     vector& operator=(const vector& rhs){
-        if(data && _capacity < rhs._capacity){
-            delete[] data;
-            data = nullptr;
-        }
-
         if(_capacity < rhs._capacity){
+            if(data){
+                release();
+            }
+
             _capacity = rhs._capacity;
-            data = new T[_capacity];
+            data = allocate(_capacity);
+        } else {
+            destruct_all();
         }
 
         _size = rhs._size;
 
         for(size_t i = 0; i < _size; ++i){
-            data[i] = rhs.data[i];
+            new (&data[i]) value_type(rhs.data[i]);
         }
 
         return *this;
@@ -89,7 +90,7 @@ struct vector {
 
     vector& operator=(vector&& rhs){
         if(data){
-            delete[] data;
+            release();
         }
 
         data = rhs.data;
@@ -104,7 +105,7 @@ struct vector {
 
     ~vector(){
         if(data){
-            delete[] data;
+            release();
         }
     }
 
@@ -191,8 +192,11 @@ struct vector {
         if(new_size > size()){
             ensure_capacity(new_size);
 
-            //The elements will automatically be created to their defaults when
-            //the array gets resized in ensure_capacity
+            // Default initialize the new elements
+            for(size_t i = _size; i < new_size; ++i){
+                new (&data[i]) value_type();
+            }
+
             _size = new_size;
         } else if(new_size < _size){
             // Call the necessary destructors
@@ -211,7 +215,7 @@ struct vector {
     void push_back(value_type&& element){
         ensure_capacity(_size + 1);
 
-        data[_size++] = std::move(element);
+        new (&data[_size++]) value_type(std::move(element));
     }
 
     /*!
@@ -220,43 +224,7 @@ struct vector {
     void push_back(const value_type& element){
         ensure_capacity(_size + 1);
 
-        data[_size++] = element;
-    }
-
-    /*!
-     * \brief Add an element at the front of the vector
-     */
-    void push_front(value_type&& element){
-        ensure_capacity(_size + 1);
-
-        for(size_t i = _size; i > 0; --i){
-            data[i] = std::move(data[i-1]);
-        }
-
-        data[0] = std::move(element);
-        ++_size;
-    }
-
-    /*!
-     * \brief Add an element at the front of the vector
-     */
-    void push_front(const value_type& element){
-        ensure_capacity(_size + 1);
-
-        for(size_t i = _size; i > 0; --i){
-            data[i] = std::move(data[i-1]);
-        }
-
-        data[0] = element;
-        ++_size;
-    }
-
-    value_type& emplace_back(){
-        ensure_capacity(_size + 1);
-
-        new (&data[_size++]) T();
-
-        return back();
+        new (&data[_size++]) value_type(element);
     }
 
     template<typename... Args>
@@ -266,6 +234,46 @@ struct vector {
         new (&data[_size++]) T{std::forward<Args>(args)...};
 
         return back();
+    }
+
+    /*!
+     * \brief Add an element at the front of the vector
+     */
+    void push_front(value_type&& element){
+        ensure_capacity(_size + 1);
+
+        if(!empty()){
+            new (&data[_size]) value_type(std::move(data[_size - 1]));
+
+            for (size_t i = _size - 1; i > 0; --i) {
+                data[i] = std::move(data[i - 1]);
+            }
+        }
+
+        // At this point data[0] has been deleted
+        data[0] = std::move(element);
+
+        ++_size;
+    }
+
+    /*!
+     * \brief Add an element at the front of the vector
+     */
+    void push_front(const value_type& element){
+        ensure_capacity(_size + 1);
+
+        if(!empty()){
+            new (&data[_size]) value_type(std::move(data[_size - 1]));
+
+            for (size_t i = _size - 1; i > 0; --i) {
+                data[i] = std::move(data[i - 1]);
+            }
+        }
+
+        // At this point data[0] has been deleted
+        data[0] = element;
+
+        ++_size;
     }
 
     /*!
@@ -282,9 +290,7 @@ struct vector {
      * \brief Removes all the elements of the vector
      */
     void clear(){
-        for(size_t i = 0; i < _size; ++i){
-            data[i].~value_type();
-        }
+        destruct_all();
 
         _size = 0;
     }
@@ -383,10 +389,33 @@ struct vector {
     }
 
 private:
+    static value_type* allocate(size_t n){
+        return static_cast<value_type*>(malloc(n * sizeof(value_type)));
+    }
+
+    static void deallocate(value_type* ptr){
+        free(ptr);
+    }
+
+    void destruct_all(){
+        // Call the destructors
+        for(size_t i = 0; i< _size; ++i){
+            data[i].~value_type();
+        }
+    }
+
+    void release(){
+        destruct_all();
+
+        // Deallocate the memory
+        free(data);
+        data = nullptr;
+    }
+
     void ensure_capacity(size_t new_capacity){
         if(_capacity == 0){
             _capacity = new_capacity;
-            data = new T[_capacity];
+            data = allocate(_capacity);
         } else if(_capacity < new_capacity){
             // Double the current capacity
             _capacity= _capacity * 2;
@@ -396,10 +425,11 @@ private:
                 _capacity = new_capacity;
             }
 
-            auto new_data = new T[_capacity];
+            auto new_data = allocate(_capacity);
             std::move_n(data, _size, new_data);
 
-            delete[] data;
+            release();
+
             data = new_data;
         }
     }
