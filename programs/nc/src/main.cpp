@@ -225,13 +225,13 @@ int netcat_tcp_server(const tlib::ip::address& local, size_t port){
         tlib::printf("nc: Wait for message\n");
 
         auto size = child.receive(message_buffer, 2048, remaining);
-        if (!sock) {
-            if (sock.error() == std::ERROR_SOCKET_TIMEOUT) {
-                sock.clear();
+        if (!child) {
+            if (child.error() == std::ERROR_SOCKET_TIMEOUT) {
+                child.clear();
                 break;
             }
 
-            tlib::printf("nc: receive error: %s\n", std::error_message(sock.error()));
+            tlib::printf("nc: receive error: %s\n", std::error_message(child.error()));
             return 1;
         } else {
             message_buffer[size] = '\0';
@@ -241,8 +241,8 @@ int netcat_tcp_server(const tlib::ip::address& local, size_t port){
 
             child.send(message_buffer, size);
 
-            if (!sock) {
-                tlib::printf("nc: send error: %s\n", std::error_message(sock.error()));
+            if (!child) {
+                tlib::printf("nc: send error: %s\n", std::error_message(child.error()));
                 return 1;
             }
         }
@@ -255,7 +255,7 @@ int netcat_tcp_server(const tlib::ip::address& local, size_t port){
     child.listen(false);
 
     if (!child) {
-        tlib::printf("nc: listen error: %s\n", std::error_message(sock.error()));
+        tlib::printf("nc: listen error: %s\n", std::error_message(child.error()));
         return 1;
     }
 
