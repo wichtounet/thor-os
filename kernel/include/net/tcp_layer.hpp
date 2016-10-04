@@ -41,6 +41,7 @@ struct tcp_connection {
 
     bool connected = false; ///< Indicate if the connection is connnected
     bool server    = false; ///< Indicate if the connection is a server (true) or a client (false)
+    bool child     = false; ///< Indicate if the connection was created from accept
 
     uint32_t ack_number = 0; ///< The next ack number
     uint32_t seq_number = 0; ///< The next sequence number

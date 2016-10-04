@@ -82,6 +82,12 @@ void prepare_packet(network::packet& packet, size_t source, size_t target) {
     packet.index += default_tcp_header_length;
 }
 
+size_t tcp_data_offset(const network::packet_p& packet){
+    auto* tcp_header = reinterpret_cast<const network::tcp::header*>(packet->payload + packet->tag(2));
+    auto tcp_flags = switch_endian_16(tcp_header->flags);
+    return *flag_data_offset(&tcp_flags) * 4;
+}
+
 size_t tcp_payload_len(const network::packet_p& packet){
     auto* ip_header  = reinterpret_cast<const network::ip::header*>(packet->payload + packet->tag(1));
     auto* tcp_header = reinterpret_cast<const network::tcp::header*>(packet->payload + packet->tag(2));
@@ -111,27 +117,45 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
     auto* ip_header = reinterpret_cast<network::ip::header*>(packet->payload + packet->tag(1));
     auto* tcp_header = reinterpret_cast<network::tcp::header*>(packet->payload + packet->index);
 
-    logging::logf(logging::log_level::TRACE, "tcp:decode: Start TCP packet handling\n");
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Start TCP packet handling (%p)\n", packet.get());
 
     auto source_port = switch_endian_16(tcp_header->source_port);
     auto target_port = switch_endian_16(tcp_header->target_port);
     auto seq         = switch_endian_32(tcp_header->sequence_number);
     auto ack         = switch_endian_32(tcp_header->ack_number);
+    auto len         = tcp_payload_len(packet);
 
     logging::logf(logging::log_level::TRACE, "tcp:decode: Source Port %u \n", size_t(source_port));
     logging::logf(logging::log_level::TRACE, "tcp:decode: Target Port %u \n", size_t(target_port));
     logging::logf(logging::log_level::TRACE, "tcp:decode: Seq Number %u \n", size_t(seq));
     logging::logf(logging::log_level::TRACE, "tcp:decode: Ack Number %u \n", size_t(ack));
+    logging::logf(logging::log_level::TRACE, "tcp:decode: Length %u \n", size_t(len));
 
     auto flags = switch_endian_16(tcp_header->flags);
 
+    const bool is_syn = *flag_syn(&flags);
+    const bool is_ack = *flag_ack(&flags);
+    const bool is_fin = *flag_fin(&flags);
+    const bool is_psh = *flag_psh(&flags);
+
+    logging::logf(logging::log_level::TRACE, "tcp:decode: SYN:%b ACK:%b FIN:%b PSH:%b \n", is_syn, is_ack, is_fin, is_psh);
+
     auto next_seq = ack;
-    auto next_ack = seq + tcp_payload_len(packet);
+    auto next_ack = seq + len;
 
     logging::logf(logging::log_level::TRACE, "tcp:decode: Next Seq Number %u \n", size_t(next_seq));
     logging::logf(logging::log_level::TRACE, "tcp:decode: Next Ack Number %u \n", size_t(next_ack));
 
     connections.for_each_connection_for_packet(source_port, target_port, [&](tcp_connection& connection) {
+        if(connection.socket){
+            logging::logf(logging::log_level::TRACE, "tcp:decode: Found connection with socket\n");
+        } else {
+            logging::logf(logging::log_level::TRACE, "tcp:decode: Found connection without socket\n");
+        }
+
+        logging::logf(logging::log_level::TRACE, "tcp:decode: connection (server:%b,connected:%b,child:%b)\n", connection.server, connection.connected, connection.child);
+        logging::logf(logging::log_level::TRACE, "            src:%u dest:%u server:%h\n", connection.local_port, connection.server_port, connection.server_address.raw_address);
+
         // Update the connection status
 
         connection.seq_number = next_seq;
@@ -146,12 +170,14 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
 
         // Propagate to the kernel socket
 
-        if (*flag_psh(&flags) && connection.socket) {
+        if (is_psh && connection.socket) {
             auto& socket = *connection.socket;
 
             packet->index += *flag_data_offset(&flags) * 4;
 
             if (socket.listen) {
+                logging::logf(logging::log_level::TRACE, "tcp:decode: Propagated to socket\n");
+
                 socket.listen_packets.push_back(packet);
                 socket.listen_queue.notify_one();
             }
@@ -160,7 +186,7 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
 
     // Acknowledge if necessary
 
-    if (*flag_psh(&flags)) {
+    if (is_psh) {
         logging::logf(logging::log_level::TRACE, "tcp:decode: Acknowledge directly\n");
 
         auto p = kernel_prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
@@ -223,6 +249,8 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
     }
 
+    logging::logf(logging::log_level::TRACE, "tcp:receive: Wait for packet\n");
+
     if(socket.listen_packets.empty()){
         socket.listen_queue.wait();
     }
@@ -230,13 +258,17 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
     auto packet = socket.listen_packets.back();
     socket.listen_packets.pop_back();
 
+    logging::logf(logging::log_level::TRACE, "tcp:receive: Received packet\n");
+
     auto payload_len = tcp_payload_len(packet);
 
     if(payload_len > n){
         return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
     }
 
-    std::copy_n(packet->payload + packet->index, payload_len, buffer);
+    auto offset = packet->tag(2) + tcp_data_offset(packet);
+
+    std::copy_n(packet->payload + offset, payload_len, buffer);
 
     return payload_len;
 }
@@ -248,6 +280,8 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
     if(!connection.connected){
         return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
     }
+
+    logging::logf(logging::log_level::TRACE, "tcp:receive: Wait for packet (timeout)\n");
 
     if(socket.listen_packets.empty()){
         if(!ms){
@@ -262,13 +296,17 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
     auto packet = socket.listen_packets.back();
     socket.listen_packets.pop_back();
 
+    logging::logf(logging::log_level::TRACE, "tcp:receive: Received packet\n");
+
     auto payload_len = tcp_payload_len(packet);
 
     if(payload_len > n){
         return std::make_unexpected<size_t>(std::ERROR_BUFFER_SMALL);
     }
 
-    std::copy_n(packet->payload + packet->index, payload_len, buffer);
+    auto offset = packet->tag(2) + tcp_data_offset(packet);
+
+    std::copy_n(packet->payload + offset, payload_len, buffer);
 
     return payload_len;
 }
@@ -538,9 +576,13 @@ std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
     auto child_fd = scheduler::register_new_socket(socket.domain, socket.type, socket.protocol);
     auto& child_sock = scheduler::get_socket(child_fd);
 
+    logging::logf(logging::log_level::TRACE, "tcp:accept: Register new socket %u\n", child_fd);
+
     // Create the connection
 
     auto& child_connection = connections.create_connection();
+
+    child_connection.child = true;
 
     child_connection.local_port     = target_port;
     child_connection.server_port    = source_port;
