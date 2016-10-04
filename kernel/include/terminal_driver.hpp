@@ -14,10 +14,10 @@
 
 namespace stdio {
 
-struct terminal_driver : devfs::char_driver {
-    size_t read(void* data, char* buffer, size_t count, size_t& read);
-    size_t read(void* data, char* buffer, size_t count, size_t& read, size_t ms);
-    size_t write(void* data, const char* buffer, size_t count, size_t& written);
+struct terminal_driver final : devfs::char_driver {
+    size_t read(void* data, char* buffer, size_t count, size_t& read) override;
+    size_t read(void* data, char* buffer, size_t count, size_t& read, size_t ms) override;
+    size_t write(void* data, const char* buffer, size_t count, size_t& written) override;
 };
 
 } //end of namespace stdio
