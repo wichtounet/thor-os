@@ -204,6 +204,9 @@ struct deque {
         delete[] data;
     }
 
+    /*!
+     * \brief Push an element at the back of the deque
+     */
     void push_back(T&& element) {
         ensure_capacity_back(1);
 
@@ -224,6 +227,9 @@ struct deque {
         ++_size;
     }
 
+    /*!
+     * \brief Push an element at the back of the deque
+     */
     void push_back(const T& element) {
         ensure_capacity_back(1);
 
@@ -244,6 +250,9 @@ struct deque {
         ++_size;
     }
 
+    /*!
+     * \brief Construct an element at the back of the vector, enplace.
+     */
     reference_type emplace_back() {
         ensure_capacity_back(1);
 
@@ -266,6 +275,9 @@ struct deque {
         return back();
     }
 
+    /*!
+     * \brief Construct an element at the back of the vector, enplace.
+     */
     template <typename... Args>
     reference_type emplace_back(Args&&... args) {
         ensure_capacity_back(1);
@@ -289,6 +301,9 @@ struct deque {
         return back();
     }
 
+    /*!
+     * \brief Push an element at the front of the deque
+     */
     void push_front(T&& element) {
         ensure_capacity_front(1);
 
@@ -309,6 +324,9 @@ struct deque {
         ++_size;
     }
 
+    /*!
+     * \brief Push an element at the front of the deque
+     */
     void push_front(const T& element) {
         ensure_capacity_front(1);
 
@@ -329,6 +347,9 @@ struct deque {
         ++_size;
     }
 
+    /*!
+     * \brief Construct an element at the front of the vector, enplace.
+     */
     reference_type emplace_front() {
         ensure_capacity_front(1);
 
@@ -349,6 +370,9 @@ struct deque {
         ++_size;
     }
 
+    /*!
+     * \brief Construct an element at the front of the vector, enplace.
+     */
     template <typename... Args>
     reference_type emplace_front(Args&&... args) {
         ensure_capacity_front(1);
@@ -370,6 +394,9 @@ struct deque {
         ++_size;
     }
 
+    /*!
+     * \brief Removes an element from the back of the deque
+     */
     void pop_back() {
         auto block = (last_element) / block_elements;
         auto index = (last_element) % block_elements;
@@ -383,6 +410,9 @@ struct deque {
         }
     }
 
+    /*!
+     * \brief Removes an element from the front of the deque
+     */
     void pop_front() {
         auto block = (first_element) / block_elements;
         auto index = (first_element) % block_elements;
@@ -396,6 +426,9 @@ struct deque {
         }
     }
 
+    /*!
+     * \brief Erase the element at the given position
+     */
     void erase(size_t position) {
         for (size_t i = position; i < _size - 1; ++i) {
             (*this)[i] = std::move((*this)[i + 1]);
@@ -409,12 +442,18 @@ struct deque {
         --_size;
     }
 
+    /*!
+     * \brief Erase the element at the given position
+     */
     iterator erase(iterator position) {
         erase(position.index);
 
         return position;
     }
 
+    /*!
+     * \brief Erase all the elements of the given range
+     */
     void erase(iterator first, iterator last) {
         auto n = last - first;
 
@@ -442,38 +481,68 @@ struct deque {
         _size = 0;
     }
 
+    /*!
+     * \brief Returns the size of the deque
+     */
     size_t size() const {
         return _size;
     }
 
+    /*!
+     * \brief Returns the current maximum size of the deque
+     */
     size_t max_size() const {
         return blocks * block_elements;
     }
 
+    /*!
+     * \brief Retuns a reference to the element at position i
+     */
     reference_type operator[](size_t i) {
         auto block = (i + first_element) / block_elements;
         auto index = (i + first_element) % block_elements;
         return data[block][index];
     }
 
+    /*!
+     * \brief Retuns a reference to the element at position i
+     */
+    const_reference_type operator[](size_t i) const {
+        auto block = (i + first_element) / block_elements;
+        auto index = (i + first_element) % block_elements;
+        return data[block][index];
+    }
+
+    /*!
+     * \brief Returns a reference to the back element of the deque
+     */
     reference_type back() {
         auto block = (last_element) / block_elements;
         auto index = (last_element) % block_elements;
         return data[block][index];
     }
 
+    /*!
+     * \brief Returns a reference to the back element of the deque
+     */
     const_reference_type back() const {
         auto block = (last_element) / block_elements;
         auto index = (last_element) % block_elements;
         return data[block][index];
     }
 
+    /*!
+     * \brief Returns a reference to the front element of the deque
+     */
     reference_type front() {
         auto block = (first_element) / block_elements;
         auto index = (first_element) % block_elements;
         return data[block][index];
     }
 
+    /*!
+     * \brief Returns a reference to the front element of the deque
+     */
     const_reference_type front() const {
         auto block = (first_element) / block_elements;
         auto index = (first_element) % block_elements;
@@ -482,36 +551,60 @@ struct deque {
 
     //Iterators
 
+    /*!
+     * \brief Return an iterator to point to the first element
+     */
     iterator begin() {
         return iterator(this, 0);
     }
 
+    /*!
+     * \brief Return an iterator to point to the first element
+     */
     constexpr const_iterator begin() const {
         return const_iterator(this, 0);
     }
 
+    /*!
+     * \brief Return an iterator to point to the past-the-end element
+     */
     iterator end() {
         return iterator(this, _size);
     }
 
+    /*!
+     * \brief Return an iterator to point to the past-the-end element
+     */
     constexpr const_iterator end() const {
         return const_iterator(this, _size);
     }
 
     //Iterators
 
+    /*!
+     * \brief Return a reverse iterator to point to the first element
+     */
     reverse_iterator rbegin() {
         return reverse_iterator(iterator(this, _size - 1));
     }
 
+    /*!
+     * \brief Return a reverse iterator to point to the first element
+     */
     constexpr const_reverse_iterator rbegin() const {
         return const_iterator(const_iterator(this, _size - 1));
     }
 
+    /*!
+     * \brief Return a reverse iterator point to the past-the-end element
+     */
     reverse_iterator rend() {
         return reverse_iterator(iterator(this, -1));
     }
 
+    /*!
+     * \brief Return a reverse iterator point to the past-the-end element
+     */
     constexpr const_reverse_iterator rend() const {
         return const_reverse_iterator(const_iterator(this, -1));
     }

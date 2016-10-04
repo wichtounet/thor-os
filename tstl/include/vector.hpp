@@ -235,6 +235,9 @@ struct vector {
         new (&data[_size++]) value_type(element);
     }
 
+    /*!
+     * \brief Construct a new element inplace
+     */
     value_type& emplace_back(){
         ensure_capacity(_size + 1);
 
@@ -243,6 +246,9 @@ struct vector {
         return back();
     }
 
+    /*!
+     * \brief Construct a new element inplace
+     */
     template<typename... Args>
     value_type& emplace_back(Args... args){
         ensure_capacity(_size + 1);
@@ -311,6 +317,9 @@ struct vector {
         _size = 0;
     }
 
+    /*!
+     * \brief Erase the element at the given position
+     */
     void erase(size_t position){
         for(size_t i = position; i < _size - 1; ++i){
             data[i] = std::move(data[i+1]);
@@ -322,6 +331,9 @@ struct vector {
         data[_size].~value_type();
     }
 
+    /*!
+     * \brief Erase the element at the given position
+     */
     void erase(iterator position){
         for(size_t i = position - begin(); i < _size - 1; ++i){
             data[i] = std::move(data[i+1]);
@@ -333,6 +345,9 @@ struct vector {
         data[_size].~value_type();
     }
 
+    /*!
+     * \brief Erase all the elements of the given range
+     */
     void erase(iterator first, iterator last){
         auto n = std::distance(first, last);
 
@@ -350,36 +365,60 @@ struct vector {
 
     //Iterators
 
+    /*!
+     * \brief Return an iterator to point to the first element
+     */
     iterator begin(){
         return iterator(&data[0]);
     }
 
+    /*!
+     * \brief Return an iterator to point to the first element
+     */
     constexpr const_iterator begin() const {
         return const_iterator(&data[0]);
     }
 
+    /*!
+     * \brief Return an iterator to point to the past-the-end element
+     */
     iterator end(){
         return iterator(&data[_size]);
     }
 
+    /*!
+     * \brief Return an iterator to point to the past-the-end element
+     */
     constexpr const_iterator end() const {
         return const_iterator(&data[_size]);
     }
 
     //Iterators
 
+    /*!
+     * \brief Return a reverse iterator to point to the first element
+     */
     reverse_iterator rbegin(){
         return reverse_iterator(&data[_size] - 1);
     }
 
+    /*!
+     * \brief Return a reverse iterator to point to the first element
+     */
     constexpr const_reverse_iterator rbegin() const {
         return const_iterator(&data[_size - 1]);
     }
 
+    /*!
+     * \brief Return a reverse iterator point to the past-the-end element
+     */
     reverse_iterator rend(){
         return reverse_iterator(&data[-1]);
     }
 
+    /*!
+     * \brief Return a reverse iterator point to the past-the-end element
+     */
     constexpr const_reverse_iterator rend() const {
         return const_reverse_iterator(&data[-1]);
     }
