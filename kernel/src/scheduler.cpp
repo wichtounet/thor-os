@@ -622,6 +622,7 @@ void init_context(scheduler::process_t& process, const char* buffer, const std::
     auto regs = reinterpret_cast<interrupt::syscall_regs*>(rsp);
 
     regs->rsp = scheduler::user_rsp - sizeof(interrupt::syscall_regs) - args_size; //Not sure about that
+    regs->rbp = 0;
     regs->rip = header->e_entry;
     regs->cs = gdt::USER_CODE_SELECTOR + 3;
     regs->ds = gdt::USER_DATA_SELECTOR + 3;
