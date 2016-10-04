@@ -42,7 +42,12 @@ int netcat_tcp_client(const tlib::ip::address& server, size_t port){
         return 1;
     }
 
+    tlib::printf("nc: wait 2 seconds\n");
+    tlib::sleep_ms(2000);
+
     // Send a packet to the server
+
+    tlib::printf("nc: send a message\n");
 
     {
         auto message = "THOR";
@@ -54,6 +59,8 @@ int netcat_tcp_client(const tlib::ip::address& server, size_t port){
             return 1;
         }
     }
+
+    tlib::printf("nc: wait for message\n");
 
     // Listen for packets from the server
 
@@ -227,14 +234,12 @@ int netcat_tcp_server(const tlib::ip::address& local, size_t port){
             tlib::printf("nc: receive error: %s\n", std::error_message(sock.error()));
             return 1;
         } else {
-            tlib::printf("nc: received message of size %u\n", size);
-
             message_buffer[size] = '\0';
-            tlib::print(message_buffer);
 
-            tlib::printf("nc: Send response\n");
+            tlib::printf("nc: received message of size %u: %s\n", size, message_buffer);
+            tlib::printf("nc: Send response back\n");
 
-            sock.send(message_buffer, size);
+            child.send(message_buffer, size);
 
             if (!sock) {
                 tlib::printf("nc: send error: %s\n", std::error_message(sock.error()));
