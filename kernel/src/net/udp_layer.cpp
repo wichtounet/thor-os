@@ -101,7 +101,7 @@ void network::udp::layer::decode(network::interface_descriptor& interface, netwo
             auto& socket = *connection.socket;
 
             if (socket.listen) {
-                socket.listen_packets.push_back(packet);
+                socket.listen_packets.push(packet);
                 socket.listen_queue.notify_one();
             }
         }
@@ -294,8 +294,8 @@ std::expected<size_t> network::udp::layer::receive(char* buffer, network::socket
         socket.listen_queue.wait();
     }
 
-    auto packet = socket.listen_packets.back();
-    socket.listen_packets.pop_back();
+    auto packet = socket.listen_packets.top();
+    socket.listen_packets.pop();
 
     auto* udp_header = reinterpret_cast<network::udp::header*>(packet->payload + packet->tag(2));
     auto payload_len = switch_endian_16(udp_header->length);
@@ -327,8 +327,8 @@ std::expected<size_t> network::udp::layer::receive(char* buffer, network::socket
         }
     }
 
-    auto packet = socket.listen_packets.back();
-    socket.listen_packets.pop_back();
+    auto packet = socket.listen_packets.top();
+    socket.listen_packets.pop();
 
     auto* udp_header = reinterpret_cast<network::udp::header*>(packet->payload + packet->tag(2));
     auto payload_len = switch_endian_16(udp_header->length);
@@ -356,8 +356,8 @@ std::expected<size_t> network::udp::layer::receive_from(char* buffer, network::s
         socket.listen_queue.wait();
     }
 
-    auto packet = socket.listen_packets.back();
-    socket.listen_packets.pop_back();
+    auto packet = socket.listen_packets.top();
+    socket.listen_packets.pop();
 
     auto* udp_header = reinterpret_cast<network::udp::header*>(packet->payload + packet->tag(2));
     auto payload_len = switch_endian_16(udp_header->length);
@@ -396,8 +396,8 @@ std::expected<size_t> network::udp::layer::receive_from(char* buffer, network::s
         }
     }
 
-    auto packet = socket.listen_packets.back();
-    socket.listen_packets.pop_back();
+    auto packet = socket.listen_packets.top();
+    socket.listen_packets.pop();
 
     auto* udp_header = reinterpret_cast<network::udp::header*>(packet->payload + packet->tag(2));
     auto payload_len = switch_endian_16(udp_header->length);

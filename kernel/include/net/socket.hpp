@@ -9,7 +9,7 @@
 #define NET_SOCKET_H
 
 #include <types.hpp>
-#include <vector.hpp>
+#include <queue.hpp>
 #include <algorithms.hpp>
 #include <circular_buffer.hpp>
 #include <type_traits.hpp>
@@ -38,8 +38,8 @@ struct socket {
 
     std::vector<network::packet_p> packets; ///< Packets that are prepared with their fd
 
-    std::vector<network::packet_p> listen_packets; ///< The packets that wait to be read in listen mode
-    condition_variable listen_queue;               ///< Condition variable to wait for packets
+    std::queue<network::packet_p> listen_packets; ///< The packets that wait to be read in listen mode
+    condition_variable listen_queue;              ///< Condition variable to wait for packets
 
     socket() {}
     socket(size_t id, socket_domain domain, socket_type type, socket_protocol protocol, size_t next_fd, bool listen)

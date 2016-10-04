@@ -10,7 +10,7 @@
 
 #include <types.hpp>
 #include <atomic.hpp>
-#include <circular_buffer.hpp>
+#include <queue.hpp>
 
 #include "conc/condition_variable.hpp"
 
@@ -37,7 +37,7 @@ struct tcp_connection {
 
     std::atomic<bool> listening;            ///< Indicates if a kernel thread is listening on this connection
     condition_variable queue;               ///< The listening queue
-    std::vector<network::packet_p> packets; ///< The packets for the listening queue
+    std::queue<network::packet_p> packets; ///< The packets for the listening queue
 
     bool connected = false; ///< Indicate if the connection is connnected
     bool server    = false; ///< Indicate if the connection is a server (true) or a client (false)

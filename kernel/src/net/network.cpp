@@ -879,8 +879,8 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
         socket.listen_queue.wait();
     }
 
-    auto packet = socket.listen_packets.back();
-    socket.listen_packets.pop_back();
+    auto packet = socket.listen_packets.top();
+    socket.listen_packets.pop();
 
     std::copy_n(packet->payload, packet->payload_size, buffer);
 
@@ -912,8 +912,8 @@ std::expected<size_t> network::wait_for_packet(char* buffer, socket_fd_t socket_
         }
     }
 
-    auto packet = socket.listen_packets.back();
-    socket.listen_packets.pop_back();
+    auto packet = socket.listen_packets.top();
+    socket.listen_packets.pop();
 
     std::copy_n(packet->payload, packet->payload_size, buffer);
 
@@ -940,7 +940,7 @@ void network::propagate_packet(const packet_p& packet, socket_protocol protocol)
                     // Note: Stream and datagram sockets are responsible for propagation
 
                     if (propagate) {
-                        socket.listen_packets.push_back(packet);
+                        socket.listen_packets.push(packet);
                         socket.listen_queue.notify_one();
                     }
                 }

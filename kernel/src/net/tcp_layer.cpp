@@ -166,7 +166,7 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
         if (connection.listening.load()) {
             logging::logf(logging::log_level::TRACE, "tcp:decode: Propagated to connection\n");
 
-            connection.packets.push_back(packet);
+            connection.packets.push(packet);
             connection.queue.notify_one();
         }
 
@@ -187,7 +187,7 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
             if (socket.listen) {
                 logging::logf(logging::log_level::TRACE, "tcp:decode: Propagated to socket\n");
 
-                socket.listen_packets.push_back(packet);
+                socket.listen_packets.push(packet);
                 socket.listen_queue.notify_one();
             }
         }
@@ -264,8 +264,8 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
         socket.listen_queue.wait();
     }
 
-    auto packet = socket.listen_packets.back();
-    socket.listen_packets.pop_back();
+    auto packet = socket.listen_packets.top();
+    socket.listen_packets.pop();
 
     logging::logf(logging::log_level::TRACE, "tcp:receive: Received packet\n");
 
@@ -302,8 +302,8 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
         }
     }
 
-    auto packet = socket.listen_packets.back();
-    socket.listen_packets.pop_back();
+    auto packet = socket.listen_packets.top();
+    socket.listen_packets.pop();
 
     logging::logf(logging::log_level::TRACE, "tcp:receive: Received packet\n");
 
@@ -403,8 +403,8 @@ std::expected<void> network::tcp::layer::finalize_packet(network::interface_desc
 
             thor_assert(!connection.packets.empty(), "Should not be notified if queue not empty");
 
-            auto received_packet = connection.packets.back();
-            connection.packets.pop_back();
+            auto received_packet = connection.packets.top();
+            connection.packets.pop();
 
             auto* tcp_header = reinterpret_cast<network::tcp::header*>(received_packet->payload + received_packet->tag(2));
             auto flags       = switch_endian_16(tcp_header->flags);
@@ -551,8 +551,8 @@ std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
             connection.queue.wait();
         }
 
-        auto received_packet = connection.packets.back();
-        connection.packets.pop_back();
+        auto received_packet = connection.packets.top();
+        connection.packets.pop();
 
         auto* tcp_header = reinterpret_cast<header*>(received_packet->payload + received_packet->index);
         auto flags       = switch_endian_16(tcp_header->flags);
@@ -722,8 +722,8 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
             auto remaining = timeout_ms - (after - before);
 
             if(connection.queue.wait_for(remaining)){
-                auto received_packet = connection.packets.back();
-                connection.packets.pop_back();
+                auto received_packet = connection.packets.top();
+                connection.packets.pop();
 
                 auto* tcp_header = reinterpret_cast<header*>(received_packet->payload + received_packet->index);
                 auto flags       = switch_endian_16(tcp_header->flags);
@@ -788,8 +788,8 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
                 }
             }
 
-            auto received_packet = connection.packets.back();
-            connection.packets.pop_back();
+            auto received_packet = connection.packets.top();
+            connection.packets.pop();
 
             auto* tcp_header = reinterpret_cast<header*>(received_packet->payload + received_packet->index);
             auto flags       = switch_endian_16(tcp_header->flags);
