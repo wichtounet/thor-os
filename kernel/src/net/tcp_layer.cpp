@@ -173,8 +173,36 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
         if(connection.child && is_fin){
             logging::logf(logging::log_level::TRACE, "tcp:decode: End connection (received FIN/ACK)\n");
 
-            //TODO Answer to the FIN/ACK
-            //TODO Wake up the thread (if any) waiting on this connection
+            logging::logf(logging::log_level::TRACE, "tcp:decode: Send FIN/ACK\n");
+
+            auto p = kernel_prepare_packet(interface, switch_endian_32(ip_header->source_ip), target_port, source_port, 0);
+
+            if (!p) {
+                logging::logf(logging::log_level::ERROR, "tcp:decode: Impossible to prepare TCP packet for FIN/ACK\n");
+            } else {
+                auto& packet = *p;
+
+                auto* ack_tcp_header = reinterpret_cast<header*>(packet->payload + packet->tag(2));
+
+                ack_tcp_header->sequence_number = switch_endian_32(connection.seq_number);
+                ack_tcp_header->ack_number      = switch_endian_32(connection.ack_number);
+
+                auto ack_flags = get_default_flags();
+                (flag_fin(&ack_flags)) = 1;
+                (flag_ack(&ack_flags)) = 1;
+                ack_tcp_header->flags = switch_endian_16(ack_flags);
+
+                finalize_packet_direct(interface, packet);
+            }
+
+            //Wake up the thread (if any) waiting on this connection
+
+            connection.connected = false;
+            connection.queue.notify_all();
+
+            if(connection.socket){
+                connection.socket->listen_queue.notify_all();
+            }
         }
 
         // Propagate to the kernel socket
@@ -262,6 +290,11 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
 
     if(socket.listen_packets.empty()){
         socket.listen_queue.wait();
+
+        if(!connection.connected){
+            logging::logf(logging::log_level::TRACE, "tcp:receive: Disconnected while waiting\n");
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
+        }
     }
 
     auto packet = socket.listen_packets.top();
@@ -299,6 +332,11 @@ std::expected<size_t> network::tcp::layer::receive(char* buffer, network::socket
 
         if(!socket.listen_queue.wait_for(ms)){
             return std::make_unexpected<size_t>(std::ERROR_SOCKET_TIMEOUT);
+        }
+
+        if(!connection.connected){
+            logging::logf(logging::log_level::TRACE, "tcp:receive: Disconnected while waiting\n");
+            return std::make_unexpected<size_t>(std::ERROR_SOCKET_NOT_CONNECTED);
         }
     }
 
