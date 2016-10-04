@@ -164,8 +164,17 @@ void network::tcp::layer::decode(network::interface_descriptor& interface, netwo
         // Propagate to kernel connections
 
         if (connection.listening.load()) {
+            logging::logf(logging::log_level::TRACE, "tcp:decode: Propagated to connection\n");
+
             connection.packets.push_back(packet);
             connection.queue.notify_one();
+        }
+
+        if(connection.child && is_fin){
+            logging::logf(logging::log_level::TRACE, "tcp:decode: End connection (received FIN/ACK)\n");
+
+            //TODO Answer to the FIN/ACK
+            //TODO Wake up the thread (if any) waiting on this connection
         }
 
         // Propagate to the kernel socket
