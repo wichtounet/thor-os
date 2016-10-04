@@ -9,7 +9,7 @@
 
 int main(int argc, char* argv[]){
     for(size_t i = 0; i < size_t(argc); ++i){
-        tlib::print_line(argv[i]);
+        tlib::printf("arg:%u:%p:%s\n", i, argv[i], argv[i]);
     }
 
     return 0;
