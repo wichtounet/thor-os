@@ -51,6 +51,13 @@ qemu: default
 	tail -f virtual.log
 	kill %1
 
+qemu_run: default
+	touch virtual.log
+	sudo run-qemu -enable-kvm -cpu host -serial file:virtual.log -vga std -hda hdd.img &
+	echo "Reading kernel log (Ctrl+C for exit)"
+	tail -f virtual.log
+	kill %1
+
 qemu_user: default
 	touch virtual.log
 	sudo qemu-system-x86_64 -enable-kvm -cpu host -serial file:virtual.log -net user,vlan=0 -net nic,model=rtl8139,vlan=0,macaddr=52:54:00:12:34:56 -net socket,listen=localhost:1234 -net dump,vlan=0,file=thor.pcap -vga std -hda hdd.img &
