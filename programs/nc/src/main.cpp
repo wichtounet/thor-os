@@ -226,7 +226,14 @@ int netcat_tcp_server(const tlib::ip::address& local, size_t port){
 
         auto size = child.receive(message_buffer, 2048, remaining);
         if (!child) {
+            // Simple timeout
             if (child.error() == std::ERROR_SOCKET_TIMEOUT) {
+                child.clear();
+                break;
+            }
+
+            // It may have disconnected in the meantime
+            if (child.error() == std::ERROR_SOCKET_NOT_CONNECTED) {
                 child.clear();
                 break;
             }
@@ -253,11 +260,7 @@ int netcat_tcp_server(const tlib::ip::address& local, size_t port){
     tlib::printf("nc: done... disconnecting\n");
 
     child.listen(false);
-
-    if (!child) {
-        tlib::printf("nc: listen error: %s\n", std::error_message(child.error()));
-        return 1;
-    }
+    child.clear();
 
     return 0;
 }

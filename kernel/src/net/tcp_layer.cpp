@@ -707,7 +707,7 @@ std::expected<void> network::tcp::layer::disconnect(network::socket& sock) {
     auto& connection = sock.get_connection_data<tcp_connection>();
 
     if(!connection.connected){
-        return std::make_unexpected<void>(std::ERROR_SOCKET_NOT_CONNECTED);
+        return std::make_expected();
     }
 
     auto target_ip  = connection.server_address;
