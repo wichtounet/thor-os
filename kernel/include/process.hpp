@@ -10,6 +10,7 @@
 
 #include <types.hpp>
 #include <vector.hpp>
+#include <deque.hpp>
 
 #include "paging.hpp"
 #include "interrupts.hpp"
@@ -107,7 +108,7 @@ struct process_control_t {
     size_t rounds; ///< The number of rounds remaining
     size_t sleep_timeout; ///< The sleep timeout (in ticks)
     std::vector<path> handles; ///< The file handles
-    std::vector<network::socket> sockets; ///< The socket handles
+    std::deque<network::socket> sockets; ///< The socket handles
     path working_directory; ///< The current working directory
 };
 

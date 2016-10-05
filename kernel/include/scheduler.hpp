@@ -165,12 +165,12 @@ void release_socket(size_t fd);
 /*!
  * \brief Returns the sockets of the current process
  */
-std::vector<network::socket>& get_sockets();
+std::deque<network::socket>& get_sockets();
 
 /*!
  * \brief Returns the sockets of the given process
  */
-std::vector<network::socket>& get_sockets(pid_t pid);
+std::deque<network::socket>& get_sockets(pid_t pid);
 
 /*!
  * \brief Returns the working directory of the current process

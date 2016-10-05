@@ -1032,11 +1032,11 @@ network::socket& scheduler::get_socket(size_t fd){
     return pcb[current_pid].sockets[fd - 1];
 }
 
-std::vector<network::socket>& scheduler::get_sockets(){
+std::deque<network::socket>& scheduler::get_sockets(){
     return pcb[current_pid].sockets;
 }
 
-std::vector<network::socket>& scheduler::get_sockets(scheduler::pid_t pid){
+std::deque<network::socket>& scheduler::get_sockets(scheduler::pid_t pid){
     return pcb[pid].sockets;
 }
 
