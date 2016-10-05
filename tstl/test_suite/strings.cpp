@@ -113,6 +113,47 @@ void test_concat(){
     check(strcmp(s3.c_str(), "123456789123456789123456789") == 0, "Invalid content");
 }
 
+void test_concat_more(){
+    std::string s1("123456789");
+    std::string s2("123456789");
+
+    s1 += s2;
+
+    check(!s1.empty(), "String mustn't be empty");
+    check_equals(s1.size(), 18, "Invalid size");
+    check_equals(s1.capacity(), 32, "Invalid capacity");
+    check(strcmp(s1.c_str(), "123456789123456789") == 0, "Invalid content");
+
+    check(!s2.empty(), "String mustn't be empty");
+    check_equals(s2.size(), 9, "Invalid size");
+    check_equals(s2.capacity(), 16, "Invalid capacity");
+    check(strcmp(s2.c_str(), "123456789") == 0, "Invalid content");
+
+    s1 += s2;
+
+    check(!s1.empty(), "String mustn't be empty");
+    check_equals(s1.size(), 27, "Invalid size");
+    check_equals(s1.capacity(), 32, "Invalid capacity");
+    check(strcmp(s1.c_str(), "123456789123456789123456789") == 0, "Invalid content");
+
+    check(!s2.empty(), "String mustn't be empty");
+    check_equals(s2.size(), 9, "Invalid size");
+    check_equals(s2.capacity(), 16, "Invalid capacity");
+    check(strcmp(s2.c_str(), "123456789") == 0, "Invalid content");
+
+    s1 += s2;
+
+    check(!s1.empty(), "String mustn't be empty");
+    check_equals(s1.size(), 36, "Invalid size");
+    check_equals(s1.capacity(), 64, "Invalid capacity");
+    check(strcmp(s1.c_str(), "123456789123456789123456789123456789") == 0, "Invalid content");
+
+    check(!s2.empty(), "String mustn't be empty");
+    check_equals(s2.size(), 9, "Invalid size");
+    check_equals(s2.capacity(), 16, "Invalid capacity");
+    check(strcmp(s2.c_str(), "123456789") == 0, "Invalid content");
+}
+
 void test_move(){
     std::string s1("123456789");
 
@@ -233,6 +274,7 @@ void string_tests(){
     test_limit();
     test_grow();
     test_concat();
+    test_concat_more();
     test_move();
     test_large();
     test_reserve();
