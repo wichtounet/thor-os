@@ -155,7 +155,7 @@ struct list {
      * \brief Indicates if the list is empty
      */
     bool empty() const {
-        return _size;
+        return !_size;
     }
 
     /*!
