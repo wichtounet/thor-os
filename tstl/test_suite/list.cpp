@@ -37,11 +37,14 @@ Iterator advance(Iterator it, size_t n){
 void test_erase(){
     std::list<int> a{1, 0, 0, 2, 3, 4};
 
+    check(!a.empty(), "erase: Invalid list::empty()");
+
     a.erase(advance(a.begin(), 2));
 
-    check(a.size() == 5, "Invalid list:size");
-    check(a.front() == 1, "Invalid list:front()");
-    check(a.back() == 4, "Invalid list:back()");
+    check(!a.empty(), "erase: Invalid list::empty()");
+    check(a.size() == 5, "erase: Invalid list:size");
+    check(a.front() == 1, "erase: Invalid list:front()");
+    check(a.back() == 4, "erase: Invalid list:back()");
 
     check(*a.begin() == 1, "erase: Invalid element 0");
     check(*advance(a.begin(),1) == 0, "erase: Invalid element 1");
@@ -232,6 +235,22 @@ void test_lots() {
     check_equals(vec.back(), 10000, "test_lots: invalid back()");
 }
 
+void test_clear(){
+    std::list<int> a{1, 0, 0, 2, 3, 4};
+
+    check(!a.empty(), "invalid list::empty()");
+
+    a.push_back(3);
+    check(!a.empty(), "invalid list::empty()");
+
+    a.push_front(4);
+    check(!a.empty(), "invalid list::empty()");
+
+    a.clear();
+
+    check(a.empty(), "invalid list::empty()");
+}
+
 } //end of anonymous namespace
 
 void list_tests(){
@@ -245,4 +264,5 @@ void list_tests(){
     test_iterator();
     test_reverse_iterator();
     test_lots();
+    test_clear();
 }
