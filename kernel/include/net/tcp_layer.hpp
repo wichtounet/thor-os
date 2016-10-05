@@ -46,6 +46,9 @@ struct tcp_connection {
     uint32_t ack_number = 0; ///< The next ack number
     uint32_t seq_number = 0; ///< The next sequence number
 
+    uint32_t fina_ack_number = 0; ///< The next ack number (from finalize)
+    uint32_t fina_seq_number = 0; ///< The next sequence number (from finalize)
+
     network::socket* socket = nullptr; ///< Pointer to the user socket
 
     tcp_connection() : listening(false) {

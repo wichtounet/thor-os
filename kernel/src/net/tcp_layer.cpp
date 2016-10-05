@@ -465,6 +465,9 @@ std::expected<void> network::tcp::layer::finalize_packet(network::interface_desc
             if (correct_ack) {
                 logging::logf(logging::log_level::TRACE, "tcp:finalize: Received ACK\n");
 
+                connection.fina_ack_number = switch_endian_32(tcp_header->ack_number);
+                connection.fina_seq_number = switch_endian_32(tcp_header->sequence_number);
+
                 received = true;
 
                 break;
@@ -528,6 +531,9 @@ std::expected<size_t> network::tcp::layer::connect(network::socket& sock, networ
     if(!status){
         return std::make_unexpected<size_t, size_t>(status.error());
     }
+
+    connection.seq_number = connection.fina_ack_number;
+    connection.ack_number = connection.fina_seq_number + 1;
 
     // The SYN/ACK is ensured by finalize_packet
 
@@ -639,6 +645,10 @@ std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
     child_sock.connection_data = &child_connection;
     child_connection.socket = &child_sock;
 
+    // Child connection numbers
+    child_connection.seq_number = connection.seq_number;
+    child_connection.ack_number = connection.ack_number;
+
     child_connection.connected = true;
 
     auto& interface = network::select_interface(source_address);
@@ -678,7 +688,7 @@ std::expected<size_t> network::tcp::layer::accept(network::socket& socket){
 }
 
 std::expected<size_t> network::tcp::layer::accept(network::socket& socket, size_t ms){
-
+    //TODO
 }
 
 std::expected<void> network::tcp::layer::server_start(network::socket& sock, size_t server_port, network::ip::address server) {
