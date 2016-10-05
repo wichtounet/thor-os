@@ -191,6 +191,46 @@ void test_pop_back() {
     check(counter == 1, "pop_back: Invalid destructors");
 }
 
+void test_lots() {
+    std::vector<size_t> vec;
+
+    for(size_t i = 0; i < 1000; ++i){
+        vec.push_back(i);
+    }
+
+    for(size_t i = 10000; i < 11000; ++i){
+        vec.push_front(i);
+    }
+
+    for(size_t i = 0; i < 1000; ++i){
+        check_equals(vec[i], 10999 - i, "test_lots: invalid []");
+    }
+
+    for(size_t i = 1000; i < 2000; ++i){
+        check_equals(vec[i], i - 1000, "test_lots: invalid []");
+    }
+
+    check_equals(vec.size(), 2000, "test_lots: invalid size()");
+    check_equals(vec.front(), 10999, "test_lots: invalid front()");
+    check_equals(vec.back(), 999, "test_lots: invalid back()");
+
+    for(size_t i = 0; i < 1000; ++i){
+        vec.pop_back();
+    }
+
+    check_equals(vec.size(), 1000, "test_lots: invalid size()");
+    check_equals(vec.front(), 10999, "test_lots: invalid front()");
+    check_equals(vec.back(), 10000, "test_lots: invalid back()");
+
+    for(size_t i = 0; i < 500; ++i){
+        vec.erase(vec.begin());
+    }
+
+    check_equals(vec.size(), 500, "test_lots: invalid size()");
+    check_equals(vec.front(), 10499, "test_lots: invalid front()");
+    check_equals(vec.back(), 10000, "test_lots: invalid back()");
+}
+
 } //end of anonymous namespace
 
 void vector_tests(){
@@ -204,4 +244,5 @@ void vector_tests(){
     test_destructor();
     test_clear();
     test_pop_back();
+    test_lots();
 }
