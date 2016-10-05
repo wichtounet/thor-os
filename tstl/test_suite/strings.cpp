@@ -266,6 +266,134 @@ void test_reserve(){
     check(strcmp(s2.c_str(), "123456789012345678") == 0, "Invalid content");
 }
 
+void test_operators_short(){
+    std::string short_string("asdfjkle");
+    std::string empty_string;
+
+    empty_string = short_string;
+
+    check(!empty_string.empty(), "String mustn't be empty");
+    check_equals(empty_string.size(), 8, "Invalid size");
+    check(strcmp(empty_string.c_str(), "asdfjkle") == 0, "Invalid content");
+
+    empty_string.clear();
+
+    empty_string = std::move(short_string);
+
+    check(!empty_string.empty(), "String mustn't be empty");
+    check_equals(empty_string.size(), 8, "Invalid size");
+    check(strcmp(empty_string.c_str(), "asdfjkle") == 0, "Invalid content");
+
+    check_equals(short_string.size(), 0, "Invalid size");
+
+    std::string first(empty_string);
+    std::string last(std::move(empty_string));
+
+    check(!first.empty(), "String mustn't be empty");
+    check_equals(first.size(), 8, "Invalid size");
+    check(strcmp(first.c_str(), "asdfjkle") == 0, "Invalid content");
+
+    check(!last.empty(), "String mustn't be empty");
+    check_equals(last.size(), 8, "Invalid size");
+    check(strcmp(last.c_str(), "asdfjkle") == 0, "Invalid content");
+}
+
+void test_operators_long(){
+    std::string short_string("asdfjkleasdfjkleasdfjkle");
+    std::string empty_string;
+
+    empty_string = short_string;
+
+    check(!empty_string.empty(), "String mustn't be empty");
+    check_equals(empty_string.size(), 24, "Invalid size");
+    check(strcmp(empty_string.c_str(), "asdfjkleasdfjkleasdfjkle") == 0, "Invalid content");
+
+    empty_string.clear();
+
+    empty_string = std::move(short_string);
+
+    check(!empty_string.empty(), "String mustn't be empty");
+    check_equals(empty_string.size(), 24, "Invalid size");
+    check(strcmp(empty_string.c_str(), "asdfjkleasdfjkleasdfjkle") == 0, "Invalid content");
+
+    check_equals(short_string.size(), 0, "Invalid size");
+
+    std::string first(empty_string);
+    std::string last(std::move(empty_string));
+
+    check(!first.empty(), "String mustn't be empty");
+    check_equals(first.size(), 24, "Invalid size");
+    check(strcmp(first.c_str(), "asdfjkleasdfjkleasdfjkle") == 0, "Invalid content");
+
+    check(!last.empty(), "String mustn't be empty");
+    check_equals(last.size(), 24, "Invalid size");
+    check(strcmp(last.c_str(), "asdfjkleasdfjkleasdfjkle") == 0, "Invalid content");
+}
+
+void test_operators_short_to_long(){
+    std::string short_string("asdfjkleasdfjkleasdfjkle");
+    std::string empty_string("asdf");;
+
+    empty_string = short_string;
+
+    check(!empty_string.empty(), "String mustn't be empty");
+    check_equals(empty_string.size(), 24, "Invalid size");
+    check(strcmp(empty_string.c_str(), "asdfjkleasdfjkleasdfjkle") == 0, "Invalid content");
+
+    empty_string.clear();
+
+    empty_string = std::move(short_string);
+
+    check(!empty_string.empty(), "String mustn't be empty");
+    check_equals(empty_string.size(), 24, "Invalid size");
+    check(strcmp(empty_string.c_str(), "asdfjkleasdfjkleasdfjkle") == 0, "Invalid content");
+
+    check_equals(short_string.size(), 0, "Invalid size");
+
+    std::string first(empty_string);
+    std::string last(std::move(empty_string));
+
+    check(!first.empty(), "String mustn't be empty");
+    check_equals(first.size(), 24, "Invalid size");
+    check(strcmp(first.c_str(), "asdfjkleasdfjkleasdfjkle") == 0, "Invalid content");
+
+    check(!last.empty(), "String mustn't be empty");
+    check_equals(last.size(), 24, "Invalid size");
+    check(strcmp(last.c_str(), "asdfjkleasdfjkleasdfjkle") == 0, "Invalid content");
+}
+
+void test_operators_long_to_short(){
+    std::string short_string("asdf");
+    std::string empty_string("asdfjkleasdfjkleasdfjkle");;
+
+    empty_string = short_string;
+
+    check(!empty_string.empty(), "String mustn't be empty");
+    check_equals(empty_string.size(), 4, "Invalid size");
+    check(strcmp(empty_string.c_str(), "asdf") == 0, "Invalid content");
+
+    empty_string.clear();
+
+    empty_string = std::move(short_string);
+
+    check(!empty_string.empty(), "String mustn't be empty");
+    check_equals(empty_string.size(), 4, "Invalid size");
+    check(strcmp(empty_string.c_str(), "asdf") == 0, "Invalid content");
+
+    check_equals(short_string.size(), 0, "Invalid size");
+
+    std::string first(empty_string);
+    std::string last(std::move(empty_string));
+
+    check(!first.empty(), "String mustn't be empty");
+    check_equals(first.size(), 4, "Invalid size");
+    check(strcmp(first.c_str(), "asdf") == 0, "Invalid content");
+
+    check(!last.empty(), "String mustn't be empty");
+    check_equals(last.size(), 4, "Invalid size");
+    check(strcmp(last.c_str(), "asdf") == 0, "Invalid content");
+}
+
 } //end of anonymous namespace
 
 void string_tests(){
@@ -278,4 +406,8 @@ void string_tests(){
     test_move();
     test_large();
     test_reserve();
+    test_operators_short();
+    test_operators_long();
+    test_operators_short_to_long();
+    test_operators_long_to_short();
 }
