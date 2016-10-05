@@ -289,11 +289,13 @@ private:
             tail = node->prev;
         }
 
+        auto next = node->next;
+
         delete node;
 
         --_size;
 
-        return iterator(node->next);
+        return iterator(next);
     }
 
 public:
@@ -307,8 +309,7 @@ public:
 
     iterator erase(iterator it, iterator last){
         while(it != last){
-            erase_node(it.current);
-            ++it;
+            it = erase_node(it.current);
         }
 
         return last;
@@ -316,8 +317,7 @@ public:
 
     iterator erase(const_iterator it, const_iterator last){
         while(it != last){
-            erase_node(it.current);
-            ++it;
+            it = erase_node(it.current);
         }
 
         return iterator(last.current);
