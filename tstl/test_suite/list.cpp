@@ -111,6 +111,18 @@ void test_push_front(){
     check(*a.begin() == 99);
 }
 
+void test_push_back(){
+    std::list<int> a{1, 0, 0, 2, 3, 4};
+
+    a.push_back(99);
+
+    check(a.size() == 7, "Invalid list:size");
+    check(a.front() == 1, "Invalid list:[]");
+    check(a.back() == 99, "Invalid list:[]");
+
+    check(*a.begin() == 1);
+}
+
 void test_iterator(){
     std::list<int> a{1, 0, 0, 2, 3, 4};
 
@@ -177,6 +189,49 @@ void test_reverse_iterator(){
     check(it == end, "Invalid reverse iterator");
 }
 
+void test_lots() {
+    std::list<size_t> vec;
+
+    for(size_t i = 0; i < 1000; ++i){
+        vec.push_back(i);
+    }
+
+    for(size_t i = 10000; i < 11000; ++i){
+        vec.push_front(i);
+    }
+
+    auto it = vec.begin();
+    for(size_t i = 0; i < 1000; ++i){
+        check_equals(*it, 10999 - i, "test_lots: invalid iterator");
+        ++it;
+    }
+
+    for(size_t i = 1000; i < 2000; ++i){
+        check_equals(*it, i - 1000, "test_lots: invalid iterator");
+        ++it;
+    }
+
+    check_equals(vec.size(), 2000, "test_lots: invalid size()");
+    check_equals(vec.front(), 10999, "test_lots: invalid front()");
+    check_equals(vec.back(), 999, "test_lots: invalid back()");
+
+    for(size_t i = 0; i < 1000; ++i){
+        vec.pop_back();
+    }
+
+    check_equals(vec.size(), 1000, "test_lots: invalid size()");
+    check_equals(vec.front(), 10999, "test_lots: invalid front()");
+    check_equals(vec.back(), 10000, "test_lots: invalid back()");
+
+    for(size_t i = 0; i < 500; ++i){
+        vec.pop_front();
+    }
+
+    check_equals(vec.size(), 500, "test_lots: invalid size()");
+    check_equals(vec.front(), 10499, "test_lots: invalid front()");
+    check_equals(vec.back(), 10000, "test_lots: invalid back()");
+}
+
 } //end of anonymous namespace
 
 void list_tests(){
@@ -186,6 +241,8 @@ void list_tests(){
     test_erase_remove();
     test_erase_remove_if();
     test_push_front();
+    test_push_back();
     test_iterator();
     test_reverse_iterator();
+    test_lots();
 }
