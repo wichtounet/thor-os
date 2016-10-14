@@ -302,6 +302,78 @@ struct is_same <T1, T1> {
     static constexpr const bool value = true;
 };
 
+/* is_integral */
+
+template <typename>
+struct is_integral {
+    static constexpr const bool value = false;
+};
+
+template <typename T>
+struct is_integral <const T>{
+    static constexpr const bool value = is_integral<T>::value;
+};
+
+template <>
+struct is_integral <bool> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral <char> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral <signed char> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<unsigned char> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<short> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<unsigned short> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<int> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<unsigned int> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<long> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<unsigned long> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<long long> {
+    static constexpr const bool value = true;
+};
+
+template <>
+struct is_integral<unsigned long long> {
+    static constexpr const bool value = true;
+};
+
 } //end of namespace std
 
 #endif
