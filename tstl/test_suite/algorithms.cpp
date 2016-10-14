@@ -132,6 +132,36 @@ void test_clear(){
     check(test[24] == 'e', "Invalid fill_n");
 }
 
+void test_fill_n_2(){
+    char* test[4];
+
+    // This must compile
+    std::fill_n(test, 4, nullptr);
+
+    check(test[0] == nullptr, "Invalid fill_n");
+    check(test[1] == nullptr, "Invalid fill_n");
+    check(test[2] == nullptr, "Invalid fill_n");
+    check(test[3] == nullptr, "Invalid fill_n");
+}
+
+struct POD {
+    int a;
+};
+
+void test_fill_n_3(){
+    POD test[4];
+
+    POD a{99};
+
+    // This must compile
+    std::fill_n(test, 4, a);
+
+    check(test[0].a == 99, "Invalid fill_n");
+    check(test[1].a == 99, "Invalid fill_n");
+    check(test[2].a == 99, "Invalid fill_n");
+    check(test[3].a == 99, "Invalid fill_n");
+}
+
 } //end of anonymous namespace
 
 void algorithms_tests(){
@@ -139,6 +169,8 @@ void algorithms_tests(){
     test_copy_n();
     test_fill();
     test_fill_n();
+    test_fill_n_2();
+    test_fill_n_3();
     test_clear();
     test_clear_n();
 }
