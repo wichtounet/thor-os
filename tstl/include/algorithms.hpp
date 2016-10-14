@@ -169,7 +169,7 @@ void fill(ForwardIterator first, ForwardIterator last, const T& value){
  * \param count The number of elements
  * \param value The value to write
  */
-template<typename ForwardIterator, typename T, std::enable_if_t<!std::has_trivial_assign<typename std::iterator_traits<ForwardIterator>::value_type>::value, int> = 42>
+template<typename ForwardIterator, typename T, std::enable_if_t<!(std::is_integral<typename std::iterator_traits<ForwardIterator>::value_type>::value && is_integral<T>::value), int> = 42>
 void fill_n(ForwardIterator first, size_t count, const T& value){
     if(count > 0){
         *first = value;
@@ -187,7 +187,7 @@ void fill_n(ForwardIterator first, size_t count, const T& value){
  * \param count The number of elements
  * \param value The value to write
  */
-template<typename ForwardIterator, typename T, std::enable_if_t<std::has_trivial_assign<typename std::iterator_traits<ForwardIterator>::value_type>::value, int> = 42>
+template<typename ForwardIterator, typename T, std::enable_if_t<std::is_integral<typename std::iterator_traits<ForwardIterator>::value_type>::value && is_integral<T>::value, int> = 42>
 void fill_n(ForwardIterator first, size_t count, const T& value){
     if(!value){
         memclr(reinterpret_cast<char*>(first), count * sizeof(decltype(*first)));
