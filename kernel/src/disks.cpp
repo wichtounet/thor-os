@@ -60,7 +60,7 @@ void make_ram_disk(){
     auto* descriptor = ramdisk::make_disk(1024 * 1024); //1MiB
 
     if(!descriptor){
-        logging::logf(logging::log_level::ERROR, "disks: failed to created /dev/ram0");
+        logging::logf(logging::log_level::ERROR, "disks: failed to create /dev/ram0");
         return;
     }
 
