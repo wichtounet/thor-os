@@ -95,6 +95,9 @@ umount_fat:
 	sudo /bin/umount mnt/fake/
 	sudo /sbin/losetup -d /dev/loop0
 
+umount_loop:
+	sudo /sbin/losetup -d /dev/loop0
+
 debug: default
 	echo "c" > commands
 	bochs -qf tools/debug_bochsrc.txt -rc commands
