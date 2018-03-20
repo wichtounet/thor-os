@@ -255,12 +255,13 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
 
     size_t cluster_size = 512 * fat_bs->sectors_per_cluster;
 
+    // Allocate a buffer big enough to read one cluster (possibly several sectors)
+    std::unique_heap_array<char> cluster_buffer(cluster_size);
+
     while(read_bytes < last){
         auto cluster_last = (cluster + 1) * cluster_size;
 
         if(first < cluster_last){
-            std::unique_heap_array<char> cluster_buffer(cluster_size);
-
             if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster_buffer.get())){
                 size_t i = 0;
 
@@ -337,13 +338,15 @@ size_t fat32::fat32_file_system::write(const path& file_path, const char* buffer
 
     size_t cluster_size = 512 * fat_bs->sectors_per_cluster;
 
+    // Allocate a buffer big enough to read one cluster (possibly several sectors)
+    std::unique_heap_array<char> cluster_buffer(cluster_size);
+
     while(read_bytes < last){
         auto cluster_last = (cluster + 1) * cluster_size;
 
         if(first < cluster_last){
-            std::unique_heap_array<char> cluster(cluster_size);
 
-            if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+            if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster_buffer.get())){
                 size_t i = 0;
 
                 if(position == 0){
@@ -351,10 +354,10 @@ size_t fat32::fat32_file_system::write(const path& file_path, const char* buffer
                 }
 
                 for(; i < cluster_size && read_bytes < last; ++i, ++read_bytes){
-                    cluster[i] = buffer[position++];
+                    cluster_buffer[i] = buffer[position++];
                 }
 
-                if(!write_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+                if(!write_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster_buffer.get())){
                     return std::ERROR_FAILED;
                 }
             } else {
@@ -420,13 +423,14 @@ size_t fat32::fat32_file_system::clear(const path& file_path, size_t count, size
 
     size_t cluster_size = 512 * fat_bs->sectors_per_cluster;
 
+    // Allocate a buffer big enough to read one cluster (possibly several sectors)
+    std::unique_heap_array<char> cluster_buffer(cluster_size);
+
     while(read_bytes < last){
         auto cluster_last = (cluster + 1) * cluster_size;
 
         if(first < cluster_last){
-            std::unique_heap_array<char> cluster(cluster_size);
-
-            if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+            if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster_buffer.get())){
                 size_t i = 0;
 
                 if(first_position){
@@ -435,10 +439,10 @@ size_t fat32::fat32_file_system::clear(const path& file_path, size_t count, size
                 }
 
                 for(; i < cluster_size && read_bytes < last; ++i, ++read_bytes){
-                    cluster[i] = 0;
+                    cluster_buffer[i] = 0;
                 }
 
-                if(!write_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
+                if(!write_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster_buffer.get())){
                     return std::ERROR_FAILED;
                 }
             } else {
