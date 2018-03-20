@@ -338,7 +338,7 @@ void create_init_tasks(){
 void create_gc_task(){
     auto& gc_process = scheduler::create_kernel_task("gc", new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &gc_task);
 
-    gc_process.ppid = 1;
+    gc_process.ppid = 0;
     gc_process.priority = scheduler::MIN_PRIORITY + 1;
 
     scheduler::queue_system_process(gc_process.pid);
@@ -351,7 +351,7 @@ void create_gc_task(){
 void create_post_init_task(){
     auto& post_init_process = scheduler::create_kernel_task("post_init", new char[scheduler::user_stack_size], new char[scheduler::kernel_stack_size], &post_init_task);
 
-    post_init_process.ppid = 1;
+    post_init_process.ppid = 0;
     post_init_process.priority = scheduler::MAX_PRIORITY;
 
     post_init_pid = post_init_process.pid;
