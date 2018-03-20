@@ -140,8 +140,6 @@ enum class sector_operation {
 };
 
 bool read_write_sector(ata::drive_descriptor& drive, uint64_t start, void* data, sector_operation operation){
-    std::lock_guard<decltype(ata_lock)> lock(ata_lock);
-
     //Select the device
     if(!select_device(drive)){
         return false;
@@ -231,7 +229,7 @@ bool reset_controller(uint16_t controller){
     return true;
 }
 
-void ide_string_into(std::string& destination, uint16_t* info, size_t start, size_t size){
+void ide_string_into(std::string& target, uint16_t* info, size_t start, size_t size){
     char buffer[50];
 
     //Copy the characters
@@ -264,7 +262,7 @@ void ide_string_into(std::string& destination, uint16_t* info, size_t start, siz
     }
 
     buffer[end+1] = '\0';
-    destination = buffer;
+    target = buffer;
 }
 
 void identify(ata::drive_descriptor& drive){
@@ -389,7 +387,9 @@ ata::drive_descriptor& ata::drive(uint8_t disk){
     return drives[disk];
 }
 
-size_t ata::ata_driver::read(void* data, char* destination, size_t count, size_t offset, size_t& read){
+size_t ata::ata_driver::read(void* data, char* target, size_t count, size_t offset, size_t& read){
+    logging::logf(logging::log_level::TRACE, "ata: read(target=%p, count=%d, offset=%d)\n", target, count, offset);
+
     if(count % BLOCK_SIZE != 0){
         return std::ERROR_INVALID_COUNT;
     }
@@ -406,7 +406,7 @@ size_t ata::ata_driver::read(void* data, char* destination, size_t count, size_t
     auto descriptor = reinterpret_cast<disks::disk_descriptor*>(data);
     auto disk = reinterpret_cast<ata::drive_descriptor*>(descriptor->descriptor);
 
-    return ata::read_sectors(*disk, start, sectors, destination, read);
+    return ata::read_sectors(*disk, start, sectors, target, read);
 }
 
 size_t ata::ata_driver::write(void* data, const char* source, size_t count, size_t offset, size_t& written){
@@ -456,7 +456,9 @@ size_t ata::ata_driver::size(void* data){
     return disk->size;
 }
 
-size_t ata::ata_part_driver::read(void* data, char* destination, size_t count, size_t offset, size_t& read){
+size_t ata::ata_part_driver::read(void* data, char* target, size_t count, size_t offset, size_t& read){
+    logging::logf(logging::log_level::TRACE, "ata_part: read(target=%p, count=%d, offset=%d)\n", target, count, offset);
+
     if(count % BLOCK_SIZE != 0){
         return std::ERROR_INVALID_COUNT;
     }
@@ -476,7 +478,7 @@ size_t ata::ata_part_driver::read(void* data, char* destination, size_t count, s
 
     start += part_descriptor->start;
 
-    return ata::read_sectors(*disk, start, sectors, destination, read);
+    return ata::read_sectors(*disk, start, sectors, target, read);
 }
 
 size_t ata::ata_part_driver::write(void* data, const char* source, size_t count, size_t offset, size_t& written){
@@ -525,10 +527,12 @@ size_t ata::ata_part_driver::clear(void* data, size_t count, size_t offset, size
     return ata::clear_sectors(*disk, start, sectors, written);
 }
 
-size_t ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* destination, size_t& read){
-    auto buffer = reinterpret_cast<uint8_t*>(destination);
+size_t ata::read_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, void* target, size_t& read){
+    auto buffer = reinterpret_cast<uint8_t*>(target);
 
     for(size_t i = 0; i < count; ++i){
+        std::lock_guard<decltype(ata_lock)> lock(ata_lock);
+
         bool valid;
         auto block = cache.block((drive.controller << 8) + drive.drive, start + i, valid);
 
@@ -552,6 +556,8 @@ size_t ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count
     auto buffer = reinterpret_cast<uint8_t*>(const_cast<void*>(source));
 
     for(size_t i = 0; i < count; ++i){
+        std::lock_guard<decltype(ata_lock)> lock(ata_lock);
+
         // If the block is in cache, simply update the cache and write through the disk
         auto block = cache.block_if_present((drive.controller << 8) + drive.drive, start + i);
         if(block){
@@ -571,6 +577,8 @@ size_t ata::write_sectors(drive_descriptor& drive, uint64_t start, uint8_t count
 
 size_t ata::clear_sectors(drive_descriptor& drive, uint64_t start, uint8_t count, size_t& written){
     for(size_t i = 0; i < count; ++i){
+        std::lock_guard<decltype(ata_lock)> lock(ata_lock);
+
         // If the block is in cache, simply update the cache and write through the disk
         auto block = cache.block_if_present((drive.controller << 8) + drive.drive, start + i);
         if(block){
