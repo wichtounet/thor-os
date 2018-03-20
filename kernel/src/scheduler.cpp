@@ -303,6 +303,8 @@ void create_idle_task(){
     scheduler::queue_system_process(idle_process.pid);
 
     idle_pid = idle_process.pid;
+
+    logging::logf(logging::log_level::DEBUG, "scheduler: idle_task %u \n", idle_pid);
 }
 
 void create_init_tasks(){
@@ -341,6 +343,8 @@ void create_gc_task(){
     scheduler::queue_system_process(gc_process.pid);
 
     gc_pid = gc_process.pid;
+
+    logging::logf(logging::log_level::DEBUG, "scheduler: gc_task %u \n", gc_pid);
 }
 
 void create_post_init_task(){
@@ -350,6 +354,8 @@ void create_post_init_task(){
     post_init_process.priority = scheduler::MAX_PRIORITY;
 
     scheduler::queue_system_process(post_init_process.pid);
+
+    logging::logf(logging::log_level::DEBUG, "scheduler: post_init_task %u \n", post_init_process.pid);
 }
 
 void switch_to_process(size_t pid){
