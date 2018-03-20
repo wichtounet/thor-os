@@ -672,6 +672,9 @@ void scheduler::init(){
 }
 
 void scheduler::start(){
+    // TODO The current_pid should be set dynamically to the task in the list
+    // with highest priority
+
     //Run the post init task by default (maximum priority)
     current_pid = post_init_pid;
     pcb[current_pid].state = scheduler::process_state::RUNNING;
