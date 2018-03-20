@@ -224,6 +224,8 @@ size_t fat32::fat32_file_system::get_file(const path& file_path, vfs::file& file
 }
 
 size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
+    logging::logf(logging::log_level::TRACE, "fat32: Start read (buffer=%p,count=%d,offset=%d)\n", buffer, count, offset);
+
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
