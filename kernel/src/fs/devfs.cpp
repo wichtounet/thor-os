@@ -85,6 +85,8 @@ size_t devfs::devfs_file_system::get_file(const path& file_path, vfs::file& f){
 }
 
 size_t devfs::devfs_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
+    logging::logf(logging::log_level::TRACE, "devfs: read(buffer=%p, count=%d, offset=%d)\n", buffer, count, offset);
+
     //Cannot access the root for reading
     if(file_path.is_root()){
         return std::ERROR_PERMISSION_DENIED;

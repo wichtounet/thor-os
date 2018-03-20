@@ -229,6 +229,7 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
+        logging::logf(logging::log_level::TRACE, "fat32: invalid file\n");
         return result;
     }
 
@@ -237,11 +238,13 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
 
     //Check the offset parameter
     if(offset > file_size){
+        logging::logf(logging::log_level::TRACE, "fat32: invalid offset\n");
         return std::ERROR_INVALID_OFFSET;
     }
 
     //No need to read the cluster if there are no content
     if(file_size == 0 || count == 0){
+        logging::logf(logging::log_level::TRACE, "fat32: nothing to read\n");
         read = 0;
         return 0;
     }
@@ -262,6 +265,7 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
         auto cluster_last = (cluster + 1) * cluster_size;
 
         if(first < cluster_last){
+            logging::logf(logging::log_level::TRACE, "fat32: read_sectors\n");
             if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster_buffer.get())){
                 size_t i = 0;
 
@@ -273,6 +277,7 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
                     buffer[position++] = cluster_buffer[i];
                 }
             } else {
+                logging::logf(logging::log_level::TRACE, "fat32: read failed\n");
                 return std::ERROR_FAILED;
             }
         } else {
@@ -298,6 +303,8 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
     }
 
     read = last - first;
+
+    logging::logf(logging::log_level::TRACE, "fat32: finished read\n");
 
     return 0;
 }
