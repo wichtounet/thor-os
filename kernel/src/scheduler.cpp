@@ -70,6 +70,7 @@ volatile size_t next_pid = 0;
 size_t gc_pid = 0;
 size_t idle_pid = 0;
 size_t init_pid = 0;
+size_t post_init_pid = 0;
 
 std::vector<scheduler::pid_t>& run_queue(size_t priority){
     return run_queues[priority - scheduler::MIN_PRIORITY];
@@ -353,9 +354,11 @@ void create_post_init_task(){
     post_init_process.ppid = 1;
     post_init_process.priority = scheduler::MAX_PRIORITY;
 
-    scheduler::queue_system_process(post_init_process.pid);
+    post_init_pid = post_init_process.pid;
 
-    logging::logf(logging::log_level::DEBUG, "scheduler: post_init_task %u \n", post_init_process.pid);
+    scheduler::queue_system_process(post_init_pid);
+
+    logging::logf(logging::log_level::DEBUG, "scheduler: post_init_task %u \n", post_init_pid);
 }
 
 void switch_to_process(size_t pid){
@@ -669,8 +672,8 @@ void scheduler::init(){
 }
 
 void scheduler::start(){
-    //Run the init task by default
-    current_pid = init_pid;
+    //Run the post init task by default (maximum priority)
+    current_pid = post_init_pid;
     pcb[current_pid].state = scheduler::process_state::RUNNING;
 
     started = true;
