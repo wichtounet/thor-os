@@ -134,6 +134,8 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
         }
     }
 
+    logging::logf(logging::log_level::TRACE, "dhcp: Sent request\n");
+
     // 2. Receive DHCP Offer
 
     network::ip::address offer_address;
@@ -146,6 +148,8 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
 
     {
         while (true) {
+            logging::logf(logging::log_level::TRACE, "dhcp: Wait for answer\n");
+
             if (packets.empty()) {
                 listen_queue.wait();
             }
@@ -371,6 +375,8 @@ std::expected<network::dhcp::dhcp_configuration> network::dhcp::layer::request_i
     if (gateway) {
         conf.gateway_address = gateway_address;
     }
+
+    logging::logf(logging::log_level::TRACE, "dhcp: Finished discovery\n");
 
     return {conf};
 }

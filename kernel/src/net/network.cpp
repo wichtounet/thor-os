@@ -206,6 +206,8 @@ void network_discovery() {
                         dns_address = network::ip::make_address(10, 0, 2, 2);
                     }
                 } else {
+                    logging::logf(logging::log_level::TRACE, "network: impossible to acquire address for interface %u\n", interface.id);
+
                     // Defaults for Qemu (better than nothing)
                     interface.ip_address = network::ip::make_address(10, 0, 2, 15);
                     interface.gateway    = network::ip::make_address(10, 0, 2, 2);
