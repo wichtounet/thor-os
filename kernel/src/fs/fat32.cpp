@@ -18,6 +18,12 @@
 #include "console.hpp"
 #include "logging.hpp"
 
+#ifdef THOR_CONFIG_FAT32_VERBOSE
+#define verbose_logf(...) logging::logf(__VA_ARGS__)
+#else
+#define verbose_logf(...)
+#endif
+
 namespace {
 
 constexpr const uint32_t CLUSTER_FREE = 0x0;
@@ -224,12 +230,12 @@ size_t fat32::fat32_file_system::get_file(const path& file_path, vfs::file& file
 }
 
 size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_t count, size_t offset, size_t& read){
-    logging::logf(logging::log_level::TRACE, "fat32: Start read (buffer=%p,count=%d,offset=%d)\n", buffer, count, offset);
+    verbose_logf(logging::log_level::TRACE, "fat32: Start read (buffer=%p,count=%d,offset=%d)\n", buffer, count, offset);
 
     vfs::file file;
     auto result = get_file(file_path, file);
     if(result > 0){
-        logging::logf(logging::log_level::TRACE, "fat32: invalid file\n");
+        verbose_logf(logging::log_level::TRACE, "fat32: invalid file\n");
         return result;
     }
 
@@ -238,13 +244,13 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
 
     //Check the offset parameter
     if(offset > file_size){
-        logging::logf(logging::log_level::TRACE, "fat32: invalid offset\n");
+        verbose_logf(logging::log_level::TRACE, "fat32: invalid offset\n");
         return std::ERROR_INVALID_OFFSET;
     }
 
     //No need to read the cluster if there are no content
     if(file_size == 0 || count == 0){
-        logging::logf(logging::log_level::TRACE, "fat32: nothing to read\n");
+        verbose_logf(logging::log_level::TRACE, "fat32: nothing to read\n");
         read = 0;
         return 0;
     }
@@ -265,7 +271,8 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
         auto cluster_last = (cluster + 1) * cluster_size;
 
         if(first < cluster_last){
-            logging::logf(logging::log_level::TRACE, "fat32: read_sectors\n");
+            verbose_logf(logging::log_level::TRACE, "fat32: read_sectors\n");
+
             if(read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster_buffer.get())){
                 size_t i = 0;
 
@@ -277,7 +284,8 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
                     buffer[position++] = cluster_buffer[i];
                 }
             } else {
-                logging::logf(logging::log_level::TRACE, "fat32: read failed\n");
+                verbose_logf(logging::log_level::TRACE, "fat32: read failed\n");
+
                 return std::ERROR_FAILED;
             }
         } else {
@@ -304,7 +312,7 @@ size_t fat32::fat32_file_system::read(const path& file_path, char* buffer, size_
 
     read = last - first;
 
-    logging::logf(logging::log_level::TRACE, "fat32: finished read\n");
+    verbose_logf(logging::log_level::TRACE, "fat32: finished read\n");
 
     return 0;
 }
@@ -631,10 +639,8 @@ size_t fat32::fat32_file_system::mkdir(const path& file_path){
         return std::ERROR_DISK_FULL;
     }
 
-#ifdef THOR_CONFIG_DEBUG_FAT32
-    logging::logf(logging::log_level::TRACE, "fat32: mkdir: free_cluster:%u\n", size_t(cluster));
-    logging::logf(logging::log_level::TRACE, "fat32: mkdir: parent_cluster:%u\n", size_t(parent_cluster));
-#endif
+    verbose_logf(logging::log_level::TRACE, "fat32: mkdir: free_cluster:%u\n", size_t(cluster));
+    verbose_logf(logging::log_level::TRACE, "fat32: mkdir: parent_cluster:%u\n", size_t(parent_cluster));
 
     std::unique_heap_array<cluster_entry> directory_cluster(16 * fat_bs->sectors_per_cluster);
     if(!read_sectors(cluster_lba(parent_cluster), fat_bs->sectors_per_cluster, directory_cluster.get())){
@@ -687,10 +693,8 @@ size_t fat32::fat32_file_system::mkdir(const path& file_path){
         return std::ERROR_FAILED;
     }
 
-#ifdef THOR_CONFIG_DEBUG_FAT32
-    logging::logf(logging::log_level::TRACE, "fat32: mkdir: special entry . -> %u\n", size_t(new_directory_cluster[0].cluster_low));
-    logging::logf(logging::log_level::TRACE, "fat32: mkdir: special entry . -> %u\n", size_t(new_directory_cluster[1].cluster_low));
-#endif
+    verbose_logf(logging::log_level::TRACE, "fat32: mkdir: special entry . -> %u\n", size_t(new_directory_cluster[0].cluster_low));
+    verbose_logf(logging::log_level::TRACE, "fat32: mkdir: special entry . -> %u\n", size_t(new_directory_cluster[1].cluster_low));
 
     return 0;
 }

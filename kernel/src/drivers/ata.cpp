@@ -23,6 +23,12 @@
 #include "disks.hpp"
 #include "block_cache.hpp"
 
+#ifdef THOR_CONFIG_ATA_VERBOSE
+#define verbose_logf(...) logging::logf(__VA_ARGS__)
+#else
+#define verbose_logf(...)
+#endif
+
 namespace {
 
 static constexpr const size_t BLOCK_SIZE = 512;
@@ -388,7 +394,7 @@ ata::drive_descriptor& ata::drive(uint8_t disk){
 }
 
 size_t ata::ata_driver::read(void* data, char* target, size_t count, size_t offset, size_t& read){
-    logging::logf(logging::log_level::TRACE, "ata: read(target=%p, count=%d, offset=%d)\n", target, count, offset);
+    verbose_logf(logging::log_level::TRACE, "ata: read(target=%p, count=%d, offset=%d)\n", target, count, offset);
 
     if(count % BLOCK_SIZE != 0){
         return std::ERROR_INVALID_COUNT;
@@ -457,7 +463,7 @@ size_t ata::ata_driver::size(void* data){
 }
 
 size_t ata::ata_part_driver::read(void* data, char* target, size_t count, size_t offset, size_t& read){
-    logging::logf(logging::log_level::TRACE, "ata_part: read(target=%p, count=%d, offset=%d)\n", target, count, offset);
+    verbose_logf(logging::log_level::TRACE, "ata_part: read(target=%p, count=%d, offset=%d)\n", target, count, offset);
 
     if(count % BLOCK_SIZE != 0){
         return std::ERROR_INVALID_COUNT;
