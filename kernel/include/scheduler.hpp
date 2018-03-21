@@ -94,11 +94,15 @@ void tick();
 
 /*!
  * \brief Let another process run.
+ *
+ * This may change the state of the current process state
  */
 void yield();
 
 /*!
- * \brief Rescedule another process, if this one is not running
+ * \brief Reschedule to another process, if the current process is not running
+ *
+ * This will not change the state of the process!
  */
 void reschedule();
 
