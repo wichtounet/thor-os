@@ -38,7 +38,9 @@ struct wait_list {
     bool waiting() const;
 
     /*!
-     * \brief Removes the current process from the list
+     * \brief Removes the current process from the list.
+     *
+     * The process must be in the list!
      */
     void remove();
 

@@ -38,8 +38,13 @@ void wait_list::remove(){
     auto pid      = scheduler::get_pid();
     auto& process = scheduler::get_process(pid);
 
-    if(head == &process.wait){
-        head = head->next;
+    if (head == &process.wait) {
+        if(head == tail){
+            tail = head = nullptr;
+        } else {
+            head = head->next;
+        }
+
         return;
     }
 
@@ -47,7 +52,12 @@ void wait_list::remove(){
 
     while(node->next){
         if(node->next == &process.wait){
+            if(tail == node->next){
+                tail = node->next->next;
+            }
+
             node->next = node->next->next;
+
             return;
         }
 
