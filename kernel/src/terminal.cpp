@@ -109,7 +109,7 @@ size_t stdio::virtual_terminal::read_input_raw(size_t ms) {
         }
     }
 
-    thor_assert(!raw_buffer.empty(), "There is a problem with the sleep queue");
+    thor_assert(!raw_buffer.empty(), "There is a problem with the sleep queue: Nothing to read from raw_buffer");
 
     return raw_buffer.pop();
 }
