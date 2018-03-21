@@ -452,9 +452,8 @@ size_t select_next_process_with_lock(){
 }
 
 size_t select_next_process(){
-    auto current_priority = pcb[current_pid].process.priority;
-
-
+    // Cannot be interrupted
+    direct_int_lock lock;
 
     return select_next_process_with_lock();
 }
