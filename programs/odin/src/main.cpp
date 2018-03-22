@@ -196,8 +196,10 @@ public:
         }
     }
 
+    static constexpr const size_t border = 2;
+    static constexpr const size_t button_size = 12;
+
     void draw() const {
-        constexpr const size_t border = 2;
 
         // Draw the background of the window
         draw_rect(x + 2, y + 2, width - 4, height - 4, color);
@@ -210,6 +212,23 @@ public:
 
         // Draw the base line of the title bar
         draw_rect(x, y + 18, width, border, border_color);
+
+        // Draw the close button of the window
+        auto red_color = make_color(200, 10, 10);
+        draw_rect(x + width - border - button_size - 2, y + border + 2, button_size, button_size, red_color);
+    }
+
+    bool mouse_in_close_button() {
+        auto mouse_x = tlib::graphics::mouse_x();
+        auto mouse_y = tlib::graphics::mouse_y();
+
+        if (mouse_y >= y + border + 2 && mouse_y <= y + border + 2 + button_size) {
+            if (mouse_x >= x + width - border - 2 - button_size && mouse_x <= x + width - border - 2) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     bool mouse_in_title() {
@@ -221,6 +240,10 @@ public:
 
     bool inside(size_t look_x, size_t look_y) {
         return look_x >= x && look_x <= x + width && look_y >= y && look_y <= y + height;
+    }
+
+    void close() {
+        // Nothing to do now, but need to clean process later
     }
 
     void start_drag() {
@@ -323,17 +346,27 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     break;
                 }
 
-                case std::keycode::MOUSE_LEFT_PRESS:
-                    tlib::user_logf("odin: left press");
-
+                case std::keycode::MOUSE_LEFT_PRESS: {
+                    // Raise the window if necessary
                     raise();
 
-                    if (windows.front().mouse_in_title()) {
+                    auto& window = windows.front();
+
+                    if (window.mouse_in_close_button()) {
+                        tlib::user_logf("odin: close window");
+
+                        // Let the window know it's getting closed
+                        window.close();
+
+                        // Remove the window
+                        windows.erase(windows.begin());
+                    } else if (window.mouse_in_title()) {
                         tlib::user_logf("odin: start drag");
-                        windows.front().start_drag();
+                        window.start_drag();
                     }
 
                     break;
+                }
 
                 case std::keycode::MOUSE_LEFT_RELEASE:
                     tlib::user_logf("odin: left release");
