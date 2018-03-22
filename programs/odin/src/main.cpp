@@ -197,12 +197,14 @@ public:
     }
 
     static constexpr const size_t border = 2;
+    static constexpr const size_t title_padding = 2;
+    static constexpr const size_t title_height = 18;
     static constexpr const size_t button_size = 12;
 
     void draw() const {
 
         // Draw the background of the window
-        draw_rect(x + 2, y + 2, width - 4, height - 4, color);
+        draw_rect(x + border, y + border, width - 2 * border, height - 2 * border, color);
 
         // Draw the outer border
         draw_rect(x, y, width, border, border_color);
@@ -211,19 +213,19 @@ public:
         draw_rect(x + width - border, y, border, height, border_color);
 
         // Draw the base line of the title bar
-        draw_rect(x, y + 18, width, border, border_color);
+        draw_rect(x, y + title_height, width, border, border_color);
 
         // Draw the close button of the window
         auto red_color = make_color(200, 10, 10);
-        draw_rect(x + width - border - button_size - 2, y + border + 2, button_size, button_size, red_color);
+        draw_rect(x + width - border - button_size - title_padding, y + border + title_padding, button_size, button_size, red_color);
     }
 
     bool mouse_in_close_button() {
         auto mouse_x = tlib::graphics::mouse_x();
         auto mouse_y = tlib::graphics::mouse_y();
 
-        if (mouse_y >= y + border + 2 && mouse_y <= y + border + 2 + button_size) {
-            if (mouse_x >= x + width - border - 2 - button_size && mouse_x <= x + width - border - 2) {
+        if (mouse_y >= y + border + title_padding && mouse_y <= y + border + title_padding + button_size) {
+            if (mouse_x >= x + width - border - title_padding - button_size && mouse_x <= x + width - border - title_padding) {
                 return true;
             }
         }
@@ -235,7 +237,7 @@ public:
         auto mouse_x = tlib::graphics::mouse_x();
         auto mouse_y = tlib::graphics::mouse_y();
 
-        return mouse_x >= x && mouse_x <= x + width && mouse_y >= y + 2 && mouse_y <= y + 18;
+        return mouse_x >= x && mouse_x <= x + width && mouse_y >= y + border && mouse_y <= y + title_height;
     }
 
     bool inside(size_t look_x, size_t look_y) {
@@ -308,7 +310,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     std::default_random_engine eng(tlib::ms_time());
     std::uniform_int_distribution<> width_dist(200, 300);
-    std::uniform_int_distribution<> height_dist(100, 250);
+    std::uniform_int_distribution<> height_dist(200, 350);
     std::uniform_int_distribution<> position_dist(0, 500);
 
     while (true) {
@@ -337,7 +339,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
             switch (code) {
                 case std::keycode::RELEASED_ENTER: {
                     size_t width  = width_dist(eng);
-                    size_t height = width_dist(eng);
+                    size_t height = height_dist(eng);
                     size_t pos_x  = position_dist(eng);
                     size_t pos_y  = position_dist(eng);
 
