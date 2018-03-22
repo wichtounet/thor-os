@@ -397,6 +397,8 @@ void raise() {
 } // end of anonnymous namespace
 
 int main(int /*argc*/, char* /*argv*/ []) {
+    tlib::user_logf("odin: starts with %u windows", windows.size());
+
     sc_width            = tlib::graphics::get_width();
     sc_height           = tlib::graphics::get_height();
     x_shift             = tlib::graphics::get_x_shift();
