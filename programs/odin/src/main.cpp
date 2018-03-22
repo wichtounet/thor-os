@@ -17,10 +17,13 @@
 
 namespace {
 
+constexpr const size_t min_window_height = 50;
+constexpr const size_t min_window_width = 50;
+
 uint32_t* z_buffer = nullptr;
 
-uint64_t width               = 0;
-uint64_t height              = 0;
+uint64_t sc_width            = 0;
+uint64_t sc_height           = 0;
 uint64_t x_shift             = 0;
 uint64_t y_shift             = 0;
 uint64_t bytes_per_scan_line = 0;
@@ -36,8 +39,8 @@ uint32_t make_color(uint8_t r, uint8_t g, uint8_t b) {
 
 void fill_buffer(uint32_t color) {
     auto where = 0;
-    for (size_t j = 0; j < height; ++j) {
-        for (size_t i = 0; i < width; ++i) {
+    for (size_t j = 0; j < sc_height; ++j) {
+        for (size_t i = 0; i < sc_width; ++i) {
             z_buffer[where + i] = color;
         }
 
@@ -45,16 +48,31 @@ void fill_buffer(uint32_t color) {
     }
 }
 
-void draw_pixel(size_t x, size_t y, uint32_t color) {
-    if(x < width && y < height){
+void soft_draw_pixel(size_t x, size_t y, uint32_t color) {
+    if(x < sc_width && y < sc_height){
         z_buffer[x + y * y_shift] = color;
     }
 }
 
+void soft_draw_hline(size_t x, size_t y, size_t w, uint32_t color) {
+    if (y < sc_height) {
+        auto where = x + y * y_shift;
+
+        for (size_t i = 0; i < w && x + i < sc_width; ++i) {
+            z_buffer[where + i] = color;
+        }
+    }
+}
+
 void draw_hline(size_t x, size_t y, size_t w, uint32_t color) {
+    if(y >= sc_height){
+        tlib::user_logf("Invalid draw_hline(%u >= %u)\n", y, sc_height);
+        return;
+    }
+
     auto where = x + y * y_shift;
 
-    for (size_t i = 0; i < w && x + i < width; ++i) {
+    for (size_t i = 0; i < w && x + i < sc_width; ++i) {
         z_buffer[where + i] = color;
     }
 }
@@ -62,7 +80,7 @@ void draw_hline(size_t x, size_t y, size_t w, uint32_t color) {
 void draw_vline(size_t x, size_t y, size_t h, uint32_t color) {
     auto where = x + y * y_shift;
 
-    for (size_t j = 0; j < h && y + j < height; ++j) {
+    for (size_t j = 0; j < h && y + j < sc_height; ++j) {
         z_buffer[where] = color;
         where += y_shift;
     }
@@ -71,8 +89,8 @@ void draw_vline(size_t x, size_t y, size_t h, uint32_t color) {
 void draw_rect(size_t x, size_t y, size_t w, size_t h, uint32_t color) {
     auto where = x + y * y_shift;
 
-    for (size_t j = 0; j < h && y + j < height; ++j) {
-        for (size_t i = 0; i < w && x + i < width; ++i) {
+    for (size_t j = 0; j < h && y + j < sc_height; ++j) {
+        for (size_t i = 0; i < w && x + i < sc_width; ++i) {
             z_buffer[where + i] = color;
         }
 
@@ -110,28 +128,28 @@ void paint_cursor() {
 
     auto color = make_color(20, 20, 20);
 
-    draw_pixel(x, y, color);
-    draw_hline(x, y + 1, 2, color);
-    draw_hline(x, y + 2, 3, color);
-    draw_hline(x, y + 3, 4, color);
-    draw_hline(x, y + 4, 5, color);
-    draw_hline(x, y + 5, 4, color);
-    draw_pixel(x, y + 6, color);
-    draw_hline(x + 2, y + 6, 2, color);
-    draw_hline(x + 3, y + 7, 2, color);
-    draw_hline(x + 3, y + 8, 2, color);
+    soft_draw_pixel(x, y, color);
+    soft_draw_hline(x, y + 1, 2, color);
+    soft_draw_hline(x, y + 2, 3, color);
+    soft_draw_hline(x, y + 3, 4, color);
+    soft_draw_hline(x, y + 4, 5, color);
+    soft_draw_hline(x, y + 5, 4, color);
+    soft_draw_pixel(x, y + 6, color);
+    soft_draw_hline(x + 2, y + 6, 2, color);
+    soft_draw_hline(x + 3, y + 7, 2, color);
+    soft_draw_hline(x + 3, y + 8, 2, color);
 }
 
 void paint_top_bar() {
-    draw_rect(0, 0, width, 18, make_color(51, 51, 51));
-    draw_rect(0, 18, width, 2, make_color(25, 25, 25));
+    draw_rect(0, 0, sc_width, 18, make_color(51, 51, 51));
+    draw_rect(0, 18, sc_width, 2, make_color(25, 25, 25));
 
     auto date = tlib::local_date();
 
     auto date_str = tlib::sprintf("%u.%u.%u %u:%u", size_t(date.day), size_t(date.month), size_t(date.year), size_t(date.hour), size_t(date.minutes));
 
     draw_char(2, 2, 'T', make_color(30, 30, 30));
-    draw_string(width - 128, 2, date_str.c_str(), make_color(200, 200, 200));
+    draw_string(sc_width - 128, 2, date_str.c_str(), make_color(200, 200, 200));
 }
 
 struct window {
@@ -147,6 +165,10 @@ private:
     bool drag            = false;
     int64_t drag_start_x = 0;
     int64_t drag_start_y = 0;
+
+    bool resize            = false;
+    int64_t resize_start_x = 0;
+    int64_t resize_start_y = 0;
 
 public:
     // TODO Relax std::vector to allow for non-default-constructible
@@ -168,6 +190,51 @@ public:
     window& operator=(window&& rhs) = default;
 
     void update() {
+        if(resize){
+            auto mouse_x = tlib::graphics::mouse_x();
+            auto mouse_y = tlib::graphics::mouse_y();
+
+            auto delta_x = int64_t(mouse_x) - resize_start_x;
+            auto delta_y = int64_t(mouse_y) - resize_start_y;
+
+            // A) Handle resize from left
+
+            if (resize_from_left(resize_start_x, resize_start_y)) {
+                width += -delta_x;
+
+                if(-delta_x > x){
+                    x = 2;
+                } else {
+                    x += delta_x;
+                }
+
+                width = std::max(width, min_window_width);
+                width = std::min(width, sc_width - x - 3);
+            }
+
+            // B) Handle resize from right
+
+            if (resize_from_right(resize_start_x, resize_start_y)) {
+                width += delta_x;
+
+                width = std::max(width, min_window_width);
+                width = std::min(width, sc_width - x - 3);
+            }
+
+            // C) Handle resize from bottom
+
+            if (resize_from_bottom(resize_start_x, resize_start_y)) {
+                height += delta_y;
+
+                height = std::max(height, min_window_height);
+                height = std::min(height, sc_height - y - 3);
+            }
+
+            // TODO Need to handle maximum minimum here!
+            resize_start_x = mouse_x;
+            resize_start_y = mouse_y;
+        }
+
         if (drag) {
             auto mouse_x = tlib::graphics::mouse_x();
             auto mouse_y = tlib::graphics::mouse_y();
@@ -180,7 +247,7 @@ public:
             } else {
                 x += delta_x;
 
-                x = std::min(x, ::width - width);
+                x = std::min(x, sc_width - width);
             }
 
             if (int64_t(y) + delta_y < 20) {
@@ -188,7 +255,7 @@ public:
             } else {
                 y += delta_y;
 
-                y = std::min(y, ::height - height);
+                y = std::min(y, sc_height - height);
             }
 
             drag_start_x = mouse_x;
@@ -196,10 +263,11 @@ public:
         }
     }
 
-    static constexpr const size_t border = 2;
+    static constexpr const size_t border        = 2;
     static constexpr const size_t title_padding = 2;
-    static constexpr const size_t title_height = 18;
-    static constexpr const size_t button_size = 12;
+    static constexpr const size_t resize_margin = 2;
+    static constexpr const size_t title_height  = 18;
+    static constexpr const size_t button_size   = 12;
 
     void draw() const {
 
@@ -240,6 +308,37 @@ public:
         return mouse_x >= x && mouse_x <= x + width && mouse_y >= y + border && mouse_y <= y + title_height;
     }
 
+    bool resize_from_left(uint64_t xx, uint64_t yy){
+        if (yy >= y + title_height + border && yy <= y + height) {
+            return xx >= x - resize_margin && xx <= x + border + resize_margin;
+        }
+
+        return false;
+    }
+
+    bool resize_from_right(uint64_t xx, uint64_t yy){
+        if (yy >= y + title_height + border && yy <= y + height) {
+            return xx >= x + width - resize_margin - border && xx <= x + width + resize_margin;
+        }
+
+        return false;
+    }
+
+    bool resize_from_bottom(uint64_t xx, uint64_t yy){
+        if (yy >= y + height - resize_margin - border && yy <= y + height + resize_margin) {
+            return xx >= x && xx <= x + width;
+        }
+
+        return false;
+    }
+
+    bool mouse_in_resize() {
+        auto mouse_x = tlib::graphics::mouse_x();
+        auto mouse_y = tlib::graphics::mouse_y();
+
+        return resize_from_left(mouse_x, mouse_y) || resize_from_right(mouse_x, mouse_y) || resize_from_bottom(mouse_x, mouse_y);
+    }
+
     bool inside(size_t look_x, size_t look_y) {
         return look_x >= x && look_x <= x + width && look_y >= y && look_y <= y + height;
     }
@@ -256,8 +355,20 @@ public:
         }
     }
 
+    void start_resize() {
+        if (!resize) {
+            resize         = true;
+            resize_start_x = tlib::graphics::mouse_x();
+            resize_start_y = tlib::graphics::mouse_y();
+        }
+    }
+
     void stop_drag() {
         drag = false;
+    }
+
+    void stop_resize() {
+        resize = false;
     }
 };
 
@@ -286,8 +397,8 @@ void raise() {
 } // end of anonnymous namespace
 
 int main(int /*argc*/, char* /*argv*/ []) {
-    width               = tlib::graphics::get_width();
-    height              = tlib::graphics::get_height();
+    sc_width            = tlib::graphics::get_width();
+    sc_height           = tlib::graphics::get_height();
     x_shift             = tlib::graphics::get_x_shift();
     y_shift             = tlib::graphics::get_y_shift();
     bytes_per_scan_line = tlib::graphics::get_bytes_per_scan_line();
@@ -295,7 +406,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     green_shift         = tlib::graphics::get_green_shift();
     blue_shift          = tlib::graphics::get_blue_shift();
 
-    size_t total_size = height * bytes_per_scan_line;
+    size_t total_size = sc_height * bytes_per_scan_line;
 
     auto buffer = new char[total_size];
 
@@ -354,6 +465,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
                     auto& window = windows.front();
 
+                    // Handle close
+
                     if (window.mouse_in_close_button()) {
                         tlib::user_logf("odin: close window");
 
@@ -362,9 +475,27 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
                         // Remove the window
                         windows.erase(windows.begin());
-                    } else if (window.mouse_in_title()) {
+
+                        break;
+                    }
+
+                    // Handle resize
+
+                    if(window.mouse_in_resize()){
+                        tlib::user_logf("odin: start resize");
+
+                        window.start_resize();
+
+                        break;
+                    }
+
+                    // Handle move
+
+                    if (window.mouse_in_title()) {
                         tlib::user_logf("odin: start drag");
                         window.start_drag();
+
+                        break;
                     }
 
                     break;
@@ -376,6 +507,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     raise();
 
                     windows.front().stop_drag();
+                    windows.front().stop_resize();
 
                     break;
 
