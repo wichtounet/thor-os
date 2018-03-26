@@ -59,6 +59,9 @@ In general, while books will help you understand operating systems a bit, they w
 Build
 #####
 
+Note: This repository, is using submodules, don't forget the --recursive option
+when you check it out.
+
 Build procedure is described on the Wiki: https://github.com/wichtounet/thor-os/wiki/Build
 
 License
