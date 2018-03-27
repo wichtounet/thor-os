@@ -17,8 +17,14 @@
 
 namespace {
 
-constexpr const size_t min_window_height = 50;
-constexpr const size_t min_window_width = 50;
+constexpr const size_t min_window_height = 100;
+constexpr const size_t min_window_width = 100;
+
+constexpr const size_t border        = 2;
+constexpr const size_t title_padding = 2;
+constexpr const size_t resize_margin = 2;
+constexpr const size_t title_height  = 18;
+constexpr const size_t button_size   = 12;
 
 uint32_t* z_buffer = nullptr;
 
@@ -166,9 +172,9 @@ private:
     int64_t drag_start_x = 0;
     int64_t drag_start_y = 0;
 
-    bool resize            = false;
-    int64_t resize_start_x = 0;
-    int64_t resize_start_y = 0;
+    int64_t resize         = 0;
+    uint64_t resize_start_x = 0;
+    uint64_t resize_start_y = 0;
 
 public:
     // TODO Relax std::vector to allow for non-default-constructible
@@ -189,50 +195,96 @@ public:
     window& operator=(const window& rhs) = default;
     window& operator=(window&& rhs) = default;
 
-    void update() {
-        if(resize){
+    void apply_resize(){
+        // A) Handle resize from left
+
+        if (resize == 1) {
             auto mouse_x = tlib::graphics::mouse_x();
+
+            // Make it more natural
+            if((resize_start_x < mouse_x || resize_start_x > x) && width == min_window_width){
+                resize_start_x = mouse_x;
+                return;
+            }
+
+            auto delta_x = int64_t(mouse_x) - int64_t(resize_start_x);
+
+            // Ensure x + delta_x >= 0
+            if( delta_x < 0 && size_t(-delta_x) > x){
+                delta_x = -x;
+            }
+
+            // Ensure width - delta_x >= 0
+            if( delta_x > 0 && size_t(delta_x) > width){
+                delta_x = width;
+            }
+
+            // Change the width if possible
+            auto prev_width = width;
+            width = std::clip(size_t(width - delta_x), min_window_width, sc_width - x - resize_margin);
+
+            // Move to the left if possible
+            delta_x = int64_t(prev_width) - int64_t(width);
+            x = std::clip(size_t(x + delta_x), resize_margin, sc_width - resize_margin);
+
+            // Save the new position
+            resize_start_x = mouse_x;
+        }
+
+        // B) Handle resize from right
+
+        if (resize == 2) {
+            auto mouse_x = tlib::graphics::mouse_x();
+
+            // Make it more natural
+            if(resize_start_x < size_t(x + min_window_width)){
+                resize_start_x = mouse_x;
+                return;
+            }
+
+            auto delta_x = int64_t(mouse_x) - int64_t(resize_start_x);
+
+            // Ensure width + delta_x >= 0
+            if (delta_x < 0 && size_t(-delta_x) > width){
+                delta_x = -width;
+            }
+
+            // Change the width if possible
+            width = std::clip(size_t(width + delta_x), min_window_width, sc_width - x - resize_margin);
+
+            // Save the new position
+            resize_start_x = mouse_x;
+        }
+
+        // C) Handle resize from bottom
+
+        if (resize == 3) {
             auto mouse_y = tlib::graphics::mouse_y();
 
-            auto delta_x = int64_t(mouse_x) - resize_start_x;
-            auto delta_y = int64_t(mouse_y) - resize_start_y;
-
-            // A) Handle resize from left
-
-            if (resize_from_left(resize_start_x, resize_start_y)) {
-                width += -delta_x;
-
-                if(-delta_x > x){
-                    x = 2;
-                } else {
-                    x += delta_x;
-                }
-
-                width = std::max(width, min_window_width);
-                width = std::min(width, sc_width - x - 3);
+            // Make it more natural
+            if(resize_start_y < size_t(y + min_window_height)){
+                resize_start_y = mouse_y;
+                return;
             }
 
-            // B) Handle resize from right
+            auto delta_y = int64_t(mouse_y) - int64_t(resize_start_y);
 
-            if (resize_from_right(resize_start_x, resize_start_y)) {
-                width += delta_x;
-
-                width = std::max(width, min_window_width);
-                width = std::min(width, sc_width - x - 3);
+            // Ensure height + delta_y >= 0
+            if (delta_y < 0 && size_t(-delta_y) > height){
+                delta_y = -height;
             }
 
-            // C) Handle resize from bottom
+            // Change the height if possible
+            height = std::clip(size_t(height + delta_y), min_window_height, sc_height - y - resize_margin);
 
-            if (resize_from_bottom(resize_start_x, resize_start_y)) {
-                height += delta_y;
-
-                height = std::max(height, min_window_height);
-                height = std::min(height, sc_height - y - 3);
-            }
-
-            // TODO Need to handle maximum minimum here!
-            resize_start_x = mouse_x;
+            // Save the new position
             resize_start_y = mouse_y;
+        }
+    }
+
+    void update() {
+        if(resize){
+            apply_resize();
         }
 
         if (drag) {
@@ -262,12 +314,6 @@ public:
             drag_start_y = mouse_y;
         }
     }
-
-    static constexpr const size_t border        = 2;
-    static constexpr const size_t title_padding = 2;
-    static constexpr const size_t resize_margin = 2;
-    static constexpr const size_t title_height  = 18;
-    static constexpr const size_t button_size   = 12;
 
     void draw() const {
 
@@ -357,9 +403,20 @@ public:
 
     void start_resize() {
         if (!resize) {
-            resize         = true;
             resize_start_x = tlib::graphics::mouse_x();
             resize_start_y = tlib::graphics::mouse_y();
+
+            if(resize_from_left(resize_start_x,resize_start_y)){
+                resize = 1;
+            }
+
+            if(resize_from_right(resize_start_x,resize_start_y)){
+                resize = 2;
+            }
+
+            if(resize_from_bottom(resize_start_x,resize_start_y)){
+                resize = 3;
+            }
         }
     }
 
@@ -368,13 +425,26 @@ public:
     }
 
     void stop_resize() {
-        resize = false;
+        resize = 0;
+    }
+
+    size_t get_width() const {
+        return width;
+    }
+
+    size_t get_height() const {
+        return height;
     }
 };
 
 std::vector<window> windows;
 
 void raise() {
+    // If there are no windows, save some time
+    if(windows.empty()){
+        return;
+    }
+
     auto mouse_x = tlib::graphics::mouse_x();
     auto mouse_y = tlib::graphics::mouse_y();
 
@@ -397,7 +467,9 @@ void raise() {
 } // end of anonnymous namespace
 
 int main(int /*argc*/, char* /*argv*/ []) {
-    tlib::user_logf("odin: starts with %u windows", windows.size());
+    tlib::user_logf("odin: windows.size():%u", windows.size());
+    tlib::user_logf("odin: windows.capacity():%u", windows.capacity());
+    tlib::user_logf("odin: windows.data():%p", windows.data());
 
     sc_width            = tlib::graphics::get_width();
     sc_height           = tlib::graphics::get_height();
@@ -456,7 +528,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     size_t pos_x  = position_dist(eng);
                     size_t pos_y  = position_dist(eng);
 
-                    windows.emplace_back(width, height, pos_x, pos_y);
+                    windows.emplace_back(pos_x, pos_y, width, height);
 
                     break;
                 }
