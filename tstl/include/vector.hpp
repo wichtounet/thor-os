@@ -35,29 +35,29 @@ struct vector {
     /*!
      * \brief Constructs en empty vector
      */
-    vector() : data(nullptr), _size(0), _capacity(0) {}
+    vector() : _data(nullptr), _size(0), _capacity(0) {}
 
     /*!
      * \brief Constructs a vector of the given size
      */
-    explicit vector(uint64_t c) : data(allocate(c)), _size(0), _capacity(c) {}
+    explicit vector(uint64_t c) : _data(allocate(c)), _size(0), _capacity(c) {}
 
     /*!
      * \brief Construct a vector containing the given values
      */
-    vector(initializer_list<T> values) : data(allocate(values.size())), _size(values.size()), _capacity(values.size()) {
+    vector(initializer_list<T> values) : _data(allocate(values.size())), _size(values.size()), _capacity(values.size()) {
         size_t i = 0;
         for(auto& v : values){
-            new (&data[i++]) value_type(v);
+            new (&_data[i++]) value_type(v);
         }
     }
 
-    vector(const vector& rhs) : data(nullptr), _size(rhs._size), _capacity(rhs._capacity) {
+    vector(const vector& rhs) : _data(nullptr), _size(rhs._size), _capacity(rhs._capacity) {
         if(!rhs.empty()){
-            data = allocate(_capacity);
+            _data = allocate(_capacity);
 
             for(size_t i = 0; i < _size; ++i){
-                new (&data[i]) value_type(rhs.data[i]);
+                new (&_data[i]) value_type(rhs._data[i]);
             }
         }
     }
@@ -65,12 +65,12 @@ struct vector {
     vector& operator=(const vector& rhs){
         if (this != &rhs) {
             if (_capacity < rhs._capacity) {
-                if (data) {
+                if (_data) {
                     release();
                 }
 
                 _capacity = rhs._capacity;
-                data      = allocate(_capacity);
+                _data      = allocate(_capacity);
             } else {
                 destruct_all();
             }
@@ -78,7 +78,7 @@ struct vector {
             _size = rhs._size;
 
             for (size_t i = 0; i < _size; ++i) {
-                new (&data[i]) value_type(rhs.data[i]);
+                new (&_data[i]) value_type(rhs._data[i]);
             }
         }
 
@@ -87,23 +87,23 @@ struct vector {
 
     //Move constructors
 
-    vector(vector&& rhs) : data(rhs.data), _size(rhs._size), _capacity(rhs._capacity) {
-        rhs.data = nullptr;
+    vector(vector&& rhs) : _data(rhs._data), _size(rhs._size), _capacity(rhs._capacity) {
+        rhs._data = nullptr;
         rhs._size = 0;
         rhs._capacity = 0;
     };
 
     vector& operator=(vector&& rhs){
         if (this != &rhs) {
-            if (data) {
+            if (_data) {
                 release();
             }
 
-            data          = rhs.data;
+            _data          = rhs._data;
             _size         = rhs._size;
             _capacity     = rhs._capacity;
 
-            rhs.data      = nullptr;
+            rhs._data      = nullptr;
             rhs._size     = 0;
             rhs._capacity = 0;
         }
@@ -112,7 +112,7 @@ struct vector {
     }
 
     ~vector(){
-        if(data){
+        if(_data){
             release();
         }
     }
@@ -122,64 +122,78 @@ struct vector {
     /*!
      * \brief Returns the size of the vector
      */
-    constexpr size_type size() const {
+    constexpr size_type size() const noexcept {
         return _size;
     }
 
     /*!
      * \brief Indicates if the vector is empty
      */
-    bool empty() const {
+    bool empty() const noexcept {
         return _size == 0;
     }
 
     /*!
      * \brief Returns the capacity of the vector
      */
-    constexpr size_type capacity() const {
+    constexpr size_type capacity() const noexcept {
         return _capacity;
+    }
+
+    /*!
+     * \brief Returns a pointer to the underlying array.
+     */
+    value_type* data() noexcept {
+        return _data;
+    }
+
+    /*!
+     * \brief Returns a pointer to the underlying array.
+     */
+    const value_type* data() const noexcept {
+        return _data;
     }
 
     /*!
      * \brief Returns a const reference to the elemenet at the given position
      */
     constexpr const value_type& operator[](size_type pos) const {
-        return data[pos];
+        return _data[pos];
     }
 
     /*!
      * \brief Returns a reference to the elemenet at the given position
      */
     value_type& operator[](size_type pos){
-        return data[pos];
+        return _data[pos];
     }
 
     /*!
      * \brief Returns a reference to the element at the front of the collection
      */
     value_type& front(){
-        return data[0];
+        return _data[0];
     }
 
     /*!
      * \brief Returns a const reference to the element at the front of the collection
      */
     const value_type& front() const  {
-        return data[0];
+        return _data[0];
     }
 
     /*!
      * \brief Returns a reference to the element at the back of the collection
      */
     value_type& back(){
-        return data[size() - 1];
+        return _data[size() - 1];
     }
 
     /*!
      * \brief Returns a const reference to the element at the back of the collection
      */
     const value_type& back() const  {
-        return data[size() - 1];
+        return _data[size() - 1];
     }
 
     //Modifiers
@@ -202,14 +216,14 @@ struct vector {
 
             // Default initialize the new elements
             for(size_t i = _size; i < new_size; ++i){
-                new (&data[i]) value_type();
+                new (&_data[i]) value_type();
             }
 
             _size = new_size;
         } else if(new_size < _size){
             // Call the necessary destructors
             for(size_t i = new_size; i < _size; ++i){
-                data[i].~value_type();
+                _data[i].~value_type();
             }
 
             //By diminishing the size, the last elements become unreachable
@@ -223,7 +237,7 @@ struct vector {
     void push_back(value_type&& element){
         ensure_capacity(_size + 1);
 
-        new (&data[_size++]) value_type(std::move(element));
+        new (&_data[_size++]) value_type(std::move(element));
     }
 
     /*!
@@ -232,7 +246,7 @@ struct vector {
     void push_back(const value_type& element){
         ensure_capacity(_size + 1);
 
-        new (&data[_size++]) value_type(element);
+        new (&_data[_size++]) value_type(element);
     }
 
     /*!
@@ -241,7 +255,7 @@ struct vector {
     value_type& emplace_back(){
         ensure_capacity(_size + 1);
 
-        new (&data[_size++]) value_type();
+        new (&_data[_size++]) value_type();
 
         return back();
     }
@@ -253,7 +267,7 @@ struct vector {
     value_type& emplace_back(Args... args){
         ensure_capacity(_size + 1);
 
-        new (&data[_size++]) value_type{std::forward<Args>(args)...};
+        new (&_data[_size++]) value_type{std::forward<Args>(args)...};
 
         return back();
     }
@@ -265,15 +279,15 @@ struct vector {
         ensure_capacity(_size + 1);
 
         if(!empty()){
-            new (&data[_size]) value_type(std::move(data[_size - 1]));
+            new (&_data[_size]) value_type(std::move(_data[_size - 1]));
 
             for (size_t i = _size - 1; i > 0; --i) {
-                data[i] = std::move(data[i - 1]);
+                _data[i] = std::move(_data[i - 1]);
             }
         }
 
-        // At this point data[0] has been deleted
-        data[0] = std::move(element);
+        // At this point _data[0] has been deleted
+        _data[0] = std::move(element);
 
         ++_size;
     }
@@ -285,15 +299,15 @@ struct vector {
         ensure_capacity(_size + 1);
 
         if(!empty()){
-            new (&data[_size]) value_type(std::move(data[_size - 1]));
+            new (&_data[_size]) value_type(std::move(_data[_size - 1]));
 
             for (size_t i = _size - 1; i > 0; --i) {
-                data[i] = std::move(data[i - 1]);
+                _data[i] = std::move(_data[i - 1]);
             }
         }
 
-        // At this point data[0] has been deleted
-        data[0] = element;
+        // At this point _data[0] has been deleted
+        _data[0] = element;
 
         ++_size;
     }
@@ -305,7 +319,7 @@ struct vector {
         --_size;
 
         // Call the destructor of the erased value
-        data[_size].~value_type();
+        _data[_size].~value_type();
     }
 
     /*!
@@ -322,13 +336,13 @@ struct vector {
      */
     void erase(size_t position){
         for(size_t i = position; i < _size - 1; ++i){
-            data[i] = std::move(data[i+1]);
+            _data[i] = std::move(_data[i+1]);
         }
 
         --_size;
 
         // Call the destructor of the last value
-        data[_size].~value_type();
+        _data[_size].~value_type();
     }
 
     /*!
@@ -336,13 +350,13 @@ struct vector {
      */
     void erase(iterator position){
         for(size_t i = position - begin(); i < _size - 1; ++i){
-            data[i] = std::move(data[i+1]);
+            _data[i] = std::move(_data[i+1]);
         }
 
         --_size;
 
         // Call the destructor of the last value
-        data[_size].~value_type();
+        _data[_size].~value_type();
     }
 
     /*!
@@ -352,12 +366,12 @@ struct vector {
         auto n = std::distance(first, last);
 
         for(size_t i = first - begin(); i < _size - n; ++i){
-            data[i] = std::move(data[i+n]);
+            _data[i] = std::move(_data[i+n]);
         }
 
         // Call the destructors on the erase elements
         for(size_t i = _size - n; i < _size; ++i){
-            data[i].~value_type();
+            _data[i].~value_type();
         }
 
         _size -= n;
@@ -369,28 +383,28 @@ struct vector {
      * \brief Return an iterator to point to the first element
      */
     iterator begin(){
-        return iterator(&data[0]);
+        return iterator(&_data[0]);
     }
 
     /*!
      * \brief Return an iterator to point to the first element
      */
     constexpr const_iterator begin() const {
-        return const_iterator(&data[0]);
+        return const_iterator(&_data[0]);
     }
 
     /*!
      * \brief Return an iterator to point to the past-the-end element
      */
     iterator end(){
-        return iterator(&data[_size]);
+        return iterator(&_data[_size]);
     }
 
     /*!
      * \brief Return an iterator to point to the past-the-end element
      */
     constexpr const_iterator end() const {
-        return const_iterator(&data[_size]);
+        return const_iterator(&_data[_size]);
     }
 
     //Iterators
@@ -399,28 +413,28 @@ struct vector {
      * \brief Return a reverse iterator to point to the first element
      */
     reverse_iterator rbegin(){
-        return reverse_iterator(&data[_size] - 1);
+        return reverse_iterator(&_data[int64_t(_size) - 1]);
     }
 
     /*!
      * \brief Return a reverse iterator to point to the first element
      */
     constexpr const_reverse_iterator rbegin() const {
-        return const_iterator(&data[_size - 1]);
+        return const_iterator(&_data[int64_t(_size) - 1]);
     }
 
     /*!
      * \brief Return a reverse iterator point to the past-the-end element
      */
     reverse_iterator rend(){
-        return reverse_iterator(&data[-1]);
+        return reverse_iterator(&_data[-1]);
     }
 
     /*!
      * \brief Return a reverse iterator point to the past-the-end element
      */
     constexpr const_reverse_iterator rend() const {
-        return const_reverse_iterator(&data[-1]);
+        return const_reverse_iterator(&_data[-1]);
     }
 
     // Relational operators
@@ -455,7 +469,7 @@ private:
     void destruct_all(){
         // Call the destructors
         for(size_t i = 0; i< _size; ++i){
-            data[i].~value_type();
+            _data[i].~value_type();
         }
     }
 
@@ -463,14 +477,14 @@ private:
         destruct_all();
 
         // Deallocate the memory
-        deallocate(data);
-        data = nullptr;
+        deallocate(_data);
+        _data = nullptr;
     }
 
     void ensure_capacity(size_t new_capacity){
         if(_capacity == 0){
             _capacity = new_capacity;
-            data = allocate(_capacity);
+            _data = allocate(_capacity);
         } else if(_capacity < new_capacity){
             // Double the current capacity
             _capacity= _capacity * 2;
@@ -482,21 +496,20 @@ private:
 
             auto new_data = allocate(_capacity);
 
-            // Move the old data into the new one
+            // Move the old _data into the new one
             for(size_t i = 0; i < _size; ++i){
-                new (&new_data[i]) value_type(std::move(data[i]));
+                new (&new_data[i]) value_type(std::move(_data[i]));
             }
 
             release();
 
-            data = new_data;
+            _data = new_data;
         }
     }
 
-    T* data; ///< The data storage
+    T* _data; ///< The data storage
     uint64_t _size; ///< The vector size
     uint64_t _capacity; ///< The data capacity
-
 };
 
 } //end of namespace std
