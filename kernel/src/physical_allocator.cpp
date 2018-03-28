@@ -34,17 +34,21 @@ buddy_type allocator;
 size_t first_physical_address;
 size_t last_physical_address;
 
+bool buddy = false;
+size_t buddy_managed_space = 0;
+size_t buddy_allocated_memory = 0;
+
 size_t array_size(size_t managed_space, size_t block){
     return (managed_space / (block * unit) + 1) / (sizeof(uint64_t) * 8) + 1;
 }
 
-uint64_t* create_array(size_t managed_space, size_t block){
+uint64_t* create_buddy_array(size_t managed_space, size_t block){
     auto size = array_size(managed_space, block) * sizeof(uint64_t);
     auto pages = paging::pages(size);
 
     auto physical_address = current_mmap_entry_position;
 
-    allocated_memory += pages * paging::PAGE_SIZE;
+    buddy_allocated_memory += pages * paging::PAGE_SIZE;
     current_mmap_entry_position += pages * paging::PAGE_SIZE;
 
     auto virtual_address = virtual_allocator::allocate(pages);
@@ -60,12 +64,24 @@ std::string sysfs_free(){
     return std::to_string(physical_allocator::free());
 }
 
+std::string sysfs_total_free(){
+    return std::to_string(physical_allocator::total_free());
+}
+
 std::string sysfs_available(){
     return std::to_string(physical_allocator::available());
 }
 
+std::string sysfs_total_available(){
+    return std::to_string(physical_allocator::total_available());
+}
+
 std::string sysfs_allocated(){
     return std::to_string(physical_allocator::allocated());
+}
+
+std::string sysfs_total_allocated(){
+    return std::to_string(physical_allocator::total_allocated());
 }
 
 } //End of anonymous namespace
@@ -123,24 +139,23 @@ size_t physical_allocator::early_allocate(size_t blocks){
 void physical_allocator::init(){
     //Make sure to start with an aligned address
     if((current_mmap_entry_position % paging::PAGE_SIZE) != 0){
-        allocated_memory += current_mmap_entry_position % paging::PAGE_SIZE;
+        buddy_allocated_memory += current_mmap_entry_position % paging::PAGE_SIZE;
         current_mmap_entry_position = current_mmap_entry_position + current_mmap_entry_position % paging::PAGE_SIZE;
     }
 
-    // Compute the size of the managed space
+    // Compute the size of the managed space available into the
+    // current mmap entry
     auto size = current_mmap_entry->size;
     auto managed_space = size - (current_mmap_entry_position -  current_mmap_entry->base);
 
-    logging::logf(logging::log_level::TRACE, "palloc: Managed space %m\n", size_t(managed_space));
-
-    auto data_bitmap_1 = create_array(managed_space, 1);
-    auto data_bitmap_2 = create_array(managed_space, 2);
-    auto data_bitmap_4 = create_array(managed_space, 4);
-    auto data_bitmap_8 = create_array(managed_space, 8);
-    auto data_bitmap_16 = create_array(managed_space, 16);
-    auto data_bitmap_32 = create_array(managed_space, 32);
-    auto data_bitmap_64 = create_array(managed_space, 64);
-    auto data_bitmap_128 = create_array(managed_space, 128);
+    auto data_bitmap_1 = create_buddy_array(managed_space, 1);
+    auto data_bitmap_2 = create_buddy_array(managed_space, 2);
+    auto data_bitmap_4 = create_buddy_array(managed_space, 4);
+    auto data_bitmap_8 = create_buddy_array(managed_space, 8);
+    auto data_bitmap_16 = create_buddy_array(managed_space, 16);
+    auto data_bitmap_32 = create_buddy_array(managed_space, 32);
+    auto data_bitmap_64 = create_buddy_array(managed_space, 64);
+    auto data_bitmap_128 = create_buddy_array(managed_space, 128);
 
     first_physical_address = current_mmap_entry_position;
     last_physical_address = current_mmap_entry->base + current_mmap_entry->size;
@@ -158,6 +173,13 @@ void physical_allocator::init(){
 
     allocator.init();
 
+    // The available space is now dependent only on the buddy allocator
+    buddy = true;
+    buddy_managed_space = managed_space;
+
+    logging::logf(logging::log_level::TRACE, "palloc: Buddy allocator in place\n");
+    logging::logf(logging::log_level::TRACE, "palloc: Managed space %m\n", size_t(managed_space));
+
     //TODO The current system uses more memory than necessary,
     //because it also tries to index memory that is used for the
     //buddy system.
@@ -167,8 +189,11 @@ void physical_allocator::init(){
 
 void physical_allocator::finalize(){
     sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/available"), &sysfs_available);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/free"), &sysfs_free);
+    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/total_available"), &sysfs_total_available);
     sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/allocated"), &sysfs_allocated);
+    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/total_allocated"), &sysfs_total_allocated);
+    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/free"), &sysfs_free);
+    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/total_free"), &sysfs_total_free);
 
     // Publish the e820 map
     auto entries = e820::mmap_entry_count();
@@ -188,7 +213,7 @@ void physical_allocator::finalize(){
 size_t physical_allocator::allocate(size_t blocks){
     thor_assert(blocks * paging::PAGE_SIZE < free(), "Not enough physical memory");
 
-    allocated_memory += buddy_type::level_size(blocks) * unit;
+    buddy_allocated_memory += buddy_type::level_size(blocks) * unit;
 
     auto phys = allocator.allocate(blocks);
 
@@ -200,17 +225,37 @@ size_t physical_allocator::allocate(size_t blocks){
 }
 
 void physical_allocator::free(size_t address, size_t blocks){
-    allocated_memory -= buddy_type::level_size(blocks) * unit;
+    buddy_allocated_memory -= buddy_type::level_size(blocks) * unit;
 
     return allocator.free(address, blocks);
 }
 
-size_t physical_allocator::available(){
+size_t physical_allocator::total_available(){
     return e820::available_memory();
 }
 
+size_t physical_allocator::available(){
+    if(buddy){
+        return buddy_managed_space;
+    } else {
+        return total_available();
+    }
+}
+
+size_t physical_allocator::total_allocated(){
+    return buddy_allocated_memory + allocated_memory;
+}
+
 size_t physical_allocator::allocated(){
-    return allocated_memory;
+    if(buddy){
+        return allocated_memory;
+    } else {
+        return buddy_allocated_memory;
+    }
+}
+
+size_t physical_allocator::total_free(){
+    return total_available() - total_allocated();
 }
 
 size_t physical_allocator::free(){

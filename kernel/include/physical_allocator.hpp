@@ -54,17 +54,32 @@ void free(size_t address, size_t pages);
 /*!
  * \brief Return the amount of physical memory available
  */
+size_t total_available();
+
+/*!
+ * \brief Return the amount of physical memory currently available
+ */
 size_t available();
 
 /*!
  * \brief Return the amount of physical memory allocated
  */
+size_t total_allocated();
+
+/*!
+ * \brief Return the amount of physical memory currently allocated
+ */
 size_t allocated();
+
+/*!
+ * \brief Return the amount of physical memory currently free
+ */
+size_t free();
 
 /*!
  * \brief Return the amount of physical memory free
  */
-size_t free();
+size_t total_free();
 
 } //end of physical_allocator namespace
 
