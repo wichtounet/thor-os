@@ -130,6 +130,9 @@ void kernel_main(){
     network::finalize();
     stdio::finalize();
 
+    // Report some information before starting the scheduler
+    logging::logf(logging::log_level::TRACE, "Allocations before start of scheduler: %u\n", kalloc::allocations());
+
     // Start the scheduler
     scheduler::start();
 }
