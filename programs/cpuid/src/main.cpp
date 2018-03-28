@@ -77,6 +77,7 @@ void get_brand_string(){
 
 // EDX Features
 const int FPU = 1 << 0;
+const int APIC = 1 << 9;
 const int MMX = 1 << 23;
 const int SSE = 1 << 25;
 const int SSE2 = 1 << 26;
@@ -104,6 +105,7 @@ void get_features(){
     tlib::print("Features:");
 
     test_feature(edx, FPU, "fpu");
+    test_feature(edx, APIC, "apic");
     test_feature(edx, MMX, "mmx");
     test_feature(edx, SSE, "sse");
     test_feature(edx, SSE2, "sse2");
