@@ -87,14 +87,15 @@ void vesa_console::print_char(void* buffer, size_t line, size_t column, char c) 
 }
 
 void* vesa_console::save(void* buffer) {
-    void* buffer32 = static_cast<uint32_t*>(buffer);
-    if (!buffer32) {
-        buffer32 = new uint32_t[buffer_size];
+    char* char_buffer = static_cast<char*>(buffer);
+
+    if (!char_buffer) {
+        char_buffer = new char[buffer_size];
     }
 
-    vesa::save(static_cast<char*>(buffer32));
+    vesa::save(char_buffer);
 
-    return buffer32;
+    return char_buffer;
 }
 
 void vesa_console::restore(void* buffer) {
