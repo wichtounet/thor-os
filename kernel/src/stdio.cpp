@@ -16,6 +16,7 @@
 #include "assert.hpp"
 #include "logging.hpp"
 #include "scheduler.hpp"
+#include "physical_allocator.hpp"
 
 namespace {
 
@@ -23,6 +24,8 @@ stdio::terminal_driver terminal_driver_impl;
 stdio::terminal_driver* tty_driver = &terminal_driver_impl;
 
 constexpr const size_t MAX_TERMINALS = 3;
+
+size_t _terminals_count;
 size_t active_terminal;
 
 std::array<stdio::virtual_terminal, MAX_TERMINALS> terminals;
@@ -131,7 +134,17 @@ void input_thread(void* data) {
 void stdio::init_terminals() {
     size_t id = 0;
 
-    for (auto& terminal : terminals) {
+    if(physical_allocator::available() < 64 * 1024 * 1024){
+        _terminals_count = 1;
+    } else {
+        _terminals_count = MAX_TERMINALS;
+    }
+
+    logging::logf(logging::log_level::DEBUG, "stdio: using %u terminals\n", _terminals_count);
+
+    for (size_t i = 0; i < _terminals_count; ++i){
+        auto& terminal = terminals[i];
+
         terminal.id        = id++;
         terminal.active    = false;
         terminal.canonical = true;
@@ -146,7 +159,9 @@ void stdio::init_terminals() {
 }
 
 void stdio::register_devices() {
-    for (auto& terminal : terminals) {
+    for (size_t i = 0; i < _terminals_count; ++i){
+        auto& terminal = terminals[i];
+
         std::string name = std::string("tty") + std::to_string(terminal.id);
 
         devfs::register_device("/dev/", name, devfs::device_type::CHAR_DEVICE, tty_driver, &terminal);
@@ -154,7 +169,9 @@ void stdio::register_devices() {
 }
 
 void stdio::finalize() {
-    for (auto& terminal : terminals) {
+    for (size_t i = 0; i < _terminals_count; ++i){
+        auto& terminal = terminals[i];
+
         auto* user_stack   = new char[scheduler::user_stack_size];
         auto* kernel_stack = new char[scheduler::kernel_stack_size];
 
@@ -173,7 +190,7 @@ void stdio::finalize() {
 }
 
 size_t stdio::terminals_count() {
-    return MAX_TERMINALS;
+    return _terminals_count;
 }
 
 stdio::virtual_terminal& stdio::get_active_terminal() {
@@ -181,7 +198,7 @@ stdio::virtual_terminal& stdio::get_active_terminal() {
 }
 
 stdio::virtual_terminal& stdio::get_terminal(size_t id) {
-    thor_assert(id < MAX_TERMINALS, "Out of bound tty");
+    thor_assert(id < _terminals_count, "Out of bound tty");
 
     return terminals[id];
 }
