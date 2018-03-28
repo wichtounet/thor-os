@@ -26,6 +26,12 @@
 #include "drivers/pci.hpp"
 #include "logging.hpp"
 
+#ifdef THOR_CONFIG_ACPI_OSL_VERBOSE
+#define verbose_logf(...) logging::logf(__VA_ARGS__)
+#else
+#define verbose_logf(...)
+#endif
+
 extern "C" {
 
 // Initialization
@@ -84,13 +90,19 @@ ACPI_STATUS AcpiOsPhysicalTableOverride(ACPI_TABLE_HEADER* /*ExistingTable*/, AC
  * \brief Allocate dynamic memory on the heap of the given size.
  */
 void* AcpiOsAllocate(ACPI_SIZE size){
-    return kalloc::k_malloc(size);
+    auto memory = kalloc::k_malloc(size);
+
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: Allocate(size=%u)=%p\n", size, memory);
+
+    return memory;
 }
 
 /*!
  * \brief Release dynamic memory from the heap.
  */
 void AcpiOsFree(void* p){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: Free(p=%p)\n", p);
+
     kalloc::k_free(p);
 }
 
@@ -119,6 +131,8 @@ void AcpiOsVprintf(const char* format, va_list va){
  * \brief Called by the ACPI debugger
  */
 ACPI_STATUS AcpiOsSignal(UINT32 function, void* info){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: Signal\n");
+
     // This should never happen
     if(!info){
         return AE_NO_MEMORY;
@@ -152,6 +166,8 @@ ACPI_STATUS AcpiOsSignal(UINT32 function, void* info){
  * \brief Return the current thread id
  */
 ACPI_THREAD_ID AcpiOsGetThreadId(){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: GetThreadId\n");
+
     return scheduler::get_pid();
 }
 
@@ -159,6 +175,8 @@ ACPI_THREAD_ID AcpiOsGetThreadId(){
  * \brief Sleep the given number of milliseconds
  */
 void AcpiOsSleep(UINT64 ms){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: Sleep\n");
+
     scheduler::sleep_ms(ms);
 }
 
@@ -166,6 +184,8 @@ void AcpiOsSleep(UINT64 ms){
  * \brief Active sleep for the given number of microseconds
  */
 void AcpiOsStall(UINT32 us){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: Stall\n");
+
     uint64_t c = timer::counter();
     uint64_t wait = us * (timer::counter_frequency() / double(1000000));
     wait = !wait ? 1 : wait;
@@ -183,6 +203,8 @@ void AcpiOsStall(UINT32 us){
  * \brief Execute the given function in a new process
  */
 ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE /*type*/, ACPI_OSD_EXEC_CALLBACK function, void* context){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: Execute\n");
+
     auto* user_stack = new char[scheduler::user_stack_size];
     auto* kernel_stack = new char[scheduler::kernel_stack_size];
 
@@ -200,6 +222,8 @@ ACPI_STATUS AcpiOsExecute(ACPI_EXECUTE_TYPE /*type*/, ACPI_OSD_EXEC_CALLBACK fun
  * \brief Returns the system time in 100 nanoseconds units
  */
 UINT64 AcpiOsGetTimer(){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: GetTimer\n");
+
     //TODO This should be done much more precise
     // and should be real timestamp not an uptime timestamp
 
@@ -210,6 +234,8 @@ UINT64 AcpiOsGetTimer(){
  * \brief Wait for all asynchronous events to complete
  */
 void AcpiOsWaitEventsComplete(){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: WaitEventsComplete\n");
+
     return;
 }
 
@@ -219,6 +245,8 @@ void AcpiOsWaitEventsComplete(){
  * \brief Returns the physical address of the ACPI Root
  */
 ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: GetRootPointer\n");
+
     ACPI_PHYSICAL_ADDRESS  root_pointer;
     root_pointer = 0;
     auto status = AcpiFindRootPointer(&root_pointer);
@@ -236,6 +264,8 @@ ACPI_PHYSICAL_ADDRESS AcpiOsGetRootPointer(){
  * \brief Map physical memory to a virtual address
  */
 void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys, ACPI_SIZE length){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: MapMemory\n");
+
     auto offset = phys % paging::PAGE_SIZE;
 
     auto real_length = offset + length;
@@ -262,6 +292,8 @@ void* AcpiOsMapMemory(ACPI_PHYSICAL_ADDRESS phys, ACPI_SIZE length){
  * \brief Unmap physical memory from a virtual address
  */
 void AcpiOsUnmapMemory(void* virt_raw, ACPI_SIZE length){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: UnmapMemory\n");
+
     auto virt = reinterpret_cast<size_t>(virt_raw);
 
     auto offset = virt % paging::PAGE_SIZE;
@@ -282,6 +314,8 @@ void AcpiOsUnmapMemory(void* virt_raw, ACPI_SIZE length){
  * \brief Create a mutex
  */
 ACPI_STATUS AcpiOsCreateMutex(ACPI_MUTEX* handle){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: CreateMutex\n");
+
     auto* lock = new mutex<false>();
 
     lock->init();
@@ -295,6 +329,8 @@ ACPI_STATUS AcpiOsCreateMutex(ACPI_MUTEX* handle){
  * \brief Delete a mutex
  */
 void AcpiOsDeleteMutex(ACPI_MUTEX handle){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: DeleteMutex\n");
+
     auto* lock = static_cast<mutex<false>*>(handle);
 
     delete lock;
@@ -304,6 +340,8 @@ void AcpiOsDeleteMutex(ACPI_MUTEX handle){
  * \brief Acquire a mutex
  */
 ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX handle, UINT16 Timeout){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: AcquireMutex\n");
+
     auto* lock = static_cast<mutex<false>*>(handle);
 
     lock->lock();
@@ -315,6 +353,8 @@ ACPI_STATUS AcpiOsAcquireMutex(ACPI_MUTEX handle, UINT16 Timeout){
  * \brief Release a mutex
  */
 void AcpiOsReleaseMutex(ACPI_MUTEX handle){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: ReleaseMutex\n");
+
     auto* lock = static_cast<mutex<false>*>(handle);
 
     lock->unlock();
@@ -328,6 +368,8 @@ void AcpiOsReleaseMutex(ACPI_MUTEX handle){
 ACPI_STATUS AcpiOsCreateSemaphore(UINT32 /*maxUnits*/, UINT32 initialUnits, ACPI_SEMAPHORE* handle){
     auto* lock = new semaphore();
 
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: CreateSemaphore(initial=%u)=%p\n", initialUnits, lock);
+
     lock->init(initialUnits);
 
     *handle = lock;
@@ -339,6 +381,8 @@ ACPI_STATUS AcpiOsCreateSemaphore(UINT32 /*maxUnits*/, UINT32 initialUnits, ACPI
  * \brief Delete a semaphore
  */
 ACPI_STATUS AcpiOsDeleteSemaphore(ACPI_SEMAPHORE handle){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: DeleteSemaphore\n");
+
     auto* lock = static_cast<semaphore*>(handle);
 
     delete lock;
@@ -349,7 +393,9 @@ ACPI_STATUS AcpiOsDeleteSemaphore(ACPI_SEMAPHORE handle){
 /*!
  * \brief Wait a semaphore
  */
-ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 units, UINT16 /*timeout*/){
+ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 units, UINT16 timeout){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: WaitSemaphore(handle=%p,units=%u,timeout=%u)\n", handle, units, timeout);
+
     auto* lock = static_cast<semaphore*>(handle);
 
     for(size_t i = 0; i < units; ++i){
@@ -363,6 +409,8 @@ ACPI_STATUS AcpiOsWaitSemaphore(ACPI_SEMAPHORE handle, UINT32 units, UINT16 /*ti
  * \brief Signal a semaphore
  */
 ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 units){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: SignalSemaphore\n");
+
     auto* lock = static_cast<semaphore*>(handle);
 
     lock->release(units);
@@ -374,6 +422,8 @@ ACPI_STATUS AcpiOsSignalSemaphore(ACPI_SEMAPHORE handle, UINT32 units){
  * \brief Create an interrupt spinlock
  */
 ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *handle){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: CreateLock\n");
+
     auto* lock = new int_lock();
 
     *handle = lock;
@@ -385,6 +435,8 @@ ACPI_STATUS AcpiOsCreateLock(ACPI_SPINLOCK *handle){
  * \brief Delete an interrupt spinlock
  */
 void AcpiOsDeleteLock(ACPI_HANDLE handle){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: DeleteLock\n");
+
     auto* lock = static_cast<int_lock*>(handle);
 
     delete lock;
@@ -394,6 +446,8 @@ void AcpiOsDeleteLock(ACPI_HANDLE handle){
  * \brief Acquire an interrupt spinlock
  */
 ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: acquireLock\n");
+
     auto* lock = static_cast<int_lock*>(handle);
 
     lock->lock();
@@ -405,6 +459,8 @@ ACPI_CPU_FLAGS AcpiOsAcquireLock(ACPI_SPINLOCK handle){
  * \brief Release an interrupt spinlock
  */
 void AcpiOsReleaseLock(ACPI_SPINLOCK handle, ACPI_CPU_FLAGS /*flags*/){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: ReleaseLock\n");
+
     auto* lock = static_cast<int_lock*>(handle);
 
     lock->unlock();
@@ -416,6 +472,8 @@ void AcpiOsReleaseLock(ACPI_SPINLOCK handle, ACPI_CPU_FLAGS /*flags*/){
  * \brief Read an hardware
  */
 ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS port, UINT32* value, UINT32 width){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: ReadPort\n");
+
     switch (width) {
         case 8:
             *value = in_byte(port);
@@ -440,6 +498,8 @@ ACPI_STATUS AcpiOsReadPort(ACPI_IO_ADDRESS port, UINT32* value, UINT32 width){
  * \brief Write an hardware
  */
 ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS port, UINT32 value, UINT32 width){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: WritePort\n");
+
     switch (width) {
         case 8:
             out_byte(port, value);
@@ -464,6 +524,8 @@ ACPI_STATUS AcpiOsWritePort(ACPI_IO_ADDRESS port, UINT32 value, UINT32 width){
  * \brief Read a physical memory location
  */
 ACPI_STATUS AcpiOsReadMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 *value, UINT32 width){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: ReadMemory\n");
+
     ACPI_STATUS rv = AE_OK;
 
     void* logical_address = AcpiOsMapMemory(Address, width / 8);
@@ -502,6 +564,8 @@ ACPI_STATUS AcpiOsReadMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 *value, UINT3
  * \brief Write a physical memory location
  */
 ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 value, UINT32 width){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: WriteMemory\n");
+
     ACPI_STATUS rv = AE_OK;
 
     void* logical_address = AcpiOsMapMemory(Address, width / 8);
@@ -537,6 +601,8 @@ ACPI_STATUS AcpiOsWriteMemory(ACPI_PHYSICAL_ADDRESS Address, UINT64 value, UINT3
 }
 
 ACPI_STATUS AcpiOsReadPciConfiguration(ACPI_PCI_ID* pci_id, UINT32 Register, UINT64* value, UINT32 width){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: ReadPciConfiguration\n");
+
     if (pci_id->Bus >= 256 || pci_id->Device >= 32 || pci_id->Function >= 8){
         return AE_BAD_PARAMETER;
     }
@@ -562,6 +628,8 @@ ACPI_STATUS AcpiOsReadPciConfiguration(ACPI_PCI_ID* pci_id, UINT32 Register, UIN
 }
 
 ACPI_STATUS AcpiOsWritePciConfiguration(ACPI_PCI_ID* pci_id, UINT32 Register, ACPI_INTEGER value, UINT32 width){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: WritePciConfiguration\n");
+
     if (pci_id->Bus >= 256 || pci_id->Device >= 32 || pci_id->Function >= 8){
         return AE_BAD_PARAMETER;
     }
@@ -599,6 +667,8 @@ void acpi_interrupt_handler(interrupt::syscall_regs*, void* context){
 }
 
 ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine, void* context){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: InstallInterruptHandler\n");
+
     if (irq > 255){
         return AE_BAD_PARAMETER;
     }
@@ -623,6 +693,8 @@ ACPI_STATUS AcpiOsInstallInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine, 
 }
 
 ACPI_STATUS AcpiOsRemoveInterruptHandler(UINT32 irq, ACPI_OSD_HANDLER routine){
+    verbose_logf(logging::log_level::TRACE, "thor:acpica:osl: RemoveInterruptHandler\n");
+
     if (irq > 255){
         return AE_BAD_PARAMETER;
     }
