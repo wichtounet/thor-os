@@ -179,6 +179,14 @@ void physical_allocator::init(){
 
     logging::logf(logging::log_level::TRACE, "palloc: Buddy allocator in place\n");
     logging::logf(logging::log_level::TRACE, "palloc: Managed space %m\n", size_t(managed_space));
+    logging::logf(logging::log_level::TRACE, "palloc: Level 0 %u blocks\n", array_size(managed_space, 1));
+    logging::logf(logging::log_level::TRACE, "palloc: Level 1 %u blocks\n", array_size(managed_space, 2));
+    logging::logf(logging::log_level::TRACE, "palloc: Level 2 %u blocks\n", array_size(managed_space, 4));
+    logging::logf(logging::log_level::TRACE, "palloc: Level 3 %u blocks\n", array_size(managed_space, 8));
+    logging::logf(logging::log_level::TRACE, "palloc: Level 4 %u blocks\n", array_size(managed_space, 16));
+    logging::logf(logging::log_level::TRACE, "palloc: Level 5 %u blocks\n", array_size(managed_space, 32));
+    logging::logf(logging::log_level::TRACE, "palloc: Level 6 %u blocks\n", array_size(managed_space, 64));
+    logging::logf(logging::log_level::TRACE, "palloc: Level 7 %u blocks\n", array_size(managed_space, 128));
 
     //TODO The current system uses more memory than necessary,
     //because it also tries to index memory that is used for the
