@@ -226,7 +226,7 @@ size_t physical_allocator::allocate(size_t blocks){
     auto phys = allocator.allocate(blocks);
 
     if(!phys){
-        logging::logf(logging::log_level::ERROR, "palloc: Unable to allocate %u blocks\n", size_t(blocks));
+        logging::logf(logging::log_level::ERROR, "palloc: Unable to allocate %u blocks\n", blocks);
     }
 
     return phys;
