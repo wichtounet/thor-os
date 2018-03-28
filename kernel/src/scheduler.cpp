@@ -695,6 +695,8 @@ void scheduler::init(){
 }
 
 void scheduler::start(){
+    logging::log(logging::log_level::TRACE, "scheduler: starting\n");
+
     // TODO The current_pid should be set dynamically to the task in the list
     // with highest priority
 
