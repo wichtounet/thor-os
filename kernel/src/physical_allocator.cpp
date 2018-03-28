@@ -129,7 +129,7 @@ void physical_allocator::init(){
     auto size = current_mmap_entry->size;
     auto managed_space = size - (current_mmap_entry_position -  current_mmap_entry->base);
 
-    logging::logf(logging::log_level::TRACE, "palloc: Managed space %h\n", size_t(managed_space));
+    logging::logf(logging::log_level::TRACE, "palloc: Managed space %m\n", size_t(managed_space));
 
     auto data_bitmap_1 = create_array(managed_space, 1);
     auto data_bitmap_2 = create_array(managed_space, 2);
@@ -184,7 +184,7 @@ void physical_allocator::finalize(){
 }
 
 size_t physical_allocator::allocate(size_t blocks){
-    thor_assert(blocks < free() / paging::PAGE_SIZE, "Not enough physical memory");
+    thor_assert(blocks * paging::PAGE_SIZE < free(), "Not enough physical memory");
 
     allocated_memory += buddy_type::level_size(blocks) * unit;
 
