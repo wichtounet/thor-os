@@ -59,7 +59,7 @@ static const char* AcpiGbl_ExceptionNames_Env[] = {
 volatile bool acpi_initialized = false;
 
 void initialize_acpica(){
-    logging::logf(logging::log_level::DEBUG, "acpi:: Started initialization of ACPICA\n");
+    logging::logf(logging::log_level::DEBUG, "acpi: Started initialization of ACPICA\n");
 
     /* Initialize the ACPICA subsystem */
 
@@ -103,7 +103,7 @@ void initialize_acpica(){
 
     acpi_initialized = true;
 
-    logging::logf(logging::log_level::DEBUG, "acpi:: Finished initialization of ACPICA\n");
+    logging::logf(logging::log_level::DEBUG, "acpi: Finished initialization of ACPICA\n");
 }
 
 uint64_t acpi_read(const ACPI_GENERIC_ADDRESS& address){
