@@ -113,9 +113,9 @@ struct semaphore {
     }
 
 private:
-    mutable spinlock value_lock; ///< The spin lock protecting the counter
-    volatile size_t value;       ///< The value of the counter
-    wait_list queue;             ///< The sleep queue
+    spinlock value_lock;    ///< The spin lock protecting the counter
+    volatile size_t value;  ///< The value of the counter
+    wait_list queue;        ///< The sleep queue
 };
 
 #endif
