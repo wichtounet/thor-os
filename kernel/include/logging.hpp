@@ -32,6 +32,11 @@ void log(log_level level, const std::string& s);
 void logf(log_level level, const char* s, va_list va);
 void logf(log_level level, const char* s, ...);
 
+void log(const char* s);
+void log(const std::string& s);
+void logf(const char* s, va_list va);
+void logf(const char* s, ...);
+
 } //end of namespace logging
 
 #endif

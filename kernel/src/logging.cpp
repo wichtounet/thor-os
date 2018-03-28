@@ -95,6 +95,8 @@ void logging::to_file(){
     file = true;
 }
 
+// Versions with log_level
+
 void logging::log(log_level level, const char* s){
     if(!is_early()){
         // Get a nice message
@@ -129,6 +131,42 @@ void logging::logf(log_level level, const char* s, ...){
     char buffer[1024];
     vsprintf_raw(buffer, 1024, s, va);
     log(level, buffer);
+
+    va_end(va);
+}
+
+// Versions without log_level
+
+void logging::log(const char* s){
+    if(!is_early()){
+        // Print to the virtual debugger
+        virtual_debug(s);
+    }
+
+    if(is_file()){
+        append_to_file(s, std::str_len(s));
+    }
+}
+
+void logging::log(const std::string& s){
+    thor_assert(!is_early(), "log(level,string) is not valid in early mode");
+
+    log(s.c_str());
+}
+
+void logging::logf(const char* s, va_list va){
+    char buffer[1024];
+    vsprintf_raw(buffer, 1024, s, va);
+    log(buffer);
+}
+
+void logging::logf(const char* s, ...){
+    va_list va;
+    va_start(va, s);
+
+    char buffer[1024];
+    vsprintf_raw(buffer, 1024, s, va);
+    log(buffer);
 
     va_end(va);
 }
