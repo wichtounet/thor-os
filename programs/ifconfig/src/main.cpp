@@ -34,7 +34,7 @@ int main(int /*argc*/, char* /*argv*/[]){
     tlib::file dir("/sys/net/");
 
     if(!dir){
-        tlib::printf("ifconfig: error: %s\n", std::error_message(dir.error()));
+        tlib::printf("ifconfig: No network interface\n");
         return 1;
     }
 
