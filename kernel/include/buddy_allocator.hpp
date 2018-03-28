@@ -66,38 +66,44 @@ public:
     }
 
     /*!
+     * \brief Compute the actual memory that will be reserved to
+     * allocate for this number of pages.
+     */
+    size_t necessary_size(size_t pages){
+        if(pages <= max_block){
+            auto l = level(pages);
+
+            return level_size(l) * Unit;
+        } else if(pages <= max_block * static_bitmap::bits_per_word){
+            auto l = word_level(pages);
+
+            return word_level_size(l) * Unit;
+        } else {
+            //TODO Complete allocation for bigger blocks
+
+            return 0;
+        }
+    }
+
+    /*!
      * \brief Allocate memory for the given amount of pages
      */
     size_t allocate(size_t pages){
-        if(pages > max_block){
-            if(pages > max_block * static_bitmap::bits_per_word){
-                logging::logf(logging::log_level::ERROR, "buddy: Impossible to allocate more than 33M block:%u\n", pages);
-                //TODO Implement larger allocation
-                return 0;
-            } else {
-                // Select a level for which a whole word can hold the necessary pages
-                auto l = word_level(pages);
-                auto index = bitmaps[l].set_word();
-                auto address = block_start(l, index);
+        if(pages <= max_block){
+            // 1. In the easy case, at most one block of the highest
+            //    level will be used
 
-                if(address + level_size(l) >= last_address){
-                    logging::logf(logging::log_level::ERROR, "buddy: Address too high level:%u index:%u address:%h\n", l, index, address);
-                    return 0;
-                }
-
-                //Mark all bits of the word as used
-                for(size_t b = 0; b < static_bitmap::bits_per_word; ++b){
-                    mark_used(l, index + b);
-                }
-
-                return address;
-            }
-        } else {
             auto l = level(pages);
             auto index = bitmaps[l].set_bit();
+
+            if(index == static_bitmap::npos){
+                logging::logf(logging::log_level::ERROR, "buddy: There is no free bit pages:%u level:%u index:%u address:%h\n", pages, l, index);
+                return 0;
+            }
+
             auto address = block_start(l, index);
 
-            if(address + level_size(l) >= last_address){
+            if(address + level_size(l) * Unit >= last_address){
                 logging::logf(logging::log_level::ERROR, "buddy: Address too high pages:%u level:%u index:%u address:%h\n", pages, l, index, address);
                 return 0;
             }
@@ -105,6 +111,41 @@ public:
             mark_used(l, index);
 
             return address;
+        } else if(pages <= max_block * static_bitmap::bits_per_word){
+            // 2. In the more complex case, several contiguous
+            //    bits are used to form a bigger block, only
+            //    within a single word
+
+            // Select a level for which a whole word can hold the necessary pages
+            auto l = word_level(pages);
+            auto index = bitmaps[l].set_word();
+
+            if(index == static_bitmap::npos){
+                logging::logf(logging::log_level::ERROR, "buddy: There is no free word pages:%u level:%u index:%u address:%h\n", pages, l, index);
+                return 0;
+            }
+
+            auto address = block_start(l, index);
+
+            if(address + word_level_size(l) * Unit >= last_address){
+                logging::logf(logging::log_level::ERROR, "buddy: Address too high level:%u index:%u address:%h\n", l, index, address);
+                return 0;
+            }
+
+            //Mark all bits of the word as used
+            for(size_t b = 0; b < static_bitmap::bits_per_word; ++b){
+                mark_used(l, index + b);
+            }
+
+            return address;
+        } else {
+            // 3 In the most complex case, several contiguous
+            //   words are needed to form a bigger block
+
+            logging::logf(logging::log_level::ERROR, "buddy: Impossible to allocate more than 33M block:%u\n", pages);
+
+            //TODO Implement larger allocation
+            return 0;
         }
     }
 
@@ -140,6 +181,13 @@ public:
      */
     static size_t level_size(size_t level){
         return pow(2, level);
+    }
+
+    /*!
+     * \brief The size of the given level
+     */
+    static size_t word_level_size(size_t level){
+        return static_bitmap::bits_per_word * pow(2, level);
     }
 
 private:
