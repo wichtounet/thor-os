@@ -129,7 +129,7 @@ void physical_allocator::init(){
     auto size = current_mmap_entry->size;
     auto managed_space = size - (current_mmap_entry_position -  current_mmap_entry->base);
 
-    logging::logf(logging::log_level::ERROR, "palloc: Managed space %h\n", size_t(managed_space));
+    logging::logf(logging::log_level::TRACE, "palloc: Managed space %h\n", size_t(managed_space));
 
     auto data_bitmap_1 = create_array(managed_space, 1);
     auto data_bitmap_2 = create_array(managed_space, 2);
