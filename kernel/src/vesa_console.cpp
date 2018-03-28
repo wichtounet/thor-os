@@ -49,7 +49,7 @@ void vesa_console::init() {
     vesa::draw_char(title_left + 16, PADDING + MARGIN, 'O', _color);
     vesa::draw_char(title_left + 24, PADDING + MARGIN, 'R', _color);
 
-    logging::logf(logging::log_level::TRACE, "vesa_console: Buffer size: %m\n", buffer_size * sizeof(uint32_t));
+    logging::logf(logging::log_level::TRACE, "vesa_console: Buffer size: %m\n", buffer_size);
 }
 
 size_t vesa_console::lines() const {
