@@ -189,7 +189,7 @@ fat32::fat32_file_system::~fat32_file_system(){
 }
 
 void fat32::fat32_file_system::init(){
-    std::unique_ptr<fat_bs_t> fat_bs_tmp(new fat_bs_t());
+    auto fat_bs_tmp = std::make_unique<fat_bs_t>();
 
     if(read_sectors(0, 1, fat_bs_tmp.get())){
         fat_bs = fat_bs_tmp.unlock();
@@ -202,7 +202,7 @@ void fat32::fat32_file_system::init(){
 
     auto fs_information_sector =  static_cast<uint64_t>(fat_bs->fs_information_sector);
 
-    std::unique_ptr<fat_is_t> fat_is_tmp(new fat_is_t());
+    auto fat_is_tmp = std::make_unique<fat_is_t>();
 
     if(read_sectors(fs_information_sector, 1, fat_is_tmp.get())){
         fat_is = fat_is_tmp.unlock();

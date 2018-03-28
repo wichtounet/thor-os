@@ -139,7 +139,7 @@ std::unique_heap_array<disks::partition_descriptor> disks::partitions(disk_descr
         return {};
     }
 
-    std::unique_ptr<boot_record_t> boot_record(new boot_record_t());
+    auto boot_record = std::make_unique<boot_record_t>();
 
     size_t read;
     if(ata::read_sectors(*static_cast<ata::drive_descriptor*>(disk.descriptor), 0, 1, boot_record.get(), read) > 0){
