@@ -10,6 +10,7 @@
 #include "conc/int_lock.hpp"
 
 #include "acpica.hpp"
+#include "virtual_debug.hpp"
 #include "logging.hpp"
 #include "mmap.hpp"
 #include "kernel.hpp" // For suspend_kernel
@@ -92,6 +93,13 @@ void hpet::init(){
 }
 
 bool hpet::install(){
+    // For now, we disable HPET on bochs, because it does not work
+    // normally
+    if(is_bochs_e9()){
+        logging::logf(logging::log_level::TRACE, "hpet: Detected bochs, disabling HPET\n");
+        return 9;
+    }
+
     // Find the HPET table
     auto status = AcpiGetTable(ACPI_SIG_HPET, 0, reinterpret_cast<ACPI_TABLE_HEADER **>(&hpet_table));
     if (ACPI_FAILURE(status)){
@@ -99,6 +107,28 @@ bool hpet::install(){
     }
 
     logging::logf(logging::log_level::TRACE, "hpet: Found ACPI HPET table\n");
+    logging::logf(logging::log_level::TRACE, "hpet: HPET Address: %h\n", hpet_table->Address.Address);
+
+    hpet_map = static_cast<uint64_t*>(mmap_phys(hpet_table->Address.Address, 1024)); //TODO Check the size
+
+    auto capabilities = read_register(CAPABILITIES_REGISTER);
+
+    logging::logf(logging::log_level::TRACE, "hpet: HPET Capabilities: %h\n", capabilities);
+
+    if(!(capabilities & CAPABILITIES_LEGACY)){
+        logging::logf(logging::log_level::TRACE, "hpet: HPET is not able to handle legacy replacement mode\n");
+        return false;
+    }
+
+    if(!(capabilities & CAPABILITIES_64)){
+         logging::logf(logging::log_level::TRACE, "hpet: HPET is not able to handle 64-bit counter\n");
+        return false;
+    }
+
+    if(!(read_register(timer_configuration_reg(0)) & TIMER_CONFIG_64)){
+         logging::logf(logging::log_level::TRACE, "hpet: HPET Timer #0 is not 64-bit\n");
+        return false;
+    }
 
     return true;
 }
@@ -107,30 +137,11 @@ void hpet::late_install(){
     if(hpet::install()){
         logging::logf(logging::log_level::TRACE, "hpet: Late install suceeded\n");
 
-        logging::logf(logging::log_level::TRACE, "hpet: HPET Address: %h\n", hpet_table->Address.Address);
-
-        hpet_map = static_cast<uint64_t*>(mmap_phys(hpet_table->Address.Address, 1024)); //TODO Check the size
-
         // Disable interrupts: We should not be interrupted from this point on
         direct_int_lock lock;
 
         // Disable before configuration
         clear_register_bits(GENERAL_CONFIG_REGISTER, GENERAL_CONFIG_ENABLE);
-
-        if(!(read_register(CAPABILITIES_REGISTER) & CAPABILITIES_LEGACY)){
-            logging::logf(logging::log_level::TRACE, "hpet: HPET is not able to handle legacy replacement mode\n");
-            return;
-        }
-
-        if(!(read_register(CAPABILITIES_REGISTER) & CAPABILITIES_64)){
-             logging::logf(logging::log_level::TRACE, "hpet: HPET is not able to handle 64-bit counter\n");
-            return;
-        }
-
-        if(!(read_register(timer_configuration_reg(0)) & TIMER_CONFIG_64)){
-             logging::logf(logging::log_level::TRACE, "hpet: HPET Timer #0 is not 64-bit\n");
-            return;
-        }
 
         // Get the frequency of the main counter
 
