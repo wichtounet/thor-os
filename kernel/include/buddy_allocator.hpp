@@ -97,7 +97,7 @@ public:
             auto index = bitmaps[l].set_bit();
 
             if(index == static_bitmap::npos){
-                logging::logf(logging::log_level::ERROR, "buddy: There is no free bit pages:%u level:%u index:%u address:%h\n", pages, l, index);
+                logging::logf(logging::log_level::ERROR, "buddy: There is no free bit pages:%u level:%u index:%u\n", pages, l, index);
                 return 0;
             }
 
@@ -121,7 +121,7 @@ public:
             auto index = bitmaps[l].set_word();
 
             if(index == static_bitmap::npos){
-                logging::logf(logging::log_level::ERROR, "buddy: There is no free word pages:%u level:%u index:%u address:%h\n", pages, l, index);
+                logging::logf(logging::log_level::ERROR, "buddy: There is no free word pages:%u level:%u index:%u\n", pages, l, index);
                 return 0;
             }
 
