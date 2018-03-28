@@ -419,7 +419,7 @@ void* kalloc::k_malloc(uint64_t bytes){
     auto block_start = reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk);
 
     if(TRACE_MALLOC){
-        printf("m %u(%u) %h ", bytes, current->size(), block_start);
+        logging::logf(logging::log_level::TRACE, "m %u(%u) %h\n", bytes, current->size(), block_start);
     }
 
     return reinterpret_cast<void*>(block_start);
@@ -437,7 +437,7 @@ void kalloc::k_free(void* block){
     }
 
     if(TRACE_MALLOC){
-        printf("f %u %h ", free_header->size(), reinterpret_cast<uint64_t>(block));
+        logging::logf(logging::log_level::TRACE, "f %u %h\n", free_header->size(), reinterpret_cast<uint64_t>(block));
     }
 
     //Less memory is used
