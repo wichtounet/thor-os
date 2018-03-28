@@ -25,6 +25,7 @@ T* k_malloc(){
 
 uint64_t allocated_memory();
 uint64_t used_memory();
+uint64_t allocations();
 uint64_t free_memory();
 
 void debug();

@@ -24,6 +24,7 @@ const bool DEBUG_MALLOC = false;
 const bool TRACE_MALLOC = false;
 
 size_t _used_memory;
+size_t _allocations;
 size_t _allocated_memory;
 
 struct malloc_footer_chunk;
@@ -323,9 +324,18 @@ std::string sysfs_used(){
     return std::to_string(kalloc::used_memory());
 }
 
+std::string sysfs_allocations(){
+    return std::to_string(kalloc::allocations());
+}
+
 } //end of anonymous namespace
 
 void kalloc::init(){
+    // Set the counters
+    _used_memory = 0;
+    _allocations = 0;
+    _allocated_memory = 0;
+
     //Init the fake head
     init_head();
 
@@ -337,6 +347,7 @@ void kalloc::finalize(){
     sysfs::set_dynamic_value(path("/sys"), path("/memory/dynamic/free"), &sysfs_free);
     sysfs::set_dynamic_value(path("/sys"), path("/memory/dynamic/used"), &sysfs_used);
     sysfs::set_dynamic_value(path("/sys"), path("/memory/dynamic/allocated"), &sysfs_allocated);
+    sysfs::set_dynamic_value(path("/sys"), path("/memory/dynamic/allocations"), &sysfs_allocations);
 }
 
 void* kalloc::k_malloc(uint64_t bytes){
@@ -414,6 +425,7 @@ void* kalloc::k_malloc(uint64_t bytes){
     }
 
     _used_memory += current->size() + META_SIZE;
+    ++_allocations;
 
     //Address of the start of the block
     auto block_start = reinterpret_cast<uintptr_t>(current) + sizeof(malloc_header_chunk);
@@ -458,6 +470,10 @@ size_t kalloc::allocated_memory(){
 
 size_t kalloc::used_memory(){
     return _used_memory;
+}
+
+size_t kalloc::allocations(){
+    return _allocations;
 }
 
 size_t kalloc::free_memory(){
