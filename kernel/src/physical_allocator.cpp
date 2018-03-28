@@ -49,6 +49,8 @@ uint64_t* create_array(size_t managed_space, size_t block){
 
     auto virtual_address = virtual_allocator::allocate(pages);
 
+    thor_assert(virtual_address, "Impossible to allocate virtual pages for the physical allocator");
+
     thor_assert(paging::map_pages(virtual_address, physical_address, pages), "Impossible to map pages for the physical allocator");
 
     return reinterpret_cast<uint64_t*>(virtual_address);
