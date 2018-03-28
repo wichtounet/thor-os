@@ -178,7 +178,10 @@ std::string vsprintf(const std::string& format, va_list va){
             //String
             else if(ch == 's'){
                 const char* arg = va_arg(va, const char*);
-                s += arg;
+
+                if(arg){
+                    s += arg;
+                }
             }
 
             if(min_width > 0){
