@@ -8,6 +8,7 @@
 #include "vesa_console.hpp"
 #include "vesa.hpp"
 #include "early_memory.hpp"
+#include "logging.hpp"
 
 namespace {
 
@@ -25,6 +26,8 @@ size_t buffer_size;
 } //end of anonymous namespace
 
 void vesa_console::init() {
+    logging::logf(logging::log_level::TRACE, "vesa_console: init()\n");
+
     auto& block = *reinterpret_cast<vesa::mode_info_block_t*>(early::vesa_mode_info_address);
 
     _columns = (block.width - (MARGIN + PADDING) * 2) / 8;
@@ -45,6 +48,8 @@ void vesa_console::init() {
     vesa::draw_char(title_left + 8, PADDING + MARGIN, 'H', _color);
     vesa::draw_char(title_left + 16, PADDING + MARGIN, 'O', _color);
     vesa::draw_char(title_left + 24, PADDING + MARGIN, 'R', _color);
+
+    logging::logf(logging::log_level::TRACE, "vesa_console: Buffer size: %m\n", buffer_size * sizeof(uint32_t));
 }
 
 size_t vesa_console::lines() const {
