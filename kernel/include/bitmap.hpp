@@ -18,6 +18,7 @@ struct static_bitmap {
     using data_type = uint64_t; ///< The word type
 
     static constexpr const size_t bits_per_word = sizeof(data_type) * 8; ///< The number of bits stored in each word
+    static constexpr const size_t npos = 18446744073709551615ULL;        ///< Special number indicating an error
 
     template<typename Array>
     void init(Array& array){
@@ -83,7 +84,7 @@ struct static_bitmap {
             }
         }
 
-        thor_unreachable("static_bitmap has no free bit");
+        return npos;
     }
 
     /*!
@@ -96,7 +97,7 @@ struct static_bitmap {
             }
         }
 
-        thor_unreachable("static_bitmap has no free word");
+        return npos;
     }
 
     /*!
