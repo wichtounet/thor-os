@@ -44,7 +44,7 @@ constexpr const size_t TIMER_CONFIG_64 = 1 << 5;
 constexpr const size_t TIMER_FREQUENCY_GOAL = 10000; // 1 tick every 100 microseconds
 
 ACPI_TABLE_HPET* hpet_table;
-uint64_t* hpet_map;
+volatile uint64_t* hpet_map;
 volatile uint64_t comparator_update;
 
 uint64_t timer_configuration_reg(uint64_t n){
@@ -109,7 +109,7 @@ bool hpet::install(){
     logging::logf(logging::log_level::TRACE, "hpet: Found ACPI HPET table\n");
     logging::logf(logging::log_level::TRACE, "hpet: HPET Address: %h\n", hpet_table->Address.Address);
 
-    hpet_map = static_cast<uint64_t*>(mmap_phys(hpet_table->Address.Address, 1024)); //TODO Check the size
+    hpet_map = static_cast<volatile uint64_t*>(mmap_phys(hpet_table->Address.Address, 1024)); //TODO Check the size
 
     auto capabilities = read_register(CAPABILITIES_REGISTER);
 
