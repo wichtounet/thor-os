@@ -175,6 +175,27 @@ std::string vsprintf(const std::string& format, va_list va){
                     s += "false";
                 }
             }
+            // Binary
+            else if(ch == 'B'){
+                size_t value= va_arg(va, size_t);
+
+                uint8_t bits[64];
+                size_t top = 0;
+                bits[0] = 0;
+
+                while(value){
+                    bits[top++] = value & 1;
+                    value >>= 1;
+                }
+
+                s += "0b";
+
+                for(size_t i = top; i > 0; --i){
+                    s += bits[i] ? '1' : '0';
+                }
+
+                s += bits[0] ? '1' : '0';
+            }
             //String
             else if(ch == 's'){
                 const char* arg = va_arg(va, const char*);
@@ -398,6 +419,28 @@ void vsprintf_raw(char* out_buffer, size_t /*n*/, const char* format, va_list va
                 } else {
                     out_i += str_cat(out_buffer + out_i, "false");
                 }
+            }
+            // Binary
+            else if(ch == 'B'){
+                size_t value= va_arg(va, size_t);
+
+                uint8_t bits[64];
+                size_t top = 0;
+                bits[0] = 0;
+
+                while(value){
+                    bits[top++] = value & 1;
+                    value >>= 1;
+                }
+
+                out_buffer[out_i++] = '0';
+                out_buffer[out_i++] = 'b';
+
+                for(size_t i = top; i > 0; --i){
+                    out_buffer[out_i++] = bits[i] ? '1' : '0';
+                }
+
+                out_buffer[out_i++] = bits[0] ? '1' : '0';
             }
             //String
             else if(ch == 's'){
