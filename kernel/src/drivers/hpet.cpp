@@ -113,7 +113,7 @@ bool hpet::install(){
 
     auto capabilities = read_register(CAPABILITIES_REGISTER);
 
-    logging::logf(logging::log_level::TRACE, "hpet: HPET Capabilities: %h\n", capabilities);
+    logging::logf(logging::log_level::TRACE, "hpet: HPET Capabilities: %B\n", capabilities);
 
     if(!(capabilities & CAPABILITIES_LEGACY)){
         logging::logf(logging::log_level::TRACE, "hpet: HPET is not able to handle legacy replacement mode\n");
