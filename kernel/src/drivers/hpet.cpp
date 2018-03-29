@@ -93,13 +93,6 @@ void hpet::init(){
 }
 
 bool hpet::install(){
-    // For now, we disable HPET on bochs, because it does not work
-    // normally
-    if(is_bochs_e9()){
-        logging::logf(logging::log_level::TRACE, "hpet: Detected bochs, disabling HPET\n");
-        return 9;
-    }
-
     // Find the HPET table
     auto status = AcpiGetTable(ACPI_SIG_HPET, 0, reinterpret_cast<ACPI_TABLE_HEADER **>(&hpet_table));
     if (ACPI_FAILURE(status)){
