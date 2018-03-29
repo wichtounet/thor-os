@@ -9,13 +9,9 @@
 
 #include "assert.hpp"
 
-path::path(){
-    //Nothing to init
-}
+namespace {
 
-path::path(const char* path){
-    thor_assert(path, "Invalid base path");
-
+void append_path_to_names(const char* path, std::vector<std::string>& names){
     size_t i = 0;
 
     if(path[0] == '/'){
@@ -43,12 +39,34 @@ path::path(const char* path){
     }
 }
 
+} // end of anonymous namespaces
+
+path::path(){
+    //Nothing to init
+}
+
+path::path(const char* path){
+    thor_assert(path, "Invalid base path");
+
+    append_path_to_names(path, names);
+}
+
 path::path(const std::string& path){
     if(path[0] == '/'){
         names.push_back("/");
     }
 
     std::split_append(path, names, '/');
+}
+
+path::path(const path& base_path, const char* p){
+    thor_assert(!p || p[0] != '/', "Impossible to add absolute path to another path");
+
+    names.reserve(base_path.size() + 1);
+
+    std::copy(base_path.begin(), base_path.end(), std::back_inserter(names));
+
+    append_path_to_names(p, names);
 }
 
 path::path(const path& base_path, const std::string& p){
@@ -212,7 +230,7 @@ path operator/(const path& lhs, const std::string& rhs){
 }
 
 path operator/(const path& lhs, const char* rhs){
-    return {lhs, path(rhs)};
+    return {lhs, rhs};
 }
 
 path operator/(const std::string& lhs, const path& rhs){

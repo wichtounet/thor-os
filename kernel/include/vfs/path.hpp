@@ -37,6 +37,11 @@ struct path {
     /*!
      * \brief Construct a path by concatenating a base path and a string path
      */
+    path(const path& base_path, const char* path);
+
+    /*!
+     * \brief Construct a path by concatenating a base path and a string path
+     */
     path(const path& base_path, const std::string& path);
 
     /*!
