@@ -196,25 +196,25 @@ void physical_allocator::init(){
 }
 
 void physical_allocator::finalize(){
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/available"), &sysfs_available);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/total_available"), &sysfs_total_available);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/allocated"), &sysfs_allocated);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/total_allocated"), &sysfs_total_allocated);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/free"), &sysfs_free);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/physical/total_free"), &sysfs_total_free);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/physical/available"), &sysfs_available);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/physical/total_available"), &sysfs_total_available);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/physical/allocated"), &sysfs_allocated);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/physical/total_allocated"), &sysfs_total_allocated);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/physical/free"), &sysfs_free);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/physical/total_free"), &sysfs_total_free);
 
     // Publish the e820 map
     auto entries = e820::mmap_entry_count();
-    sysfs::set_constant_value(path("/sys/"), path("/memory/e820/entries"), std::to_string(entries));
+    sysfs::set_constant_value(sysfs::get_sys_path(), path("/memory/e820/entries"), std::to_string(entries));
 
     for(size_t i = 0; i < entries; ++i){
         auto& entry = e820::mmap_entry(i);
 
         auto base_path = path("/memory/e820") / std::to_string(i);
 
-        sysfs::set_constant_value(path("/sys/"), base_path / "base", std::to_string(entry.base));
-        sysfs::set_constant_value(path("/sys/"), base_path / "size", std::to_string(entry.size));
-        sysfs::set_constant_value(path("/sys/"), base_path / "type", e820::str_e820_type(entry.type));
+        sysfs::set_constant_value(sysfs::get_sys_path(), base_path / "base", std::to_string(entry.base));
+        sysfs::set_constant_value(sysfs::get_sys_path(), base_path / "size", std::to_string(entry.size));
+        sysfs::set_constant_value(sysfs::get_sys_path(), base_path / "type", e820::str_e820_type(entry.type));
     }
 }
 

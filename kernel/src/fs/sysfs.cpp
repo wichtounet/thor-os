@@ -18,6 +18,8 @@
 
 namespace {
 
+path sys_path;
+
 struct sys_value {
     std::string name;
     std::string _value;
@@ -387,4 +389,12 @@ void sysfs::delete_folder(const path& mount_point, const path& file_path) {
 
         ::delete_folder(folder, file_path.base_name());
     }
+}
+
+path& sysfs::get_sys_path(){
+    if(!sys_path.is_valid()){
+        sys_path = "/sys";
+    }
+
+    return sys_path;
 }

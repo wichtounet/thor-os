@@ -89,10 +89,10 @@ void check_function(uint8_t bus, uint8_t device, uint8_t function){
 
     auto p = path("/pci") / pci_name;
 
-    sysfs::set_constant_value(path("/sys"), p / "vendor", std::to_string(vendor_id));
-    sysfs::set_constant_value(path("/sys"), p / "device", std::to_string(device_id));
-    sysfs::set_constant_value(path("/sys"), p / "class", std::to_string(class_code));
-    sysfs::set_constant_value(path("/sys"), p / "subclass", std::to_string(sub_class));
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "vendor", std::to_string(vendor_id));
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "device", std::to_string(device_id));
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "class", std::to_string(class_code));
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "subclass", std::to_string(sub_class));
 }
 
 void check_device(uint8_t bus, uint8_t device) {

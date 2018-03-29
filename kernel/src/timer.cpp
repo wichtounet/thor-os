@@ -53,7 +53,7 @@ void timer::install(){
         suspend_boot();
     }
 
-    sysfs::set_dynamic_value(path("/sys"), path("/uptime"), &sysfs_uptime);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/uptime"), &sysfs_uptime);
 }
 
 void timer::tick(){

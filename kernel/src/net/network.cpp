@@ -128,29 +128,29 @@ std::string sysfs_tx_bytes(void* data){
 void sysfs_publish(network::interface_descriptor& interface){
     auto p = path("/net") / interface.name;
 
-    sysfs::set_constant_value(path("/sys"), p / "name", interface.name);
-    sysfs::set_constant_value(path("/sys"), p / "driver", interface.driver);
-    sysfs::set_constant_value(path("/sys"), p / "enabled", interface.enabled ? "true" : "false");
-    sysfs::set_constant_value(path("/sys"), p / "pci_device", std::to_string(interface.pci_device));
-    sysfs::set_constant_value(path("/sys"), p / "mac", std::to_string(interface.mac_address));
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "name", interface.name);
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "driver", interface.driver);
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "enabled", interface.enabled ? "true" : "false");
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "pci_device", std::to_string(interface.pci_device));
+    sysfs::set_constant_value(sysfs::get_sys_path(), p / "mac", std::to_string(interface.mac_address));
 
     if(interface.enabled){
         auto ip      = interface.ip_address;
         auto ip_addr = std::to_string(ip(0)) + "." + std::to_string(ip(1)) + "." + std::to_string(ip(2)) + "." + std::to_string(ip(3));
 
-        sysfs::set_constant_value(path("/sys"), p / "ip", ip_addr);
+        sysfs::set_constant_value(sysfs::get_sys_path(), p / "ip", ip_addr);
 
         if (!interface.is_loopback()) {
             auto gateway      = interface.gateway;
             auto gateway_addr = std::to_string(gateway(0)) + "." + std::to_string(gateway(1)) + "." + std::to_string(gateway(2)) + "." + std::to_string(gateway(3));
 
-            sysfs::set_constant_value(path("/sys"), p / "gateway", gateway_addr);
+            sysfs::set_constant_value(sysfs::get_sys_path(), p / "gateway", gateway_addr);
         }
 
-        sysfs::set_dynamic_value_data(path("/sys"), p / "rx_packets", sysfs_rx_packets, &interface);
-        sysfs::set_dynamic_value_data(path("/sys"), p / "rx_bytes", sysfs_rx_bytes, &interface);
-        sysfs::set_dynamic_value_data(path("/sys"), p / "tx_packets", sysfs_tx_packets, &interface);
-        sysfs::set_dynamic_value_data(path("/sys"), p / "tx_bytes", sysfs_tx_bytes, &interface);
+        sysfs::set_dynamic_value_data(sysfs::get_sys_path(), p / "rx_packets", sysfs_rx_packets, &interface);
+        sysfs::set_dynamic_value_data(sysfs::get_sys_path(), p / "rx_bytes", sysfs_rx_bytes, &interface);
+        sysfs::set_dynamic_value_data(sysfs::get_sys_path(), p / "tx_packets", sysfs_tx_packets, &interface);
+        sysfs::set_dynamic_value_data(sysfs::get_sys_path(), p / "tx_bytes", sysfs_tx_bytes, &interface);
     }
 }
 

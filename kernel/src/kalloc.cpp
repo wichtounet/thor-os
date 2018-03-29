@@ -403,10 +403,10 @@ void kalloc::init(){
 }
 
 void kalloc::finalize(){
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/dynamic/free"), &sysfs_free);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/dynamic/used"), &sysfs_used);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/dynamic/allocated"), &sysfs_allocated);
-    sysfs::set_dynamic_value(path("/sys"), path("/memory/dynamic/allocations"), &sysfs_allocations);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/dynamic/free"), &sysfs_free);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/dynamic/used"), &sysfs_used);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/dynamic/allocated"), &sysfs_allocated);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/dynamic/allocations"), &sysfs_allocations);
 }
 
 void* kalloc::k_malloc(uint64_t bytes){

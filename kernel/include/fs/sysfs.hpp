@@ -89,6 +89,8 @@ void set_dynamic_value_data(const path& mount_point, const path& file_path, dyna
 void delete_value(const path& mount_point, const path& file_path);
 void delete_folder(const path& mount_point, const path& file_path);
 
+path& get_sys_path();
+
 } //end of namespace sysfs
 
 #endif

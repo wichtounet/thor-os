@@ -85,9 +85,9 @@ void virtual_allocator::init(){
 }
 
 void virtual_allocator::finalize(){
-    sysfs::set_dynamic_value(path("/sys/"), path("/memory/virtual/available"), &sysfs_available);
-    sysfs::set_dynamic_value(path("/sys/"), path("/memory/virtual/free"), &sysfs_free);
-    sysfs::set_dynamic_value(path("/sys/"), path("/memory/virtual/allocated"), &sysfs_allocated);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/virtual/available"), &sysfs_available);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/virtual/free"), &sysfs_free);
+    sysfs::set_dynamic_value(sysfs::get_sys_path(), path("/memory/virtual/allocated"), &sysfs_allocated);
 }
 
 size_t virtual_allocator::allocate(size_t pages){

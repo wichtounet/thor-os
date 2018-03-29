@@ -120,8 +120,8 @@ void kernel_main(){
     //Only install system calls when everything else is ready
     install_system_calls();
 
-    sysfs::set_constant_value(path("/sys"), path("/version"), "0.1");
-    sysfs::set_constant_value(path("/sys"), path("/author"), "Baptiste Wicht");
+    sysfs::set_constant_value(sysfs::get_sys_path(), path("/version"), "0.1");
+    sysfs::set_constant_value(sysfs::get_sys_path(), path("/author"), "Baptiste Wicht");
 
     // Initialize the scheduler
     scheduler::init();

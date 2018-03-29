@@ -270,11 +270,11 @@ void paging::init(){
 }
 
 void paging::finalize(){
-    sysfs::set_constant_value(path("/sys"), path("/paging/page_size"), std::to_string(paging::PAGE_SIZE));
-    sysfs::set_constant_value(path("/sys"), path("/paging/pdpt"), std::to_string(paging::pml4_entries));
-    sysfs::set_constant_value(path("/sys"), path("/paging/pd"), std::to_string(paging::pdpt_entries));
-    sysfs::set_constant_value(path("/sys"), path("/paging/pt"), std::to_string(paging::pd_entries));
-    sysfs::set_constant_value(path("/sys"), path("/paging/physical_size"), std::to_string(paging::physical_memory_pages * paging::PAGE_SIZE));
+    sysfs::set_constant_value(sysfs::get_sys_path(), path("/paging/page_size"), std::to_string(paging::PAGE_SIZE));
+    sysfs::set_constant_value(sysfs::get_sys_path(), path("/paging/pdpt"), std::to_string(paging::pml4_entries));
+    sysfs::set_constant_value(sysfs::get_sys_path(), path("/paging/pd"), std::to_string(paging::pdpt_entries));
+    sysfs::set_constant_value(sysfs::get_sys_path(), path("/paging/pt"), std::to_string(paging::pd_entries));
+    sysfs::set_constant_value(sysfs::get_sys_path(), path("/paging/physical_size"), std::to_string(paging::physical_memory_pages * paging::PAGE_SIZE));
 }
 
 size_t paging::pages(size_t size){
