@@ -13,6 +13,36 @@ path::path(){
     //Nothing to init
 }
 
+path::path(const char* path){
+    thor_assert(path, "Invalid base path");
+
+    size_t i = 0;
+
+    if(path[0] == '/'){
+        names.push_back("/");
+        i = 1;
+    }
+
+    std::string current;
+
+    while(path[i] != '\0'){
+        if(path[i] == '/'){
+            if(!current.empty()){
+                names.emplace_back(current);
+                current.clear();
+            }
+        } else {
+            current += path[i];
+        }
+
+        ++i;
+    }
+
+    if(!current.empty()){
+        names.emplace_back(current);
+    }
+}
+
 path::path(const std::string& path){
     if(path[0] == '/'){
         names.push_back("/");
@@ -178,7 +208,11 @@ path operator/(const path& lhs, const path& rhs){
 }
 
 path operator/(const path& lhs, const std::string& rhs){
-    return {lhs, rhs};
+    return {lhs, path(rhs)};
+}
+
+path operator/(const path& lhs, const char* rhs){
+    return {lhs, path(rhs)};
 }
 
 path operator/(const std::string& lhs, const path& rhs){

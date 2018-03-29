@@ -27,6 +27,11 @@ struct path {
     /*!
      * \brief Construct a path from a string
      */
+    path(const char* path);
+
+    /*!
+     * \brief Construct a path from a string
+     */
     path(const std::string& path);
 
     /*!
@@ -180,6 +185,11 @@ path operator/(const path& lhs, const path& rhs);
  * \brief Form a new path by concatenation of a path and a string.
  */
 path operator/(const path& lhs, const std::string& rhs);
+
+/*!
+ * \brief Form a new path by concatenation of a path and a string.
+ */
+path operator/(const path& lhs, const char* rhs);
 
 /*!
  * \brief Form a new path by concatenation of a string and a path.
