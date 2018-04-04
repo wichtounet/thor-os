@@ -8,6 +8,7 @@
 #ifndef STRING_H
 #define STRING_H
 
+#include <string_view.hpp>
 #include <types.hpp>
 #include <algorithms.hpp>
 #include <vector.hpp>
@@ -446,6 +447,10 @@ public:
         }
 
         return npos;
+    }
+
+    operator std::basic_string_view<CharT>() const noexcept {
+        return {data_ptr(), size()};
     }
 
     //Operators
