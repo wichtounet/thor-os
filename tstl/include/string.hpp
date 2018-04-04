@@ -40,14 +40,14 @@ struct base_long {
     base_long& operator=(base_long&&) = default;
 };
 
-static constexpr const size_t min_capacity = 16;
-static constexpr const size_t words = min_capacity / sizeof(size_t);
+static constexpr const size_t string_min_capacity = 16;
+static constexpr const size_t string_words = string_min_capacity / sizeof(size_t);
 
 //TODO Store size into base and use only one unsigned char for base_short
 
 template<typename CharT>
 struct base_short {
-    CharT data[min_capacity];
+    CharT data[string_min_capacity];
 
     base_short() = default;
 
@@ -59,7 +59,7 @@ struct base_short {
 };
 
 struct base_raw {
-    size_t data[words];
+    size_t data[string_words];
 
     base_raw() = delete;
 
@@ -83,9 +83,9 @@ union base_storage {
     ~base_storage() {}
 };
 
-static_assert(min_capacity == sizeof(base_short<char>), "base_short must be the correct SSO size");
-static_assert(min_capacity == sizeof(base_long<char>), "base_long must be the correct SSO size");
-static_assert(min_capacity == sizeof(base_raw), "base_raw must be the correct SSO size");
+static_assert(string_min_capacity == sizeof(base_short<char>), "base_short must be the correct SSO size");
+static_assert(string_min_capacity == sizeof(base_long<char>), "base_long must be the correct SSO size");
+static_assert(string_min_capacity == sizeof(base_raw), "base_raw must be the correct SSO size");
 
 /*!
  * \brief A string of the given character type.
@@ -133,7 +133,7 @@ private:
     }
 
     void zero(){
-        for(size_t i = 0; i < words; ++i){
+        for(size_t i = 0; i < string_words; ++i){
             storage.raw.data[i] = 0;
         }
     }
