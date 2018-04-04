@@ -11,6 +11,7 @@
 #include "test.hpp"
 
 void string_tests();
+void string_view_tests();
 void function_tests();
 void tuple_tests();
 void vector_tests();
@@ -25,6 +26,7 @@ void shared_ptr_tests();
 
 int main(){
     string_tests();
+    string_view_tests();
     traits_tests();
     algorithms_tests();
     circular_buffer_tests();
