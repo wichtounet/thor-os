@@ -58,3 +58,22 @@ void check_equals(long value, long expected, const char* message){
         printf("\t expected: %ld was: %ld\n", expected, value);
     }
 }
+
+void check(bool condition, const char* where, size_t line){
+    if(!condition){
+        printf("%s:%lu Check failed\n", where, line);
+    }
+}
+
+void check(bool condition, const char* message, const char* where, size_t line){
+    if(!condition){
+        printf("%s:%lu Check failed: \"%s\"\n", where, line, message);
+    }
+}
+
+void check_equals(long value, long expected, const char* message, const char* where, size_t line){
+    if(value != expected){
+        printf("%s:%lu Check failed: \"%s\"\n", where, line, message);
+        printf("\t expected: %ld was: %ld\n", expected, value);
+    }
+}
