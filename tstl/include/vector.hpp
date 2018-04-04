@@ -407,7 +407,7 @@ struct vector {
         return const_iterator(&_data[_size]);
     }
 
-    //Iterators
+    // Reverse Iterators
 
     /*!
      * \brief Return a reverse iterator to point to the first element
