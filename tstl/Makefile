@@ -4,9 +4,11 @@ include ../cpp.mk
 
 TESTSUITE_CPP_FILES=$(wildcard test_suite/*.cpp)
 
+TEST_CXX ?= g++
+
 debug/bin/tester: $(TESTSUITE_CPP_FILES)
 	@ mkdir -p debug/bin/
-	g++ $(WARNING_FLAGS) --std=c++11 -Iinclude -o debug/bin/tester -g $(TESTSUITE_CPP_FILES)
+	$(TEST_CXX) $(WARNING_FLAGS) --std=c++11 -Iinclude -o debug/bin/tester -g $(TESTSUITE_CPP_FILES)
 
 test: debug/bin/tester
 	./debug/bin/tester
