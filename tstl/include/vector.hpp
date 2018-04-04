@@ -62,6 +62,11 @@ struct vector {
         }
     }
 
+    // Note: This is a bit of a lazy scheme
+    // We always destruct all previous memory and copy construct the
+    // new information. It could be better to simply copy assign and
+    // only in the case of new allocation copy construct
+
     vector& operator=(const vector& rhs){
         if (this != &rhs) {
             if (_capacity < rhs._capacity) {
