@@ -521,6 +521,33 @@ public:
         return base_assign(sv);
     }
 
+    template<typename It>
+    basic_string& assign(It it, It end){
+        auto n = std::distance(it, end);
+
+        set_size(n);
+
+        auto need = n + 1;
+
+        if(capacity() < need){
+            auto capacity = need;
+
+            if(is_small()){
+                new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
+
+                set_small(false);
+            } else {
+                storage.big.capacity = capacity;
+                storage.big.data.reset(new CharT[capacity]);
+            }
+        }
+
+        std::copy(it, end, begin());
+        data_ptr()[size()] = '\0';
+
+        return *this;
+    }
+
 private:
 
     void ensure_capacity(size_t new_capacity){
@@ -545,6 +572,9 @@ private:
             }
         }
     }
+
+    //TODO Cleanup the duplication with ensure_capacity()
+    //Make sure to avoid the unecessary copy
 
     template<typename T>
     basic_string& base_assign(const T& rhs){
