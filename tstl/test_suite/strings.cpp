@@ -440,6 +440,25 @@ void test_compare(){
     CHECK(e.compare(e) == 0, "Invalid std::string::compare");
 }
 
+void test_assign_sv(){
+    std::string a = "bcd";
+    std::string b = "abcde";
+    std::string_view sb = b;
+    std::string c = "def";
+
+    a = sb;
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 5, "Invalid size");
+    CHECK(strcmp(a.c_str(), "abcde") == 0, "Invalid content");
+
+    a = static_cast<std::string_view>(c);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 3, "Invalid size");
+    CHECK(strcmp(a.c_str(), "def") == 0, "Invalid content");
+}
+
 } //end of anonymous namespace
 
 void string_tests(){
@@ -457,4 +476,5 @@ void string_tests(){
     test_operators_short_to_long();
     test_operators_long_to_short();
     test_compare();
+    test_assign_sv();
 }
