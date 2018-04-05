@@ -8,6 +8,7 @@
 #ifndef STRING_VIEW_H
 #define STRING_VIEW_H
 
+#include <cstring.hpp>
 #include <types.hpp>
 #include <algorithms.hpp>
 #include <iterator.hpp>

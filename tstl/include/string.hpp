@@ -8,6 +8,7 @@
 #ifndef STRING_H
 #define STRING_H
 
+#include <cstring.hpp>
 #include <string_view.hpp>
 #include <types.hpp>
 #include <algorithms.hpp>
@@ -16,14 +17,6 @@
 #include <iterator.hpp>
 
 namespace std {
-
-inline uint64_t str_len(const char* a){
-    uint64_t length = 0;
-    while(*a++){
-        ++length;
-    }
-    return length;
-}
 
 template<typename CharT>
 struct base_long {
