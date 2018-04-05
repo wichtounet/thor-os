@@ -459,6 +459,98 @@ void test_assign_sv(){
     CHECK(strcmp(a.c_str(), "def") == 0, "Invalid content");
 }
 
+void test_append_1(){
+    std::string a = "bcd";
+    std::string b = "efg";
+    std::string_view sb = b;
+
+    a.append(sb);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 6, "Invalid size");
+    CHECK(strcmp(a.c_str(), "bcdefg") == 0, "Invalid content");
+
+    a.append(b);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 9, "Invalid size");
+    CHECK(strcmp(a.c_str(), "bcdefgefg") == 0, "Invalid content");
+}
+
+void test_append_2(){
+    std::string a = "bcd";
+    std::string b = "efg";
+    std::string_view sb = b;
+
+    a += sb;
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 6, "Invalid size");
+    CHECK(strcmp(a.c_str(), "bcdefg") == 0, "Invalid content");
+
+    a += b;
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 9, "Invalid size");
+    CHECK(strcmp(a.c_str(), "bcdefgefg") == 0, "Invalid content");
+}
+
+void test_append_3(){
+    std::string a = "bcd";
+    std::string b = "aefga";
+    std::string_view sb = b;
+
+    a.append(sb.begin() + 1, sb.end() - 1);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 6, "Invalid size");
+    CHECK(strcmp(a.c_str(), "bcdefg") == 0, "Invalid content");
+
+    a.append(b.begin() + 1, b.end() - 1);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 9, "Invalid size");
+    CHECK(strcmp(a.c_str(), "bcdefgefg") == 0, "Invalid content");
+}
+
+void test_assign_1(){
+    std::string a = "bcd";
+    std::string b = "efg";
+    std::string_view sb = b;
+
+    a.assign(sb);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 3, "Invalid size");
+    CHECK(strcmp(a.c_str(), "efg") == 0, "Invalid content");
+
+    a = "";
+    a.assign(b);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 3, "Invalid size");
+    CHECK(strcmp(a.c_str(), "efg") == 0, "Invalid content");
+}
+
+void test_assign_2(){
+    std::string a = "bcd";
+    std::string b = "aefga";
+    std::string_view sb = b;
+
+    a.assign(sb.begin() + 1, sb.end() - 1);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 3, "Invalid size");
+    CHECK(strcmp(a.c_str(), "efg") == 0, "Invalid content");
+
+    a = "";
+    a.assign(b.begin() + 1, b.end() - 1);
+
+    CHECK(!a.empty(), "String mustn't be empty");
+    CHECK(a.size() == 3, "Invalid size");
+    CHECK(strcmp(a.c_str(), "efg") == 0, "Invalid content");
+}
+
 } //end of anonymous namespace
 
 void string_tests(){
@@ -477,4 +569,9 @@ void string_tests(){
     test_operators_long_to_short();
     test_compare();
     test_assign_sv();
+    test_assign_1();
+    test_assign_2();
+    test_append_1();
+    test_append_2();
+    test_append_3();
 }
