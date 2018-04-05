@@ -435,10 +435,10 @@ struct is_convertible_impl {
 template <typename From, typename To>
 struct is_convertible_impl<From, To, false> {
 private:
-    template <typename _To1>
-    static void test_aux(_To1);
+    template <typename To1>
+    static void test_aux(To1);
 
-    template <typename _From1, typename _To1, typename = decltype(test_aux<_To1>(std::declval<_From1>()))>
+    template <typename From1, typename To1, typename = decltype(test_aux<To1>(std::declval<From1>()))>
     static true_type test(int);
 
     template <typename, typename>
