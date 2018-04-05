@@ -19,7 +19,7 @@ template<typename CharT>
 struct basic_string_view {
     using value_type      = CharT;             ///< The value type contained in the vector
     using pointer         = value_type*;       ///< The pointer type contained in the vector
-    using const_pointer   = value_type*;       ///< The pointer type contained in the vector
+    using const_pointer   = const value_type*; ///< The pointer type contained in the vector
     using reference       = value_type&;       ///< The pointer type contained in the vector
     using const_reference = const value_type&; ///< The pointer type contained in the vector
     using size_type       = size_t;            ///< The size type
