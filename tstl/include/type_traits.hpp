@@ -374,6 +374,14 @@ struct is_integral<unsigned long long> {
     static constexpr const bool value = true;
 };
 
+template <typename T>
+struct identity_of {
+    using type = T;
+};
+
+template <typename T>
+using identity_of_t = typename identity_of<T>::type;
+
 } //end of namespace std
 
 #endif
