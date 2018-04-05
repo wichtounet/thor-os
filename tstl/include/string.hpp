@@ -267,7 +267,7 @@ public:
     // Assign from string_view convertible
 
     template<typename T, typename = std::enable_if_t<is_sv<T>::value>>
-    basic_string& operator=(T& rhs){
+    basic_string& operator=(const T& rhs){
         sv_type sv = rhs;
         return base_assign(sv);
     }
