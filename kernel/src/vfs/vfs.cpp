@@ -186,7 +186,7 @@ std::expected<void> vfs::mount(partition_type type, fd_t mp_fd, fd_t dev_fd) {
         }
     }
 
-    auto fs = get_new_fs(type, mp_path, dev_path.string());
+    auto fs = get_new_fs(type, mp_path, dev_path);
 
     if (!fs) {
         return std::make_unexpected<void>(std::ERROR_INVALID_FILE_SYSTEM);

@@ -28,20 +28,26 @@ struct sys_value {
     void* data                         = nullptr;
 
     sys_value() {}
-    sys_value(std::string name, std::string value)
-            : name(name), _value(value) {
+    sys_value(std::string_view name, std::string_view value)
+            : name(name.begin(), name.end()), _value(value.begin(), value.end()) {
         //Nothing else to init
     }
 
-    sys_value(std::string name, sysfs::dynamic_fun_t fun)
-            : name(name), fun(fun) {
+    sys_value(std::string_view name, sysfs::dynamic_fun_t fun)
+            : name(name.begin(), name.end()), fun(fun) {
         //Nothing else to init
     }
 
-    sys_value(std::string name, sysfs::dynamic_fun_data_t fun_data, void* data)
-            : name(name), fun_data(fun_data), data(data) {
+    sys_value(std::string_view name, sysfs::dynamic_fun_data_t fun_data, void* data)
+            : name(name.begin(), name.end()), fun_data(fun_data), data(data) {
         //Nothing else to init
     }
+
+    sys_value(sys_value&) = default;
+    sys_value(sys_value&&) = default;
+
+    sys_value& operator=(sys_value&) = default;
+    sys_value& operator=(sys_value&&) = default;
 
     std::string value() const {
         if (fun_data){
@@ -61,10 +67,16 @@ struct sys_folder {
 
     sys_folder() {}
 
-    explicit sys_folder(std::string name)
-            : name(name) {
+    explicit sys_folder(std::string_view name)
+            : name(name.begin(), name.end()) {
         //Nothing else to init
     }
+
+    sys_folder(sys_folder&) = default;
+    sys_folder(sys_folder&&) = default;
+
+    sys_folder& operator=(sys_folder&) = default;
+    sys_folder& operator=(sys_folder&&) = default;
 };
 
 std::vector<sys_folder> root_folders;
@@ -82,7 +94,7 @@ sys_folder& find_root_folder(const path& mount_point) {
 }
 
 sys_folder& find_folder(sys_folder& root, const path& file_path, size_t i, size_t last){
-    auto& name = file_path[i];
+    auto name = file_path[i];
 
     for (auto& folder : root.folders) {
         if (folder.name == name) {
@@ -104,7 +116,7 @@ sys_folder& find_folder(sys_folder& root, const path& file_path, size_t i, size_
 }
 
 bool exists_folder(sys_folder& root, const path& file_path, size_t i, size_t last) {
-    auto& name = file_path[i];
+    auto name = file_path[i];
 
     for (auto& folder : root.folders) {
         if (folder.name == name) {
@@ -184,7 +196,7 @@ size_t read(const sys_folder& folder, const path& file_path, char* buffer, size_
     return std::ERROR_NOT_EXISTS;
 }
 
-void set_value(sys_folder& folder, const std::string& name, const std::string& value) {
+void set_value(sys_folder& folder, std::string_view name, const std::string& value) {
     for (auto& v : folder.values) {
         if (v.name == name) {
             v._value = value;
@@ -195,7 +207,7 @@ void set_value(sys_folder& folder, const std::string& name, const std::string& v
     folder.values.emplace_back(name, value);
 }
 
-void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_t fun) {
+void set_value(sys_folder& folder, std::string_view name, sysfs::dynamic_fun_t fun) {
     for (auto& v : folder.values) {
         if (v.name == name) {
             v.fun = fun;
@@ -206,7 +218,7 @@ void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_t
     folder.values.emplace_back(name, fun);
 }
 
-void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_data_t fun, void* data) {
+void set_value(sys_folder& folder, std::string_view name, sysfs::dynamic_fun_data_t fun, void* data) {
     for (auto& v : folder.values) {
         if (v.name == name) {
             v.fun_data = fun;
@@ -218,13 +230,13 @@ void set_value(sys_folder& folder, const std::string& name, sysfs::dynamic_fun_d
     folder.values.emplace_back(name, fun, data);
 }
 
-void delete_value(sys_folder& folder, const std::string& name) {
+void delete_value(sys_folder& folder, std::string_view name) {
     folder.values.erase(std::remove_if(folder.values.begin(), folder.values.end(), [&name](const sys_value& value){
         return value.name == name;
     }), folder.values.end());
 }
 
-void delete_folder(sys_folder& folder, const std::string& name) {
+void delete_folder(sys_folder& folder, std::string_view name) {
     folder.folders.erase(std::remove_if(folder.folders.begin(), folder.folders.end(), [&name](const sys_folder& value){
         return value.name == name;
     }), folder.folders.end());

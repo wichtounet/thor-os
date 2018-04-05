@@ -11,7 +11,7 @@
 
 namespace {
 
-void append_path_to_names(const char* path, std::vector<std::string>& names){
+void append_path_to_names(std::string_view path, std::vector<std::string>& names){
     size_t i = 0;
 
     if(path[0] == '/'){
@@ -21,7 +21,7 @@ void append_path_to_names(const char* path, std::vector<std::string>& names){
 
     std::string current;
 
-    while(path[i] != '\0'){
+    while(i < path.size()){
         if(path[i] == '/'){
             if(!current.empty()){
                 names.emplace_back(current);
@@ -45,38 +45,20 @@ path::path(){
     //Nothing to init
 }
 
-path::path(const char* path){
-    thor_assert(path, "Invalid base path");
+path::path(std::string_view path){
+    thor_assert(path.size(), "Invalid base path");
 
     append_path_to_names(path, names);
 }
 
-path::path(const std::string& path){
-    if(path[0] == '/'){
-        names.push_back("/");
-    }
-
-    std::split_append(path, names, '/');
-}
-
-path::path(const path& base_path, const char* p){
-    thor_assert(!p || p[0] != '/', "Impossible to add absolute path to another path");
+path::path(const path& base_path, std::string_view p){
+    thor_assert(p.empty() || p[0] != '/', "Impossible to add absolute path to another path");
 
     names.reserve(base_path.size() + 1);
 
     std::copy(base_path.begin(), base_path.end(), std::back_inserter(names));
 
     append_path_to_names(p, names);
-}
-
-path::path(const path& base_path, const std::string& p){
-    thor_assert(p.empty() || p[0] != '/', "Impossible to add absolute path to another path");
-
-    auto parts = std::split(p, '/');
-    names.reserve(names.size() + base_path.size() + parts.size());
-
-    std::copy(base_path.begin(), base_path.end(), std::back_inserter(names));
-    std::copy(parts.begin(), parts.end(), std::back_inserter(names));
 }
 
 path::path(const path& base_path, const path& p){
@@ -86,6 +68,12 @@ path::path(const path& base_path, const path& p){
 
     std::copy(base_path.begin(), base_path.end(), std::back_inserter(names));
     std::copy(p.begin(), p.end(), std::back_inserter(names));
+}
+
+path& path::operator=(std::string_view rhs){
+    names.clear();
+
+    append_path_to_names(rhs, names);
 }
 
 // TODO Ideally, the last / should not be used
@@ -139,7 +127,7 @@ size_t path::size() const {
     return names.size();
 }
 
-std::string path::base_name() const {
+std::string_view path::base_name() const {
     if(empty()){
         return "";
     } else {
@@ -147,7 +135,7 @@ std::string path::base_name() const {
     }
 }
 
-std::string path::root_name() const {
+std::string_view path::root_name() const {
     if(empty()){
         return "";
     } else {
@@ -155,7 +143,7 @@ std::string path::root_name() const {
     }
 }
 
-std::string path::sub_root_name() const {
+std::string_view path::sub_root_name() const {
     if(size() < 2){
         return "";
     } else {
@@ -171,11 +159,11 @@ bool path::is_relative() const {
     return names.size() && names[0] != "/";
 }
 
-const std::string& path::name(size_t i) const {
+std::string_view path::name(size_t i) const {
     return names[i];
 }
 
-const std::string& path::operator[](size_t i) const {
+std::string_view path::operator[](size_t i) const {
     return names[i];
 }
 
@@ -221,18 +209,28 @@ bool path::operator!=(const path& p) const {
     return names != p.names;
 }
 
+bool path::operator==(std::string_view p) const {
+    // Note: This is highly inefficient
+    path rhs(p);
+    return *this == rhs;
+}
+
+bool path::operator!=(std::string_view p) const {
+    return !(*this == p);
+}
+
 path operator/(const path& lhs, const path& rhs){
     return {lhs, rhs};
 }
 
-path operator/(const path& lhs, const std::string& rhs){
-    return {lhs, path(rhs)};
+path operator/(const path& lhs, std::string_view rhs){
+    return {lhs, rhs};
 }
 
 path operator/(const path& lhs, const char* rhs){
     return {lhs, rhs};
 }
 
-path operator/(const std::string& lhs, const path& rhs){
+path operator/(std::string_view lhs, const path& rhs){
     return {path(lhs), rhs};
 }

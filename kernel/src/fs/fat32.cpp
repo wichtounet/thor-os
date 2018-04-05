@@ -48,16 +48,16 @@ inline bool is_long_name(const fat32::cluster_entry& entry){
 
 //Return the number of entries necessary to hold the name
 //Always computed to store a long file name entry before the information entry
-size_t number_of_entries(const std::string& name){
+size_t number_of_entries(const std::string_view& name){
     return (name.size() - 1) / 13 + 2;
 }
 
 //Init an entry
 template<bool Long>
-fat32::cluster_entry* init_entry(fat32::cluster_entry* entry_ptr, const char* name, uint32_t cluster){
+fat32::cluster_entry* init_entry(fat32::cluster_entry* entry_ptr, std::string_view name, uint32_t cluster){
     //If necessary create all the long filename entries
     if(Long){
-        auto len = std::str_len(name);
+        auto len = name.size();
 
         //Compute the checksum of 8.3 Entry
         char sum = 0;
@@ -125,8 +125,8 @@ fat32::cluster_entry* init_entry(fat32::cluster_entry* entry_ptr, const char* na
 
     //Copy the name into the entry
     size_t i = 0;
-    for(; i < 11 && *name; ++i){
-        entry.name[i] = *name++;
+    for(; i < 11 && i < name.size(); ++i){
+        entry.name[i] = name[i];
     }
 
     for(; i < 11; ++i){
@@ -159,7 +159,7 @@ fat32::cluster_entry* init_entry(fat32::cluster_entry* entry_ptr, const char* na
 
 //Init a directory entry
 template<bool Long>
-void init_directory_entry(fat32::cluster_entry* entry_ptr, const char* name, uint32_t cluster){
+void init_directory_entry(fat32::cluster_entry* entry_ptr, std::string_view name, uint32_t cluster){
     //Init the base entry parameters
     entry_ptr = init_entry<Long>(entry_ptr, name, cluster);
 
@@ -169,7 +169,7 @@ void init_directory_entry(fat32::cluster_entry* entry_ptr, const char* name, uin
 
 //Init a file entry
 template<bool Long>
-void init_file_entry(fat32::cluster_entry* entry_ptr, const char* name, uint32_t cluster){
+void init_file_entry(fat32::cluster_entry* entry_ptr, std::string_view name, uint32_t cluster){
     //Init the base entry parameters
     entry_ptr = init_entry<Long>(entry_ptr, name, cluster);
 
@@ -614,7 +614,7 @@ size_t fat32::fat32_file_system::touch(const path& file_path){
     auto entries = number_of_entries(file);
     auto new_directory_entry = find_free_entry(directory_cluster, entries, parent_cluster_number);
 
-    init_file_entry<true>(new_directory_entry, file.c_str(), 0);
+    init_file_entry<true>(new_directory_entry, file, 0);
 
     //Write back the parent directory cluster
     if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
@@ -653,7 +653,7 @@ size_t fat32::fat32_file_system::mkdir(const path& file_path){
     auto entries = number_of_entries(directory);
     auto new_directory_entry = find_free_entry(directory_cluster, entries, parent_cluster_number);
 
-    init_directory_entry<true>(new_directory_entry, directory.c_str(), cluster);
+    init_directory_entry<true>(new_directory_entry, directory, cluster);
 
     //Write back the parent directory cluster
     if(!write_sectors(cluster_lba(parent_cluster_number), fat_bs->sectors_per_cluster, directory_cluster.get())){
@@ -1229,7 +1229,7 @@ std::pair<bool, uint32_t> fat32::fat32_file_system::find_cluster_number(const pa
     }
 
     for(size_t i = 1; i < file_path.size() - last; ++i){
-        auto& p = file_path[i];
+        auto p = file_path[i];
 
         bool found = false;
 

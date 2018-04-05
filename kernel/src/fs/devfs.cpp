@@ -296,7 +296,7 @@ size_t devfs::devfs_file_system::statfs(vfs::statfs_info& file){
     return 0;
 }
 
-void devfs::register_device(const std::string& mp, const std::string& name, device_type type, void* driver, void* data){
+void devfs::register_device(std::string_view mp, const std::string& name, device_type type, void* driver, void* data){
     for(auto& device_list : devices){
         if(device_list.mount_point == mp){
             device_list.devices.emplace_back(name, type, driver, data);
@@ -307,7 +307,7 @@ void devfs::register_device(const std::string& mp, const std::string& name, devi
     devices.emplace_back(mp).devices.emplace_back(name, type, driver, data);
 }
 
-void devfs::deregister_device(const std::string& mp, const std::string& name){
+void devfs::deregister_device(std::string_view mp, const std::string& name){
     for(auto& device_list : devices){
         if(device_list.mount_point == mp){
             device_list.devices.erase(std::remove_if(device_list.devices.begin(), device_list.devices.end(), [&name](const device& dev){

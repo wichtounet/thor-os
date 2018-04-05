@@ -10,6 +10,7 @@
 
 #include <vector.hpp>
 #include <string.hpp>
+#include <string_view.hpp>
 
 /*!
  * \brief Structure to represent a path on the file system
@@ -27,22 +28,12 @@ struct path {
     /*!
      * \brief Construct a path from a string
      */
-    path(const char* path);
-
-    /*!
-     * \brief Construct a path from a string
-     */
-    path(const std::string& path);
+    path(std::string_view path);
 
     /*!
      * \brief Construct a path by concatenating a base path and a string path
      */
-    path(const path& base_path, const char* path);
-
-    /*!
-     * \brief Construct a path by concatenating a base path and a string path
-     */
-    path(const path& base_path, const std::string& path);
+    path(const path& base_path, std::string_view path);
 
     /*!
      * \brief Construct a path by concatenating a base path and a second path
@@ -54,6 +45,8 @@ struct path {
 
     path& operator=(const path&) = default;
     path& operator=(path&&) = default;
+
+    path& operator=(std::string_view rhs);
 
     // Conversion functions
 
@@ -107,17 +100,17 @@ struct path {
     /*!
      * \brief Returns the base name (the last part)
      */
-    std::string base_name() const;
+    std::string_view base_name() const;
 
     /*!
      * \brief Returns the root name (the first part)
      */
-    std::string root_name() const;
+    std::string_view root_name() const;
 
     /*!
      * \brief Returns the sub root name (the second part)
      */
-    std::string sub_root_name() const;
+    std::string_view sub_root_name() const;
 
     /*!
      * \brief Returns true if the path is absoluate, false otherwise
@@ -134,12 +127,12 @@ struct path {
     /*!
      * \brief Returns the ith part of the path
      */
-    const std::string& name(size_t i) const;
+    std::string_view name(size_t i) const;
 
     /*!
      * \brief Returns the ith part of the path
      */
-    const std::string& operator[](size_t i) const;
+    std::string_view operator[](size_t i) const;
 
     // Decomposition functions
 
@@ -177,6 +170,16 @@ struct path {
      */
     bool operator!=(const path& p) const;
 
+    /*!
+     * \brief Returns true if the two paths are equivalent
+     */
+    bool operator==(std::string_view p) const;
+
+    /*!
+     * \brief Returns true if the two paths are not equivalent
+     */
+    bool operator!=(std::string_view p) const;
+
     private:
         std::vector<std::string> names;
 };
@@ -189,7 +192,7 @@ path operator/(const path& lhs, const path& rhs);
 /*!
  * \brief Form a new path by concatenation of a path and a string.
  */
-path operator/(const path& lhs, const std::string& rhs);
+path operator/(const path& lhs, std::string_view rhs);
 
 /*!
  * \brief Form a new path by concatenation of a path and a string.
@@ -199,6 +202,6 @@ path operator/(const path& lhs, const char* rhs);
 /*!
  * \brief Form a new path by concatenation of a string and a path.
  */
-path operator/(const std::string& lhs, const path& rhs);
+path operator/(std::string_view lhs, const path& rhs);
 
 #endif

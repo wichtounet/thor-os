@@ -164,8 +164,8 @@ private:
     path mount_point;
 };
 
-void register_device(const std::string& mp, const std::string& name, device_type type, void* driver, void* data);
-void deregister_device(const std::string& mp, const std::string& name);
+void register_device(std::string_view mp, const std::string& name, device_type type, void* driver, void* data);
+void deregister_device(std::string_view mp, const std::string& name);
 
 uint64_t get_device_size(const path& device_name, size_t& size);
 

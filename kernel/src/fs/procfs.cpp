@@ -34,7 +34,7 @@ size_t read(const std::string& value, char* buffer, size_t count, size_t offset,
     return 0;
 }
 
-std::string get_value(uint64_t pid, const std::string& name){
+std::string get_value(uint64_t pid, std::string_view name){
     auto& process = pcb[pid];
 
     if(name == "pid"){
