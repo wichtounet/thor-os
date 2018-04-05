@@ -476,6 +476,23 @@ public:
         return const_iterator(data_ptr() + size());
     }
 
+    /*!
+     * \brief Lexicographically compare strings
+     */
+    int compare(basic_string& rhs){
+        return base_compare(rhs);
+    }
+
+    /*!
+     * \brief Lexicographically compare with string_view rhs
+     */
+    template<typename T>
+    int compare(const T& rhs){
+        basic_string_view<CharT> sv = rhs;
+
+        return base_compare(sv);
+    }
+
 private:
     void ensure_capacity(size_t new_capacity){
         if(new_capacity > 0 && (capacity() < new_capacity)){
@@ -498,6 +515,29 @@ private:
                 storage.big.capacity = new_cap;
             }
         }
+    }
+
+    template<typename T>
+    int base_compare(const T& rhs){
+        for (size_t i = 0; i < rhs.size() && i < size(); ++i) {
+            if ((*this)[i] < rhs[i]) {
+                return -1;
+            }
+
+            if ((*this)[i] > rhs[i]) {
+                return 1;
+            }
+        }
+
+        if (size() == rhs.size()) {
+            return 0;
+        }
+
+        if (size() < rhs.size()) {
+            return -1;
+        }
+
+        return 1;
     }
 };
 
@@ -532,17 +572,7 @@ basic_string<C> operator+(const basic_string<C>& lhs, const C* rhs){
  */
 template <typename CharT>
 bool operator==(const basic_string<CharT>& x, const basic_string<CharT>& y){
-    if (x.size() != y.size()) {
-        return false;
-    }
-
-    for (size_t i = 0; i < x.size(); ++i) {
-        if (x[i] != y[i]) {
-            return false;
-        }
-    }
-
-    return true;
+    return x.compare(y) == 0;
 }
 
 /*!
@@ -550,17 +580,7 @@ bool operator==(const basic_string<CharT>& x, const basic_string<CharT>& y){
  */
 template <typename CharT>
 bool operator==(const basic_string<CharT>& x, const CharT* y){
-    if (x.size() != str_len(y)) {
-        return false;
-    }
-
-    for (size_t i = 0; i < x.size(); ++i) {
-        if (x[i] != y[i]) {
-            return false;
-        }
-    }
-
-    return true;
+    return x.compare(y) == 0;
 }
 
 /*!
@@ -568,17 +588,7 @@ bool operator==(const basic_string<CharT>& x, const CharT* y){
  */
 template <typename CharT>
 bool operator==(const CharT* x, const basic_string<CharT>& y){
-    if (str_len(x) != y.size()) {
-        return false;
-    }
-
-    for (size_t i = 0; i < x.size(); ++i) {
-        if (x[i] != y[i]) {
-            return false;
-        }
-    }
-
-    return true;
+    return y.compare(x) == 0;
 }
 
 /*!
@@ -586,7 +596,7 @@ bool operator==(const CharT* x, const basic_string<CharT>& y){
  */
 template <typename CharT>
 bool operator!=(const basic_string<CharT>& x, const basic_string<CharT>& y) {
-    return !(x == y);
+    return x.compare(y) != 0;
 }
 
 /*!
@@ -594,7 +604,7 @@ bool operator!=(const basic_string<CharT>& x, const basic_string<CharT>& y) {
  */
 template <typename CharT>
 bool operator!=(const basic_string<CharT>& x, const CharT* y) {
-    return !(x == y);
+    return x.compare(y) != 0;
 }
 
 /*!
@@ -602,7 +612,67 @@ bool operator!=(const basic_string<CharT>& x, const CharT* y) {
  */
 template <typename CharT>
 bool operator!=(const CharT* x, const basic_string<CharT>& y) {
-    return !(x == y);
+    return y.compare(x) != 0;
+}
+
+template <typename CharT>
+bool operator<(const basic_string<CharT>& x, const basic_string<CharT>& y){
+    return x.compare(y) < 0;
+}
+
+template <typename CharT>
+bool operator<(const basic_string<CharT>& x, const CharT* y){
+    return x.compare(y) < 0;
+}
+
+template <typename CharT>
+bool operator<(const CharT* x, const basic_string<CharT>& y){
+    return y.compare(x) > 0;
+}
+
+template <typename CharT>
+bool operator>(const basic_string<CharT>& x, const basic_string<CharT>& y){
+    return x.compare(y) > 0;
+}
+
+template <typename CharT>
+bool operator>(const basic_string<CharT>& x, const CharT* y){
+    return x.compare(y) > 0;
+}
+
+template <typename CharT>
+bool operator>(const CharT* x, const basic_string<CharT>& y){
+    return y.compare(x) < 0;
+}
+
+template <typename CharT>
+bool operator<=(const basic_string<CharT>& x, const basic_string<CharT>& y){
+    return x.compare(y) <= 0;
+}
+
+template <typename CharT>
+bool operator<=(const basic_string<CharT>& x, const CharT* y){
+    return x.compare(y) <= 0;
+}
+
+template <typename CharT>
+bool operator<=(const CharT* x, const basic_string<CharT>& y){
+    return y.compare(x) >= 0;
+}
+
+template <typename CharT>
+bool operator>=(const basic_string<CharT>& x, const basic_string<CharT>& y){
+    return x.compare(y) >= 0;
+}
+
+template <typename CharT>
+bool operator>=(const basic_string<CharT>& x, const CharT* y){
+    return x.compare(y) >= 0;
+}
+
+template <typename CharT>
+bool operator>=(const CharT* x, const basic_string<CharT>& y){
+    return y.compare(x) <= 0;
 }
 
 typedef basic_string<char> string;
