@@ -394,6 +394,52 @@ void test_operators_long_to_short(){
     check(strcmp(last.c_str(), "asdf") == 0, "Invalid content");
 }
 
+void test_compare(){
+    std::string a = "bcd";
+    std::string b = "bcde";
+    std::string c = "abcd";
+    std::string d = "abcde";
+    std::string e = "bcd";
+
+    CHECK(a == a, "Invalid operator==");
+    CHECK(a == e, "Invalid operator==");
+    CHECK(e == a, "Invalid operator==");
+
+    CHECK(a != b, "Invalid operator!=");
+    CHECK(a != c, "Invalid operator!=");
+    CHECK(a != d, "Invalid operator!=");
+
+    CHECK(a.compare(a) == 0, "Invalid std::string::compare");
+    CHECK(a.compare(b) == -1, "Invalid std::string::compare");
+    CHECK(a.compare(c) == 1, "Invalid std::string::compare");
+    CHECK(a.compare(d) == 1, "Invalid std::string::compare");
+    CHECK(a.compare(e) == 0, "Invalid std::string::compare");
+
+    CHECK(b.compare(a) == 1, "Invalid std::string::compare");
+    CHECK(b.compare(b) == 0, "Invalid std::string::compare");
+    CHECK(b.compare(c) == 1, "Invalid std::string::compare");
+    CHECK(b.compare(d) == 1, "Invalid std::string::compare");
+    CHECK(b.compare(e) == 1, "Invalid std::string::compare");
+
+    CHECK(c.compare(a) == -1, "Invalid std::string::compare");
+    CHECK(c.compare(b) == -1, "Invalid std::string::compare");
+    CHECK(c.compare(c) == 0, "Invalid std::string::compare");
+    CHECK(c.compare(d) == -1, "Invalid std::string::compare");
+    CHECK(c.compare(e) == -1, "Invalid std::string::compare");
+
+    CHECK(d.compare(a) == 1, "Invalid std::string::compare");
+    CHECK(d.compare(b) == 1, "Invalid std::string::compare");
+    CHECK(d.compare(c) == 1, "Invalid std::string::compare");
+    CHECK(d.compare(d) == 0, "Invalid std::string::compare");
+    CHECK(d.compare(e) == 1, "Invalid std::string::compare");
+
+    CHECK(e.compare(a) == 0, "Invalid std::string::compare");
+    CHECK(e.compare(b) == -1, "Invalid std::string::compare");
+    CHECK(e.compare(c) == 1, "Invalid std::string::compare");
+    CHECK(e.compare(d) == 1, "Invalid std::string::compare");
+    CHECK(e.compare(e) == 0, "Invalid std::string::compare");
+}
+
 } //end of anonymous namespace
 
 void string_tests(){
@@ -410,4 +456,5 @@ void string_tests(){
     test_operators_long();
     test_operators_short_to_long();
     test_operators_long_to_short();
+    test_compare();
 }
