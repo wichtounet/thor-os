@@ -180,10 +180,24 @@ static_assert(sizeof(string_view) == 16, "The size of a string_view must always 
 
 // TODO Switch to C++14 and use constexpr for these functions
 
+// Note: The identity_of_t trick is simply to ensure that template argument
+// deduction is only done on one of the two arguments. This is allowing implicit
+// conversion (string and string_view for instance)
+
 // non-member comparison functions
 
 template <typename CharT>
 bool operator==(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
+    return x.compare(y) == 0;
+}
+
+template <typename CharT>
+bool operator==(basic_string_view<CharT> x, std::identity_of_t<basic_string_view<CharT>> y) noexcept {
+    return x.compare(y) == 0;
+}
+
+template <typename CharT>
+bool operator==(std::identity_of_t<basic_string_view<CharT>> x, basic_string_view<CharT> y) noexcept {
     return x.compare(y) == 0;
 }
 
@@ -193,7 +207,27 @@ bool operator!=(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept
 }
 
 template <typename CharT>
+bool operator!=(std::identity_of_t<basic_string_view<CharT>> x, basic_string_view<CharT> y) noexcept {
+    return x.compare(y) != 0;
+}
+
+template <typename CharT>
+bool operator!=(basic_string_view<CharT> x, std::identity_of_t<basic_string_view<CharT>> y) noexcept {
+    return x.compare(y) != 0;
+}
+
+template <typename CharT>
 bool operator<(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
+    return x.compare(y) < 0;
+}
+
+template <typename CharT>
+bool operator<(std::identity_of_t<basic_string_view<CharT>> x, basic_string_view<CharT> y) noexcept {
+    return x.compare(y) < 0;
+}
+
+template <typename CharT>
+bool operator<(basic_string_view<CharT> x, std::identity_of_t<basic_string_view<CharT>> y) noexcept {
     return x.compare(y) < 0;
 }
 
@@ -203,12 +237,42 @@ bool operator>(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept 
 }
 
 template <typename CharT>
+bool operator>(std::identity_of_t<basic_string_view<CharT>> x, basic_string_view<CharT> y) noexcept {
+    return x.compare(y) > 0;
+}
+
+template <typename CharT>
+bool operator>(basic_string_view<CharT> x, std::identity_of_t<basic_string_view<CharT>> y) noexcept {
+    return x.compare(y) > 0;
+}
+
+template <typename CharT>
 bool operator<=(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
     return x.compare(y) <= 0;
 }
 
 template <typename CharT>
+bool operator<=(std::identity_of_t<basic_string_view<CharT>> x, basic_string_view<CharT> y) noexcept {
+    return x.compare(y) <= 0;
+}
+
+template <typename CharT>
+bool operator<=(basic_string_view<CharT> x, std::identity_of_t<basic_string_view<CharT>> y) noexcept {
+    return x.compare(y) <= 0;
+}
+
+template <typename CharT>
 bool operator>=(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
+    return x.compare(y) >= 0;
+}
+
+template <typename CharT>
+bool operator>=(std::identity_of_t<basic_string_view<CharT>> x, basic_string_view<CharT> y) noexcept {
+    return x.compare(y) >= 0;
+}
+
+template <typename CharT>
+bool operator>=(basic_string_view<CharT> x, std::identity_of_t<basic_string_view<CharT>> y) noexcept {
     return x.compare(y) >= 0;
 }
 
