@@ -535,20 +535,7 @@ public:
 
         set_size(n);
 
-        auto need = n + 1;
-
-        if(capacity() < need){
-            auto capacity = need;
-
-            if(is_small()){
-                new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
-
-                set_small(false);
-            } else {
-                storage.big.capacity = capacity;
-                storage.big.data.reset(new CharT[capacity]);
-            }
-        }
+        ensure_capacity(n + 1, false);
 
         std::copy(it, end, begin());
         data_ptr()[size()] = '\0';
@@ -558,7 +545,7 @@ public:
 
 private:
 
-    void ensure_capacity(size_t new_capacity){
+    void ensure_capacity(size_t new_capacity, bool preserve = true){
         if(new_capacity > 0 && (capacity() < new_capacity)){
             auto new_cap = capacity() * 2;
 
@@ -568,7 +555,9 @@ private:
 
             auto new_data = new CharT[new_cap];
 
-            std::copy_n(begin(), size() + 1, new_data);
+            if(preserve){
+                std::copy_n(begin(), size() + 1, new_data);
+            }
 
             if(is_small()){
                 new (&storage.big) base_long<CharT>(new_cap, new_data);
@@ -601,27 +590,11 @@ private:
         return *this;
     }
 
-    //TODO Cleanup the duplication with ensure_capacity()
-    //Make sure to avoid the unecessary copy
-
     template<typename T>
     basic_string& base_assign(const T& rhs){
         set_size(rhs.size());
 
-        auto need = rhs.size() + 1;
-
-        if(capacity() < need){
-            auto capacity = need;
-
-            if(is_small()){
-                new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
-
-                set_small(false);
-            } else {
-                storage.big.capacity = capacity;
-                storage.big.data.reset(new CharT[capacity]);
-            }
-        }
+        ensure_capacity(rhs.size() + 1, false);
 
         std::copy(rhs.begin(), rhs.end(), begin());
         data_ptr()[size()] = '\0';
