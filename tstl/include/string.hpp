@@ -446,56 +446,6 @@ public:
         return {data_ptr(), size()};
     }
 
-    //Operators
-
-    /*!
-     * \brief Test if this string is equal to the given raw string
-     */
-    bool operator==(const CharT* s) const {
-        if(size() != str_len(s)){
-            return false;
-        }
-
-        for(size_t i = 0; i < size(); ++i){
-            if((*this)[i] != s[i]){
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /*!
-     * \brief Test if this string is not equal to the given raw string
-     */
-    bool operator!=(const CharT* s) const {
-        return !(*this == s);
-    }
-
-    /*!
-     * \brief Test if this string is equal to the given string
-     */
-    bool operator==(const basic_string& rhs) const {
-        if(size() != rhs.size()){
-            return false;
-        }
-
-        for(size_t i = 0; i < size(); ++i){
-            if((*this)[i] != rhs[i]){
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /*!
-     * \brief Test if this string is not equal to the given string
-     */
-    bool operator!=(const basic_string& rhs) const {
-        return !(*this == rhs);
-    }
-
     //Iterators
 
     /*!
@@ -573,6 +523,86 @@ basic_string<C> operator+(const basic_string<C>& lhs, const C* rhs){
     result += lhs;
     result += rhs;
     return std::move(result);
+}
+
+//Operators
+
+/*!
+ * \brief Test if two std::basic_string are equal to each other
+ */
+template <typename CharT>
+bool operator==(const basic_string<CharT>& x, const basic_string<CharT>& y){
+    if (x.size() != y.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < x.size(); ++i) {
+        if (x[i] != y[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*!
+ * \brief Test if one std::basic_string and one raw string are equal to each other
+ */
+template <typename CharT>
+bool operator==(const basic_string<CharT>& x, const CharT* y){
+    if (x.size() != str_len(y)) {
+        return false;
+    }
+
+    for (size_t i = 0; i < x.size(); ++i) {
+        if (x[i] != y[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*!
+ * \brief Test if one std::basic_string and one raw string are equal to each other
+ */
+template <typename CharT>
+bool operator==(const CharT* x, const basic_string<CharT>& y){
+    if (str_len(x) != y.size()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < x.size(); ++i) {
+        if (x[i] != y[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*!
+ * \brief Test if two std::basic_string are not equal to each other
+ */
+template <typename CharT>
+bool operator!=(const basic_string<CharT>& x, const basic_string<CharT>& y) {
+    return !(x == y);
+}
+
+/*!
+ * \brief Test if one std::basic_string and one raw string are not equal to each other
+ */
+template <typename CharT>
+bool operator!=(const basic_string<CharT>& x, const CharT* y) {
+    return !(x == y);
+}
+
+/*!
+ * \brief Test if one std::basic_string and one raw string are not equal to each other
+ */
+template <typename CharT>
+bool operator!=(const CharT* x, const basic_string<CharT>& y) {
+    return !(x == y);
 }
 
 typedef basic_string<char> string;
@@ -839,7 +869,6 @@ inline uint64_t atoui(const std::string& s){
 
     return value;
 }
-
 
 } //end of namespace std
 
