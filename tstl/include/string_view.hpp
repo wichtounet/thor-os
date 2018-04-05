@@ -145,6 +145,30 @@ struct basic_string_view {
         return {data + pos, std::min(n, size() - pos)};
     }
 
+    // Compare
+
+    int compare(basic_string_view& rhs) const noexcept {
+        for (size_t i = 0; i < rhs.size() && i < size(); ++i) {
+            if ((*this)[i] < rhs[i]) {
+                return -1;
+            }
+
+            if ((*this)[i] > rhs[i]) {
+                return 1;
+            }
+        }
+
+        if (size() == rhs.size()) {
+            return 0;
+        }
+
+        if (size() < rhs.size()) {
+            return -1;
+        }
+
+        return 1;
+    }
+
 private:
     const CharT * _data;
     size_t _size;
@@ -160,57 +184,32 @@ static_assert(sizeof(string_view) == 16, "The size of a string_view must always 
 
 template <typename CharT>
 bool operator==(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
-    if(x.size() != y.size()){
-        return false;
-    }
-
-    for(size_t i = 0; i < x.size(); ++i){
-        if(x[i] != y[i]){
-            return false;
-        }
-    }
-
-    return true;
+    return x.compare(y) == 0;
 }
 
 template <typename CharT>
 bool operator!=(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
-    return !(x == y);
+    return x.compare(y) != 0;
 }
 
 template <typename CharT>
 bool operator<(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
-    auto first1 = x.begin();
-    auto last1 = x.end();
-    auto first2 = y.begin();
-    auto last2 = y.end();
-
-    for (; (first1 != last1) && (first2 != last2); ++first1, (void) ++first2) {
-        if (*first1 < *first2) {
-            return true;
-        }
-
-        if (*first2 < *first1) {
-            return false;
-        }
-    }
-
-    return (first1 == last1) && (first2 != last2);
+    return x.compare(y) < 0;
 }
 
 template <typename CharT>
 bool operator>(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
-    return !(x < y) && !(x == y);
+    return x.compare(y) > 0;
 }
 
 template <typename CharT>
 bool operator<=(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
-    return x == y || x < y;
+    return x.compare(y) <= 0;
 }
 
 template <typename CharT>
 bool operator>=(basic_string_view<CharT> x, basic_string_view<CharT> y) noexcept {
-    return x == y || x > y;
+    return x.compare(y) >= 0;
 }
 
 } //end of namespace std
