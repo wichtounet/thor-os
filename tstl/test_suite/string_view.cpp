@@ -117,6 +117,36 @@ void test_compare(){
     CHECK(e.compare(e) == 0, "Invalid std::string_view::compare");
 }
 
+void test_mixed_compare(){
+    std::string sa = "bcd";
+    std::string sb = "bcde";
+    std::string sc = "abcd";
+    std::string sd = "abcde";
+    std::string se = "bcd";
+
+    std::string_view a = sa;
+    std::string_view b = sb;
+    std::string_view c = sc;
+    std::string_view d = sd;
+    std::string_view e = se;
+
+    CHECK(a == sa, "Invalid operator==");
+    CHECK(a == se, "Invalid operator==");
+    CHECK(e == sa, "Invalid operator==");
+
+    CHECK(sa == a, "Invalid operator==");
+    CHECK(sa == e, "Invalid operator==");
+    CHECK(se == a, "Invalid operator==");
+
+    CHECK(a != sb, "Invalid operator!=");
+    CHECK(a != sc, "Invalid operator!=");
+    CHECK(a != sd, "Invalid operator!=");
+
+    CHECK(sa != b, "Invalid operator!=");
+    CHECK(sa != c, "Invalid operator!=");
+    CHECK(sa != d, "Invalid operator!=");
+}
+
 } //end of anonymous namespace
 
 void string_view_tests(){
@@ -124,4 +154,5 @@ void string_view_tests(){
     test_suffix();
     test_empty();
     test_compare();
+    test_mixed_compare();
 }
