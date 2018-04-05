@@ -921,7 +921,8 @@ inline void to_raw_string<int32_t>(const int32_t& value, char* buffer, size_t n)
     to_raw_string(static_cast<uint64_t>(value), buffer, n);
 }
 
-inline uint64_t atoui(const std::string& s){
+template<typename T>
+inline uint64_t atoui(const basic_string_view<T>& s){
     uint64_t value = 0;
     uint64_t mul = 1;
 
@@ -938,6 +939,11 @@ inline uint64_t atoui(const std::string& s){
     }
 
     return value;
+}
+
+inline uint64_t atoui(const std::string& s){
+    std::string_view sv = s;
+    return atoui(sv);
 }
 
 } //end of namespace std
