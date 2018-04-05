@@ -479,7 +479,7 @@ public:
     /*!
      * \brief Lexicographically compare strings
      */
-    int compare(basic_string& rhs){
+    int compare(basic_string& rhs) const noexcept {
         return base_compare(rhs);
     }
 
@@ -487,7 +487,7 @@ public:
      * \brief Lexicographically compare with string_view rhs
      */
     template<typename T>
-    int compare(const T& rhs){
+    int compare(const T& rhs) const noexcept {
         basic_string_view<CharT> sv = rhs;
 
         return base_compare(sv);
@@ -518,7 +518,7 @@ private:
     }
 
     template<typename T>
-    int base_compare(const T& rhs){
+    int base_compare(const T& rhs) const noexcept {
         for (size_t i = 0; i < rhs.size() && i < size(); ++i) {
             if ((*this)[i] < rhs[i]) {
                 return -1;
