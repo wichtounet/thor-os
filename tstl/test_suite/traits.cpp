@@ -11,6 +11,7 @@
 
 #include <type_traits.hpp>
 #include <string.hpp>
+#include <string_view.hpp>
 
 #include "test.hpp"
 
@@ -51,6 +52,10 @@ void test_is_trivially_destructible(){
     check(!std::is_trivially_destructible<non_trivial>::value, "Invalid is_trivially_destructible<non_trivial>");
 }
 
+void test_is_convertible(){
+    check(std::is_convertible<std::string, std::string_view>::value, "Invalid is_convertible");
+}
+
 } //end of anonymous namespace
 
 void traits_tests(){
@@ -58,4 +63,5 @@ void traits_tests(){
     test_iterator_traits();
     test_has_trivial_assign();
     test_is_trivially_destructible();
+    test_is_convertible();
 }
