@@ -94,6 +94,15 @@ struct basic_string {
     static constexpr const size_t npos = -1;
 
 private:
+    using sv_type = std::basic_string_view<CharT>;
+
+    // Utility to ensure valid conversions to string_view
+    template <typename T>
+    using is_sv = std::integral_constant<bool,
+                std::is_convertible<const T&, sv_type>::value
+            && !std::is_convertible<const T*, const basic_string*>::value
+            && !std::is_convertible<const T&, const CharT*>::value>;
+
     size_t _size;
 
     base_storage<CharT> storage;
@@ -207,22 +216,7 @@ public:
 
     basic_string& operator=(const basic_string& rhs){
         if(this != &rhs){
-            set_size(rhs.size());
-
-            if(capacity() < rhs.capacity()){
-                auto capacity = rhs.capacity();
-
-                if(is_small()){
-                    new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
-
-                    set_small(false);
-                } else {
-                    storage.big.capacity = capacity;
-                    storage.big.data.reset(new CharT[capacity]);
-                }
-            }
-
-            std::copy_n(rhs.begin(), size() + 1, begin());
+            return base_assign(rhs);
         }
 
         return *this;
@@ -268,6 +262,14 @@ public:
         rhs.zero();
 
         return *this;
+    }
+
+    // Assign from string_view convertible
+
+    template<typename T, typename = std::enable_if_t<is_sv<T>::value>>
+    basic_string& operator=(T& rhs){
+        sv_type sv = rhs;
+        return base_assign(sv);
     }
 
     //Destructors
@@ -442,7 +444,7 @@ public:
         return npos;
     }
 
-    operator std::basic_string_view<CharT>() const noexcept {
+    operator sv_type() const noexcept {
         return {data_ptr(), size()};
     }
 
@@ -479,21 +481,32 @@ public:
     /*!
      * \brief Lexicographically compare strings
      */
-    int compare(basic_string& rhs) const noexcept {
+    int compare(const basic_string& rhs) const noexcept {
         return base_compare(rhs);
     }
 
     /*!
      * \brief Lexicographically compare with string_view rhs
      */
-    template<typename T>
+    template<typename T, typename = std::enable_if_t<is_sv<T>::value>>
     int compare(const T& rhs) const noexcept {
-        basic_string_view<CharT> sv = rhs;
+        sv_type sv = rhs;
 
         return base_compare(sv);
     }
 
+    basic_string& assign(basic_string& rhs){
+        return base_assign(rhs);
+    }
+
+    template<typename T, typename = std::enable_if_t<is_sv<T>::value>>
+    basic_string& assign(T& rhs){
+        sv_type sv = rhs;
+        return base_assign(sv);
+    }
+
 private:
+
     void ensure_capacity(size_t new_capacity){
         if(new_capacity > 0 && (capacity() < new_capacity)){
             auto new_cap = capacity() * 2;
@@ -515,6 +528,31 @@ private:
                 storage.big.capacity = new_cap;
             }
         }
+    }
+
+    template<typename T>
+    basic_string& base_assign(const T& rhs){
+        set_size(rhs.size());
+
+        auto need = rhs.size() + 1;
+
+        if(capacity() < need){
+            auto capacity = need;
+
+            if(is_small()){
+                new (&storage.big) base_long<CharT>(capacity, new CharT[capacity]);
+
+                set_small(false);
+            } else {
+                storage.big.capacity = capacity;
+                storage.big.data.reset(new CharT[capacity]);
+            }
+        }
+
+        std::copy(rhs.begin(), rhs.end(), begin());
+        data_ptr()[size()] = '\0';
+
+        return *this;
     }
 
     template<typename T>
