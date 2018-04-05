@@ -29,9 +29,41 @@ struct iterator_traits <T*> {
     using difference_type = size_t; ///< The difference type of the iterator
 };
 
+/* integral_constant */
+
+template <typename T, T V>
+struct integral_constant {
+    static constexpr T value = V;
+
+    using value_type = T;
+    using type       = integral_constant<T, V>;
+
+    constexpr operator value_type() const noexcept {
+        return value;
+    }
+
+    constexpr value_type operator()() const noexcept {
+        return value;
+    }
+};
+
+using true_type = integral_constant<bool, true>;
+using false_type = integral_constant<bool, false>;
+
+/* declval */
+
+template <typename T, typename _Up = T&&>
+_Up declval_impl(int);
+
+template <typename T>
+T declval_impl(long);
+
+template <typename T>
+auto declval() noexcept -> decltype(declval_impl<T>(0));
+
 /* remove_reference */
 
-template<typename T>
+template <typename T>
 struct remove_reference {
     using type = T;
 };
@@ -123,6 +155,17 @@ struct remove_cv {
 
 template<typename T>
 using remove_cv_t = typename remove_cv<T>::type;
+
+// is_void */
+
+template <typename>
+struct is_void_impl : false_type {};
+
+template <>
+struct is_void_impl<void> : true_type {};
+
+template <typename _Tp>
+struct is_void : is_void_impl<remove_cv_t<_Tp>>::type {};
 
 /* conditional */
 
@@ -381,6 +424,33 @@ struct identity_of {
 
 template <typename T>
 using identity_of_t = typename identity_of<T>::type;
+
+// is_convertible
+
+template <typename From, typename To, bool = is_void<From>::value || is_function<To>::value || is_array<To>::value>
+struct is_convertible_impl {
+    using type = typename is_void<To>::type;
+};
+
+template <typename From, typename To>
+struct is_convertible_impl<From, To, false> {
+private:
+    template <typename _To1>
+    static void test_aux(_To1);
+
+    template <typename _From1, typename _To1, typename = decltype(test_aux<_To1>(std::declval<_From1>()))>
+    static true_type test(int);
+
+    template <typename, typename>
+    static false_type test(...);
+
+public:
+    using type = decltype(test<From, To>(0));
+};
+
+// is_convertible
+template <typename From, typename To>
+struct is_convertible : is_convertible_impl<From, To>::type {};
 
 } //end of namespace std
 
