@@ -434,6 +434,22 @@ public:
         return *(data_ptr() + i);
     }
 
+    CharT& front() noexcept {
+        return data_ptr()[0];
+    }
+
+    const CharT& front() const noexcept {
+        return data_ptr()[0];
+    }
+
+    CharT& back() noexcept {
+        return data_ptr()[size() - 1];
+    }
+
+    const CharT& back() const noexcept {
+        return data_ptr()[size() - 1];
+    }
+
     size_t find(char c, size_t pos = 0) const {
         for(; pos < size(); ++pos){
             if((*this)[pos] == c){
