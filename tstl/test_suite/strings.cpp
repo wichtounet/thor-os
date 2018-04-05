@@ -427,11 +427,11 @@ void test_compare(){
     CHECK(c.compare(d) == -1, "Invalid std::string::compare");
     CHECK(c.compare(e) == -1, "Invalid std::string::compare");
 
-    CHECK(d.compare(a) == 1, "Invalid std::string::compare");
-    CHECK(d.compare(b) == 1, "Invalid std::string::compare");
+    CHECK(d.compare(a) == -1, "Invalid std::string::compare");
+    CHECK(d.compare(b) == -1, "Invalid std::string::compare");
     CHECK(d.compare(c) == 1, "Invalid std::string::compare");
     CHECK(d.compare(d) == 0, "Invalid std::string::compare");
-    CHECK(d.compare(e) == 1, "Invalid std::string::compare");
+    CHECK(d.compare(e) == -1, "Invalid std::string::compare");
 
     CHECK(e.compare(a) == 0, "Invalid std::string::compare");
     CHECK(e.compare(b) == -1, "Invalid std::string::compare");
