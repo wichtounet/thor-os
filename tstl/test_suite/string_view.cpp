@@ -65,10 +65,63 @@ void test_empty(){
     CHECK(s.size() == 0, "Invalid size");
 }
 
+void test_compare(){
+    std::string sa = "bcd";
+    std::string sb = "bcde";
+    std::string sc = "abcd";
+    std::string sd = "abcde";
+    std::string se = "bcd";
+
+    std::string_view a = sa;
+    std::string_view b = sb;
+    std::string_view c = sc;
+    std::string_view d = sd;
+    std::string_view e = se;
+
+    CHECK(a == a, "Invalid operator==");
+    CHECK(a == e, "Invalid operator==");
+    CHECK(e == a, "Invalid operator==");
+
+    CHECK(a != b, "Invalid operator!=");
+    CHECK(a != c, "Invalid operator!=");
+    CHECK(a != d, "Invalid operator!=");
+
+    CHECK(a.compare(a) == 0, "Invalid std::string_view::compare");
+    CHECK(a.compare(b) == -1, "Invalid std::string_view::compare");
+    CHECK(a.compare(c) == 1, "Invalid std::string_view::compare");
+    CHECK(a.compare(d) == 1, "Invalid std::string_view::compare");
+    CHECK(a.compare(e) == 0, "Invalid std::string_view::compare");
+
+    CHECK(b.compare(a) == 1, "Invalid std::string_view::compare");
+    CHECK(b.compare(b) == 0, "Invalid std::string_view::compare");
+    CHECK(b.compare(c) == 1, "Invalid std::string_view::compare");
+    CHECK(b.compare(d) == 1, "Invalid std::string_view::compare");
+    CHECK(b.compare(e) == 1, "Invalid std::string_view::compare");
+
+    CHECK(c.compare(a) == -1, "Invalid std::string_view::compare");
+    CHECK(c.compare(b) == -1, "Invalid std::string_view::compare");
+    CHECK(c.compare(c) == 0, "Invalid std::string_view::compare");
+    CHECK(c.compare(d) == -1, "Invalid std::string_view::compare");
+    CHECK(c.compare(e) == -1, "Invalid std::string_view::compare");
+
+    CHECK(d.compare(a) == -1, "Invalid std::string_view::compare");
+    CHECK(d.compare(b) == -1, "Invalid std::string_view::compare");
+    CHECK(d.compare(c) == 1, "Invalid std::string_view::compare");
+    CHECK(d.compare(d) == 0, "Invalid std::string_view::compare");
+    CHECK(d.compare(e) == -1, "Invalid std::string_view::compare");
+
+    CHECK(e.compare(a) == 0, "Invalid std::string_view::compare");
+    CHECK(e.compare(b) == -1, "Invalid std::string_view::compare");
+    CHECK(e.compare(c) == 1, "Invalid std::string_view::compare");
+    CHECK(e.compare(d) == 1, "Invalid std::string_view::compare");
+    CHECK(e.compare(e) == 0, "Invalid std::string_view::compare");
+}
+
 } //end of anonymous namespace
 
 void string_view_tests(){
     test_small();
     test_suffix();
     test_empty();
+    test_compare();
 }
