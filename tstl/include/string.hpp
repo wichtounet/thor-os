@@ -312,6 +312,40 @@ public:
         ensure_capacity(new_capacity);
     }
 
+    basic_string& append(const basic_string& rhs){
+        return base_append(rhs);
+    }
+
+    basic_string& append(const char* rhs){
+        std::string_view sv = rhs;
+
+        return base_append(sv);
+    }
+
+    template<typename T, typename = std::enable_if_t<is_sv<T>::value>>
+    basic_string& append(const T& rhs){
+        std::string_view sv = rhs;
+
+        return base_append(sv);
+    }
+
+    template<typename T>
+    basic_string& append(T it, T end){
+        return base_append(it, end);
+    }
+
+    basic_string& operator+=(const char* rhs){
+        return append(rhs);
+    }
+
+    basic_string& operator+=(const basic_string& rhs){
+        return append(rhs);
+    }
+
+    basic_string& operator+=(const sv_type& rhs){
+        return append(rhs);
+    }
+
     /*!
      * \brief Creates a string resulting of the concatenation of this string the given char
      */
@@ -333,32 +367,6 @@ public:
         (*this)[size() + 1] = '\0';
 
         set_size(size() + 1);
-
-        return *this;
-    }
-
-    basic_string& operator+=(const char* rhs){
-        auto len = str_len(rhs);
-
-        ensure_capacity(size() + len + 1);
-
-        std::copy_n(rhs, len, begin() + size());
-
-        set_size(size() + len);
-
-        (*this)[size()] = '\0';
-
-        return *this;
-    }
-
-    basic_string& operator+=(const basic_string& rhs){
-        ensure_capacity(size() + rhs.size() + 1);
-
-        std::copy_n(rhs.begin(), rhs.size(), begin() + size());
-
-        set_size(size() + rhs.size());
-
-        (*this)[size()] = '\0';
 
         return *this;
     }
@@ -571,6 +579,26 @@ private:
                 storage.big.capacity = new_cap;
             }
         }
+    }
+
+    template<typename T>
+    basic_string& base_append(const T& rhs){
+        return base_append(rhs.begin(), rhs.end());
+    }
+
+    template<typename T>
+    basic_string& base_append(T it, T end){
+        auto n = std::distance(it, end);
+
+        ensure_capacity(size() + n + 1);
+
+        std::copy(it, end, begin() + size());
+
+        set_size(size() + n);
+
+        (*this)[size()] = '\0';
+
+        return *this;
     }
 
     //TODO Cleanup the duplication with ensure_capacity()
