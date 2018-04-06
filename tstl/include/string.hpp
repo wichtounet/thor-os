@@ -306,6 +306,20 @@ public:
     }
 
     /*!
+     * \brief Erase the character at the given position
+     */
+    void erase(size_t position) {
+        if(position >= size()){
+            return;
+        }
+
+        std::copy(begin() + position + 1, end(), begin() + position);
+
+        set_size(size() - 1);
+        (*this)[size()] = '\0';
+    }
+
+    /*!
      * \brief Ensures a capacity of at least new_capacity
      */
     void reserve(size_t new_capacity){
