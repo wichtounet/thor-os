@@ -11,31 +11,30 @@
 
 namespace {
 
-void append_path_to_names(std::string_view path, std::vector<std::string>& names){
-    size_t i = 0;
+void update_positions(std::string& base, std::small_vector<path::position_t>& positions){
+    positions.clear();
 
-    if(path[0] == '/'){
-        names.push_back("/");
-        i = 1;
+    if(base.empty()){
+        return;
     }
 
-    std::string current;
-
-    while(i < path.size()){
-        if(path[i] == '/'){
-            if(!current.empty()){
-                names.emplace_back(current);
-                current.clear();
-            }
-        } else {
-            current += path[i];
+    for(int i = base.size() - 2; i >= 0; --i){
+        if(base[i] == '/' && base[i+1] == '/'){
+            base.erase(size_t(i+1));
         }
-
-        ++i;
     }
 
-    if(!current.empty()){
-        names.emplace_back(current);
+    // Canonicalize this
+    // TODO Ideally we should handle that before to avoid a possible
+    // second allocation here!
+    if(base.back() != '/'){
+        base += '/';
+    }
+
+    for(size_t i = 0; i < base.size(); ++i){
+        if(base[i] == '/'){
+            positions.push_back(i);
+        }
     }
 }
 
@@ -45,132 +44,159 @@ path::path(){
     //Nothing to init
 }
 
-path::path(std::string_view path){
+path::path(std::string_view path) : base(path.begin(), path.end()) {
     thor_assert(path.size(), "Invalid base path");
 
-    append_path_to_names(path, names);
+    update_positions(base, positions);
 }
 
-path::path(const path& base_path, std::string_view p){
+path::path(const path& base_path, std::string_view p) : base(base_path.base) {
     thor_assert(p.empty() || p[0] != '/', "Impossible to add absolute path to another path");
 
-    names.reserve(base_path.size() + 1);
+    //TODO Add support for string::operator+=(string_view)
+    base += std::string(p.begin(), p.end());
 
-    std::copy(base_path.begin(), base_path.end(), std::back_inserter(names));
-
-    append_path_to_names(p, names);
+    update_positions(base, positions);
 }
 
-path::path(const path& base_path, const path& p){
+path::path(const path& base_path, const path& p) : base(base_path.base) {
     thor_assert(p.is_relative(), "Impossible to add absolute path to another path");
 
-    names.reserve(names.size() + base_path.size() + p.size());
+    base += p.base;
 
-    std::copy(base_path.begin(), base_path.end(), std::back_inserter(names));
-    std::copy(p.begin(), p.end(), std::back_inserter(names));
+    update_positions(base, positions);
 }
 
 path& path::operator=(std::string_view rhs){
-    names.clear();
+    base = rhs;
 
-    append_path_to_names(rhs, names);
+    update_positions(base, positions);
+
+    return *this;
 }
 
-// TODO Ideally, the last / should not be used
-std::string path::string() const {
-    std::string str_path;
-
-    size_t i = 0;
-
-    if(is_absolute()){
-        str_path = "/";
-        i = 1;
-    }
-
-    std::string comma;
-    for(; i < names.size(); ++i){
-        str_path += comma;
-        str_path += names[i];
-
-        comma = "/";
-    }
-
-    return str_path;
-}
-
-const std::vector<std::string>& path::vec() const {
-    return names;
+std::string_view path::string() const {
+    return {base.c_str(), base.size()};
 }
 
 void path::invalidate(){
-    names.resize(1);
-    names[0] = "//";
+    base = "//";
+    positions.clear();
 }
 
 bool path::empty() const {
-    return names.empty();
+    return base.empty();
 }
 
 bool path::is_root() const {
-    return names.size() == 1 && names[0] == "/";
+    return base == "/";
 }
 
 bool path::is_valid() const {
-    return !names.empty() && !(names.size() == 1 && names[0] == "//");
+    return !base.empty() && base != "//";
 }
 
 bool path::is_sub_root() const {
-    return is_absolute() && names.size() == 2;
+    return is_absolute() && positions.size() == 2;
 }
 
 size_t path::size() const {
-    return names.size();
+    return positions.size();
 }
 
 std::string_view path::base_name() const {
-    if(empty()){
+    if (empty()) {
         return "";
+    }
+
+    if (is_root()) {
+        return "/";
+    }
+
+    if (is_absolute()) {
+        return {base.begin() + positions[size() - 2] + 1, base.size() - 1 - static_cast<size_t>(positions[size() - 2] + 1)};
+    }
+
+    if (size() == 1) {
+        return {base.begin(), base.size() - 1};
     } else {
-        return names.back();
+        return {base.begin() + positions[size() - 2] + 1, base.size() - 1 - static_cast<size_t>(positions[size() - 2] + 1)};
     }
 }
 
 std::string_view path::root_name() const {
     if(empty()){
         return "";
-    } else {
-        return names.front();
     }
+
+    if(is_absolute()){
+        return "/";
+    }
+
+    return {base.begin(), positions.front()};
 }
 
 std::string_view path::sub_root_name() const {
+    thor_assert(is_absolute(), "sub_root_name() does not make sense on relative path");
+
     if(size() < 2){
         return "";
-    } else {
-        return names[1];
     }
+
+    return {base.begin() + 1, static_cast<size_t>(positions[1]) - 1};
 }
 
 bool path::is_absolute() const {
-    return names.size() && names[0] == "/";
+    return !base.empty() && base[0] == '/';
 }
 
 bool path::is_relative() const {
-    return names.size() && names[0] != "/";
+    return !is_absolute();
 }
 
 std::string_view path::name(size_t i) const {
-    return names[i];
+    if (is_absolute()) {
+        if (i == 0) {
+            return "/";
+        }
+
+        return {base.begin() + positions[i - 1] + 1, size_t(positions[i] - 1) - positions[i - 1]};
+    }
+
+    if (i == 0) {
+        return {base.begin(), positions[i]};
+    }
+
+    return {base.begin() + positions[i - 1] + 1, size_t(positions[i] - 1) - positions[i - 1]};
 }
 
 std::string_view path::operator[](size_t i) const {
-    return names[i];
+    return name(i);
 }
 
 path path::sub_path(size_t i) const {
+    if (i == 0) {
+        return *this;
+    }
+
     path p;
-    p.names.resize(size() - i);
-    std::copy(names.begin() + i, names.end(), p.names.begin());
+
+    if (is_absolute()) {
+        if (i == size()) {
+            return p;
+        }
+
+        p.base.assign(base.begin() + positions[i - 1] + 1, base.end());
+    } else {
+        if (i == size()) {
+            return p;
+        }
+
+        p.base.assign(base.begin() + positions[i - 1] + 1, base.end());
+    }
+
+    update_positions(p.base, p.positions);
+
     return p;
 }
 
@@ -188,25 +214,24 @@ path path::branch_path() const {
     }
 
     path p;
-    p.names.resize(size() - 1);
-    std::copy(names.begin(), names.end() - 1, p.names.begin());
+
+    if(is_relative()){
+        p.base.assign(base.begin(), base.begin() + positions[size() - 2]);
+    } else {
+        p.base.assign(base.begin(), base.begin() + positions[size() - 2]);
+    }
+
+    update_positions(p.base, p.positions);
+
     return p;
 }
 
-path::iterator path::begin() const {
-    return names.begin();
-}
-
-path::iterator path::end() const {
-    return names.end();
-}
-
 bool path::operator==(const path& p) const {
-    return names == p.names;
+    return base == p.base;
 }
 
 bool path::operator!=(const path& p) const {
-    return names != p.names;
+    return base != p.base;
 }
 
 bool path::operator==(std::string_view p) const {

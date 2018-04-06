@@ -9,6 +9,7 @@
 #define VFS_PATH_H
 
 #include <vector.hpp>
+#include <small_vector.hpp>
 #include <string.hpp>
 #include <string_view.hpp>
 
@@ -16,7 +17,7 @@
  * \brief Structure to represent a path on the file system
  */
 struct path {
-    typedef std::vector<std::string>::const_iterator iterator; ///< The type of iterator
+    using position_t = uint16_t; ///< The position type
 
     /*!
      * \brief Construct an empty path.
@@ -53,12 +54,7 @@ struct path {
     /*!
      * \brief Returns a string  representation of the path
      */
-    std::string string() const;
-
-    /*!
-     * \brief Returns a reference to the internal representation of the path
-     */
-    const std::vector<std::string>& vec() const;
+    std::string_view string() const;
 
     // Modifiers
 
@@ -146,18 +142,6 @@ struct path {
      */
     path branch_path() const;
 
-    // Iterators
-
-    /*!
-     * \brief Returns an iterator poiting to the first element.
-     */
-    iterator begin() const ;
-
-    /*!
-     * \brief Returns an iterator poiting past the end element.
-     */
-    iterator end() const ;
-
     // relational operators
 
     /*!
@@ -181,7 +165,8 @@ struct path {
     bool operator!=(std::string_view p) const;
 
     private:
-        std::vector<std::string> names;
+        std::string base;
+        std::small_vector<position_t> positions;
 };
 
 /*!
