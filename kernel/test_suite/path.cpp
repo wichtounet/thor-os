@@ -397,7 +397,7 @@ void test_double_slash(){
     CHECK_DIRECT(p1.name(0) == "/");
     CHECK_DIRECT(p1 == "/");
     CHECK_DIRECT(p1 == "///");
-    CHECK_DIRECT(p1.to_string() == "/");
+    CHECK_DIRECT(p1.string() == "/");
 
     CHECK_DIRECT(!p2.empty());
     CHECK_DIRECT(p2.is_valid());
@@ -411,7 +411,7 @@ void test_double_slash(){
     CHECK_DIRECT(p2.name(1) == "a1");
     CHECK_DIRECT(p2 == "/a1/");
     CHECK_DIRECT(p2 == "///a1/////");
-    CHECK_DIRECT(p2.to_string() == "/a1/");
+    CHECK_DIRECT(p2.string() == "/a1/");
 
     CHECK_DIRECT(!p3.empty());
     CHECK_DIRECT(p3.is_valid());
@@ -427,7 +427,7 @@ void test_double_slash(){
     CHECK_DIRECT(p3.name(3) == "c");
     CHECK_DIRECT(p3 == "/a1/b2/c");
     CHECK_DIRECT(p3 == "/a1//////b2/c//");
-    CHECK_DIRECT(p3.to_string() == "/a1/b2/c/");
+    CHECK_DIRECT(p3.string() == "/a1/b2/c/");
 
     CHECK_DIRECT(!p4.empty());
     CHECK_DIRECT(p4.is_valid());
@@ -441,7 +441,7 @@ void test_double_slash(){
     CHECK_DIRECT(p4.name(2) == "c");
     CHECK_DIRECT(p4 == "a1/b2/c");
     CHECK_DIRECT(p4 != "////a1/b2/c/////");
-    CHECK_DIRECT(p4.to_string() == "a1/b2/c/");
+    CHECK_DIRECT(p4.string() == "a1/b2/c/");
 }
 
 } //end of anonymous namespace
