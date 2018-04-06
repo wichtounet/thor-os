@@ -195,7 +195,12 @@ std::expected<void> vfs::mount(partition_type type, fd_t mp_fd, fd_t dev_fd) {
     mount_point_list.emplace_back(type, dev_path, mp_path, fs);
     fs->init();
 
-    logging::logf(logging::log_level::TRACE, "vfs: mounted file system %s at %s \n", dev_path.string().c_str(), mp_path.string().c_str());
+    auto dev_path_string = dev_path.string();
+    auto mp_path_string = mp_path.string();
+
+    logging::logf(logging::log_level::TRACE, "vfs: mounted file system %.*s at %.*s\n",
+        dev_path_string.size(), dev_path_string.data(),
+        mp_path_string.size(), mp_path_string.data());
 
     return {};
 }
@@ -211,6 +216,13 @@ std::expected<void> vfs::mount(partition_type type, const char* mount_point, con
     }
 
     mount_point_list.emplace_back(type, dev_path, mp_path, fs);
+
+    auto dev_path_string = dev_path.string();
+    auto mp_path_string = mp_path.string();
+
+    logging::logf(logging::log_level::TRACE, "vfs: mounted file system %.*s at %.*s\n",
+        dev_path_string.size(), dev_path_string.data(),
+        mp_path_string.size(), mp_path_string.data());
 
     return {};
 }
