@@ -2,6 +2,11 @@ default: debug/kernel.bin
 
 include ../cpp.mk
 
+TESTSUITE_CPP_FILES=$(wildcard test_suite/*.cpp) src/path.cpp src/assert.cpp
+TESTSUITE_FLAGS=--std=c++11 -I../tstl/include -I../tstl/test_suite/ -Iinclude -DTHOR_NO_ASSERT
+
+TEST_CXX ?= g++
+
 THOR_FLAGS=-DCONFIG_HISTORY=y
 
 # Ask GCC for the crtbegin and crtend files
@@ -60,6 +65,13 @@ debug/kernel.bin: $(LINK_O_FILES)
 	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link $(FILE_COLOR)$@$(NO_COLOR)"
 	@ $(CXX) $(KERNEL_LINK_FLAGS) $(KERNEL_CPP_FLAGS_64) -o $@.o $(LINK_O_FILES)
 	@ $(OC) -R .note -R .comment -O binary --set-section-flags .bss=alloc,load,contents $@.o $@
+
+debug/bin/tester: $(TESTSUITE_CPP_FILES)
+	@ mkdir -p debug/bin/
+	$(TEST_CXX) $(WARNING_FLAGS) $(TESTSUITE_FLAGS) -o debug/bin/tester -g $(TESTSUITE_CPP_FILES)
+
+test: debug/bin/tester
+	./debug/bin/tester
 
 clean:
 	@ echo -e "Remove compiled files (deps/objects)"

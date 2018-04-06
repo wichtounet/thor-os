@@ -10,39 +10,17 @@
 
 #include "test.hpp"
 
-void string_tests();
-void string_view_tests();
-void function_tests();
-void tuple_tests();
-void vector_tests();
-void small_vector_tests();
-void deque_tests();
-void expected_tests();
-void list_tests();
-void traits_tests();
-void algorithms_tests();
-void circular_buffer_tests();
-void shared_ptr_tests();
+void path_tests();
 
 int main(){
-    string_tests();
-    string_view_tests();
-    traits_tests();
-    algorithms_tests();
-    circular_buffer_tests();
-    tuple_tests();
-    vector_tests();
-    small_vector_tests();
-    deque_tests();
-    expected_tests();
-    shared_ptr_tests();
-    list_tests();
-    function_tests();
+    path_tests();
 
     printf("All tests finished\n");
 
     return 0;
 }
+
+// TODO Avoid that duplication
 
 void check(bool condition){
     if(!condition){
@@ -84,7 +62,7 @@ void check_equals(long value, long expected, const char* message, const char* wh
 
 void check_equals(long value, long expected, const char* where, size_t line){
     if(value != expected){
-        printf("%s:%lu Check failed\n", where, line);
+        printf("%s:%lu Check failed", where, line);
         printf("\t expected: %ld was: %ld\n", expected, value);
     }
 }
