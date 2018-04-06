@@ -380,6 +380,70 @@ void test_branch_path(){
     CHECK_DIRECT(p2.branch_path() == "a/b/c/d");
 }
 
+void test_double_slash(){
+    path p1("//");
+    path p2("//a1//");
+    path p3("//a1//b2//c");
+    path p4("a1//b2/c//");
+
+    CHECK_DIRECT(!p1.empty());
+    CHECK_DIRECT(p1.is_valid());
+    CHECK_DIRECT(p1.is_absolute());
+    CHECK_DIRECT(p1.is_root());
+    CHECK_DIRECT(!p1.is_sub_root());
+    CHECK_EQUALS_DIRECT(p1.size(), 1);
+    CHECK_DIRECT(p1.root_name() == "/");
+    CHECK_DIRECT(p1.base_name() == "/");
+    CHECK_DIRECT(p1.name(0) == "/");
+    CHECK_DIRECT(p1 == "/");
+    CHECK_DIRECT(p1 == "///");
+    CHECK_DIRECT(p1.to_string() == "/");
+
+    CHECK_DIRECT(!p2.empty());
+    CHECK_DIRECT(p2.is_valid());
+    CHECK_DIRECT(p2.is_absolute());
+    CHECK_DIRECT(p2.is_sub_root());
+    CHECK_EQUALS_DIRECT(p2.size(), 2);
+    CHECK_DIRECT(p2.root_name() == "/");
+    CHECK_DIRECT(p2.base_name() == "a1");
+    CHECK_DIRECT(p2.sub_root_name() == "a1");
+    CHECK_DIRECT(p2.name(0) == "/");
+    CHECK_DIRECT(p2.name(1) == "a1");
+    CHECK_DIRECT(p2 == "/a1/");
+    CHECK_DIRECT(p2 == "///a1/////");
+    CHECK_DIRECT(p2.to_string() == "/a1/");
+
+    CHECK_DIRECT(!p3.empty());
+    CHECK_DIRECT(p3.is_valid());
+    CHECK_DIRECT(p3.is_absolute());
+    CHECK_DIRECT(!p3.is_sub_root());
+    CHECK_EQUALS_DIRECT(p3.size(), 4);
+    CHECK_DIRECT(p3.root_name() == "/");
+    CHECK_DIRECT(p3.base_name() == "c");
+    CHECK_DIRECT(p3.sub_root_name() == "a1");
+    CHECK_DIRECT(p3.name(0) == "/");
+    CHECK_DIRECT(p3.name(1) == "a1");
+    CHECK_DIRECT(p3.name(2) == "b2");
+    CHECK_DIRECT(p3.name(3) == "c");
+    CHECK_DIRECT(p3 == "/a1/b2/c");
+    CHECK_DIRECT(p3 == "/a1//////b2/c//");
+    CHECK_DIRECT(p3.to_string() == "/a1/b2/c/");
+
+    CHECK_DIRECT(!p4.empty());
+    CHECK_DIRECT(p4.is_valid());
+    CHECK_DIRECT(!p4.is_absolute());
+    CHECK_DIRECT(!p4.is_sub_root());
+    CHECK_EQUALS_DIRECT(p4.size(), 3);
+    CHECK_DIRECT(p4.root_name() == "a1");
+    CHECK_DIRECT(p4.base_name() == "c");
+    CHECK_DIRECT(p4.name(0) == "a1");
+    CHECK_DIRECT(p4.name(1) == "b2");
+    CHECK_DIRECT(p4.name(2) == "c");
+    CHECK_DIRECT(p4 == "a1/b2/c");
+    CHECK_DIRECT(p4 != "////a1/b2/c/////");
+    CHECK_DIRECT(p4.to_string() == "a1/b2/c/");
+}
+
 } //end of anonymous namespace
 
 void path_tests(){
@@ -395,4 +459,5 @@ void path_tests(){
     test_concat_1();
     test_sub_path();
     test_branch_path();
+    test_double_slash();
 }
