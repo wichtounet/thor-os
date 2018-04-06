@@ -16,6 +16,17 @@ inline size_t str_cat(char* destination, const char* source){
     return n;
 }
 
+inline size_t str_cat(char* destination, const char* source, size_t length){
+    size_t n = 0;
+
+    while(n < length){
+        *destination++ = *source++;
+        ++n;
+    }
+
+    return n;
+}
+
 std::string vsprintf(const std::string& format, va_list va){
     std::string s(format.size());
 
@@ -35,12 +46,19 @@ std::string vsprintf(const std::string& format, va_list va){
             }
 
             size_t min_digits = 0;
-            if(ch == '.'){
+            bool variable_length = false;
+
+            if (ch == '.') {
                 ch = format[fi++];
 
-                while(ch >= '0' && ch <= '9'){
-                    min_digits = 10 * min_digits + (ch - '0');
+                if (ch == '*') {
+                    variable_length = true;
                     ch = format[fi++];
+                } else {
+                    while (ch >= '0' && ch <= '9') {
+                        min_digits = 10 * min_digits + (ch - '0');
+                        ch         = format[fi++];
+                    }
                 }
             }
 
@@ -198,10 +216,20 @@ std::string vsprintf(const std::string& format, va_list va){
             }
             //String
             else if(ch == 's'){
-                const char* arg = va_arg(va, const char*);
+                if (variable_length) {
+                    size_t size_arg = va_arg(va, size_t);
 
-                if(arg){
-                    s += arg;
+                    const char* arg = va_arg(va, const char*);
+
+                    if (arg) {
+                        s.append(arg, arg + size_arg);
+                    }
+                } else {
+                    const char* arg = va_arg(va, const char*);
+
+                    if (arg) {
+                        s += arg;
+                    }
                 }
             }
 
@@ -269,12 +297,19 @@ void vsprintf_raw(char* out_buffer, size_t /*n*/, const char* format, va_list va
             }
 
             size_t min_digits = 0;
-            if(ch == '.'){
+            bool variable_length = false;
+
+            if (ch == '.') {
                 ch = format[fi++];
 
-                while(ch >= '0' && ch <= '9'){
-                    min_digits = 10 * min_digits + (ch - '0');
+                if (ch == '*') {
+                    variable_length = true;
                     ch = format[fi++];
+                } else {
+                    while (ch >= '0' && ch <= '9') {
+                        min_digits = 10 * min_digits + (ch - '0');
+                        ch         = format[fi++];
+                    }
                 }
             }
 
@@ -444,8 +479,21 @@ void vsprintf_raw(char* out_buffer, size_t /*n*/, const char* format, va_list va
             }
             //String
             else if(ch == 's'){
-                const char* arg = va_arg(va, const char*);
-                out_i += str_cat(out_buffer + out_i, arg);
+                if (variable_length) {
+                    size_t size_arg = va_arg(va, size_t);
+
+                    const char* arg = va_arg(va, const char*);
+
+                    if (arg) {
+                        out_i += str_cat(out_buffer + out_i, arg, size_arg);
+                    }
+                } else {
+                    const char* arg = va_arg(va, const char*);
+
+                    if (arg) {
+                        out_i += str_cat(out_buffer + out_i, arg);
+                    }
+                }
             }
 
             if(min_width > 0){
