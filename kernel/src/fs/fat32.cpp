@@ -898,7 +898,7 @@ size_t fat32::fat32_file_system::change_directory_entry(uint32_t parent_cluster_
 //Finds "entries" consecutive free entries in the given directory cluster
 fat32::cluster_entry* fat32::fat32_file_system::find_free_entry(std::unique_heap_array<cluster_entry>& directory_cluster, size_t entries, uint32_t& cluster_number){
     while(true){
-        size_t end;
+        size_t end = 0;
         bool end_found = false;
 
         //1. Search the first end of directory marker
