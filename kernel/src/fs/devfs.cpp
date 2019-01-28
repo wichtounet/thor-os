@@ -31,7 +31,7 @@ struct device {
     void* data;
 
     device(){}
-    device(std::string name, devfs::device_type type, void* driver, void* data)
+    device(const std::string& name, devfs::device_type type, void* driver, void* data)
         : name(name), type(type), driver(driver), data(data) {}
 };
 
