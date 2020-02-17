@@ -100,7 +100,9 @@ std::expected<size_t> tlib::exec_and_wait(const char* executable, const std::vec
 }
 
 void tlib::reboot(int delay=0) {
-    tlib::sleep_ms(1000*delay);
+    if (delay != 0) {
+    tlib::sleep_ms(1000 * delay);
+    }
     asm volatile("mov rax, 0x50; int 50"
         : //No outputs
         : //No inputs
@@ -110,7 +112,9 @@ void tlib::reboot(int delay=0) {
 }
 
 void tlib::shutdown(int delay=0){
-    tlib::sleep_ms(1000* delay);
+    if (delay != 0) {
+    tlib::sleep_ms(1000 * delay);
+    }
     asm volatile("mov rax, 0x51; int 50"
         : //No outputs
         : //No inputs
