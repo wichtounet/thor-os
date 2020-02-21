@@ -189,7 +189,9 @@ void fill_n(ForwardIterator first, size_t count, const T& value){
  */
 template<typename ForwardIterator, typename T, std::enable_if_t<std::is_integral<typename std::iterator_traits<ForwardIterator>::value_type>::value && is_integral<T>::value, int> = 42>
 void fill_n(ForwardIterator first, size_t count, const T& value){
-    if(!value){
+    // TODO This is definitely not good, should properly compare to zero
+    bool v{value};
+    if(!v){
         memclr(reinterpret_cast<char*>(first), count * sizeof(decltype(*first)));
     } else {
         if(count > 0){
