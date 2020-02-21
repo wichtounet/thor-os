@@ -248,7 +248,7 @@ std::string vsprintf(const std::string& format, va_list va){
         }
     }
 
-    return std::move(s);
+    return s;
 }
 
 std::string sprintf(const std::string& format, ...){
@@ -259,7 +259,7 @@ std::string sprintf(const std::string& format, ...){
 
     va_end(va);
 
-    return std::move(s);
+    return s;
 }
 
 void vprintf(const std::string& format, va_list va){

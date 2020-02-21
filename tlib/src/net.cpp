@@ -601,7 +601,7 @@ tlib::socket tlib::socket::accept() {
         sock._bound     = false;
         sock.error_code = 0;
 
-        return std::move(sock);
+        return sock;
     } else {
         error_code = status.error();
     }

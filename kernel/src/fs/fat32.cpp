@@ -61,7 +61,7 @@ fat32::cluster_entry* init_entry(fat32::cluster_entry* entry_ptr, std::string_vi
 
         //Compute the checksum of 8.3 Entry
         char sum = 0;
-        for(int c = 0; c < 11; ++c){
+        for(unsigned int c = 0; c < 11; ++c){
             char v = c < len ? name[c] : ' ';
             sum = ((sum & 1) ? 0x80 : 0) + (sum >> 1) + v;
         }
@@ -1078,7 +1078,7 @@ std::vector<vfs::file> fat32::fat32_file_system::files(uint32_t cluster_number){
 
     while(!end_reached){
         if(!read_sectors(cluster_lba(cluster_number), fat_bs->sectors_per_cluster, cluster.get())){
-            return std::move(files);
+            return files;
         }
 
         size_t position = 0;
@@ -1204,19 +1204,19 @@ std::vector<vfs::file> fat32::fat32_file_system::files(uint32_t cluster_number){
 
             //If there are no more cluster, return false
             if(!cluster_number){
-                return std::move(files);
+                return files;
             }
 
             //The block is corrupted
             if(cluster_number == CLUSTER_CORRUPTED){
-                return std::move(files);
+                return files;
             }
         }
 
         ++cluster_position;
     }
 
-    return std::move(files);
+    return files;
 }
 
 //TODO use expected here

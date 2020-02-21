@@ -368,7 +368,7 @@ public:
 
         copy += c;
 
-        return move(copy);
+        return copy;
     }
 
     /*!
@@ -645,7 +645,7 @@ basic_string<C> operator+(const basic_string<C>& lhs, const basic_string<C>& rhs
     basic_string<C> result;
     result += lhs;
     result += rhs;
-    return std::move(result);
+    return result;
 }
 
 template<typename C>
@@ -653,7 +653,7 @@ basic_string<C> operator+(const C* lhs, const basic_string<C>& rhs){
     basic_string<C> result;
     result += lhs;
     result += rhs;
-    return std::move(result);
+    return result;
 }
 
 template<typename C>
@@ -661,7 +661,7 @@ basic_string<C> operator+(const basic_string<C>& lhs, const C* rhs){
     basic_string<C> result;
     result += lhs;
     result += rhs;
-    return std::move(result);
+    return result;
 }
 
 //Operators
@@ -852,7 +852,7 @@ std::vector<std::basic_string<Char>> split(const std::basic_string<Char>& s, cha
         parts.push_back(current);
     }
 
-    return std::move(parts);
+    return parts;
 }
 
 template<typename Char>
@@ -901,7 +901,7 @@ inline std::string to_string<uint64_t>(const uint64_t& value){
         s += buffer[i];
     }
 
-    return std::move(s);
+    return s;
 }
 
 template<>
@@ -909,7 +909,7 @@ inline std::string to_string<int64_t>(const int64_t& value){
     if(value < 0){
         std::string s("-");
         s += to_string(static_cast<uint64_t>(-value));
-        return std::move(s);
+        return s;
     } else {
         return to_string(static_cast<uint64_t>(value));
     }

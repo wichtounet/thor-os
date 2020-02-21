@@ -14,7 +14,7 @@ template<typename T>
 struct default_delete {
     constexpr default_delete() = default;
 
-    constexpr default_delete(const default_delete&) {}
+    constexpr default_delete(const default_delete&) = default;
 
     void operator()(T* ptr) const {
         static_assert(sizeof(T) > 0, "Type must be complete");
@@ -27,7 +27,7 @@ template<typename T>
 struct default_delete<T[]> {
     constexpr default_delete() = default;
 
-    constexpr default_delete(const default_delete&) {}
+    constexpr default_delete(const default_delete&) = default;
 
     void operator()(T* ptr) const {
         static_assert(sizeof(T) > 0, "Type must be complete");
