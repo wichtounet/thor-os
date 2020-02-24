@@ -31,8 +31,8 @@ void sleep_ms(size_t ms);
 
 datetime local_date();
 
-void reboot();
-void shutdown();
+void reboot(unsigned int);
+void shutdown(unsigned int);
 
 uint64_t s_time();
 uint64_t ms_time();

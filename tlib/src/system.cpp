@@ -99,10 +99,11 @@ std::expected<size_t> tlib::exec_and_wait(const char* executable, const std::vec
     return std::move(result);
 }
 
-void tlib::reboot(int delay=0) {
-    if (delay != 0) {
-    tlib::sleep_ms(1000 * delay);
+void tlib::reboot(unsigned int delay) {
+    if (delay) {
+        tlib::sleep_ms(1000 * delay);
     }
+
     asm volatile("mov rax, 0x50; int 50"
         : //No outputs
         : //No inputs
@@ -111,10 +112,11 @@ void tlib::reboot(int delay=0) {
     __builtin_unreachable();
 }
 
-void tlib::shutdown(int delay=0){
-    if (delay != 0) {
-    tlib::sleep_ms(1000 * delay);
+void tlib::shutdown(unsigned int delay) {
+    if (delay) {
+        tlib::sleep_ms(1000 * delay);
     }
+
     asm volatile("mov rax, 0x51; int 50"
         : //No outputs
         : //No inputs
