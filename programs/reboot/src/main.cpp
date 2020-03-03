@@ -8,6 +8,6 @@
 #include <tlib/system.hpp>
 
 int main(){
-    tlib::reboot();
+    tlib::reboot(0);
     return 0;
 }
