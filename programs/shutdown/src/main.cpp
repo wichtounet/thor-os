@@ -8,6 +8,6 @@
 #include <tlib/system.hpp>
 
 int main(){
-    tlib::shutdown(0);
+    tlib::shutdown();
     return 0;
 }
