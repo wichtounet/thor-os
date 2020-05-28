@@ -12,11 +12,19 @@
 #include "boot_32.hpp"
 
 #include "gdt_types.hpp"
-void __attribute__ ((noreturn)) rm_main();
-void __attribute__ ((noreturn)) foo(){ rm_main(); }
+
 #include "e820_types.hpp"
 #include "vesa_types.hpp"
 #include "early_memory.hpp"
+
+/*
+*
+* This is required for QEMU boot.
+* See https://github.com/wichtounet/thor-os/issues/24 
+*
+*/
+void __attribute__ ((noreturn)) rm_main();
+void __attribute__ ((noreturn)) foo(){ rm_main(); }
 
 e820::bios_e820_entry bios_e820_entries[e820::MAX_E820_ENTRIES];
 
