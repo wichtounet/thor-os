@@ -14,13 +14,13 @@ force_look:
 	true
 
 dist: tlib/libtlib.a
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Build all programs"
+	@ /bin/echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Build all programs"
 	@ $(foreach var,$(PROGRAMS),cd $(var); $(MAKE); cd ..;)
 	@ mkdir -p dist
 	@ $(foreach var,$(PROGRAMS),cp $(var)/debug/$(var) dist/;)
 	@ strip dist/*
 
 clean:
-	@ echo -e "Clean all programs"
+	@ /bin/echo -e "Clean all programs"
 	@ $(foreach var,$(PROGRAMS),cd $(var); $(MAKE) clean; cd ..;)
 	@ rm -rf dist
