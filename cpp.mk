@@ -51,7 +51,7 @@ define compile_assembly_folder
 
 debug/$(1)/%.s.o: $(1)/%.s
 	@ mkdir -p debug/$(1)/
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (assembly) $(FILE_COLOR)$(1)/$$*.s$(NO_COLOR)"
+	@ /bin/echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (assembly) $(FILE_COLOR)$(1)/$$*.s$(NO_COLOR)"
 	@ $(AS) -g -c $$< -o $$@
 
 folder_s_files := $(wildcard $(1)/*.s)
@@ -70,7 +70,7 @@ debug/$(1)/%.cpp.d: $(1)/%.cpp
 
 debug/$(1)/%.cpp.o: $(1)/%.cpp
 	@ mkdir -p debug/$(1)/
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
+	@ /bin/echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
 	@ $(CXX) $(KERNEL_CPP_FLAGS_64) $(THOR_FLAGS) $(WARNING_FLAGS) -c $$< -o $$@
 
 folder_cpp_files := $(wildcard $(1)/*.cpp)
@@ -91,7 +91,7 @@ debug/acpica/source/components/$(1)/%.c.d: acpica/source/components/$(1)/%.c
 
 debug/acpica/source/components/$(1)/%.c.o: acpica/source/components/$(1)/%.c
 	@ mkdir -p debug/acpica/source/components/$(1)/
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (ACPICA) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
+	@ /bin/echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (ACPICA) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
 	@ $(CC) $(ACPICA_C_FLAGS) $(THOR_FLAGS) -c $$< -o $$@
 
 acpica_folder_c_files := $(wildcard acpica/source/components/$(1)/*.c)
@@ -108,7 +108,7 @@ define program_compile_cpp_folder
 
 debug/$(1)/%.cpp.o: $(1)/%.cpp
 	@ mkdir -p debug/$(1)/
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (program) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
+	@ /bin/echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (program) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
 	@ $(CXX) -c $$< -o $$@ $(PROGRAM_FLAGS)
 
 folder_cpp_files := $(wildcard $(1)/*.cpp)
@@ -122,7 +122,7 @@ define program_link_executable
 
 debug/$(1): $(O_FILES)
 	@ mkdir -p debug/
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link (program) $(FILE_COLOR)$$@$(NO_COLOR)"
+	@ /bin/echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Link (program) $(FILE_COLOR)$$@$(NO_COLOR)"
 	@ $(CXX) -o debug/$(1) $(PROGRAM_LINK_FLAGS) ../../tlib/debug/src/crti.s.o $$(shell $(CXX) -print-file-name=crtbegin.o) $(O_FILES) -ltlib $$(shell $(CXX) -print-file-name=crtend.o) ../../tlib/debug/src/crtn.s.o
 link: debug/$(1)
 
@@ -137,7 +137,7 @@ debug/$(1)/%.cpp.d: $(1)/%.cpp
 
 debug/$(1)/%.cpp.o: $(1)/%.cpp
 	@ mkdir -p debug/$(1)/
-	@ echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (tlib) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
+	@ /bin/echo -e "$(MODE_COLOR)[debug]$(NO_COLOR) Compile (tlib) $(FILE_COLOR)$(1)/$$*.cpp$(NO_COLOR)"
 	@ $(CXX) $(TLIB_FLAGS) -c $$< -o $$@
 
 folder_cpp_files := $(wildcard $(1)/*.cpp)

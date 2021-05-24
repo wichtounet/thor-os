@@ -30,19 +30,20 @@ thor.flp: hdd.img bootloader/stage1.bin bootloader/stage2.bin init/debug/init.bi
 	mkdir -p mnt/fake/
 	dd if=bootloader/stage1.bin of=hdd.img conv=notrunc
 	dd if=bootloader/stage2.bin of=hdd.img seek=1 conv=notrunc
-	sudo /sbin/losetup -o1048576 /dev/loop0 hdd.img
-	sudo mkdosfs -v -F32 /dev/loop0
-	sudo /bin/mount -t vfat /dev/loop0 mnt/fake/
-	sudo mkdir mnt/fake/bin/
-	sudo mkdir mnt/fake/sys/
-	sudo mkdir mnt/fake/dev/
-	sudo mkdir mnt/fake/proc/
-	sudo /bin/cp init/debug/init.bin mnt/fake/
-	sudo /bin/cp kernel/debug/kernel.bin mnt/fake/
-	sudo /bin/cp programs/dist/* mnt/fake/bin/
-	sleep 0.1
-	sudo /bin/umount mnt/fake/
-	sudo /sbin/losetup -d /dev/loop0
+	loopdev="`/sbin/losetup -f`" && \
+	sudo /sbin/losetup -o1048576 "$$loopdev" hdd.img && \
+	sudo mkdosfs -v -F32 "$$loopdev" && \
+	sudo /bin/mount -t vfat "$$loopdev" mnt/fake/ && \
+	sudo mkdir mnt/fake/bin/ && \
+	sudo mkdir mnt/fake/sys/ && \
+	sudo mkdir mnt/fake/dev/ && \
+	sudo mkdir mnt/fake/proc/ && \
+	sudo /bin/cp init/debug/init.bin mnt/fake/ && \
+	sudo /bin/cp kernel/debug/kernel.bin mnt/fake/ && \
+	sudo /bin/cp programs/dist/* mnt/fake/bin/ && \
+	sleep 0.1 && \
+	sudo /bin/umount mnt/fake/ && \
+	sudo /sbin/losetup -d "$$loopdev"
 
 qemu: default
 	touch virtual.log
